@@ -5,7 +5,6 @@ import {
   Users,
   Menu,
   X,
-  Bell,
   PlusCircle,
   Camera,
   Eye,
@@ -91,17 +90,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, is
     }
   };
 
-  // ROBUST SAVE LOGIC (Defensive - protects against corrupted sessions)
+  // ROBUST SAVE LOGIC
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // 🛡️ SAFETY CHECK: Ensure userId is a valid string
-      const safeUserId = String(userId);
-      if (!safeUserId || safeUserId === 'undefined' || safeUserId === 'null') {
-        throw new Error("Invalid user session. Please log out and log in again.");
-      }
-
-      console.log("Starting save for user:", safeUserId);
       let finalAvatarUrl = userImage;
 
       // 1. UPDATE PASSWORD (Auth API)
@@ -131,10 +123,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, is
         console.log('Profile image compressed:',
           `${(selectedFile.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB`);
 
-        // Use simple timestamp filename to avoid pattern issues
         const fileExt = compressedFile.name.split('.').pop();
         const fileName = `avatar_${Date.now()}.${fileExt}`;
-        const filePath = `${safeUserId}/${fileName}`;
+        const filePath = `${userId}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('avatars')
@@ -151,8 +142,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, is
       }
 
       // 3. UPDATE DATABASE
-      console.log("3. Saving to database...");
-
       const updates = {
         full_name: nameInput,
         avatar_url: finalAvatarUrl,
@@ -163,7 +152,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, is
       const { error: dbError } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('id', safeUserId);
+        .eq('id', userId);
 
       if (dbError) {
         console.error("Database Error:", dbError);
@@ -184,7 +173,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, is
 
     } catch (error: any) {
       console.error("Save failed:", error);
-      showError(`Failed to save profile: ${error.message}`);
+      showError(`Failed to save: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -508,10 +497,6 @@ const Layout: React.FC<LayoutProps> = (props) => {
                 )}
               </div>
 
-              <button className="relative p-2.5 text-slate-400 hover:bg-slate-100 hover:text-promed-primary rounded-xl transition">
-                <Bell size={20} />
-                <span className="absolute top-2.5 right-3 w-2 h-2 bg-red-500 rounded-full border border-white" />
-              </button>
             </div>
           </div>
         </header>

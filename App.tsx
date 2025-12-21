@@ -91,7 +91,11 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLocked, setIsLocked] = useState(false);
+  // Initialize lock state from localStorage to persist across refreshes
+  const [isLocked, setIsLocked] = useState(() => {
+    const savedLockState = localStorage.getItem('appLockState');
+    return savedLockState === 'true';
+  });
   const [isLockEnabled, setIsLockEnabled] = useState(false);
   const [userPassword, setUserPassword] = useState('password123');
   const [userImage, setUserImage] = useState<string>("https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&size=128");
@@ -100,62 +104,61 @@ const App: React.FC = () => {
 
   const { t } = useLanguage();
 
+  // Persist lock state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('appLockState', isLocked.toString());
+  }, [isLocked]);
+
   // Validate session consistency
   useEffect(() => {
     const checkSession = async () => {
-      if (isLoggedIn) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          console.warn('App: Local state is logged in but Supabase session is missing. Logging out to sync.');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const persistedAccountId = localStorage.getItem('accountId');
+        const sessionUserId = session.user.id;
+
+        if (persistedAccountId && persistedAccountId !== sessionUserId) {
+          console.warn('⚠️ Session mismatch detected! Clearing corrupted state...');
+          localStorage.clear();
           logout();
+          window.location.reload();
+          return;
         }
+
+        setAccount(sessionUserId, sessionUserId, '');
       }
     };
-
-    // Check initially
     checkSession();
+  }, []);
 
-    // And listen for auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' && isLoggedIn) {
-        logout();
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    }
-  }, [isLoggedIn, logout]);
-
-
-
-  // Subscribe to real-time user profile updates
+  // ===== PROFILE AND SETTINGS SYNC =====
   useEffect(() => {
-    if (!isLoggedIn || !userId) return;
+    if (!userId) return;
 
     const unsubscribe = subscribeToUserProfile(
       userId,
       (profile) => {
-        console.log('Profile loaded from database:', profile);
-        if (profile.profileImage) {
-          setUserImage(profile.profileImage);
-        }
-        if (profile.role) {
-          setUserRole(profile.role);
-        }
-        // Load lock screen enabled state from database
-        if (profile.lockEnabled !== undefined) {
-          console.log('✓ Lock enabled loaded:', profile.lockEnabled);
-          setIsLockEnabled(profile.lockEnabled);
-        } else {
-          console.warn('⚠️ lock_enabled column missing in database');
-        }
-        // Load lock screen password from database
-        if (profile.lockPassword) {
-          setUserPassword(profile.lockPassword);
+        console.log("✓ Profile data received:", profile);
+        if (profile) {
+          if (profile.lock_enabled !== undefined) {
+            console.log("  • Lock Enabled:", profile.lock_enabled);
+            setIsLockEnabled(profile.lock_enabled);
+          }
+          if (profile.lock_password) {
+            console.log("  • Password exists:", !!profile.lock_password);
+            setUserPassword(profile.lock_password);
+          }
+          if (profile.profile_image || profile.avatar_url) {
+            const imageUrl = profile.profile_image || profile.avatar_url;
+            console.log("  • Image URL:", imageUrl);
+            setUserImage(imageUrl);
+          }
+          if (profile.role) {
+            setUserRole(profile.role);
+          }
         }
       },
-      (error) => console.error('Error fetching profile:', error)
+      (error) => console.error("Profile subscription error:", error)
     );
 
     return () => unsubscribe();

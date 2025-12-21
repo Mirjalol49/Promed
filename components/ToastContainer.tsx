@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
+import { Portal } from './Portal';
 
 const ToastContainer: React.FC = () => {
     const { toasts, removeToast } = useToast();
 
     return (
-        <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
-            {toasts.map((toast) => (
-                <ToastCard key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
-            ))}
-        </div>
+        <Portal>
+            <div className="fixed top-4 right-4 z-[99999] flex flex-col gap-2 pointer-events-none">
+                {toasts.map((toast) => (
+                    <ToastCard key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
+                ))}
+            </div>
+        </Portal>
     );
 };
 
