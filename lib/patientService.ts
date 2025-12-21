@@ -5,8 +5,8 @@ import { Patient, Injection, PatientImage } from '../types';
 export const COLUMNS = {
   // Minimal - for dashboard stats (smallest payload)
   MINIMAL: 'id,full_name,status,operation_date',
-  // List view - for patient list display
-  LIST: 'id,full_name,phone,email,status,profile_image,operation_date',
+  // List view - for patient list display (FIXED: added before_image, after_images)
+  LIST: 'id,full_name,phone,email,status,profile_image,before_image,after_images,operation_date',
   // Detail view - full patient data
   FULL: '*'
 } as const;
