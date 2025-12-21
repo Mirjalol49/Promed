@@ -28,10 +28,40 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
 
-  // Register flow disabled/hidden for now as we use Admin Panel for invites,
-  // or we update register flow similarly.
-  // For now I'll hide the register button or update it to use the new flow if accessible.
-  // Given instructions, focusing on Login.
+  // Forgot Password state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
+
+  // Handle forgot password
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetError('');
+    setResetMessage('');
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/?reset=true`,
+      });
+
+      if (error) throw error;
+
+      setResetMessage('Check your email for the password reset link!');
+      setTimeout(() => {
+        setShowForgotPassword(false);
+        setResetMessage('');
+        setResetEmail('');
+      }, 3000);
+    } catch (err: any) {
+      console.error('Reset password error:', err);
+      setResetError(err.message || 'Failed to send reset email');
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,10 +179,87 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 </>
               )}
             </button>
+
+            {/* Forgot Password Link */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(true);
+                  setResetEmail(email); // Pre-fill with login email
+                }}
+                className="text-teal-400 hover:text-teal-300 text-sm font-medium transition-colors hover:underline"
+              >
+                Forgot your password?
+              </button>
+            </div>
           </form>
         </div>
 
+        {/* Forgot Password Modal */}
+        {showForgotPassword && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-slate-800 border border-white/20 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+              <h3 className="text-xl font-bold text-white mb-2">Reset Password</h3>
+              <p className="text-white/60 text-sm mb-6">
+                Enter your email address and we'll send you a link to reset your password.
+              </p>
 
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
+                  placeholder="doctor@example.com"
+                  required
+                  autoFocus
+                />
+
+                {resetError && (
+                  <div className="flex items-center gap-2 p-3 bg-red-500/20 border border-red-500/30 rounded-xl text-red-300 text-sm">
+                    <AlertCircle size={18} />
+                    <span>{resetError}</span>
+                  </div>
+                )}
+
+                {resetMessage && (
+                  <div className="flex items-center gap-2 p-3 bg-green-500/20 border border-green-500/30 rounded-xl text-green-300 text-sm">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>{resetMessage}</span>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetError('');
+                      setResetMessage('');
+                    }}
+                    className="flex-1 py-3 px-4 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    className="flex-1 py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl transition-all disabled:opacity-50"
+                  >
+                    {resetLoading ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                    ) : (
+                      'Send Reset Link'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Language Selector */}
         <div className="mt-6 flex justify-center">
