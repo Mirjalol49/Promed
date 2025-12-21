@@ -140,18 +140,22 @@ const App: React.FC = () => {
       (profile) => {
         console.log("✓ Profile data received:", profile);
         if (profile) {
-          if (profile.lock_enabled !== undefined) {
-            console.log("  • Lock Enabled:", profile.lock_enabled);
-            setIsLockEnabled(profile.lock_enabled);
+          // 🔥 FIX: Sync name to AccountContext for cross-device sync
+          if (profile.name && profile.name !== accountName) {
+            console.log("  • Name updated:", profile.name);
+            setAccount(accountId!, userId, profile.name);
           }
-          if (profile.lock_password) {
-            console.log("  • Password exists:", !!profile.lock_password);
-            setUserPassword(profile.lock_password);
+          if (profile.lockEnabled !== undefined) {
+            console.log("  • Lock Enabled:", profile.lockEnabled);
+            setIsLockEnabled(profile.lockEnabled);
           }
-          if (profile.profile_image || profile.avatar_url) {
-            const imageUrl = profile.profile_image || profile.avatar_url;
-            console.log("  • Image URL:", imageUrl);
-            setUserImage(imageUrl);
+          if (profile.lockPassword) {
+            console.log("  • Password exists:", !!profile.lockPassword);
+            setUserPassword(profile.lockPassword);
+          }
+          if (profile.profileImage) {
+            console.log("  • Image URL:", profile.profileImage);
+            setUserImage(profile.profileImage);
           }
           if (profile.role) {
             setUserRole(profile.role);
@@ -162,7 +166,7 @@ const App: React.FC = () => {
     );
 
     return () => unsubscribe();
-  }, [isLoggedIn, userId]);
+  }, [isLoggedIn, userId, accountId]);
 
   // Subscribe to real-time patient updates when logged in
   useEffect(() => {
