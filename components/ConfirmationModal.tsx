@@ -1,6 +1,7 @@
 import React from 'react';
 import { LucideIcon, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 interface ConfirmationModalProps {
     isOpen: boolean;
@@ -26,6 +27,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     variant = 'primary'
 }) => {
     const { t } = useLanguage();
+
+    // Lock scroll when modal is open
+    useScrollLock(isOpen);
 
     if (!isOpen) return null;
 

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Dashboard } from './pages/Dashboard';
 import Layout from './components/Layout';
 import { StatCard, StatsChart, UpcomingInjections } from './components/Widgets';
 import { PatientList, PatientDetail, AddPatientForm } from './components/PatientViews';
@@ -20,7 +21,6 @@ import {
 } from './lib/patientService';
 import { updateUserProfile, subscribeToUserProfile } from './lib/userService';
 import { uploadImage, uploadAvatar, setOptimisticImage, getOptimisticImage } from './lib/imageService';
-Broadway
 import { ProfileAvatar } from './components/ProfileAvatar';
 import { useImagePreloader } from './lib/useImagePreloader';
 import ToastContainer from './components/ToastContainer';
@@ -567,9 +567,12 @@ const App: React.FC = () => {
     });
 
     try {
+      console.log('Updating injection status:', { patientId, injectionId, status });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-    } catch (error) {
-      console.error('Error updating injection:', error);
+      success(t('toast_profile_saved') || 'Updated successfully');
+    } catch (err: any) {
+      console.error('Error updating injection:', err);
+      error(`${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -578,7 +581,7 @@ const App: React.FC = () => {
     if (!patient) return;
 
     const newInjection = {
-      id: `inj - ${Date.now()} `,
+      id: `inj-${Date.now()}`,
       date,
       status: InjectionStatus.SCHEDULED,
       notes
@@ -588,9 +591,12 @@ const App: React.FC = () => {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     try {
+      console.log('Adding new injection:', { patientId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-    } catch (error) {
-      console.error('Error adding injection:', error);
+      success(t('toast_profile_saved') || 'Added successfully');
+    } catch (err: any) {
+      console.error('Error adding injection:', err);
+      error(`${t('toast_save_failed') || 'Add failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -603,9 +609,12 @@ const App: React.FC = () => {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     try {
+      console.log('Editing injection:', { patientId, injectionId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-    } catch (error) {
-      console.error('Error editing injection:', error);
+      success(t('toast_profile_saved') || 'Saved successfully');
+    } catch (err: any) {
+      console.error('Error editing injection:', err);
+      error(`${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -616,9 +625,12 @@ const App: React.FC = () => {
     const updatedInjections = patient.injections.filter(i => i.id !== injectionId);
 
     try {
+      console.log('Deleting injection:', { patientId, injectionId });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-    } catch (error) {
-      console.error('Error deleting injection:', error);
+      success(t('toast_profile_saved') || 'Deleted successfully');
+    } catch (err: any) {
+      console.error('Error deleting injection:', err);
+      error(`${t('toast_save_failed') || 'Delete failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -689,51 +701,19 @@ const App: React.FC = () => {
 
         {/* Dashboard View - Always Mounted, Hidden when inactive */}
         <div style={{ display: view === 'DASHBOARD' ? 'block' : 'none' }}>
-          {/* Top Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              label={t('total_patients')}
-              value={stats.total}
-              change=""
-              icon={Users}
-              colorClass="bg-[#0f766e]"
-              shadowColor="rgba(15, 118, 110, 0.4)"
-              isLoading={showSkeleton}
-            />
-            <StatCard
-              label={t('new_patients_stat')}
-              value={stats.newThisMonth}
-              change=""
-              icon={UserPlus}
-              colorClass="bg-[#115e59]"
-              shadowColor="rgba(17, 94, 89, 0.4)"
-              isLoading={showSkeleton}
-            />
-            <StatCard
-              label={t('total_appointments')}
-              value={stats.upcoming}
-              change=""
-              icon={Calendar}
-              colorClass="bg-[#134e4a]"
-              shadowColor="rgba(19, 78, 74, 0.4)"
-              isLoading={showSkeleton}
-            />
-            <StatCard
-              label={t('requests')}
-              value={0}
-              change=""
-              icon={Activity}
-              colorClass="bg-[#0f5148]"
-              shadowColor="rgba(15, 81, 72, 0.4)"
-              isLoading={showSkeleton}
-            />
-          </div>
-
-          {/* Middle Section: Chart and Upcoming */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-            <StatsChart />
-            <UpcomingInjections patients={patients} onViewPatient={handleSelectPatient} />
-          </div>
+          <Dashboard
+            stats={{
+              total: stats.total,
+              active: patients.length,
+              upcoming: (patients || []).flatMap(p => p.injections || []).filter(i => i.status === InjectionStatus.SCHEDULED).length,
+              newThisMonth: stats.newThisMonth
+            }}
+            onNewPatient={() => setView('ADD_PATIENT')}
+            onUploadPhoto={() => console.log('Upload Photo Clicked')}
+            onPatientSelect={handleSelectPatient}
+            patients={patients}
+            isLoading={showSkeleton}
+          />
         </div>
 
         {/* Patient List View - Always Mounted, Hidden when inactive */}
@@ -894,7 +874,6 @@ const App: React.FC = () => {
       userId={userId || ''}
       currentPage={view}
       onNavigate={handleNavigate}
-      onAddPatient={() => setView('ADD_PATIENT')}
       isLockEnabled={isLockEnabled}
       onToggleLock={async (enabled) => {
         console.log('Lock toggle clicked:', enabled);

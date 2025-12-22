@@ -154,7 +154,15 @@ export const translations = {
     select_date: "Select Date",
     january: "January", february: "February", march: "March", april: "April", may: "May", june: "June",
     july: "July", august: "August", september: "September", october: "October", november: "November", december: "December",
-    sun: "Su", mon: "Mo", tue: "Tu", wed: "We", thu: "Th", fri: "Fr", sat: "Sa"
+    sun: "Su", mon: "Mo", tue: "Tu", wed: "We", thu: "Th", fri: "Fr", sat: "Sa",
+    surgeries_today: "Surgeries Today",
+    injections_due: "Injections Due",
+    active_patients: "Active Patients",
+    consultations: "Consultations",
+    todays_operations: "Today's Operations",
+    live_now: "Live Now",
+    no_operations: "No Operations",
+    view_floor_map: "View Floor Map"
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -307,7 +315,15 @@ export const translations = {
     select_date: "Sanani tanlang",
     january: "Yanvar", february: "Fevral", march: "Mart", april: "Aprel", may: "May", june: "Iyun",
     july: "Iyul", august: "Avgust", september: "Sentyabr", october: "Oktyabr", november: "Noyabr", december: "Dekabr",
-    sun: "Yak", mon: "Du", tue: "Se", wed: "Cho", thu: "Pay", fri: "Ju", sat: "Sha"
+    sun: "Yak", mon: "Du", tue: "Se", wed: "Cho", thu: "Pay", fri: "Ju", sat: "Sha",
+    surgeries_today: "Bugungi Operatsiyalar",
+    injections_due: "Kutilayotgan Inyeksiyalar",
+    active_patients: "Faol Bemorlar",
+    consultations: "Konsultatsiyalar",
+    todays_operations: "Bugungi Operatsiyalar",
+    live_now: "Hozir Amalda",
+    no_operations: "Operatsiyalar Yo'q",
+    view_floor_map: "Xaritani Ko'rish"
   },
   ru: {
     dashboard: "Панель управления",
@@ -459,7 +475,15 @@ export const translations = {
     select_date: "Выберите дату",
     january: "Январь", february: "Февраль", march: "Март", april: "Апрель", may: "Май", june: "Июнь",
     july: "Июль", august: "Август", september: "Сентябрь", october: "Октябрь", november: "Ноябрь", december: "Декабрь",
-    sun: "Вс", mon: "Пн", tue: "Вт", wed: "Ср", thu: "Чт", fri: "Пт", sat: "Сб"
+    sun: "Вс", mon: "Пн", tue: "Вт", wed: "Ср", thu: "Чт", fri: "Пт", sat: "Сб",
+    surgeries_today: "Операции сегодня",
+    injections_due: "Инъекции сегодня",
+    active_patients: "Активные пациенты",
+    consultations: "Консультации",
+    todays_operations: "Сегодняшние операции",
+    live_now: "Сейчас",
+    no_operations: "Нет операций",
+    view_floor_map: "Карта операций"
   }
 };
 

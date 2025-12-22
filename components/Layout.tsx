@@ -20,7 +20,6 @@ interface LayoutProps {
   userId: string;
   currentPage: PageView;
   onNavigate: (page: PageView) => void;
-  onAddPatient: () => void;
   isLockEnabled: boolean;
   onToggleLock: (enabled: boolean) => void;
   onLock: () => void;

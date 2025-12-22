@@ -15,6 +15,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../contexts/ToastContext';
 import { compressImage } from '../lib/imageOptimizer';
 import { setOptimisticImage } from '../lib/imageService';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -65,6 +66,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             setNewPassInput('');
         }
     }, [isOpen, userPassword, userImage, userName]);
+
+    // Lock scroll when modal is open
+    useScrollLock(isOpen);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];

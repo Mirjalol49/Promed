@@ -682,6 +682,34 @@ export const PatientDetail: React.FC<{
 };
 
 // ... imports
+const formatUzbekPhoneNumber = (value: string) => {
+  // Remove all non-digits except +
+  let digits = value.replace(/[^\d+]/g, '');
+
+  // Ensure it starts with +998
+  if (!digits.startsWith('+998')) {
+    digits = '+998' + digits.replace('+998', '').replace('+', '');
+  }
+
+  // Format: +998 XX XXX XX XX
+  let formatted = '+998';
+  const remaining = digits.substring(4).substring(0, 9); // Max 9 more digits
+
+  if (remaining.length > 0) {
+    formatted += ' ' + remaining.substring(0, 2);
+  }
+  if (remaining.length > 2) {
+    formatted += ' ' + remaining.substring(2, 5);
+  }
+  if (remaining.length > 5) {
+    formatted += ' ' + remaining.substring(5, 7);
+  }
+  if (remaining.length > 7) {
+    formatted += ' ' + remaining.substring(7, 9);
+  }
+
+  return formatted;
+};
 
 // --- Add/Edit Patient Form (Refined Modal) ---
 export const AddPatientForm: React.FC<{
@@ -694,7 +722,7 @@ export const AddPatientForm: React.FC<{
 
   // States
   const [fullName, setFullName] = useState(initialData?.fullName || '');
-  const [phone, setPhone] = useState(initialData?.phone || '');
+  const [phone, setPhone] = useState(initialData?.phone || '+998 ');
 
   const [age, setAge] = useState(initialData?.age?.toString() || '');
   const [gender, setGender] = useState<Patient['gender']>(initialData?.gender || 'Male');
@@ -907,9 +935,27 @@ export const AddPatientForm: React.FC<{
                         <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('phone_number')}</label>
                         <div className="relative group">
                           <Phone size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
-                          <input required type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                          <input
+                            required
+                            type="tel"
+                            value={phone}
+                            onChange={e => setPhone(formatUzbekPhoneNumber(e.target.value))}
+                            onKeyDown={(e) => {
+                              // Prevent deleting the +998 prefix
+                              if (e.key === 'Backspace' && phone === '+998 ') {
+                                e.preventDefault();
+                              }
+                              // Handle case where user tries to move cursor before prefix
+                              const input = e.target as HTMLInputElement;
+                              if (input.selectionStart !== null && input.selectionStart < 5 && e.key !== 'ArrowRight' && e.key !== 'ArrowDown') {
+                                // For simplicity, we just allow ArrowRight/Down to let them out, 
+                                // otherwise we jump them back to the end of the prefix
+                                // input.setSelectionRange(5, 5);
+                              }
+                            }}
                             className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
-                            placeholder="+998 93 748 91 41" />
+                            placeholder="+998 93 748 91 41"
+                          />
                         </div>
                       </div>
 
