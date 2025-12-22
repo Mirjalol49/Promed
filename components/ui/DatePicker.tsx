@@ -19,7 +19,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     minDate,
     maxDate
 }) => {
-    const { t } = useLanguage();
+    const { language, t } = useLanguage();
+    // Map internal language code to standard locale string
+    const localeString = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
+
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -40,10 +43,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
     const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
     const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay(); // 0 is Sunday
-
-    // Adjust for Monday start (optional, standard is usually Sunday or Monday depending on locale)
-    // Let's stick to Standard Sunday (0) - Saturday (6) for simplicity or match locale.
-    // We'll use standard 0-6 Sunday start for grid.
 
     const handleDayClick = (day: number) => {
         const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
@@ -103,13 +102,17 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     const formatDateDisplay = (dateStr: string) => {
         if (!dateStr) return '';
         const date = new Date(dateStr);
-        return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+        return date.toLocaleDateString(localeString, { year: 'numeric', month: 'long', day: 'numeric' });
     };
 
     const monthNames = [
-        t('january') || 'January', t('february') || 'February', t('march') || 'March', t('april') || 'April',
-        t('may') || 'May', t('june') || 'June', t('july') || 'July', t('august') || 'August',
-        t('september') || 'September', t('october') || 'October', t('november') || 'November', t('december') || 'December'
+        t('january'), t('february'), t('march'), t('april'),
+        t('may'), t('june'), t('july'), t('august'),
+        t('september'), t('october'), t('november'), t('december')
+    ];
+
+    const dayHeaders = [
+        t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')
     ];
 
     return (
@@ -126,7 +129,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 <div className="flex items-center space-x-3 text-slate-700">
                     <Calendar size={18} className="text-promed-primary" />
                     <span className={value ? 'font-medium' : 'text-slate-400'}>
-                        {value ? formatDateDisplay(value) : 'Select date'}
+                        {value ? formatDateDisplay(value) : t('select_date')}
                     </span>
                 </div>
             </div>
@@ -137,7 +140,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                         <button onClick={prevMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition">
                             <ChevronLeft size={20} />
                         </button>
-                        <span className="font-bold text-slate-800 text-base">
+                        <span className="font-bold text-slate-800 text-base capitalize">
                             {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                         </span>
                         <button onClick={nextMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition">
@@ -146,7 +149,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     </div>
 
                     <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                        {dayHeaders.map(day => (
                             <div key={day} className="text-xs font-bold text-slate-400 uppercase">{day}</div>
                         ))}
                     </div>

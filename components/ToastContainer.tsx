@@ -8,7 +8,7 @@ const ToastContainer: React.FC = () => {
 
     return (
         <Portal>
-            <div className="fixed top-4 right-4 z-[99999] flex flex-col gap-2 pointer-events-none">
+            <div className="fixed bottom-4 right-4 z-[99999] flex flex-col-reverse gap-2 pointer-events-none">
                 {toasts.map((toast) => (
                     <ToastCard key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
                 ))}

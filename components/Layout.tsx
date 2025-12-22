@@ -22,6 +22,7 @@ import { supabase } from '../lib/supabaseClient';
 import { uploadAvatar } from '../lib/imageService';
 import { useToast } from '../contexts/ToastContext';
 import { compressImage } from '../lib/imageOptimizer';
+import EditProfileModal from './EditProfileModal';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -36,301 +37,15 @@ interface LayoutProps {
   userImage: string;
   onUpdateProfile: (data: { name: string; image?: File | string; password?: string }) => Promise<void>;
   userName: string;
-  userRole?: string;
-}
-
-// --- Edit Profile Modal Component ---
-interface EditProfileModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  isLockEnabled: boolean;
-  onToggleLock: (enabled: boolean) => void;
-  userPassword: string;
-  userImage: string;
-  onUpdateProfile: (data: { name: string; image?: File | string; password?: string }) => Promise<void>;
-  userId: string;
-  userName: string;
-  userRole?: string;
 }
 
 
-const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, isLockEnabled, onToggleLock, userPassword, onUpdateProfile, userImage, userId, userName, userRole }) => {
-  const { t } = useLanguage();
-  const { success, error: showError } = useToast();
-  const [showCurrentPass, setShowCurrentPass] = useState(false);
-  const [showNewPass, setShowNewPass] = useState(false);
-  const [profileImage, setProfileImage] = useState<string>(userImage);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  // Local state for inputs
-  const [nameInput, setNameInput] = useState(userName);
-  const [currentPassInput, setCurrentPassInput] = useState(userPassword);
-  const [newPassInput, setNewPassInput] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Sync with global state when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setNameInput(userName);
-      setCurrentPassInput(userPassword);
-      setNewPassInput('');
-      setProfileImage(userImage);
-      setSelectedFile(null);
-      setIsSaving(false);
-    }
-  }, [isOpen, userPassword, userImage, userName]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setProfileImage(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // ROBUST SAVE LOGIC
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      let finalAvatarUrl = userImage;
-
-      // 1. UPDATE PASSWORD (Auth API)
-      if (newPassInput && newPassInput.trim() !== '') {
-        if (newPassInput.length < 6) {
-          throw new Error("Password must be at least 6 characters long");
-        }
-
-        console.log("1. Updating Password...");
-        const { error: passError } = await supabase.auth.updateUser({
-          password: newPassInput
-        });
-
-        if (passError) {
-          console.error("Password Error:", passError);
-          throw new Error(`Password update failed: ${passError.message}`);
-        }
-        console.log("✓ Password updated");
-      }
-
-      // 2. UPLOAD IMAGE (if new file selected)
-      if (selectedFile) {
-        console.log("2. Compressing and uploading image...");
-
-        // Compress image before upload
-        const compressedFile = await compressImage(selectedFile);
-        console.log('Profile image compressed:',
-          `${(selectedFile.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB`);
-
-        const fileExt = compressedFile.name.split('.').pop();
-        const fileName = `avatar_${Date.now()}.${fileExt}`;
-        const filePath = `${userId}/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(filePath, compressedFile, { upsert: true });
-
-        if (uploadError) {
-          console.error("Upload Error:", uploadError);
-          throw new Error(`Image upload failed: ${uploadError.message}`);
-        }
-
-        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-        finalAvatarUrl = data.publicUrl;
-        console.log("✓ Image uploaded:", finalAvatarUrl);
-      }
-
-      // 3. UPDATE DATABASE
-      const updates = {
-        full_name: nameInput,
-        avatar_url: finalAvatarUrl,
-        profile_image: finalAvatarUrl,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error: dbError } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', userId);
-
-      if (dbError) {
-        console.error("Database Error:", dbError);
-        throw new Error(`Failed to save profile: ${dbError.message}`);
-      }
-
-      console.log("✓ Profile saved successfully!");
-
-      // 4. Update local state (including password for lock screen)
-      await onUpdateProfile({
-        name: nameInput,
-        image: finalAvatarUrl,
-        password: newPassInput || undefined, // Sync lock screen password
-      });
-
-      success('Profile saved successfully!');
-      onClose();
-
-    } catch (error: any) {
-      console.error("Save failed:", error);
-      showError(`Failed to save: ${error.message}`);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-      {/* Light Theme Modal Container matching app design */}
-      <div className="bg-white w-full max-w-[440px] rounded-2xl shadow-modal border border-slate-100 overflow-hidden transform transition-all scale-100 max-h-[90vh] overflow-y-auto">
-
-        {/* Header */}
-        <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10 backdrop-blur-sm">
-          <h3 className="text-xl font-bold text-slate-800 tracking-tight">{t('edit_profile')}</h3>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition rounded-lg p-1 hover:bg-slate-100"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="p-6 space-y-6">
-          {/* Profile Image */}
-          <div className="flex justify-center mb-2">
-            <div className="relative group cursor-pointer w-28 h-28">
-              <div className="w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl group-hover:border-slate-50 transition ring-1 ring-slate-100">
-                <ProfileAvatar src={profileImage} alt="Profile" size={112} className="w-full h-full" />
-              </div>
-              {/* Hover Overlay */}
-              <label className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer">
-                <Camera className="text-white drop-shadow-md" size={32} />
-                <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
-              </label>
-            </div>
-          </div>
-
-          {/* Security Toggle Section */}
-          <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 space-y-3">
-            <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('security_settings')}</h4>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-start space-x-3">
-                <div className={`p-2 rounded-lg ${isLockEnabled ? 'bg-promed-primary text-white' : 'bg-slate-200 text-slate-500'} transition-colors`}>
-                  <Lock size={18} />
-                </div>
-                <div>
-                  <p className="font-bold text-sm text-slate-800">{t('enable_lock')}</p>
-                  <p className="text-xs text-slate-500 leading-tight mt-0.5 pr-2">{t('lock_hint')}</p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => onToggleLock(!isLockEnabled)}
-                className={`w-11 h-6 rounded-full flex items-center p-0.5 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-promed-primary ${isLockEnabled ? 'bg-promed-primary' : 'bg-slate-200'
-                  }`}
-              >
-                <div
-                  className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${isLockEnabled ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                />
-              </button>
-            </div>
-          </div>
-
-          {/* Inputs Form */}
-          <div className="space-y-5">
-
-            {/* Name */}
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('full_name')}</label>
-              <input
-                type="text"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary focus:bg-white transition-all text-sm shadow-sm"
-              />
-            </div>
-
-            {/* Role */}
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('role')}</label>
-              <input
-                type="text"
-                defaultValue={userRole || t('manager')}
-                readOnly
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-500 focus:outline-none opacity-80 cursor-not-allowed text-sm shadow-sm font-medium"
-              />
-            </div>
-
-            {/* Current Password - Read Only / Controlled Display */}
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('current_password')}</label>
-              <div className="relative">
-                <input
-                  type={showCurrentPass ? "text" : "password"}
-                  value={currentPassInput}
-                  readOnly
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary focus:bg-white transition-all tracking-widest text-sm shadow-sm opacity-80"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPass(!showCurrentPass)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition"
-                >
-                  {showCurrentPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            {/* New Password */}
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('new_password')}</label>
-              <div className="relative">
-                <input
-                  type={showNewPass ? "text" : "password"}
-                  placeholder={t('optional_change')}
-                  value={newPassInput}
-                  onChange={(e) => setNewPassInput(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary focus:bg-white transition-all text-sm shadow-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPass(!showNewPass)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition"
-                >
-                  {showNewPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end space-x-3 pt-6 mt-2 border-t border-slate-100">
-            <button
-              onClick={onClose}
-              className="px-5 py-2.5 text-sm text-slate-500 hover:text-slate-800 font-semibold transition hover:bg-slate-50 rounded-xl"
-            >
-              {t('cancel')}
-            </button>
-            <button
-              onClick={handleSave}
-              className="px-6 py-2.5 bg-promed-primary hover:bg-teal-800 text-white text-sm font-bold rounded-xl transition active:scale-95 shadow-md shadow-promed-primary/20"
-            >
-              {t('save')}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const Layout: React.FC<LayoutProps> = (props) => {
-  const { children, currentPage, onNavigate, onAddPatient, isLockEnabled, onToggleLock, onLock, userPassword, userImage, userName, userRole } = props;
+  const { children, currentPage, onNavigate, onAddPatient, isLockEnabled, onToggleLock, onLock, userPassword, userImage, userName } = props;
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
@@ -431,7 +146,6 @@ const Layout: React.FC<LayoutProps> = (props) => {
             </div>
             <div className="text-left overflow-hidden">
               <p className="text-sm font-bold text-white truncate group-hover:text-promed-light transition">{userName || t('dr_name')}</p>
-              <p className="text-[10px] text-white/60 truncate font-medium uppercase tracking-wide">{userRole || t('specialist')}</p>
             </div>
           </button>
         </div>
@@ -520,7 +234,6 @@ const Layout: React.FC<LayoutProps> = (props) => {
         onUpdateProfile={props.onUpdateProfile}
         userId={props.userId}
         userName={userName}
-        userRole={userRole}
       />
     </div>
   );

@@ -13,7 +13,6 @@ export const translations = {
     logout: "Logout",
     search: "Search...",
     dr_name: "Account Owner",
-    specialist: "Your role",
     total_patients: "Total Patients",
     new_patients_stat: "New Patients",
     total_appointments: "Total Appointments",
@@ -101,8 +100,6 @@ export const translations = {
     wrong_password: "Incorrect password, please try again.",
     access_restricted: "Access Restricted",
     edit_profile: "Edit Profile",
-    role: "Role",
-    manager: "Manager",
     current_password: "Current Password",
     new_password: "New Password",
     password_hint: "Use a strong password (at least 8 characters, numbers and letters)",
@@ -132,7 +129,24 @@ export const translations = {
     login_error_invalid_password: "Invalid password",
     login_error_disabled: "This account has been disabled",
     login_error_generic: "An error occurred. Please try again.",
-    select_language: "Language"
+    select_language: "Language",
+    toast_profile_saved: "Profile saved successfully!",
+    toast_save_failed: "Failed to save",
+    toast_upload_failed: "Image upload failed",
+    toast_password_short: "Password must be at least 6 characters",
+    toast_no_session: "No active session - please log out and log back in",
+    forgot_password: "Forgot password? Sign out",
+    forgot_password_link: "Forgot your password?",
+    reset_password_title: "Reset Password",
+    reset_password_desc: "Enter your email and we'll send you a reset link.",
+    send_link: "Send Link",
+    check_email: "Check your email for the reset link!",
+    email_placeholder: "Email",
+    magic_link_sent: "Magic link sent! Check your email to log in.",
+    select_date: "Select Date",
+    january: "January", february: "February", march: "March", april: "April", may: "May", june: "June",
+    july: "July", august: "August", september: "September", october: "October", november: "November", december: "December",
+    sun: "Su", mon: "Mo", tue: "Tu", wed: "We", thu: "Th", fri: "Fr", sat: "Sa"
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -143,7 +157,6 @@ export const translations = {
     logout: "Chiqish",
     search: "Qidirish...",
     dr_name: "Account Owner",
-    specialist: "Rolingiz",
     total_patients: "Jami Bemorlar",
     new_patients_stat: "Yangi Bemorlar",
     total_appointments: "Jami Uchrashuvlar",
@@ -231,8 +244,6 @@ export const translations = {
     wrong_password: "Parol noto'g'ri, iltimos qayta urinib ko'ring.",
     access_restricted: "Kirish Cheklangan",
     edit_profile: "Profilni Tahrirlash",
-    role: "Rol",
-    manager: "Menejer",
     current_password: "Joriy Parol",
     new_password: "Yangi Parol",
     password_hint: "Kuchli paroldan foydalaning (kamida 8 ta belgi, raqamlar va harflar)",
@@ -262,7 +273,25 @@ export const translations = {
     login_error_invalid_password: "Parol noto'g'ri",
     login_error_disabled: "Bu hisob o'chirilgan",
     login_error_generic: "Xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
-    select_language: "Til"
+    select_language: "Til",
+    toast_profile_saved: "Profil muvaffaqiyatli saqlandi!",
+    toast_save_failed: "Saqlashda xatolik",
+    toast_upload_failed: "Rasm yuklashda xatolik",
+    toast_password_short: "Parol kamida 6 ta belgidan iborat bo'lishi kerak",
+    toast_no_session: "Faol seans yo'q - iltimos, chiqib qayta kiring",
+    forgot_password: "Parolni unutdingizmi? Chiqish",
+    forgot_password_link: "Parolingizni unutdingizmi?",
+    reset_password_title: "Parolni Tiklash",
+    reset_password_desc: "Emailingizni kiriting, sizga qayta tiklash havolasini yuboramiz.",
+    send_link: "Havola Yuborish",
+    check_email: "Qayta tiklash havolasi uchun emailingizni tekshiring!",
+    email_placeholder: "Email",
+    forgot_password_confirm: "Parolni tiklash uchun tizimdan chiqishingiz kerak. Ma'lumotlaringiz xavfsiz saqlanadi.",
+    magic_link_sent: "Sehrli havola yuborildi! Kirish uchun emailingizni tekshiring.",
+    select_date: "Sanani tanlang",
+    january: "Yanvar", february: "Fevral", march: "Mart", april: "Aprel", may: "May", june: "Iyun",
+    july: "Iyul", august: "Avgust", september: "Sentyabr", october: "Oktyabr", november: "Noyabr", december: "Dekabr",
+    sun: "Yak", mon: "Du", tue: "Se", wed: "Cho", thu: "Pay", fri: "Ju", sat: "Sha"
   },
   ru: {
     dashboard: "Панель управления",
@@ -273,7 +302,6 @@ export const translations = {
     logout: "Выйти",
     search: "Поиск...",
     dr_name: "Владелец аккаунта",
-    specialist: "Ваша роль",
     total_patients: "Всего пациентов",
     new_patients_stat: "Новые пациенты",
     total_appointments: "Всего приемов",
@@ -361,8 +389,6 @@ export const translations = {
     wrong_password: "Неверный пароль, попробуйте снова.",
     access_restricted: "Доступ ограничен",
     edit_profile: "Редактировать профиль",
-    role: "Роль",
-    manager: "Менеджер",
     current_password: "Текущий пароль",
     new_password: "Новый пароль",
     password_hint: "Используйте надежный пароль (минимум 8 символов, цифры и буквы)",
@@ -392,7 +418,24 @@ export const translations = {
     login_error_invalid_password: "Неверный пароль",
     login_error_disabled: "Этот аккаунт отключен",
     login_error_generic: "Произошла ошибка. Попробуйте снова.",
-    select_language: "Язык"
+    select_language: "Язык",
+    toast_profile_saved: "Профиль успешно сохранен!",
+    toast_save_failed: "Не удалось сохранить",
+    toast_upload_failed: "Ошибка загрузки изображения",
+    toast_password_short: "Пароль должен быть не менее 6 символов",
+    toast_no_session: "Нет активной сессии - выйдите и войдите снова",
+    forgot_password: "Забыли пароль? Выйти",
+    forgot_password_link: "Забыли пароль?",
+    reset_password_title: "Сброс Пароля",
+    reset_password_desc: "Введите email и мы отправим ссылку для сброса.",
+    send_link: "Отправить",
+    check_email: "Проверьте email для сброса пароля!",
+    email_placeholder: "Email",
+    magic_link_sent: "Ссылка отправлена! Проверьте email для входа.",
+    select_date: "Выберите дату",
+    january: "Январь", february: "Февраль", march: "Март", april: "Апрель", may: "Май", june: "Июнь",
+    july: "Июль", august: "Август", september: "Сентябрь", october: "Октябрь", november: "Ноябрь", december: "Декабрь",
+    sun: "Вс", mon: "Пн", tue: "Вт", wed: "Ср", thu: "Чт", fri: "Пт", sat: "Сб"
   }
 };
 
@@ -405,7 +448,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>('uz');
 
   const t = (key: string): string => {
     // @ts-ignore

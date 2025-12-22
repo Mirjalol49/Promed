@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, ArrowRight, AlertCircle, Globe } from 'lucide-react';
+import { Lock, ArrowRight, AlertCircle, Globe, Mail, KeyRound } from 'lucide-react';
 import { useLanguage, Language } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
 
@@ -12,12 +12,6 @@ const languages: { code: Language; name: string; flag: string }[] = [
   { code: 'en', name: 'English', flag: '🇬🇧' },
   { code: 'uz', name: "O'zbekcha", flag: '🇺🇿' },
   { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-];
-
-// Demo credentials hint
-const DEMO_USERS = [
-  { phone: '+998901234567', name: 'Dr. Ahmad', accountId: 'account_1' },
-  { phone: '+998909876543', name: 'Dr. Mirjalol', accountId: 'account_2' },
 ];
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
@@ -35,7 +29,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [resetMessage, setResetMessage] = useState('');
   const [resetError, setResetError] = useState('');
 
-  // Handle forgot password
+  // Handle forgot password - Send Magic Link
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetLoading(true);
@@ -43,21 +37,25 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     setResetMessage('');
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/?reset=true`,
+      // Use signInWithOtp to send a magic link (logs user in directly when clicked)
+      const { error } = await supabase.auth.signInWithOtp({
+        email: resetEmail,
+        options: {
+          emailRedirectTo: window.location.origin,
+        }
       });
 
       if (error) throw error;
 
-      setResetMessage('Check your email for the password reset link!');
+      setResetMessage(t('magic_link_sent') || 'Magic link sent! Check your email to log in.');
       setTimeout(() => {
         setShowForgotPassword(false);
         setResetMessage('');
         setResetEmail('');
-      }, 3000);
+      }, 5000);
     } catch (err: any) {
-      console.error('Reset password error:', err);
-      setResetError(err.message || 'Failed to send reset email');
+      console.error('Magic link error:', err);
+      setResetError(err.message || 'Failed to send magic link');
     } finally {
       setResetLoading(false);
     }
@@ -82,12 +80,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       }
 
       if (data.user) {
-        // Fetch profile to get real name, accountId, etc.
-        const { data: profile } = await supabase
+        // First try to find profile by EMAIL (for email-based data linking)
+        let profile = null;
+
+        const { data: profileByEmail } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', data.user.id)
+          .eq('email', data.user.email)
           .single();
+
+        if (profileByEmail) {
+          profile = profileByEmail;
+        } else {
+          // Fallback: lookup by user ID (legacy profiles)
+          const { data: profileById } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+          profile = profileById;
+        }
 
         if (profile) {
           if (profile.is_disabled) {
@@ -95,17 +107,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             setError(t('login_error_disabled'));
             return;
           }
-
-          console.log('[LoginScreen] Login successful:', {
-            accountId: profile.account_id,
-            userId: data.user.id,
-            name: profile.full_name,
-          });
-
           onLogin(profile.account_id, data.user.id, profile.full_name);
         } else {
-          // Fallback if profile missing (shouldn't happen)
-          onLogin('unknown', data.user.id, 'User');
+          // No profile found - use email-based account_id for new data
+          onLogin('account_' + data.user.email, data.user.id, 'User');
         }
       }
 
@@ -117,167 +122,109 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
   };
 
-  // ...
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 flex flex-col items-center justify-center p-4">
-      {/* ... decorations ... */}
+    <div className="min-h-screen bg-gradient-to-br from-[#0d3d38] via-[#0f4a44] to-[#134e4a] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Ambient Glow Effects */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-teal-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-md">
-        {/* Logo ... */}
-        {/* ... */}
+      {/* Main Content */}
+      <div className="relative z-10 w-full max-w-md flex flex-col items-center">
 
-        {/* Login Form */}
-        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
-                placeholder="doctor@example.com"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">
-                {t('login_password')}
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-500/20 border border-red-500/30 rounded-xl text-red-300 text-sm">
-                <AlertCircle size={18} />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3.5 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-900/30"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <span>{t('login_signin')}</span>
-                  <ArrowRight size={18} />
-                </>
-              )}
-            </button>
-
-            {/* Forgot Password Link */}
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForgotPassword(true);
-                  setResetEmail(email); // Pre-fill with login email
-                }}
-                className="text-teal-400 hover:text-teal-300 text-sm font-medium transition-colors hover:underline"
-              >
-                Forgot your password?
-              </button>
-            </div>
-          </form>
+        {/* Lock Icon */}
+        <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mb-8 border border-white/20 shadow-2xl">
+          <Lock size={36} className="text-white/90" strokeWidth={1.5} />
         </div>
 
-        {/* Forgot Password Modal */}
-        {showForgotPassword && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-slate-800 border border-white/20 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-              <h3 className="text-xl font-bold text-white mb-2">Reset Password</h3>
-              <p className="text-white/60 text-sm mb-6">
-                Enter your email address and we'll send you a link to reset your password.
-              </p>
+        {/* Title */}
+        <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
+          {t('login_welcome')}
+        </h1>
+        <p className="text-white/60 text-center mb-10">
+          {t('login_subtitle')}
+        </p>
 
-              <form onSubmit={handleForgotPassword} className="space-y-4">
-                <input
-                  type="email"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
-                  placeholder="doctor@example.com"
-                  required
-                  autoFocus
-                />
-
-                {resetError && (
-                  <div className="flex items-center gap-2 p-3 bg-red-500/20 border border-red-500/30 rounded-xl text-red-300 text-sm">
-                    <AlertCircle size={18} />
-                    <span>{resetError}</span>
-                  </div>
-                )}
-
-                {resetMessage && (
-                  <div className="flex items-center gap-2 p-3 bg-green-500/20 border border-green-500/30 rounded-xl text-green-300 text-sm">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>{resetMessage}</span>
-                  </div>
-                )}
-
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForgotPassword(false);
-                      setResetError('');
-                      setResetMessage('');
-                    }}
-                    className="flex-1 py-3 px-4 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={resetLoading}
-                    className="flex-1 py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl transition-all disabled:opacity-50"
-                  >
-                    {resetLoading ? (
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
-                    ) : (
-                      'Send Reset Link'
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
+        {/* Login Form - Minimal Design */}
+        <form onSubmit={handleSubmit} className="w-full space-y-4">
+          {/* Email Input */}
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all text-center"
+              placeholder={t('email_placeholder')}
+              required
+            />
           </div>
-        )}
 
-        {/* Language Selector */}
-        <div className="mt-6 flex justify-center">
+          {/* Password Input */}
+          <div className="relative">
+            <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all text-center"
+              placeholder={t('enter_password')}
+              required
+            />
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="flex items-center justify-center gap-2 p-3 bg-red-500/20 border border-red-500/30 rounded-2xl text-red-300 text-sm">
+              <AlertCircle size={18} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 bg-white text-[#0f4a44] font-bold py-4 px-6 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-teal-300 border-t-teal-700 rounded-full animate-spin" />
+            ) : (
+              <>
+                <span>{t('unlock')}</span>
+                <ArrowRight size={18} />
+              </>
+            )}
+          </button>
+
+          {/* Forgot Password Link */}
+          <div className="text-center pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowForgotPassword(true);
+                setResetEmail(email);
+              }}
+              className="text-white/50 hover:text-white text-sm font-medium transition-colors"
+            >
+              {t('forgot_password_link')}
+            </button>
+          </div>
+        </form>
+
+        {/* Language Selector - Bottom */}
+        <div className="mt-12">
           <div className="relative">
             <button
               onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white/80 hover:text-white transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white/70 hover:text-white transition-all"
             >
-              <Globe size={18} />
-              <span>{languages.find(l => l.code === language)?.flag}</span>
+              <Globe size={16} />
+              <span className="text-sm">{languages.find(l => l.code === language)?.flag}</span>
               <span className="text-sm font-medium">{languages.find(l => l.code === language)?.name}</span>
-              <svg className={`w-4 h-4 transition-transform ${showLanguageMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
             </button>
 
             {showLanguageMenu && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-800/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl overflow-hidden">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-[#0d3d38]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden">
                 {languages.map((lang) => (
                   <button
                     key={lang.code}
@@ -302,6 +249,71 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0d3d38] border border-white/20 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-2">{t('reset_password_title')}</h3>
+            <p className="text-white/60 text-sm mb-6">
+              {t('reset_password_desc')}
+            </p>
+
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <input
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all"
+                placeholder={t('email_placeholder')}
+                required
+                autoFocus
+              />
+
+              {resetError && (
+                <div className="flex items-center gap-2 p-3 bg-red-500/20 border border-red-500/30 rounded-2xl text-red-300 text-sm">
+                  <AlertCircle size={18} />
+                  <span>{resetError}</span>
+                </div>
+              )}
+
+              {resetMessage && (
+                <div className="flex items-center gap-2 p-3 bg-green-500/20 border border-green-500/30 rounded-2xl text-green-300 text-sm">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{resetMessage}</span>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetError('');
+                    setResetMessage('');
+                  }}
+                  className="flex-1 py-3 px-4 bg-white/10 hover:bg-white/20 text-white font-medium rounded-2xl transition-all"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetLoading}
+                  className="flex-1 py-3 px-4 bg-white text-[#0f4a44] font-bold rounded-2xl transition-all disabled:opacity-50"
+                >
+                  {resetLoading ? (
+                    <div className="w-5 h-5 border-2 border-teal-300 border-t-teal-700 rounded-full animate-spin mx-auto" />
+                  ) : (
+                    t('send_link')
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -243,7 +243,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       console.log('[AdminPanel] User created successfully via Edge Function!');
       setSuccessMessage(`User "${formData.name}" created successfully!`);
       setShowModal(false);
-      setFormData({ phone: '', name: '', password: '', role: 'user' });
+      setFormData({ username: '', name: '', password: '', role: 'user' });
       fetchUsers(); // Refresh list
     } catch (error: any) {
       console.error('[AdminPanel] Error creating user:', error);
@@ -533,7 +533,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition"
+                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer hover:border-gray-500 shadow-sm"
                 >
                   <option value="user">User</option>
                   <option value="admin">Admin</option>

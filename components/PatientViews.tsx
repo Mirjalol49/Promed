@@ -35,6 +35,7 @@ import { DatePicker } from './ui/DatePicker';
 import { Portal } from './Portal';
 import { ImageWithFallback } from './ui/ImageWithFallback';
 import { compressImage } from '../lib/imageOptimizer';
+import { CustomSelect } from './CustomSelect';
 
 // Helper to translate status
 const useStatusTranslation = () => {
@@ -164,15 +165,15 @@ const PhotoLabelModal: React.FC<{
               </div>
               <div className="w-1/3">
                 <label className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-1.5">{t('unit')}</label>
-                <select
+                <CustomSelect
                   value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-promed-primary focus:border-promed-primary outline-none transition-all text-slate-900 font-medium"
-                >
-                  <option value="Days">{t('days')}</option>
-                  <option value="Weeks">{t('weeks')}</option>
-                  <option value="Months">{t('months')}</option>
-                </select>
+                  onChange={setUnit}
+                  options={[
+                    { value: 'Days', label: t('days') },
+                    { value: 'Weeks', label: t('weeks') },
+                    { value: 'Months', label: t('months') },
+                  ]}
+                />
               </div>
             </div>
             <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100 mt-6">
@@ -201,7 +202,8 @@ export const PatientList: React.FC<{
   onAddPatient: () => void;
   isLoading?: boolean;
 }> = ({ patients, onSelect, searchQuery, onSearch, onAddPatient, isLoading }) => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const localeString = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
   const translateStatus = useStatusTranslation();
 
   return (
@@ -269,13 +271,13 @@ export const PatientList: React.FC<{
                     </div>
                   </td>
                   <td className="p-5 text-sm font-medium text-slate-700">
-                    {new Date(patient.operationDate).toLocaleDateString()}
+                    {new Date(patient.operationDate).toLocaleDateString(localeString)}
                   </td>
                   <td className="p-5">
                     {nextInj ? (
                       <div className="flex items-center space-x-2">
                         <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
-                          {new Date(nextInj.date).toLocaleDateString()}
+                          {new Date(nextInj.date).toLocaleDateString(localeString)}
                         </span>
                       </div>
                     ) : (
@@ -333,7 +335,8 @@ export const PatientDetail: React.FC<{
   const [tempPhoto, setTempPhoto] = useState<string | null>(null);
   const [tempFile, setTempFile] = useState<File | null>(null);
 
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const localeString = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
   const translateStatus = useStatusTranslation();
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -420,7 +423,7 @@ export const PatientDetail: React.FC<{
               <div className="flex flex-wrap items-center gap-6 text-slate-600 mt-3">
                 <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
                   <Activity size={16} className="text-promed-primary" />
-                  <span className="font-semibold text-sm">{t('operation_date')}: {new Date(patient.operationDate).toLocaleDateString()}</span>
+                  <span className="font-semibold text-sm">{t('operation_date')}: {new Date(patient.operationDate).toLocaleDateString(localeString)}</span>
                 </span>
                 <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
                   <Phone size={16} className="text-promed-primary" />
@@ -602,7 +605,7 @@ export const PatientDetail: React.FC<{
                           </div>
                           <p className="text-sm text-slate-600 flex items-center space-x-2 mt-2 font-medium">
                             <Calendar size={14} className="text-slate-400" />
-                            <span>{new Date(inj.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            <span>{new Date(inj.date).toLocaleDateString(localeString, { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                           </p>
                           {inj.notes && (
                             <div className="mt-3 flex items-start space-x-2">
@@ -826,21 +829,27 @@ export const AddPatientForm: React.FC<{
                       {t('profile_photo')}
                     </h4>
 
-                    <div className="relative mb-4">
-                      <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-100 shadow-xl ring-4 ring-slate-50 group-hover:ring-promed-primary/20 transition-all duration-500">
+                    <label className="relative mb-4 cursor-pointer group/photo">
+                      <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-100 shadow-xl ring-4 ring-slate-50 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 group-hover/photo:shadow-2xl group-hover/photo:shadow-promed-primary/20 transition-all duration-500 relative">
                         {profileImage ? (
-                          <ImageWithFallback src={profileImage} alt="Profile" className="w-full h-full object-cover" fallbackType="user" />
+                          <ImageWithFallback src={profileImage} alt="Profile" className="w-full h-full object-cover group-hover/photo:scale-110 transition duration-700" fallbackType="user" />
                         ) : (
-                          <div className="flex items-center justify-center h-full text-slate-300">
-                            <User size={64} strokeWidth={1.5} />
+                          <div className="flex items-center justify-center h-full text-slate-300 group-hover/photo:bg-promed-primary/5 transition-colors duration-500">
+                            <User size={64} strokeWidth={1.5} className="group-hover/photo:scale-110 transition-transform duration-500" />
                           </div>
                         )}
+                        {/* Hover Overlay */}
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity duration-500">
+                          <Camera className="text-white drop-shadow-md transform scale-90 group-hover/photo:scale-110 group-hover/photo:-translate-y-1 transition duration-500" size={32} />
+                        </div>
                       </div>
-                      <label className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 cursor-pointer hover:bg-promed-primary hover:text-white transition-colors text-slate-600">
+
+                      {/* Floating camera icon cue */}
+                      <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1">
                         <Camera size={18} />
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setProfileImage, setProfileImageFile)} />
-                      </label>
-                    </div>
+                      </div>
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setProfileImage, setProfileImageFile)} />
+                    </label>
                     <p className="text-xs text-slate-500 font-medium">{t('click_upload')}</p>
                   </div>
 
@@ -851,20 +860,22 @@ export const AddPatientForm: React.FC<{
                       {t('before_photo')}
                     </h4>
 
-                    <label className="block w-full h-40 border-2 border-dashed border-slate-200 rounded-xl overflow-hidden cursor-pointer hover:border-promed-primary/50 hover:bg-slate-50 transition-all relative group-hover:scale-[1.02] duration-300">
+                    <label className="block w-full h-40 border-2 border-dashed border-slate-200 rounded-2xl overflow-hidden cursor-pointer hover:border-promed-primary/60 hover:bg-promed-primary/[0.02] transition-all relative group/upload duration-500">
                       {beforeImage ? (
                         <>
-                          <ImageWithFallback src={beforeImage} alt="Before" className="w-full h-full object-cover" fallbackType="image" />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="bg-white/20 backdrop-blur-sm p-2 rounded-full border border-white/30 text-white">
-                              <Edit2 size={20} />
+                          <ImageWithFallback src={beforeImage} alt="Before" className="w-full h-full object-cover group-hover/upload:scale-110 transition duration-700" fallbackType="image" />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/upload:opacity-100 transition-opacity duration-300">
+                            <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full border border-white/30 text-white transform scale-90 group-hover/upload:scale-100 transition duration-300">
+                              <Camera size={24} />
                             </div>
                           </div>
                         </>
                       ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-2">
-                          <Upload size={32} strokeWidth={1.5} />
-                          <span className="text-xs font-semibold">{t('upload_image')}</span>
+                        <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3 group-hover/upload:text-promed-primary transition-colors duration-300">
+                          <div className="p-4 rounded-full bg-slate-50 group-hover/upload:bg-promed-primary/10 group-hover/upload:scale-110 transition-all duration-500">
+                            <Upload size={32} strokeWidth={1.5} className="group-hover/upload:-translate-y-1 transition-transform duration-300" />
+                          </div>
+                          <span className="text-sm font-bold tracking-tight">{t('upload_image')}</span>
                         </div>
                       )}
                       <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setBeforeImage, setBeforeImageFile)} />
@@ -888,7 +899,7 @@ export const AddPatientForm: React.FC<{
                           <User size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                           <input required type="text" value={fullName} onChange={e => setFullName(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
-                            placeholder="e.g. Ralph Edwards" />
+                            placeholder="Mirjalol Shamsiddinov" />
                         </div>
                       </div>
                       <div className="space-y-1.5">
@@ -897,7 +908,7 @@ export const AddPatientForm: React.FC<{
                           <Phone size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                           <input required type="tel" value={phone} onChange={e => setPhone(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
-                            placeholder="+1 (555) 000-0000" />
+                            placeholder="+998 93 748 91 41" />
                         </div>
                       </div>
 
@@ -912,15 +923,14 @@ export const AddPatientForm: React.FC<{
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('gender')}</label>
-                        <div className="relative">
-                          <select value={gender} onChange={e => setGender(e.target.value as any)}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary outline-none transition-all font-medium text-slate-900 appearance-none cursor-pointer">
-                            <option value="Male">{t('gender_male')}</option>
-                            <option value="Female">{t('gender_female')}</option>
-                            <option value="Other">{t('gender_other')}</option>
-                          </select>
-                          <ChevronDown size={18} className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" />
-                        </div>
+                        <CustomSelect
+                          value={gender}
+                          onChange={(val) => setGender(val as any)}
+                          options={[
+                            { value: 'Male', label: t('gender_male') },
+                            { value: 'Female', label: t('gender_female') },
+                          ]}
+                        />
                       </div>
                     </div>
                   </div>
@@ -942,16 +952,16 @@ export const AddPatientForm: React.FC<{
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('technique')}</label>
-                        <div className="relative">
-                          <select value={technique} onChange={e => setTechnique(e.target.value)}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary outline-none transition-all font-medium text-slate-900 appearance-none cursor-pointer">
-                            <option value="">{t('select_tech')}</option>
-                            <option value="FUE">FUE</option>
-                            <option value="DHI">DHI</option>
-                            <option value="Sapphire FUE">Sapphire FUE</option>
-                          </select>
-                          <ChevronDown size={18} className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" />
-                        </div>
+                        <CustomSelect
+                          value={technique}
+                          onChange={setTechnique}
+                          placeholder={t('select_tech')}
+                          options={[
+                            { value: 'FUE', label: 'FUE' },
+                            { value: 'DHI', label: 'DHI' },
+                            { value: 'Sapphire FUE', label: 'Sapphire FUE' },
+                          ]}
+                        />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('grafts')}</label>
@@ -959,7 +969,7 @@ export const AddPatientForm: React.FC<{
                           <Hash size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                           <input type="number" value={grafts} onChange={e => setGrafts(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
-                            placeholder="e.g. 2500" />
+                            placeholder="2500" />
                         </div>
                       </div>
                     </div>

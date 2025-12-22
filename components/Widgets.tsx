@@ -144,7 +144,8 @@ interface UpcomingProps {
 }
 
 export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPatient }) => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const localeString = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
   // Flatten all injections, filter for scheduled, and sort
   const today = new Date().toISOString().split('T')[0];
 
@@ -199,7 +200,7 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
               <div className="flex flex-col items-end space-y-1">
                 <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${inj.date === today ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'
                   }`}>
-                  {inj.date === today ? t('today') : new Date(inj.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  {inj.date === today ? t('today') : new Date(inj.date).toLocaleDateString(localeString, { month: 'short', day: 'numeric' })}
                 </span>
                 {inj.date === today && <span className="text-xs font-bold text-slate-700">10:00 AM</span>}
               </div>

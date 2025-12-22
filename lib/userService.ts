@@ -4,7 +4,6 @@ export interface UserProfile {
   id: string;
   phone: string;
   full_name?: string;
-  role?: string;
   account_id?: string;
   profile_image?: string; // string URL
   is_disabled?: boolean;
@@ -15,7 +14,6 @@ const mapProfile = (data: any): any => ({
   id: data.id,
   phone: data.phone,
   name: data.full_name,
-  role: data.role,
   accountId: data.account_id,
   // PRIORITIZE avatar_url, fallback to profile_image (legacy)
   profileImage: data.avatar_url || data.profile_image,
@@ -32,7 +30,6 @@ export const updateUserProfile = async (
     fullName?: string,
     avatarUrl?: string,
     profileImage?: string,
-    role?: string,
     password?: string,
     lockEnabled?: boolean,
     lockPassword?: string // Lock screen password
@@ -44,7 +41,6 @@ export const updateUserProfile = async (
   };
 
   if (updates.fullName) dbUpdates.full_name = updates.fullName;
-  if (updates.role) dbUpdates.role = updates.role;
   if (updates.lockEnabled !== undefined) dbUpdates.lock_enabled = updates.lockEnabled;
   if (updates.lockPassword) dbUpdates.lock_password = updates.lockPassword;
 

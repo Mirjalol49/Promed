@@ -1,4 +1,13 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+    X,
+    Camera,
+    Eye,
+    EyeOff,
+    Lock,
+} from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { ProfileAvatar } from './ProfileAvatar';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../contexts/ToastContext';
 import { compressImage } from '../lib/imageOptimizer';
@@ -6,175 +15,280 @@ import { compressImage } from '../lib/imageOptimizer';
 interface EditProfileModalProps {
     isOpen: boolean;
     onClose: () => void;
-    user: any;
-    onSuccess: () => void;
+    isLockEnabled: boolean;
+    onToggleLock: (enabled: boolean) => void;
+    userPassword: string;
+    userImage: string;
+    onUpdateProfile: (data: { name: string; image?: File | string; password?: string }) => Promise<void>;
+    userId: string;
+    userName: string;
 }
 
-export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: EditProfileModalProps) {
-    // Toast notifications
-    const { success, error } = useToast();
+const EditProfileModal: React.FC<EditProfileModalProps> = ({
+    isOpen,
+    onClose,
+    isLockEnabled,
+    onToggleLock,
+    userPassword,
+    onUpdateProfile,
+    userImage,
+    userId: propUserId,
+    userName
+}) => {
+    const { t } = useLanguage();
+    const { success, error: showError } = useToast();
+    const [showCurrentPass, setShowCurrentPass] = useState(false);
+    const [showNewPass, setShowNewPass] = useState(false);
+    const [profileImage, setProfileImage] = useState<string>(userImage);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-    // State for fields
-    const [fullName, setFullName] = useState(user?.full_name || '');
-    const [password, setPassword] = useState('');
+    // Local state for inputs
+    const [nameInput, setNameInput] = useState(userName);
+    const [currentPassInput, setCurrentPassInput] = useState(userPassword);
+    const [newPassInput, setNewPassInput] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
-    // State for Images
-    const [file, setFile] = useState<File | null>(null);
-    const [preview, setPreview] = useState(user?.avatar_url || user?.profile_image || null);
-
-    const [loading, setLoading] = useState(false);
-
-    // Sync state when user prop changes
+    // Sync with global state when modal opens
     useEffect(() => {
-        if (user) {
-            setFullName(user.full_name || '');
-            // Try both common column names for the avatar
-            setPreview(user.avatar_url || user.profile_image || null);
+        if (isOpen) {
+            setNameInput(userName);
+            setCurrentPassInput(userPassword);
+            setProfileImage(userImage);
+            setSelectedFile(null);
+            setNewPassInput('');
         }
-        setPassword(''); // Always reset password field
-    }, [user, isOpen]);
+    }, [isOpen, userPassword, userImage, userName]);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const selected = e.target.files[0];
-            setFile(selected);
-            setPreview(URL.createObjectURL(selected)); // Show immediate preview
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setProfileImage(reader.result as string);
+            reader.readAsDataURL(file);
         }
     };
 
+    // ROBUST SAVE LOGIC (MATCH PATIENT LOGIC 100%)
     const handleSave = async () => {
+        setIsSaving(true);
         try {
-            setLoading(true);
-            const userId = user.id;
-            let finalAvatarUrl = user.avatar_url || user.profile_image;
+            // 1. FRESH AUTH CHECK (Phase 2 FIX)
+            const { data: { user: freshUser }, error: authError } = await supabase.auth.getUser();
+            if (authError || !freshUser) {
+                throw new Error("No active session - please log out and log back in.");
+            }
+            const activeUserId = freshUser.id;
+            let finalAvatarUrl = profileImage;
 
-            // --- STEP 1: UPDATE PASSWORD (Auth API) ---
-            if (password && password.trim() !== '') {
-                console.log("Updating Password...");
+            console.log("✓ Session verified for user:", activeUserId);
+
+            // 2. UPDATE PASSWORD (Auth API)
+            if (newPassInput && newPassInput.trim() !== '') {
+                if (newPassInput.length < 6) {
+                    throw new Error(t('toast_password_short'));
+                }
+
+                console.log("• Updating Password...");
                 const { error: passError } = await supabase.auth.updateUser({
-                    password: password
+                    password: setNewPassInput ? newPassInput : undefined // Defensive
                 });
-                if (passError) throw passError;
+
+                if (passError) {
+                    console.error("Supabase Auth Error:", passError);
+                    throw new Error(`Password update failed: ${passError.message}`);
+                }
             }
 
-            // --- STEP 2: UPLOAD IMAGE (Storage API) ---
-            if (file) {
-                console.log("Compressing and uploading image...");
+            // 3. UPLOAD IMAGE (Phase 3: Storage Mirror)
+            if (selectedFile) {
+                console.log("• Compressing and uploading image...");
 
-                // Compress image before upload
-                const compressedFile = await compressImage(file);
-                console.log('Original size:', (file.size / 1024).toFixed(0) + 'KB',
-                    '→ Compressed:', (compressedFile.size / 1024).toFixed(0) + 'KB');
+                // Compress image before upload (Standard Practice)
+                const compressedFile = await compressImage(selectedFile);
 
+                // Construct Path (Matching Patient Style: bucket/category/id/file)
                 const fileExt = compressedFile.name.split('.').pop();
-                // Unique filename prevents cache issues
-                const fileName = `avatar-${Date.now()}.${fileExt}`;
-                const filePath = `${userId}/${fileName}`;
+                const fileName = `avatar_${Date.now()}.${fileExt}`;
+                const filePath = `avatars/${activeUserId}/${fileName}`;
 
+                // USE WORKING BUCKET: promed-images (standard for patients)
                 const { error: uploadError } = await supabase.storage
-                    .from('avatars')
+                    .from('promed-images')
                     .upload(filePath, compressedFile, { upsert: true });
 
-                if (uploadError) throw uploadError;
+                if (uploadError) {
+                    console.error("Supabase Storage Error:", uploadError);
+                    throw new Error(`${t('toast_upload_failed')}: ${uploadError.message}`);
+                }
 
-                const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+                const { data } = supabase.storage.from('promed-images').getPublicUrl(filePath);
                 finalAvatarUrl = data.publicUrl;
+                console.log("✓ Image uploaded to storage:", finalAvatarUrl);
             }
 
-            // --- STEP 3: UPDATE PROFILE DATA (Database API) ---
-            console.log("Saving Profile Data...");
-
+            // 4. DATABASE UPDATE (Phase 3: Double-Write Strategy)
+            console.log("• Updating database profile...");
             const updates = {
-                full_name: fullName,
+                full_name: nameInput,
+                avatar_url: finalAvatarUrl, // Standard
+                profile_image: finalAvatarUrl, // Double-write for backward compatibility
                 updated_at: new Date().toISOString(),
-                // "Double-Shot": Send to both potential column names. 
-                // Supabase will ignore the one that doesn't exist.
-                avatar_url: finalAvatarUrl,
-                profile_image: finalAvatarUrl
             };
 
-            const { error: updateError } = await supabase
+            const { error: dbError } = await supabase
                 .from('profiles')
                 .update(updates)
-                .eq('id', userId);
+                .eq('id', activeUserId);
 
-            if (updateError) throw updateError;
+            if (dbError) {
+                console.error("Supabase Database Error:", dbError);
+                throw new Error(`Failed to save profile: ${dbError.message}`);
+            }
 
-            // --- DONE ---
-            success('Profile saved successfully!');
-            onSuccess(); // Refresh parent data
-            onClose();   // Close modal
+            // 5. SYNC APP STATE
+            await onUpdateProfile({
+                name: nameInput,
+                image: finalAvatarUrl,
+                password: newPassInput || undefined,
+            });
 
-        } catch (err: any) {
-            console.error('SAVE ERROR:', err);
-            error(err.message || 'Failed to save profile. Please try again.');
+            console.log("✓ Profile saved successfully!");
+            success(t('toast_profile_saved'));
+
+
+
+            onClose();
+
+        } catch (error: any) {
+            console.error("CRITICAL SAVE FAILED:", error);
+            showError(`${t('toast_save_failed')}: ${error.message}`);
         } finally {
-            setLoading(false);
+            setIsSaving(false);
         }
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg w-96 shadow-xl relative">
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">✕</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-[440px] rounded-2xl shadow-modal border border-slate-100 overflow-hidden transform transition-all scale-100 max-h-[90vh] overflow-y-auto">
 
-                <h2 className="text-xl font-bold mb-6">Edit Profile</h2>
+                {/* Header */}
+                <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10 backdrop-blur-sm">
+                    <h3 className="text-xl font-bold text-slate-800 tracking-tight">{t('edit_profile')}</h3>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition rounded-lg p-1 hover:bg-slate-100">
+                        <X size={20} />
+                    </button>
+                </div>
 
-                {/* Image Preview */}
-                <div className="flex flex-col items-center mb-6">
-                    <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200 mb-2">
-                        {preview ? (
-                            <img src={preview} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 font-bold text-xl">
-                                {fullName ? fullName[0].toUpperCase() : 'U'}
+                {/* Body */}
+                <div className="p-6 space-y-6">
+                    {/* Profile Image */}
+                    <div className="flex justify-center mb-2">
+                        <label className="relative group/photo cursor-pointer w-28 h-28">
+                            <div className="w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl group-hover/photo:ring-4 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 group-hover/photo:shadow-2xl group-hover/photo:shadow-promed-primary/20 transition-all duration-500 ring-1 ring-slate-100 relative">
+                                <ProfileAvatar src={profileImage} alt="Profile" size={112} className="w-full h-full group-hover/photo:scale-110 transition duration-700" />
+                                {/* Hover Overlay */}
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition duration-500">
+                                    <Camera className="text-white drop-shadow-md transform scale-90 group-hover/photo:scale-110 group-hover/photo:-translate-y-1 transition duration-500" size={32} />
+                                </div>
                             </div>
+                            {/* Floating camera icon cue */}
+                            <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1">
+                                <Camera size={18} />
+                            </div>
+                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                        </label>
+                    </div>
+
+                    {/* Security Toggle Section */}
+                    <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 space-y-3">
+                        <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('security_settings')}</h4>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-start space-x-3">
+                                <div className={`p-2 rounded-lg ${isLockEnabled ? 'bg-promed-primary text-white' : 'bg-slate-200 text-slate-500'} transition-colors`}>
+                                    <Lock size={18} />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-sm text-slate-800">{t('enable_lock')}</p>
+                                    <p className="text-xs text-slate-500 leading-tight mt-0.5 pr-2">{t('lock_hint')}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => onToggleLock(!isLockEnabled)}
+                                className={`w-11 h-6 rounded-full flex items-center p-0.5 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-promed-primary ${isLockEnabled ? 'bg-promed-primary' : 'bg-slate-200'}`}
+                            >
+                                <div className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${isLockEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Form */}
+                    <div className="space-y-5">
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('full_name')}</label>
+                            <input
+                                type="text"
+                                value={nameInput}
+                                onChange={(e) => setNameInput(e.target.value)}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary focus:bg-white transition-all text-sm shadow-sm"
+                            />
+                        </div>
+
+                        {isLockEnabled && (
+                            <>
+                                <div className="space-y-2">
+                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('current_password')}</label>
+                                    <div className="relative">
+                                        <input
+                                            type={showCurrentPass ? "text" : "password"}
+                                            value={currentPassInput}
+                                            readOnly
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary focus:bg-white transition-all tracking-widest text-sm shadow-sm opacity-80"
+                                        />
+                                        <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition">
+                                            {showCurrentPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('new_password')}</label>
+                                    <div className="relative">
+                                        <input
+                                            type={showNewPass ? "text" : "password"}
+                                            placeholder={t('optional_change')}
+                                            value={newPassInput}
+                                            onChange={(e) => setNewPassInput(e.target.value)}
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary focus:bg-white transition-all text-sm shadow-sm"
+                                        />
+                                        <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition">
+                                            {showNewPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
                         )}
                     </div>
-                    <label className="text-sm text-blue-600 cursor-pointer font-medium hover:underline">
-                        Change Photo
-                        <input type="file" onChange={handleFileChange} className="hidden" accept="image/*" />
-                    </label>
                 </div>
 
-                {/* Name Input */}
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1 text-gray-700">Full Name</label>
-                    <input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                </div>
-
-                {/* Password Input */}
-                <div className="mb-6">
-                    <label className="block text-sm font-medium mb-1 text-gray-700">New Password (Optional)</label>
-                    <input
-                        type="password"
-                        placeholder="Leave blank to keep current"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                </div>
-
-                <div className="flex justify-end gap-2">
-                    <button onClick={onClose} disabled={loading} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">
-                        Cancel
+                {/* Actions */}
+                <div className="flex items-center justify-end space-x-3 p-6 border-t border-slate-100">
+                    <button onClick={onClose} className="px-5 py-2.5 text-sm text-slate-500 hover:text-slate-800 font-semibold transition hover:bg-slate-50 rounded-xl">
+                        {t('cancel')}
                     </button>
                     <button
                         onClick={handleSave}
-                        disabled={loading}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 font-medium"
+                        disabled={isSaving}
+                        className="px-6 py-2.5 bg-promed-primary hover:bg-teal-800 text-white text-sm font-bold rounded-xl transition active:scale-95 shadow-md shadow-promed-primary/20 disabled:opacity-50"
                     >
-                        {loading ? 'Saving...' : 'Save Changes'}
+                        {isSaving ? t('saving') : t('save')}
                     </button>
                 </div>
             </div>
         </div>
     );
-}
+};
+
+export default EditProfileModal;

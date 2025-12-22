@@ -26,15 +26,21 @@ import ToastContainer from './components/ToastContainer';
 import { supabase } from './lib/supabaseClient';
 
 // --- Lock Screen Component ---
-const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = ({ onUnlock, correctPassword }) => {
+const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string; onLogout: () => void }> = ({ onUnlock, correctPassword, onLogout }) => {
   const { t } = useLanguage();
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+
+  // Magic link state
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
 
   const handleUnlock = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (password === correctPassword) {
-
       onUnlock();
     } else {
       setError(true);
@@ -43,16 +49,54 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
     }
   };
 
+  // Send magic link
+  const handleSendMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetError('');
+    setResetMessage('');
+
+    try {
+      // First sign out to clear current session
+      await supabase.auth.signOut();
+      localStorage.clear();
+
+      // Send magic link
+      const { error } = await supabase.auth.signInWithOtp({
+        email: resetEmail,
+        options: {
+          emailRedirectTo: window.location.origin,
+        }
+      });
+
+      if (error) throw error;
+
+      setResetMessage(t('magic_link_sent') || 'Magic link sent! Check your email.');
+
+      // After showing success, reload to login screen
+      setTimeout(() => {
+        onLogout();
+        window.location.reload();
+      }, 3000);
+
+    } catch (err: any) {
+      console.error('Magic link error:', err);
+      setResetError(err.message || 'Failed to send magic link');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-[100] bg-promed-dark flex flex-col items-center justify-center text-white animate-in fade-in duration-500">
+    <div className="fixed inset-0 z-[100] bg-gradient-to-br from-[#0d3d38] via-[#0f4a44] to-[#134e4a] flex flex-col items-center justify-center text-white animate-in fade-in duration-500">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-promed-primary/20 rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-promed-light/10 rounded-full blur-[100px]"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-teal-500/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[120px]"></div>
       </div>
 
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm px-6">
-        <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mb-8 backdrop-blur-sm border border-white/20 shadow-2xl animate-bounce-slow">
-          <Lock size={40} className="text-white drop-shadow-md" />
+        <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mb-8 backdrop-blur-sm border border-white/20 shadow-2xl">
+          <Lock size={40} className="text-white/90" strokeWidth={1.5} />
         </div>
 
         <h2 className="text-3xl font-bold mb-2 tracking-tight">{t('app_locked')}</h2>
@@ -64,24 +108,95 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={`w-full bg-white/10 border ${error ? 'border-red-400 shake' : 'border-white/20'} rounded-2xl py-4 px-6 text-center text-xl text-white placeholder-white/30 focus:outline-none focus:bg-white/20 focus:border-white/40 transition-all`}
+              className={`w-full bg-white/5 border ${error ? 'border-red-400 shake' : 'border-white/10'} rounded-2xl py-4 px-6 text-center text-xl text-white placeholder-white/40 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all`}
               placeholder={t('enter_password')}
               autoFocus
             />
           </div>
           <button
             type="submit"
-            className="w-full bg-white text-promed-dark font-bold py-4 rounded-2xl hover:bg-gray-100 transition active:scale-95 flex items-center justify-center space-x-2 shadow-lg"
+            className="w-full bg-white text-[#0f4a44] font-bold py-4 rounded-2xl hover:bg-gray-100 transition active:scale-95 flex items-center justify-center space-x-2 shadow-xl"
           >
             <span>{t('unlock')}</span>
             <ArrowRight size={20} />
           </button>
           {error && <p className="text-red-300 text-sm text-center font-medium animate-pulse">{t('wrong_password')}</p>}
+
+          {/* Forgot Password Option */}
+          <div className="text-center pt-4">
+            <button
+              type="button"
+              onClick={() => setShowForgotModal(true)}
+              className="text-white/50 hover:text-white text-sm font-medium transition-colors"
+            >
+              {t('forgot_password_link')}
+            </button>
+          </div>
         </form>
       </div>
+
+      {/* Forgot Password Modal - Email Input + Magic Link */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0d3d38] border border-white/20 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-2 text-center">{t('forgot_password_link')}</h3>
+            <p className="text-white/60 text-sm mb-6 text-center">
+              {t('reset_password_desc')}
+            </p>
+
+            <form onSubmit={handleSendMagicLink} className="space-y-4">
+              <input
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all text-center"
+                placeholder={t('email_placeholder')}
+                required
+                autoFocus
+              />
+
+              {resetError && (
+                <div className="text-red-300 text-sm text-center">{resetError}</div>
+              )}
+
+              {resetMessage && (
+                <div className="text-green-300 text-sm text-center">{resetMessage}</div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotModal(false);
+                    setResetError('');
+                    setResetMessage('');
+                    setResetEmail('');
+                  }}
+                  className="flex-1 py-3 px-4 bg-white/10 hover:bg-white/20 text-white font-medium rounded-2xl transition-all"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetLoading}
+                  className="flex-1 py-3 px-4 bg-white text-[#0f4a44] font-bold rounded-2xl transition-all disabled:opacity-50"
+                >
+                  {resetLoading ? (
+                    <div className="w-5 h-5 border-2 border-teal-300 border-t-teal-700 rounded-full animate-spin mx-auto" />
+                  ) : (
+                    t('send_link')
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+
 
 
 const App: React.FC = () => {
@@ -99,7 +214,6 @@ const App: React.FC = () => {
   const [isLockEnabled, setIsLockEnabled] = useState(false);
   const [userPassword, setUserPassword] = useState('password123');
   const [userImage, setUserImage] = useState<string>("https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&size=128");
-  const [userRole, setUserRole] = useState<string>('');
   const [saving, setSaving] = useState(false);
 
   const { t } = useLanguage();
@@ -125,7 +239,11 @@ const App: React.FC = () => {
           return;
         }
 
-        setAccount(sessionUserId, sessionUserId, '');
+        // 🔥 FIX: Only set account if userId isn't already set (don't overwrite name!)
+        if (!userId) {
+          // The profile subscription will fetch and set the proper name
+          setAccount(sessionUserId, sessionUserId, accountName || '');
+        }
       }
     };
     checkSession();
@@ -140,10 +258,12 @@ const App: React.FC = () => {
       (profile) => {
         console.log("✓ Profile data received:", profile);
         if (profile) {
-          // 🔥 FIX: Sync name to AccountContext for cross-device sync
-          if (profile.name && profile.name !== accountName) {
-            console.log("  • Name updated:", profile.name);
-            setAccount(accountId!, userId, profile.name);
+          // 🔥 FIX: Always sync name from database (source of truth)
+          if (profile.name) {
+            console.log("  • Name:", profile.name);
+            // Use profile.accountId if accountId isn't set yet
+            const accId = accountId || profile.accountId || userId;
+            setAccount(accId, userId, profile.name);
           }
           if (profile.lockEnabled !== undefined) {
             console.log("  • Lock Enabled:", profile.lockEnabled);
@@ -157,16 +277,14 @@ const App: React.FC = () => {
             console.log("  • Image URL:", profile.profileImage);
             setUserImage(profile.profileImage);
           }
-          if (profile.role) {
-            setUserRole(profile.role);
-          }
+
         }
       },
       (error) => console.error("Profile subscription error:", error)
     );
 
     return () => unsubscribe();
-  }, [isLoggedIn, userId, accountId]);
+  }, [userId]);
 
   // Subscribe to real-time patient updates when logged in
   useEffect(() => {
@@ -612,7 +730,6 @@ const App: React.FC = () => {
                     </div>
                     <div>
                       <p className="font-bold text-lg text-gray-800">{accountName || t('dr_name')}</p>
-                      <p className="text-gray-500">{t('specialist')}</p>
                       <p className="text-sm text-promed-primary font-bold mt-1">Account: {accountId}</p>
                     </div>
                   </div>
@@ -695,7 +812,7 @@ const App: React.FC = () => {
 
   // Render Lock Screen if locked
   if (isLocked) {
-    return <LockScreen onUnlock={() => setIsLocked(false)} correctPassword={userPassword} />;
+    return <LockScreen onUnlock={() => setIsLocked(false)} correctPassword={userPassword} onLogout={logout} />;
   }
 
   return (
@@ -726,7 +843,7 @@ const App: React.FC = () => {
       userImage={userImage}
       onUpdateProfile={handleUpdateProfile}
       userName={accountName}
-      userRole={userRole}
+
     >
       {renderContent()}
       <ToastContainer />
