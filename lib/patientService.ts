@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { Patient, Injection, PatientImage } from '../types';
+import { deleteStorageFiles, extractPathFromUrl } from './imageService';
 
 // Column sets for different query scenarios
 export const COLUMNS = {
@@ -54,8 +55,7 @@ export const subscribeToPatients = (
       {
         event: '*',
         schema: 'public',
-        table: 'patients',
-        filter: `account_id=eq.${accountId}`
+        table: 'patients'
       },
       () => {
         // Refresh all data on change for simplicity
@@ -139,12 +139,50 @@ export const updatePatient = async (
 };
 
 export const deletePatient = async (patientId: string): Promise<void> => {
-  const { error } = await supabase
+  // 1. Fetch patient to get image URLs before deleting
+  const { data: patient, error: fetchError } = await supabase
+    .from('patients')
+    .select('profile_image, before_image, after_images')
+    .eq('id', patientId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching patient for cleanup:', fetchError);
+    // Continue with deletion even if fetch fails, but we won't be able to cleanup storage
+  }
+
+  // 2. Delete the DB record
+  const { error: deleteError } = await supabase
     .from('patients')
     .delete()
     .eq('id', patientId);
 
-  if (error) throw error;
+  if (deleteError) throw deleteError;
+
+  // 3. Cleanup storage if patient record was found
+  if (patient) {
+    const bucket = 'promed-images';
+    const pathsToDelete: string[] = [];
+
+    // Extract paths from URLs
+    const profilePath = extractPathFromUrl(patient.profile_image, bucket);
+    if (profilePath) pathsToDelete.push(profilePath);
+
+    const beforePath = extractPathFromUrl(patient.before_image, bucket);
+    if (beforePath) pathsToDelete.push(beforePath);
+
+    if (Array.isArray(patient.after_images)) {
+      patient.after_images.forEach((img: PatientImage) => {
+        const path = extractPathFromUrl(img.url, bucket);
+        if (path) pathsToDelete.push(path);
+      });
+    }
+
+    if (pathsToDelete.length > 0) {
+      console.log(`Cleaning up ${pathsToDelete.length} storage files for patient ${patientId}`);
+      await deleteStorageFiles(bucket, pathsToDelete);
+    }
+  }
 };
 
 export const updatePatientInjections = async (

@@ -8,6 +8,7 @@ import { Users, UserPlus, Calendar, Activity, Bell, Shield, Smartphone, Lock, Ar
 import { Patient, PageView, InjectionStatus, PatientImage } from './types';
 import { useLanguage } from './contexts/LanguageContext';
 import { useAccount } from './contexts/AccountContext';
+import { useToast } from './contexts/ToastContext';
 import {
   subscribeToPatients,
   addPatient,
@@ -18,10 +19,13 @@ import {
   COLUMNS,
 } from './lib/patientService';
 import { updateUserProfile, subscribeToUserProfile } from './lib/userService';
-import { uploadImage, uploadAvatar } from './lib/imageService';
+import { uploadImage, uploadAvatar, setOptimisticImage, getOptimisticImage } from './lib/imageService';
+Broadway
 import { ProfileAvatar } from './components/ProfileAvatar';
 import { useImagePreloader } from './lib/useImagePreloader';
 import ToastContainer from './components/ToastContainer';
+import ConfirmationModal from './components/ConfirmationModal';
+import { Trash2 } from 'lucide-react';
 
 import { supabase } from './lib/supabaseClient';
 
@@ -212,11 +216,14 @@ const App: React.FC = () => {
     return savedLockState === 'true';
   });
   const [isLockEnabled, setIsLockEnabled] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [patientToDelete, setPatientToDelete] = useState<string | null>(null);
   const [userPassword, setUserPassword] = useState('password123');
   const [userImage, setUserImage] = useState<string>("https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&size=128");
   const [saving, setSaving] = useState(false);
 
   const { t } = useLanguage();
+  const { success, error } = useToast();
 
   // Persist lock state to localStorage whenever it changes
   useEffect(() => {
@@ -403,8 +410,9 @@ const App: React.FC = () => {
       // 1. Handle Image Upload if provided
       if (data.image) {
         if (data.image instanceof File) {
+          const blobUrl = URL.createObjectURL(data.image);
+          setOptimisticImage(`${userId}_profile`, blobUrl);
           avatarUrl = await uploadAvatar(data.image, userId);
-          console.log("2. Public URL generated:", avatarUrl); // LOG 2
         } else if (typeof data.image === 'string') {
           avatarUrl = data.image;
         }
@@ -428,12 +436,11 @@ const App: React.FC = () => {
       setAccount(accountId!, userId, data.name); // Updates name context
       if (avatarUrl) setUserImage(avatarUrl);
 
-      // 5. Force Refresh / Re-fetch is handled by the real-time subscription in useEffect!
-      // But we update state immediately for UI responsiveness.
+      success(t('toast_profile_saved'));
 
-    } catch (error: any) {
-      console.error("Error updating profile:", error);
-      alert(`Failed to update profile: ${error.message}`);
+    } catch (err: any) {
+      console.error("Error updating profile:", err);
+      error(`${t('toast_save_failed')}: ${err.message}`);
     }
   };
 
@@ -457,52 +464,96 @@ const App: React.FC = () => {
     setSaving(true);
 
     try {
-      // 1) Upload images
-      if (files?.profileImage) {
-        const url = await uploadImage(files.profileImage, `patients/${patientData.id}/profile`);
-        patientData.profileImage = url;
-      }
-
-      if (files?.beforeImage) {
-        const url = await uploadImage(files.beforeImage, `patients/${patientData.id}/before`);
-        patientData.beforeImage = url;
-      }
-
-      // 2) Supabase DB write
+      // 1) Optimistic UI update - do this BEFORE uploads for "instant" feel
       const isNewPatient = !patients.find(p => p.id === patientData.id);
+      const optimisticPatient = { ...patientData };
 
       if (isNewPatient) {
-        const { id, ...patientWithoutId } = patientData;
-        await addPatient(patientWithoutId, accountId);
+        setPatients(prev => [optimisticPatient, ...prev]);
+        success(t('toast_patient_added'));
       } else {
-        await updatePatient(patientData.id, patientData, accountId);
+        setPatients(prev => prev.map(p => p.id === optimisticPatient.id ? optimisticPatient : p));
+        success(t('toast_profile_saved'));
       }
 
-      // Navigate immediately after save
+      // 2) Navigate immediately for responsiveness
       if (view === 'EDIT_PATIENT') {
         setSelectedPatientId(patientData.id);
         setView('PATIENT_DETAIL');
       } else {
         setView('PATIENTS');
       }
-    } catch (error: any) {
-      console.error('Error saving patient:', error);
-      alert(`Failed to save: ${error.message || 'Unknown error'}`);
+
+      // 3) Background uploads & Supabase DB write
+      if (files?.profileImage) {
+        const url = URL.createObjectURL(files.profileImage);
+        setOptimisticImage(`${patientData.id}_profile`, url);
+        const remoteUrl = await uploadImage(files.profileImage, `patients/${patientData.id}/profile`);
+        patientData.profileImage = remoteUrl;
+      }
+
+      if (files?.beforeImage) {
+        const url = URL.createObjectURL(files.beforeImage);
+        setOptimisticImage(`${patientData.id}_before`, url);
+        const remoteUrl = await uploadImage(files.beforeImage, `patients/${patientData.id}/before`);
+        patientData.beforeImage = remoteUrl;
+      }
+
+      if (isNewPatient) {
+        const { id: tempId, ...patientWithoutId } = patientData;
+        const realId = await addPatient(patientWithoutId, accountId);
+
+        // 🔥 HANDOVER: Link the local blob to the new real ID
+        const profileBlob = getOptimisticImage(`${tempId}_profile`);
+        if (profileBlob) setOptimisticImage(`${realId}_profile`, profileBlob);
+
+        const beforeBlob = getOptimisticImage(`${tempId}_before`);
+        if (beforeBlob) setOptimisticImage(`${realId}_before`, beforeBlob);
+
+        // Update navigation to use real ID
+        setSelectedPatientId(realId);
+      } else {
+        await updatePatient(patientData.id, patientData, accountId);
+      }
+    } catch (err: any) {
+      console.error('Error saving patient:', err);
+      error(`${t('toast_save_failed')}: ${err.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeletePatient = async () => {
-    if (selectedPatientId && window.confirm(t('delete_patient_confirm'))) {
-      try {
-        await deletePatientFromDb(selectedPatientId);
-        setSelectedPatientId(null);
-        setView('PATIENTS');
-      } catch (error) {
-        console.error('Error deleting patient:', error);
-        alert('Failed to delete patient. Please try again.');
-      }
+    if (selectedPatientId) {
+      setPatientToDelete(selectedPatientId);
+      setIsDeleteModalOpen(true);
+    }
+  };
+
+  const confirmDeletePatient = async () => {
+    if (!patientToDelete) return;
+
+    try {
+      // 1) Optimistic UI update: Remove from local state immediately
+      const deletedId = patientToDelete;
+      setPatients(prev => prev.filter(p => p.id !== deletedId));
+
+      // 2) Close modals and navigate back
+      setSelectedPatientId(null);
+      setPatientToDelete(null);
+      setIsDeleteModalOpen(false);
+      setView('PATIENTS');
+
+      // 3) Show success toast immediately
+      success(t('toast_patient_deleted'));
+
+      // 4) Perform actual DB deletion in background
+      await deletePatientFromDb(deletedId);
+    } catch (err) {
+      console.error('Error deleting patient:', err);
+      error(t('toast_delete_failed'));
+      // Note: In case of catastrophic failure, real-time sync would eventually restore 
+      // the list if the delete actually failed on server, or we could manually re-fetch here.
     }
   };
 
@@ -576,6 +627,29 @@ const App: React.FC = () => {
     if (!patient) return;
 
     try {
+      // Optimistic UI update for instant photo appearance
+      const optimisticUrl = typeof photoOrFile === 'string' ? photoOrFile : URL.createObjectURL(photoOrFile);
+      const tempId = `img-${Date.now()}`;
+
+      // Seed cache for after photo
+      if (typeof photoOrFile !== 'string') {
+        setOptimisticImage(tempId, optimisticUrl);
+      }
+
+      const optimisticImage: PatientImage = {
+        id: tempId,
+        url: optimisticUrl,
+        date: new Date().toISOString(),
+        label
+      };
+
+      setPatients(prev => prev.map(p => {
+        if (p.id !== patientId) return p;
+        return { ...p, afterImages: [...(p.afterImages || []), optimisticImage] };
+      }));
+
+      success(t('toast_profile_saved')); // Generic profile saved toast works here
+
       let photoUrl = typeof photoOrFile === 'string' ? photoOrFile : '';
 
       if (photoOrFile instanceof File) {
@@ -584,7 +658,7 @@ const App: React.FC = () => {
           photoUrl = await uploadImage(photoOrFile, `patients/${patientId}/after_images/${timestamp}`);
         } catch (e) {
           console.error('Failed to upload after photo', e);
-          alert('Failed to upload photo');
+          error(t('toast_upload_failed'));
           return;
         }
       }
@@ -843,10 +917,25 @@ const App: React.FC = () => {
       userImage={userImage}
       onUpdateProfile={handleUpdateProfile}
       userName={accountName}
-
+      onLogout={handleLogout}
     >
       {renderContent()}
       <ToastContainer />
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setPatientToDelete(null);
+        }}
+        onConfirm={confirmDeletePatient}
+        title={t('delete_patient_title') || t('delete_patient') || 'Delete Patient'}
+        description={t('delete_patient_confirm')}
+        confirmText={t('delete')}
+        cancelText={t('cancel')}
+        icon={Trash2}
+        variant="danger"
+      />
     </Layout>
   );
 };

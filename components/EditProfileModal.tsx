@@ -5,12 +5,16 @@ import {
     Eye,
     EyeOff,
     Lock,
+    LogOut,
+    ChevronDown,
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ProfileAvatar } from './ProfileAvatar';
+import ConfirmationModal from './ConfirmationModal';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../contexts/ToastContext';
 import { compressImage } from '../lib/imageOptimizer';
+import { setOptimisticImage } from '../lib/imageService';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -22,6 +26,7 @@ interface EditProfileModalProps {
     onUpdateProfile: (data: { name: string; image?: File | string; password?: string }) => Promise<void>;
     userId: string;
     userName: string;
+    onLogout: () => void;
 }
 
 const EditProfileModal: React.FC<EditProfileModalProps> = ({
@@ -33,10 +38,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     onUpdateProfile,
     userImage,
     userId: propUserId,
-    userName
+    userName,
+    onLogout
 }) => {
     const { t } = useLanguage();
     const { success, error: showError } = useToast();
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
     const [showCurrentPass, setShowCurrentPass] = useState(false);
     const [showNewPass, setShowNewPass] = useState(false);
     const [profileImage, setProfileImage] = useState<string>(userImage);
@@ -103,6 +110,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             // 3. UPLOAD IMAGE (Phase 3: Storage Mirror)
             if (selectedFile) {
                 console.log("• Compressing and uploading image...");
+
+                // Seed optimistic cache immediately to prevent flicker
+                const blobUrl = URL.createObjectURL(selectedFile);
+                setOptimisticImage(`${activeUserId}_profile`, blobUrl);
 
                 // Compress image before upload (Standard Practice)
                 const compressedFile = await compressImage(selectedFile);
@@ -188,7 +199,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     <div className="flex justify-center mb-2">
                         <label className="relative group/photo cursor-pointer w-28 h-28">
                             <div className="w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl group-hover/photo:ring-4 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 group-hover/photo:shadow-2xl group-hover/photo:shadow-promed-primary/20 transition-all duration-500 ring-1 ring-slate-100 relative">
-                                <ProfileAvatar src={profileImage} alt="Profile" size={112} className="w-full h-full group-hover/photo:scale-110 transition duration-700" />
+                                <ProfileAvatar src={profileImage} alt="Profile" size={112} className="w-full h-full group-hover/photo:scale-110 transition duration-700" optimisticId={`${propUserId}_profile`} />
                                 {/* Hover Overlay */}
                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition duration-500">
                                     <Camera className="text-white drop-shadow-md transform scale-90 group-hover/photo:scale-110 group-hover/photo:-translate-y-1 transition duration-500" size={32} />
@@ -271,10 +282,30 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                             </>
                         )}
                     </div>
+
+                    {/* Danger Zone */}
+                    <div className="pt-6 border-t border-slate-100 mt-4">
+                        <h4 className="text-[11px] font-bold text-red-400 uppercase tracking-wider mb-3">{t('danger_zone')}</h4>
+                        <button
+                            onClick={() => setIsLogoutModalOpen(true)}
+                            className="w-full flex items-center justify-between p-4 bg-red-50/50 hover:bg-red-50 border border-red-100 rounded-xl transition-all group"
+                        >
+                            <div className="flex items-center space-x-3">
+                                <div className="p-2 bg-red-100 text-red-600 rounded-lg group-hover:scale-110 transition-transform">
+                                    <LogOut size={18} />
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-sm font-bold text-red-600">{t('logout')}</p>
+                                    <p className="text-[11px] text-red-400 font-medium">End your current session</p>
+                                </div>
+                            </div>
+                            <ChevronDown size={16} className="text-red-300 -rotate-90" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-end space-x-3 p-6 border-t border-slate-100">
+                <div className="flex items-center justify-end p-6 border-t border-slate-100 space-x-3">
                     <button onClick={onClose} className="px-5 py-2.5 text-sm text-slate-500 hover:text-slate-800 font-semibold transition hover:bg-slate-50 rounded-xl">
                         {t('cancel')}
                     </button>
@@ -286,6 +317,21 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         {isSaving ? t('saving') : t('save')}
                     </button>
                 </div>
+
+                <ConfirmationModal
+                    isOpen={isLogoutModalOpen}
+                    onClose={() => setIsLogoutModalOpen(false)}
+                    onConfirm={() => {
+                        setIsLogoutModalOpen(false);
+                        onLogout();
+                    }}
+                    title={t('confirm_logout_title')}
+                    description={t('confirm_logout_desc')}
+                    confirmText={t('logout')}
+                    cancelText={t('keep_logged_in')}
+                    icon={LogOut}
+                    variant="danger"
+                />
             </div>
         </div>
     );

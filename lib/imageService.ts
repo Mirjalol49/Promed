@@ -1,5 +1,21 @@
 import { supabase } from './supabaseClient';
 
+// Global cache to hold optimistic blob URLs and prevent flickering during sync
+// Map<OptimisticId, BlobUrl>
+export const optimisticImageCache = new Map<string, string>();
+
+export const setOptimisticImage = (id: string, url: string) => {
+  optimisticImageCache.set(id, url);
+};
+
+export const getOptimisticImage = (id: string) => {
+  return optimisticImageCache.get(id);
+};
+
+export const clearOptimisticImage = (id: string) => {
+  optimisticImageCache.delete(id);
+};
+
 export const uploadImage = async (file: File, path: string): Promise<string> => {
   if (!file) throw new Error('No file provided');
 
@@ -48,6 +64,43 @@ export const uploadAvatar = async (file: File, userId: string): Promise<string> 
   return `${publicUrl}?t=${new Date().getTime()}`;
 }
 // End of New Avatar Logic
+
+// Storage Cleanup Logic
+export const deleteStorageFiles = async (bucket: string, paths: string[]): Promise<void> => {
+  if (!paths || paths.length === 0) return;
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .remove(paths);
+
+  if (error) {
+    console.error(`Error deleting files from ${bucket}:`, error);
+    // We don't necessarily want to throw here as the DB record is already gone,
+    // but we log it for debugging.
+  }
+};
+
+/**
+ * Extracts the relative storage path from a Supabase public URL.
+ * Example: https://.../storage/v1/object/public/promed-images/patients/123/profile_167.jpg
+ * Returns: patients/123/profile_167.jpg
+ */
+export const extractPathFromUrl = (url: string, bucket: string): string | null => {
+  if (!url || !url.includes(bucket)) return null;
+
+  try {
+    // Split by bucket name and take the part after it
+    // Handle cases where the URL might have query parameters (cache busting)
+    const cleanUrl = url.split('?')[0];
+    const parts = cleanUrl.split(`${bucket}/`);
+    if (parts.length > 1) {
+      return parts[1];
+    }
+  } catch (e) {
+    console.error('Error extracting path from URL:', e);
+  }
+  return null;
+};
 
 export const isBase64 = (str: string): boolean => {
   return str?.startsWith('data:');

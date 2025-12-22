@@ -1,27 +1,18 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Users,
   Menu,
   X,
-  PlusCircle,
-  Camera,
-  Eye,
-  EyeOff,
   ChevronDown,
   Check,
   Globe,
   Lock,
-  LogOut
+  Settings
 } from 'lucide-react';
 import { PageView } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ProfileAvatar } from './ProfileAvatar';
-import { supabase } from '../lib/supabaseClient';
-import { uploadAvatar } from '../lib/imageService';
-import { useToast } from '../contexts/ToastContext';
-import { compressImage } from '../lib/imageOptimizer';
 import EditProfileModal from './EditProfileModal';
 
 interface LayoutProps {
@@ -37,15 +28,23 @@ interface LayoutProps {
   userImage: string;
   onUpdateProfile: (data: { name: string; image?: File | string; password?: string }) => Promise<void>;
   userName: string;
+  onLogout: () => void;
 }
 
-
-
-
-
-
-const Layout: React.FC<LayoutProps> = (props) => {
-  const { children, currentPage, onNavigate, onAddPatient, isLockEnabled, onToggleLock, onLock, userPassword, userImage, userName } = props;
+const Layout: React.FC<LayoutProps> = ({
+  children,
+  userId,
+  currentPage,
+  onNavigate,
+  isLockEnabled,
+  onLock,
+  userImage,
+  userName,
+  onLogout,
+  onToggleLock,
+  userPassword,
+  onUpdateProfile
+}) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
@@ -100,7 +99,6 @@ const Layout: React.FC<LayoutProps> = (props) => {
       )}
 
       {/* Sidebar */}
-      {/* Sidebar */}
       <aside className={`
         fixed md:static inset-y-0 left-0 z-40 w-64 bg-promed-dark flex flex-col transition-transform duration-300 ease-out shadow-2xl border-r border-white/5
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
@@ -141,12 +139,13 @@ const Layout: React.FC<LayoutProps> = (props) => {
             className="flex items-center w-full space-x-3 group p-2 rounded-lg hover:bg-white/5 transition duration-200 border border-transparent hover:border-white/5"
           >
             <div className="relative">
-              <ProfileAvatar src={userImage} alt="Profile" size={36} className="rounded-lg shadow-lg shadow-black/20 border border-white/10 group-hover:scale-105 transition-transform" />
+              <ProfileAvatar src={userImage} alt="Profile" size={36} className="rounded-lg shadow-lg shadow-black/20 border border-white/10 group-hover:scale-105 transition-transform" optimisticId={`${userId}_profile`} />
               <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-promed-dark rounded-full"></div>
             </div>
             <div className="text-left overflow-hidden">
               <p className="text-sm font-bold text-white truncate group-hover:text-promed-light transition">{userName || t('dr_name')}</p>
             </div>
+            <Settings size={14} className="ml-auto text-white/30 group-hover:text-white/70 transition-colors" />
           </button>
         </div>
       </aside>
@@ -210,7 +209,6 @@ const Layout: React.FC<LayoutProps> = (props) => {
                   </>
                 )}
               </div>
-
             </div>
           </div>
         </header>
@@ -231,9 +229,10 @@ const Layout: React.FC<LayoutProps> = (props) => {
         onToggleLock={onToggleLock}
         userPassword={userPassword}
         userImage={userImage}
-        onUpdateProfile={props.onUpdateProfile}
-        userId={props.userId}
+        onUpdateProfile={onUpdateProfile}
+        userId={userId}
         userName={userName}
+        onLogout={onLogout}
       />
     </div>
   );

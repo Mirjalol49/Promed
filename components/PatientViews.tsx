@@ -261,6 +261,7 @@ export const PatientList: React.FC<{
                           alt={patient.fullName}
                           className="w-full h-full rounded-xl shadow-sm ring-1 ring-slate-100"
                           fallbackType="user"
+                          optimisticId={`${patient.id}_profile`}
                         />
                         <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 border-2 border-white rounded-full ${patient.status === 'Active' ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
                       </div>
@@ -407,7 +408,7 @@ export const PatientDetail: React.FC<{
         <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
         <div className="flex-shrink-0 relative w-40 h-40">
-          <ImageWithFallback src={patient.profileImage} className="w-full h-full rounded-2xl object-cover shadow-lg ring-4 ring-white border border-slate-100" alt="Profile" fallbackType="user" />
+          <ImageWithFallback src={patient.profileImage} optimisticId={`${patient.id}_profile`} className="w-full h-full rounded-2xl object-cover shadow-lg ring-4 ring-white border border-slate-100" alt="Profile" fallbackType="user" />
           <div className="absolute -bottom-3 -right-3 bg-white p-1.5 rounded-xl shadow-md border border-slate-100">
             <div className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border ${patient.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'
               }`}>
@@ -491,7 +492,7 @@ export const PatientDetail: React.FC<{
             <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer shadow-inner relative group border border-slate-200" onClick={() => setSelectedImage(patient.beforeImage || null)}>
               {patient.beforeImage ? (
                 <>
-                  <ImageWithFallback src={patient.beforeImage} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
+                  <ImageWithFallback src={patient.beforeImage} optimisticId={`${patient.id}_before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
                 </>
               ) : (
@@ -517,7 +518,7 @@ export const PatientDetail: React.FC<{
             <div className="grid grid-cols-2 gap-3">
               {patient.afterImages.map((img, idx) => (
                 <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer group shadow-sm border border-slate-200" onClick={() => setSelectedImage(img.url)}>
-                  <ImageWithFallback src={img.url} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt={img.label} fallbackType="image" />
+                  <ImageWithFallback src={img.url} optimisticId={img.id} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt={img.label} fallbackType="image" />
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-8">
                     <p className="text-white text-xs text-center font-bold tracking-wide drop-shadow-md">{img.label}</p>
                   </div>
