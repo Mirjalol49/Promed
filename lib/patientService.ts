@@ -36,7 +36,12 @@ export const subscribeToPatients = (
   onError?: (error: any) => void,
   columns: string = COLUMNS.LIST // Default to list view columns
 ) => {
-  if (!accountId) return () => { };
+  if (!accountId) {
+    console.warn("⚠️ subscribeToPatients: No accountId provided. Multi-tenancy blocked.");
+    return () => { };
+  }
+
+  console.log("📂 Subscribing to patients for Account:", accountId);
 
   // Initial fetch
   supabase

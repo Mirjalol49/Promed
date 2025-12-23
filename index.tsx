@@ -7,6 +7,7 @@ import './index.css';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AccountProvider } from './contexts/AccountContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { SystemAlertProvider } from './contexts/SystemAlertContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -20,9 +21,11 @@ root.render(
       <LanguageProvider>
         <AccountProvider>
           <ToastProvider>
-            <Routes>
-              <Route path="/*" element={<App />} />
-            </Routes>
+            <SystemAlertProvider>
+              <Routes>
+                <Route path="/*" element={<App />} />
+              </Routes>
+            </SystemAlertProvider>
           </ToastProvider>
         </AccountProvider>
       </LanguageProvider>

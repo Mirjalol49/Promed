@@ -190,7 +190,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               <div className="w-5 h-5 border-2 border-teal-300 border-t-teal-700 rounded-full animate-spin" />
             ) : (
               <>
-                <span>{t('unlock')}</span>
+                <span>{t('login_btn')}</span>
                 <ArrowRight size={18} />
               </>
             )}

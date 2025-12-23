@@ -10,9 +10,11 @@ export interface UserProfile {
 }
 
 // Map database fields to application fields if necessary
+// Map database fields to application fields if necessary
 const mapProfile = (data: any): any => ({
   id: data.id,
   phone: data.phone,
+  email: data.email,
   name: data.full_name,
   accountId: data.account_id,
   // PRIORITIZE avatar_url, fallback to profile_image (legacy)
@@ -20,9 +22,14 @@ const mapProfile = (data: any): any => ({
   disabled: data.is_disabled,
   lockEnabled: data.lock_enabled, // Lock screen enabled state
   lockPassword: data.lock_password, // Lock screen password (plaintext)
+  role: data.role || 'doctor',
+  status: data.status || 'active',
+  subscriptionStatus: data.subscription_status || 'trial',
+  subscriptionExpiry: data.subscription_expiry,
+  paymeId: data.payme_id,
+  autoFreezeEnabled: data.auto_freeze_enabled,
+  createdAt: data.created_at
 });
-
-/* ... exports ... */
 
 export const updateUserProfile = async (
   userId: string,
@@ -32,7 +39,13 @@ export const updateUserProfile = async (
     profileImage?: string,
     password?: string,
     lockEnabled?: boolean,
-    lockPassword?: string // Lock screen password
+    lockPassword?: string, // Lock screen password
+    status?: 'active' | 'frozen' | 'banned',
+    role?: 'admin' | 'doctor' | 'staff',
+    subscriptionStatus?: string,
+    subscriptionExpiry?: string,
+    paymeId?: string,
+    autoFreezeEnabled?: boolean
   }
 ): Promise<void> => {
 
@@ -43,6 +56,12 @@ export const updateUserProfile = async (
   if (updates.fullName) dbUpdates.full_name = updates.fullName;
   if (updates.lockEnabled !== undefined) dbUpdates.lock_enabled = updates.lockEnabled;
   if (updates.lockPassword) dbUpdates.lock_password = updates.lockPassword;
+  if (updates.status) dbUpdates.status = updates.status;
+  if (updates.role) dbUpdates.role = updates.role;
+  if (updates.subscriptionStatus) dbUpdates.subscription_status = updates.subscriptionStatus;
+  if (updates.subscriptionExpiry) dbUpdates.subscription_expiry = updates.subscriptionExpiry;
+  if (updates.paymeId) dbUpdates.payme_id = updates.paymeId;
+  if (updates.autoFreezeEnabled !== undefined) dbUpdates.auto_freeze_enabled = updates.autoFreezeEnabled;
 
   // Robust Image Handling: Write to BOTH columns to ensure persistence across schema versions
   const imageUrl = updates.avatarUrl || updates.profileImage;
@@ -50,10 +69,6 @@ export const updateUserProfile = async (
     dbUpdates.avatar_url = imageUrl;
     dbUpdates.profile_image = imageUrl;
   }
-
-  // Update Firestore-like password field if needed (legacy or lock screen sync)
-  // Note: We don't save 'password' to profiles table usually, but if your app relies on it:
-  // if (updates.password) dbUpdates.password_hash = ... 
 
   const { error } = await supabase
     .from('profiles')
@@ -73,7 +88,7 @@ export const subscribeToUserProfile = (
 ) => {
   if (!userId) return () => { };
 
-  // 🔥 FIX: Initial fetch (THIS WAS MISSING!)
+  // 🔥 FIX: Initial fetch
   supabase
     .from('profiles')
     .select('*')
@@ -84,7 +99,6 @@ export const subscribeToUserProfile = (
         console.error('Initial profile fetch error:', error);
         onError?.(error);
       } else if (data) {
-        console.log('✓ Initial profile loaded:', data);
         onUpdate(mapProfile(data));
       }
     });
@@ -96,8 +110,52 @@ export const subscribeToUserProfile = (
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
       (payload) => {
-        console.log('✓ Profile realtime update received:', payload.new);
         onUpdate(mapProfile(payload.new));
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(subscription);
+  };
+};
+
+/**
+ * Super Admin: Subscribe to all profiles in the system
+ */
+export const subscribeToAllProfiles = (
+  onUpdate: (profiles: any[]) => void,
+  onError?: (error: any) => void
+) => {
+  // Initial fill
+  supabase
+    .from('profiles')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .then(({ data, error }) => {
+      if (error) {
+        console.error('Error fetching all profiles:', error);
+        onError?.(error);
+      } else if (data) {
+        onUpdate(data.map(mapProfile));
+      }
+    });
+
+  // Realtime subscription for ALL profiles
+  const subscription = supabase
+    .channel('admin:all_profiles')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'profiles' },
+      () => {
+        // Simple strategy: Re-fetch list on any change for consistency
+        supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .then(({ data }) => {
+            if (data) onUpdate(data.map(mapProfile));
+          });
       }
     )
     .subscribe();

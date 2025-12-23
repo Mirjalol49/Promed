@@ -135,7 +135,7 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
 
               {/* Info */}
               <div>
-                <h4 className="font-bold text-slate-900 text-sm leading-tight group-hover:text-promed-primary transition">{appt.name}</h4>
+                <h4 className="font-bold text-slate-900 text-sm leading-tight group-hover:text-promed.primary transition">{appt.name}</h4>
                 <p className="text-xs text-slate-400 mt-1 font-medium">{appt.notes || 'Plasma Injection'}</p>
                 <div className="flex items-center space-x-1 mt-1 xl:hidden">
                   <MapPin size={10} className="text-slate-300" />
@@ -273,7 +273,7 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
       </div>
 
       <div className="p-4 mt-auto border-t border-slate-100 bg-slate-50/30">
-        <button className="w-full py-2.5 text-sm font-bold text-slate-500 hover:text-promed-primary transition-colors flex items-center justify-center gap-2">
+        <button className="w-full py-2.5 text-sm font-bold text-slate-500 hover:text-promed.primary transition-colors flex items-center justify-center gap-2">
           {t('view_floor_map')} <ArrowRight size={14} />
         </button>
       </div>
@@ -328,7 +328,7 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
                 {item.notes?.toLowerCase().includes('wash') ? '🌊' : item.notes?.toLowerCase().includes('prp') ? '💉' : '📋'}
               </div>
               <div>
-                <h4 className="font-bold text-slate-800 text-sm group-hover:text-promed-primary transition whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">{item.patientName}</h4>
+                <h4 className="font-bold text-slate-800 text-sm group-hover:text-promed.primary transition whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">{item.patientName}</h4>
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">{item.notes || 'Routine Follow-up'}</p>
               </div>
             </div>
@@ -429,7 +429,7 @@ export const StatsChart: React.FC = () => {
           <h3 className="text-lg font-bold text-slate-800 tracking-tight">{t('patients_stats')}</h3>
           <p className="text-sm text-slate-400 font-medium mt-0.5">Overview of patient registration</p>
         </div>
-        <select className="text-sm bg-slate-50 border-slate-200 border rounded-xl px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 transition cursor-pointer font-bold">
+        <select className="text-sm bg-slate-50 border-slate-200 border rounded-xl px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-promed.primary/20 transition cursor-pointer font-bold">
           <option>{t('monthly')}</option>
           <option>{t('weekly')}</option>
         </select>
@@ -504,7 +504,7 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
           <h3 className="text-lg font-bold text-slate-800 tracking-tight">{t('todays_appointments')}</h3>
           <p className="text-sm text-slate-400 font-medium mt-0.5">Upcoming schedule</p>
         </div>
-        <button className="text-sm text-promed-primary font-bold hover:bg-promed-primary/10 px-3 py-1.5 rounded-lg transition">{t('see_all')}</button>
+        <button className="text-sm text-promed.primary font-bold hover:bg-promed.primary/10 px-3 py-1.5 rounded-lg transition">{t('see_all')}</button>
       </div>
 
       <div className="space-y-3 flex-1">
@@ -532,7 +532,7 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-800 text-sm group-hover:text-promed-primary transition">{inj.patientName}</h4>
+                  <h4 className="font-bold text-slate-800 text-sm group-hover:text-promed.primary transition">{inj.patientName}</h4>
                   <p className="text-xs text-slate-500 mt-0.5 flex items-center space-x-1 font-medium">
                     <Clock size={12} className="text-slate-400" />
                     <span>{t('plasma_injection')}</span>

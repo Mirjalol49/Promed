@@ -46,4 +46,20 @@ export interface StatData {
   color: string; // Tailwind class for bg color
 }
 
-export type PageView = 'DASHBOARD' | 'PATIENTS' | 'PATIENT_DETAIL' | 'SETTINGS' | 'ADD_PATIENT' | 'EDIT_PATIENT';
+export interface Profile {
+  id: string;
+  fullName?: string;
+  email?: string;
+  profileImage?: string;
+  role: 'admin' | 'doctor' | 'staff';
+  status: 'active' | 'frozen' | 'banned';
+  subscriptionStatus: 'trial' | 'active' | 'overdue' | 'lifetime';
+  subscriptionExpiry?: string;
+  paymeId?: string;
+  autoFreezeEnabled?: boolean;
+  accountId?: string;
+  lockEnabled?: boolean;
+  lockPassword?: string;
+}
+
+export type PageView = 'DASHBOARD' | 'PATIENTS' | 'PATIENT_DETAIL' | 'SETTINGS' | 'ADD_PATIENT' | 'EDIT_PATIENT' | 'ADMIN_DASHBOARD';

@@ -28,11 +28,11 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
             {/* Animated spinner */}
             <div className="relative">
                 <Loader2
-                    className={`${sizeClasses[size]} text-promed-primary animate-spin`}
+                    className={`${sizeClasses[size]} text-promed.primary animate-spin`}
                     strokeWidth={2.5}
                 />
                 {/* Pulsing background glow */}
-                <div className={`absolute inset-0 ${sizeClasses[size]} bg-promed-primary/20 rounded-full blur-xl animate-pulse`} />
+                <div className={`absolute inset-0 ${sizeClasses[size]} bg-promed.primary/20 rounded-full blur-xl animate-pulse`} />
             </div>
 
             {/* Optional message */}
@@ -84,11 +84,11 @@ export const ProgressLoader: React.FC<{ progress?: number; message?: string }> =
     <div className="w-full space-y-2">
         <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-slate-600">{message || 'Processing...'}</span>
-            <span className="text-sm font-bold text-promed-primary">{progress}%</span>
+            <span className="text-sm font-bold text-promed.primary">{progress}%</span>
         </div>
         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
             <div
-                className="h-full bg-gradient-to-r from-promed-primary to-teal-400 transition-all duration-300 ease-out rounded-full"
+                className="h-full bg-gradient-to-r from-promed.primary to-teal-400 transition-all duration-300 ease-out rounded-full"
                 style={{ width: `${progress}%` }}
             />
         </div>

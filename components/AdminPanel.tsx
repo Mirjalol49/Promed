@@ -20,7 +20,7 @@ interface User {
 // Admin Login Screen
 const AdminLoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
   // State
-  const [email, setEmail] = useState('superadmin@promed.local');
+  const [email, setEmail] = useState('superadmin@graft.local');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);

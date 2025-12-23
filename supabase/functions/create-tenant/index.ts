@@ -62,7 +62,7 @@ serve(async (req) => {
             throw new Error("Missing required fields: username, password, name");
         }
 
-        const email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@promed.local`;
+        const email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@graft.local`;
         console.log(`Creating tenant: ${username} -> ${email} (${name})`);
 
         // 3. Create Auth User

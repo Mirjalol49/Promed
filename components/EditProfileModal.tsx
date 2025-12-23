@@ -53,8 +53,29 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     // Local state for inputs
     const [nameInput, setNameInput] = useState(userName);
     const [currentPassInput, setCurrentPassInput] = useState(userPassword);
-    const [newPassInput, setNewPassInput] = useState('');
+    const [pin, setPin] = useState(['', '', '', '', '', '']);
     const [isSaving, setIsSaving] = useState(false);
+
+    const pinRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+
+    const handlePinChange = (index: number, value: string) => {
+        if (value.length > 1) value = value.slice(-1);
+        if (!/^\d*$/.test(value)) return;
+
+        const newPin = [...pin];
+        newPin[index] = value;
+        setPin(newPin);
+
+        if (value && index < 5) {
+            pinRefs.current[index + 1]?.focus();
+        }
+    };
+
+    const handlePinKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Backspace' && !pin[index] && index > 0) {
+            pinRefs.current[index - 1]?.focus();
+        }
+    };
 
     // Sync with global state when modal opens
     useEffect(() => {
@@ -63,7 +84,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             setCurrentPassInput(userPassword);
             setProfileImage(userImage);
             setSelectedFile(null);
-            setNewPassInput('');
+            setPin(['', '', '', '', '', '']);
         }
     }, [isOpen, userPassword, userImage, userName]);
 
@@ -95,20 +116,19 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             console.log("✓ Session verified for user:", activeUserId);
 
             // 2. UPDATE PASSWORD (Auth API)
-            if (newPassInput && newPassInput.trim() !== '') {
-                if (newPassInput.length < 6) {
-                    throw new Error(t('toast_password_short'));
-                }
-
+            const newPinValue = pin.join('');
+            if (newPinValue.length === 6) {
                 console.log("• Updating Password...");
                 const { error: passError } = await supabase.auth.updateUser({
-                    password: setNewPassInput ? newPassInput : undefined // Defensive
+                    password: newPinValue
                 });
 
                 if (passError) {
                     console.error("Supabase Auth Error:", passError);
                     throw new Error(`Password update failed: ${passError.message}`);
                 }
+            } else if (newPinValue.length > 0) {
+                throw new Error(t('toast_password_numeric_6') || 'PIN must be exactly 6 digits');
             }
 
             // 3. UPLOAD IMAGE (Phase 3: Storage Mirror)
@@ -165,7 +185,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             await onUpdateProfile({
                 name: nameInput,
                 image: finalAvatarUrl,
-                password: newPassInput || undefined,
+                password: pin.join('') || undefined,
             });
 
             console.log("✓ Profile saved successfully!");
@@ -253,35 +273,44 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
                         {isLockEnabled && (
                             <>
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('current_password')}</label>
-                                    <div className="relative">
-                                        <input
-                                            type={showCurrentPass ? "text" : "password"}
-                                            value={currentPassInput}
-                                            readOnly
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary focus:bg-white transition-all tracking-widest text-sm shadow-sm opacity-80"
-                                        />
-                                        <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition">
-                                            {showCurrentPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    <div className="flex gap-2 justify-between opacity-80">
+                                        {[...Array(6)].map((_, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="w-12 h-14 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-xl font-bold text-slate-400 shadow-inner"
+                                            >
+                                                {showCurrentPass ? (currentPassInput[idx] || '•') : '•'}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="text-slate-400 hover:text-slate-600 transition flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
+                                            {showCurrentPass ? <><EyeOff size={14} /> {t('hide')}</> : <><Eye size={14} /> {t('show')}</>}
                                         </button>
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('new_password')}</label>
-                                    <div className="relative">
-                                        <input
-                                            type={showNewPass ? "text" : "password"}
-                                            placeholder={t('optional_change')}
-                                            value={newPassInput}
-                                            onChange={(e) => setNewPassInput(e.target.value)}
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary focus:bg-white transition-all text-sm shadow-sm"
-                                        />
-                                        <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition">
-                                            {showNewPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                                        </button>
+                                    <div className="flex gap-2 justify-between">
+                                        {pin.map((digit, idx) => (
+                                            <input
+                                                key={idx}
+                                                ref={el => { pinRefs.current[idx] = el; }}
+                                                type="password"
+                                                inputMode="numeric"
+                                                pattern="\d*"
+                                                maxLength={1}
+                                                value={digit}
+                                                onChange={(e) => handlePinChange(idx, e.target.value)}
+                                                onKeyDown={(e) => handlePinKeyDown(idx, e)}
+                                                className="w-12 h-14 bg-slate-50 border border-slate-200 rounded-xl text-center text-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary transition-all shadow-sm"
+                                            />
+                                        ))}
                                     </div>
+                                    <p className="text-[10px] text-slate-400 font-medium italic">{t('lock_hint')}</p>
                                 </div>
                             </>
                         )}

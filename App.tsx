@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+console.log("🛡️ PROMED SYSTEM BOOT: Version 1.25.0 - LockFix Loaded");
 import { Dashboard } from './pages/Dashboard';
 import Layout from './components/Layout';
 import { StatCard, StatsChart, UpcomingInjections } from './components/Widgets';
 import { PatientList, PatientDetail, AddPatientForm } from './components/PatientViews';
 import { LoginScreen } from './components/LoginScreen';
-import AdminPanel from './components/AdminPanel';
+import { AdminDashboard } from './pages/AdminDashboard';
+import { AdminRoute } from './components/AdminRoute';
 import { Users, UserPlus, Calendar, Activity, Bell, Shield, Smartphone, Lock, ArrowRight, LogOut } from 'lucide-react';
 import { Patient, PageView, InjectionStatus, PatientImage } from './types';
 import { useLanguage } from './contexts/LanguageContext';
@@ -20,6 +22,7 @@ import {
   COLUMNS,
 } from './lib/patientService';
 import { updateUserProfile, subscribeToUserProfile } from './lib/userService';
+import { billingService } from './lib/billingService';
 import { uploadImage, uploadAvatar, setOptimisticImage, getOptimisticImage } from './lib/imageService';
 import { ProfileAvatar } from './components/ProfileAvatar';
 import { useImagePreloader } from './lib/useImagePreloader';
@@ -30,30 +33,40 @@ import { Trash2 } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
 
 // --- Lock Screen Component ---
-const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string; onLogout: () => void }> = ({ onUnlock, correctPassword, onLogout }) => {
+const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = ({ onUnlock, correctPassword }) => {
+  console.log("🔒 LockScreen: Starting render...");
   const { t } = useLanguage();
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
+  const [pin, setPin] = useState(['', '', '', '', '', '']);
+
+  // Use a single ref for the array to ensure stability across re-renders
+  const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+
+  const [pinError, setPinError] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
-
-  // Magic link state
   const [resetEmail, setResetEmail] = useState('');
-  const [resetLoading, setResetLoading] = useState(false);
-  const [resetMessage, setResetMessage] = useState('');
   const [resetError, setResetError] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
-  const handleUnlock = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (password === correctPassword) {
-      onUnlock();
-    } else {
-      setError(true);
-      setPassword('');
-      setTimeout(() => setError(false), 1000);
+  const handlePinChange = (index: number, value: string) => {
+    if (value.length > 1) value = value.slice(-1);
+    if (!/^\d*$/.test(value)) return;
+
+    const newPin = [...pin];
+    newPin[index] = value;
+    setPin(newPin);
+
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
-  // Send magic link
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !pin[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
   const handleSendMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetLoading(true);
@@ -61,85 +74,101 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string; onLo
     setResetMessage('');
 
     try {
-      // First sign out to clear current session
-      await supabase.auth.signOut();
-      localStorage.clear();
-
-      // Send magic link
-      const { error } = await supabase.auth.signInWithOtp({
-        email: resetEmail,
-        options: {
-          emailRedirectTo: window.location.origin,
-        }
+      const { error: authError } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: window.location.origin,
       });
 
-      if (error) throw error;
-
-      setResetMessage(t('magic_link_sent') || 'Magic link sent! Check your email.');
-
-      // After showing success, reload to login screen
-      setTimeout(() => {
-        onLogout();
-        window.location.reload();
-      }, 3000);
-
+      if (authError) throw authError;
+      setResetMessage(t('reset_link_sent') || 'Reset link sent to your email');
     } catch (err: any) {
-      console.error('Magic link error:', err);
-      setResetError(err.message || 'Failed to send magic link');
+      setResetError(err.message || 'Failed to send reset link');
     } finally {
       setResetLoading(false);
     }
   };
 
+  const handleUnlock = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const enteredPin = pin.join('');
+    if (enteredPin === correctPassword) {
+      onUnlock();
+    } else {
+      setPinError(true);
+      setPin(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+      setTimeout(() => setPinError(false), 1000);
+    }
+  };
+
+  if (!t) {
+    console.error("❌ LockScreen: t function is missing!");
+    return <div className="fixed inset-0 bg-slate-900 flex items-center justify-center text-white">Loading Security...</div>;
+  }
+
+  console.log("✅ LockScreen: Reached JSX return phase");
+
   return (
-    <div className="fixed inset-0 z-[100] bg-gradient-to-br from-[#0d3d38] via-[#0f4a44] to-[#134e4a] flex flex-col items-center justify-center text-white animate-in fade-in duration-500">
+    <div className="fixed inset-0 z-[100] bg-[#0d3d38] flex flex-col items-center justify-center text-white animate-in fade-in duration-500">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-teal-500/10 rounded-full blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[120px]"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.15)_0%,transparent_70%)]"></div>
       </div>
 
-      <div className="relative z-10 flex flex-col items-center w-full max-w-sm px-6">
-        <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mb-8 backdrop-blur-sm border border-white/20 shadow-2xl">
-          <Lock size={40} className="text-white/90" strokeWidth={1.5} />
+      <div className="relative z-10 flex flex-col items-center w-full max-w-xl px-6">
+        <div className="w-20 h-20 bg-slate-900 border border-slate-800 rounded-3xl flex items-center justify-center mb-10 shadow-2xl">
+          <Lock size={32} className="text-slate-400" strokeWidth={2} />
         </div>
 
-        <h2 className="text-3xl font-bold mb-2 tracking-tight">{t('app_locked')}</h2>
-        <p className="text-white/60 mb-8 text-center">{t('login_subtitle')}</p>
+        <h2 className="text-4xl font-black mb-3 tracking-tighter text-white">{t('app_locked')}</h2>
+        <p className="text-white/60 mb-12 text-center font-medium">{t('login_subtitle')}</p>
 
-        <form onSubmit={handleUnlock} className="w-full space-y-4">
-          <div className="relative">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={`w-full bg-white/5 border ${error ? 'border-red-400 shake' : 'border-white/10'} rounded-2xl py-4 px-6 text-center text-xl text-white placeholder-white/40 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all`}
-              placeholder={t('enter_password')}
-              autoFocus
-            />
+        <form onSubmit={handleUnlock} className="w-full flex flex-col items-center space-y-10">
+          <div className="flex gap-4 sm:gap-6 justify-center">
+            {pin.map((digit, idx) => (
+              <input
+                key={idx}
+                ref={el => { inputRefs.current[idx] = el; }}
+                type="text"
+                inputMode="numeric"
+                pattern="\d*"
+                value={digit}
+                onChange={(e) => handlePinChange(idx, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(idx, e)}
+                className={`w-14 h-18 sm:w-16 sm:h-20 bg-white border-2 ${pinError ? 'border-red-500 shake' : 'border-emerald-500/10'} 
+                  rounded-2xl text-center text-3xl font-bold text-[#0d3d38] transition-all duration-200
+                  focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20
+                  placeholder-slate-300 shadow-lg`}
+                maxLength={1}
+                autoFocus={idx === 0}
+              />
+            ))}
           </div>
-          <button
-            type="submit"
-            className="w-full bg-white text-[#0f4a44] font-bold py-4 rounded-2xl hover:bg-gray-100 transition active:scale-95 flex items-center justify-center space-x-2 shadow-xl"
-          >
-            <span>{t('unlock')}</span>
-            <ArrowRight size={20} />
-          </button>
-          {error && <p className="text-red-300 text-sm text-center font-medium animate-pulse">{t('wrong_password')}</p>}
 
-          {/* Forgot Password Option */}
-          <div className="text-center pt-4">
+          <div className="w-full max-w-sm space-y-6">
             <button
-              type="button"
-              onClick={() => setShowForgotModal(true)}
-              className="text-white/50 hover:text-white text-sm font-medium transition-colors"
+              type="submit"
+              className="w-full bg-white text-[#0d3d38] font-black py-5 rounded-[22px] hover:bg-slate-100 transition-all transform active:scale-95 flex items-center justify-center space-x-3 shadow-xl"
             >
-              {t('forgot_password_link')}
+              <span className="uppercase tracking-widest text-xs">{t('unlock')}</span>
+              <ArrowRight size={18} />
             </button>
+
+            {pinError && <p className="text-red-400 text-sm text-center font-bold tracking-tight animate-pulse">{t('wrong_password')}</p>}
+
+            {/* Forgot Password Link */}
+            <div className="text-center pt-4">
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(true)}
+                className="text-white/40 hover:text-white text-sm font-bold transition-colors uppercase tracking-widest block w-full"
+              >
+                {t('forgot_password_link')}
+              </button>
+            </div>
           </div>
         </form>
       </div>
 
-      {/* Forgot Password Modal - Email Input + Magic Link */}
+      {/* Forgot Password Modal */}
       {showForgotModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-[#0d3d38] border border-white/20 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
@@ -223,17 +252,52 @@ const App: React.FC = () => {
   const [saving, setSaving] = useState(false);
 
   const { t } = useLanguage();
-  const { success, error } = useToast();
+  const { success, error: showError } = useToast();
+
+  // Handle Supabase Auth Events (especially password recovery)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("🔔 Supabase Auth Event:", event);
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log("🔑 Password recovery detected! Bypassing lock screen...");
+        setIsLocked(false);
+        localStorage.setItem('appLockState', 'false');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Persist lock state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('appLockState', isLocked.toString());
   }, [isLocked]);
 
+  // 🔥 URL SYNC: Update URL when view changes
+  useEffect(() => {
+    let path = '/';
+    if (view === 'ADMIN_DASHBOARD') path = '/admin';
+    else if (view === 'PATIENTS') path = '/patients';
+    else if (view === 'SETTINGS') path = '/settings';
+
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
+  }, [view]);
+
   // Validate session consistency
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+
+      // 🔥 ROUTING: Check URL path on load
+      const path = window.location.pathname;
+      if (path === '/admin') {
+        setView('ADMIN_DASHBOARD');
+      } else if (path === '/patients') {
+        setView('PATIENTS');
+      }
+
       if (session) {
         const persistedAccountId = localStorage.getItem('accountId');
         const sessionUserId = session.user.id;
@@ -246,10 +310,9 @@ const App: React.FC = () => {
           return;
         }
 
-        // 🔥 FIX: Only set account if userId isn't already set (don't overwrite name!)
+        // Only set account if userId isn't already set
         if (!userId) {
-          // The profile subscription will fetch and set the proper name
-          setAccount(sessionUserId, sessionUserId, accountName || '');
+          setAccount(sessionUserId, sessionUserId, accountName || '', 'doctor', false); // Not verified yet
         }
       }
     };
@@ -265,13 +328,21 @@ const App: React.FC = () => {
       (profile) => {
         console.log("✓ Profile data received:", profile);
         if (profile) {
-          // 🔥 FIX: Always sync name from database (source of truth)
-          if (profile.name) {
-            console.log("  • Name:", profile.name);
-            // Use profile.accountId if accountId isn't set yet
-            const accId = accountId || profile.accountId || userId;
-            setAccount(accId, userId, profile.name);
-          }
+          // 🔥 FIX: ALWAYS prioritize the account_id from the database profile
+          const databaseAccountId = profile.accountId;
+          const currentAccountId = accountId;
+          const fallbackAccountId = userId;
+
+          const finalAccountId = databaseAccountId || currentAccountId || fallbackAccountId;
+
+          console.log("🛡️ PROMED SECURITY SYNC:", {
+            profileRole: profile.role,
+            dbAccount: databaseAccountId,
+            stateAccount: currentAccountId,
+            finalAccount: finalAccountId
+          });
+
+          setAccount(finalAccountId, userId, profile.name || accountName || '', profile.role || 'doctor', true); // Now VERIFIED
           if (profile.lockEnabled !== undefined) {
             console.log("  • Lock Enabled:", profile.lockEnabled);
             setIsLockEnabled(profile.lockEnabled);
@@ -285,6 +356,17 @@ const App: React.FC = () => {
             setUserImage(profile.profileImage);
           }
 
+          // 🔥 SECURITY ALERT: If account is frozen, log out immediately
+          if (profile.status === 'frozen') {
+            console.warn("❄️ Account Frozen detected for user:", userId);
+            alert('Your account has been suspended. Please contact support.');
+            handleLogout(); // Use the robust logout we just fixed
+          }
+
+          // ❄️ AUTO-FREEZE: Check subscription health (periodic check on active sessions)
+          if (profile.role !== 'admin' && profile.status === 'active') {
+            billingService.checkAndEnforceSubscription(userId);
+          }
         }
       },
       (error) => console.error("Profile subscription error:", error)
@@ -379,7 +461,6 @@ const App: React.FC = () => {
       </div>
     );
   }
-
   const handleNavigate = (page: PageView) => {
     setView(page);
     if (page !== 'PATIENT_DETAIL') setSelectedPatientId(null);
@@ -394,10 +475,14 @@ const App: React.FC = () => {
     setAccount(id, userId, name);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    console.log("👋 Logging out...");
+    await supabase.auth.signOut();
+    localStorage.clear();
     logout();
     setPatients([]);
     setView('DASHBOARD');
+    window.location.href = '/'; // Reset everything
   };
 
   // Consolidated Profile Update Handler
@@ -440,7 +525,7 @@ const App: React.FC = () => {
 
     } catch (err: any) {
       console.error("Error updating profile:", err);
-      error(`${t('toast_save_failed')}: ${err.message}`);
+      showError(`${t('toast_save_failed')}: ${err.message}`);
     }
   };
 
@@ -517,7 +602,7 @@ const App: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error saving patient:', err);
-      error(`${t('toast_save_failed')}: ${err.message || 'Unknown error'}`);
+      showError(`${t('toast_save_failed')}: ${err.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -551,7 +636,7 @@ const App: React.FC = () => {
       await deletePatientFromDb(deletedId);
     } catch (err) {
       console.error('Error deleting patient:', err);
-      error(t('toast_delete_failed'));
+      showError(t('toast_delete_failed'));
       // Note: In case of catastrophic failure, real-time sync would eventually restore 
       // the list if the delete actually failed on server, or we could manually re-fetch here.
     }
@@ -572,7 +657,7 @@ const App: React.FC = () => {
       success(t('toast_profile_saved') || 'Updated successfully');
     } catch (err: any) {
       console.error('Error updating injection:', err);
-      error(`${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
+      showError(`${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -596,7 +681,7 @@ const App: React.FC = () => {
       success(t('toast_profile_saved') || 'Added successfully');
     } catch (err: any) {
       console.error('Error adding injection:', err);
-      error(`${t('toast_save_failed') || 'Add failed'}: ${err.message || 'Unknown error'}`);
+      showError(`${t('toast_save_failed') || 'Add failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -614,7 +699,7 @@ const App: React.FC = () => {
       success(t('toast_profile_saved') || 'Saved successfully');
     } catch (err: any) {
       console.error('Error editing injection:', err);
-      error(`${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
+      showError(`${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -630,7 +715,7 @@ const App: React.FC = () => {
       success(t('toast_profile_saved') || 'Deleted successfully');
     } catch (err: any) {
       console.error('Error deleting injection:', err);
-      error(`${t('toast_save_failed') || 'Delete failed'}: ${err.message || 'Unknown error'}`);
+      showError(`${t('toast_save_failed') || 'Delete failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -670,7 +755,7 @@ const App: React.FC = () => {
           photoUrl = await uploadImage(photoOrFile, `patients/${patientId}/after_images/${timestamp}`);
         } catch (e) {
           console.error('Failed to upload after photo', e);
-          error(t('toast_upload_failed'));
+          showError(t('toast_upload_failed'));
           return;
         }
       }
@@ -716,6 +801,13 @@ const App: React.FC = () => {
           />
         </div>
 
+        {/* Admin Dashboard View - Protected Route */}
+        {view === 'ADMIN_DASHBOARD' && (
+          <AdminRoute onAccessDenied={() => setView('DASHBOARD')}>
+            <AdminDashboard />
+          </AdminRoute>
+        )}
+
         {/* Patient List View - Always Mounted, Hidden when inactive */}
         <div style={{ display: view === 'PATIENTS' || view === 'ADD_PATIENT' ? 'block' : 'none' }}>
           <PatientList
@@ -736,125 +828,129 @@ const App: React.FC = () => {
         </div>
 
         {/* Detail Views - Conditional (depend on selected ID) */}
-        {((view === 'PATIENT_DETAIL' || view === 'EDIT_PATIENT') && selectedPatientId) && (
-          (() => {
-            const patient = patients.find(p => p.id === selectedPatientId);
-            if (!patient) return null;
-            return (
-              <>
-                <PatientDetail
-                  patient={patient}
-                  onBack={() => setView('PATIENTS')}
-                  onUpdateInjection={handleUpdateInjection}
-                  onAddInjection={handleAddInjection}
-                  onEditInjection={handleEditInjection}
-                  onDeleteInjection={handleDeleteInjection}
-                  onAddAfterPhoto={handleAddAfterPhoto}
-                  onEditPatient={() => setView('EDIT_PATIENT')}
-                  onDeletePatient={handleDeletePatient}
-                />
-                {view === 'EDIT_PATIENT' && (
-                  <AddPatientForm
-                    initialData={patient}
-                    onSave={handleSavePatient}
-                    onCancel={() => setView('PATIENT_DETAIL')}
-                    saving={saving}
+        {
+          ((view === 'PATIENT_DETAIL' || view === 'EDIT_PATIENT') && selectedPatientId) && (
+            (() => {
+              const patient = patients.find(p => p.id === selectedPatientId);
+              if (!patient) return null;
+              return (
+                <>
+                  <PatientDetail
+                    patient={patient}
+                    onBack={() => setView('PATIENTS')}
+                    onUpdateInjection={handleUpdateInjection}
+                    onAddInjection={handleAddInjection}
+                    onEditInjection={handleEditInjection}
+                    onDeleteInjection={handleDeleteInjection}
+                    onAddAfterPhoto={handleAddAfterPhoto}
+                    onEditPatient={() => setView('EDIT_PATIENT')}
+                    onDeletePatient={handleDeletePatient}
                   />
-                )}
-              </>
-            )
-          })()
-        )}
+                  {view === 'EDIT_PATIENT' && (
+                    <AddPatientForm
+                      initialData={patient}
+                      onSave={handleSavePatient}
+                      onCancel={() => setView('PATIENT_DETAIL')}
+                      saving={saving}
+                    />
+                  )}
+                </>
+              )
+            })()
+          )
+        }
 
         {/* Settings View */}
-        {view === 'SETTINGS' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
-              <div className="p-8 border-b border-gray-100 bg-gray-50/50">
-                <h3 className="text-xl font-bold text-gray-800 tracking-tight">{t('settings')}</h3>
-                <p className="text-sm text-gray-500 mt-1">Manage your profile, preferences, and security</p>
-              </div>
-
-              <div className="p-8 space-y-8">
-                {/* Profile Card */}
-                <div className="flex flex-col md:flex-row items-center justify-between p-6 bg-gradient-to-r from-promed-light/50 to-white rounded-2xl border border-promed-primary/10 shadow-sm">
-                  <div className="flex items-center space-x-5 mb-4 md:mb-0">
-                    <div className="w-16 h-16 rounded-full overflow-hidden shadow-lg shadow-promed-primary/30">
-                      <ProfileAvatar src={userImage} alt="Profile" size={64} className="w-full h-full" fallbackType="user" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-lg text-gray-800">{accountName || t('dr_name')}</p>
-                      <p className="text-sm text-promed-primary font-bold mt-1">Account: {accountId}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    {/* Removed direct edit button here, using Edit Profile Modal triggered from Sidebar */}
-                    {/* This button could trigger the same modal if needed */}
-                    <button className="px-6 py-2.5 bg-white text-gray-700 font-bold text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition shadow-sm">
-                      Edit Profile
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="px-6 py-2.5 bg-red-50 text-red-600 font-bold text-sm border border-red-200 rounded-xl hover:bg-red-100 transition shadow-sm flex items-center gap-2"
-                      data-oid="logout-btn"
-                    >
-                      <LogOut size={16} />
-                      Logout
-                    </button>
-                  </div>
+        {
+          view === 'SETTINGS' && (
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+                <div className="p-8 border-b border-gray-100 bg-gray-50/50">
+                  <h3 className="text-xl font-bold text-gray-800 tracking-tight">{t('settings')}</h3>
+                  <p className="text-sm text-gray-500 mt-1">Manage your profile, preferences, and security</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* Preferences */}
-                  <div className="space-y-4">
-                    <h4 className="font-bold text-gray-400 uppercase text-xs tracking-wider mb-2">Preferences</h4>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-white hover:shadow-md transition border border-transparent hover:border-gray-100 cursor-pointer group">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2.5 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition shadow-sm">
-                          <Bell size={20} />
-                        </div>
-                        <span className="font-semibold text-gray-700">Notifications</span>
+                <div className="p-8 space-y-8">
+                  {/* Profile Card */}
+                  <div className="flex flex-col md:flex-row items-center justify-between p-6 bg-gradient-to-r from-promed-light/50 to-white rounded-2xl border border-promed-primary/10 shadow-sm">
+                    <div className="flex items-center space-x-5 mb-4 md:mb-0">
+                      <div className="w-16 h-16 rounded-full overflow-hidden shadow-lg shadow-promed-primary/30">
+                        <ProfileAvatar src={userImage} alt="Profile" size={64} className="w-full h-full" fallbackType="user" />
                       </div>
-                      <div className="w-11 h-6 bg-promed-primary rounded-full relative shadow-inner">
-                        <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                      <div>
+                        <p className="font-bold text-lg text-gray-800">{accountName || t('dr_name')}</p>
+                        <p className="text-sm text-promed-primary font-bold mt-1">Account: {accountId}</p>
                       </div>
                     </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-white hover:shadow-md transition border border-transparent hover:border-gray-100 cursor-pointer group">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2.5 bg-purple-100 text-purple-600 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition shadow-sm">
-                          <Smartphone size={20} />
-                        </div>
-                        <span className="font-semibold text-gray-700">App Appearance</span>
-                      </div>
-                      <span className="text-sm font-bold text-gray-400">Light</span>
+                    <div className="flex gap-3">
+                      {/* Removed direct edit button here, using Edit Profile Modal triggered from Sidebar */}
+                      {/* This button could trigger the same modal if needed */}
+                      <button className="px-6 py-2.5 bg-white text-gray-700 font-bold text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition shadow-sm">
+                        Edit Profile
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="px-6 py-2.5 bg-red-50 text-red-600 font-bold text-sm border border-red-200 rounded-xl hover:bg-red-100 transition shadow-sm flex items-center gap-2"
+                        data-oid="logout-btn"
+                      >
+                        <LogOut size={16} />
+                        Logout
+                      </button>
                     </div>
                   </div>
 
-                  {/* Security */}
-                  <div className="space-y-4">
-                    <h4 className="font-bold text-gray-400 uppercase text-xs tracking-wider mb-2">Security</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Preferences */}
+                    <div className="space-y-4">
+                      <h4 className="font-bold text-gray-400 uppercase text-xs tracking-wider mb-2">Preferences</h4>
 
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-white hover:shadow-md transition border border-transparent hover:border-gray-100 cursor-pointer group">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2.5 bg-green-100 text-green-600 rounded-lg group-hover:bg-green-600 group-hover:text-white transition shadow-sm">
-                          <Shield size={20} />
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-white hover:shadow-md transition border border-transparent hover:border-gray-100 cursor-pointer group">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2.5 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition shadow-sm">
+                            <Bell size={20} />
+                          </div>
+                          <span className="font-semibold text-gray-700">Notifications</span>
                         </div>
-                        <span className="font-semibold text-gray-700">Two-Factor Auth</span>
+                        <div className="w-11 h-6 bg-promed-primary rounded-full relative shadow-inner">
+                          <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                        </div>
                       </div>
-                      <div className="w-11 h-6 bg-gray-200 rounded-full relative shadow-inner">
-                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-white hover:shadow-md transition border border-transparent hover:border-gray-100 cursor-pointer group">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2.5 bg-purple-100 text-purple-600 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition shadow-sm">
+                            <Smartphone size={20} />
+                          </div>
+                          <span className="font-semibold text-gray-700">App Appearance</span>
+                        </div>
+                        <span className="text-sm font-bold text-gray-400">Light</span>
+                      </div>
+                    </div>
+
+                    {/* Security */}
+                    <div className="space-y-4">
+                      <h4 className="font-bold text-gray-400 uppercase text-xs tracking-wider mb-2">Security</h4>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-white hover:shadow-md transition border border-transparent hover:border-gray-100 cursor-pointer group">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2.5 bg-green-100 text-green-600 rounded-lg group-hover:bg-green-600 group-hover:text-white transition shadow-sm">
+                            <Shield size={20} />
+                          </div>
+                          <span className="font-semibold text-gray-700">Two-Factor Auth</span>
+                        </div>
+                        <div className="w-11 h-6 bg-gray-200 rounded-full relative shadow-inner">
+                          <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
-      </div>
+      </div >
     );
   };
 
@@ -866,7 +962,8 @@ const App: React.FC = () => {
 
   // Render Lock Screen if locked
   if (isLocked) {
-    return <LockScreen onUnlock={() => setIsLocked(false)} correctPassword={userPassword} onLogout={logout} />;
+    console.log("🔓 App component: Rendering LockScreen", { hasPassword: !!userPassword });
+    return <LockScreen onUnlock={() => setIsLocked(false)} correctPassword={userPassword} />;
   }
 
   return (

@@ -8,12 +8,15 @@ import {
   Check,
   Globe,
   Lock,
-  Settings
+  Settings,
+  Shield
 } from 'lucide-react';
 import { PageView } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ProfileAvatar } from './ProfileAvatar';
 import EditProfileModal from './EditProfileModal';
+import { useAccount } from '../contexts/AccountContext';
+import { SystemAlertBanner } from './SystemAlertBanner';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -44,6 +47,7 @@ const Layout: React.FC<LayoutProps> = ({
   userPassword,
   onUpdateProfile
 }) => {
+  const { role } = useAccount();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
@@ -71,6 +75,7 @@ const Layout: React.FC<LayoutProps> = ({
   const getPageTitle = () => {
     switch (currentPage) {
       case 'DASHBOARD': return t('dashboard');
+      case 'ADMIN_DASHBOARD': return 'Admin Control Center';
       case 'PATIENTS': return t('patient_list');
       case 'ADD_PATIENT': return t('add_new_patient');
       case 'PATIENT_DETAIL': return t('details');
@@ -89,6 +94,7 @@ const Layout: React.FC<LayoutProps> = ({
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900 font-sans">
+      <SystemAlertBanner />
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div
@@ -104,11 +110,16 @@ const Layout: React.FC<LayoutProps> = ({
       `}>
         {/* Logo */}
         <div className="p-6 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 text-white">
             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-lg shadow-black/20">
               <div className="w-4 h-4 bg-promed-primary rounded-full" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">PROMED</span>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold tracking-tight">PROMED</span>
+              {role === 'admin' && (
+                <span className="bg-purple-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-widest -mt-0.5 self-start">Super Admin</span>
+              )}
+            </div>
           </div>
           <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-white/70 hover:text-white">
             <X size={20} />
@@ -116,9 +127,16 @@ const Layout: React.FC<LayoutProps> = ({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 mt-2 px-3 overflow-y-auto no-scrollbar space-y-1">
+        <nav className="flex-1 mt-2 px-3 overflow-y-auto no-scrollbar space-y-1 text-white">
           <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />
           <NavItem page="PATIENTS" icon={Users} label={t('patients')} />
+
+          {role === 'admin' && (
+            <div className="pt-4 mt-4 border-t border-white/5 space-y-1">
+              <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Management</p>
+              <NavItem page="ADMIN_DASHBOARD" icon={Shield} label="Admin Panel" />
+            </div>
+          )}
         </nav>
 
         {/* Sidebar Footer with Profile & Lock */}
@@ -151,12 +169,9 @@ const Layout: React.FC<LayoutProps> = ({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
-        {/* Header - Refactored for proper fixed z-index context */}
+        {/* Header */}
         <header className="sticky top-0 z-20 h-20">
-          {/* Background Layer with Filter */}
           <div className="absolute inset-0 bg-white/90 backdrop-blur-md shadow-soft border-b border-slate-200" />
-
-          {/* Content Layer */}
           <div className="relative z-10 h-full flex items-center justify-between px-6 md:px-10">
             <div className="flex items-center space-x-4">
               <button
@@ -165,8 +180,8 @@ const Layout: React.FC<LayoutProps> = ({
               >
                 <Menu size={24} />
               </button>
-              <h1 className="text-2xl font-bold text-slate-900 hidden md:block tracking-tight">
-                {getPageTitle()}
+              <h1 className="text-2xl font-bold text-slate-900 hidden md:block tracking-tight text-white">
+                <span className="text-slate-900">{getPageTitle()}</span>
               </h1>
             </div>
 
@@ -184,11 +199,8 @@ const Layout: React.FC<LayoutProps> = ({
 
                 {isLangMenuOpen && (
                   <>
-                    {/* Backdrop */}
                     <div className="fixed inset-0 z-40 cursor-default" onClick={() => setIsLangMenuOpen(false)}></div>
-
-                    {/* Dropdown Menu */}
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 text-white">
                       {languages.map((lang) => (
                         <button
                           key={lang.code}
@@ -212,15 +224,17 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         </header>
 
-        {/* Content Scrollable Area */}
+        {/* Main Area */}
         <main className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth z-0">
-          <div className="max-w-[1600px] mx-auto">
-            {children}
+          <div className="max-w-[1600px] mx-auto text-white">
+            <div className="text-slate-900">
+              {children}
+            </div>
           </div>
         </main>
       </div>
 
-      {/* Modals */}
+      {/* Profile Modal */}
       <EditProfileModal
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}

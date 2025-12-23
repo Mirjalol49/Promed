@@ -1,5 +1,5 @@
 {
-  "name": "PROMED",
+  "name": "GRAFT",
   "description": "A comprehensive patient management dashboard for hair transplant specialists. Track operations, manage patient profiles, and schedule plasma injection follow-ups.",
   "requestFramePermissions": [
     "camera"

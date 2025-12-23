@@ -1,5 +1,5 @@
 -- ============================================
--- COMPREHENSIVE RLS FIX FOR PROMED
+-- COMPREHENSIVE RLS FIX FOR GRAFT
 -- Run this in Supabase SQL Editor
 -- ============================================
 
