@@ -13,6 +13,7 @@ import { Patient } from '../types';
 import Mascot from '../components/mascot/Mascot';
 import { DashboardLoader } from '../components/ui/DashboardLoader';
 import LockedOverlay from '../components/ui/LockedOverlay';
+import TourGuide from '../components/tour/TourGuide';
 
 interface DashboardProps {
     stats: {
@@ -42,7 +43,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ label, value, icon: Icon, color, sh
         initial="idle"
         whileHover="hover"
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className={`relative p-7 rounded-[32px] h-[180px] overflow-hidden ${color} bg-opacity-90 backdrop-blur-sm border border-white/20 shadow-xl ${shadow}`}
+        className={`relative p-4 md:p-7 rounded-[24px] md:rounded-[32px] h-[110px] md:h-[180px] overflow-hidden ${color} bg-opacity-90 backdrop-blur-sm border border-white/20 shadow-xl ${shadow}`}
     >
         <div className="relative z-10 h-full flex flex-col justify-between">
             <div className="space-y-1">
@@ -50,16 +51,16 @@ const HeroCard: React.FC<HeroCardProps> = ({ label, value, icon: Icon, color, sh
                     <div className="p-1.5 bg-white/10 rounded-lg">
                         <Icon size={16} className="text-white" />
                     </div>
-                    <span className="text-xs font-black uppercase tracking-[0.2em] text-white/90">{label}</span>
+                    <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-white/90">{label}</span>
                 </div>
-                <div className="flex items-baseline space-x-2 pt-2">
-                    <span className="text-6xl font-black text-white tracking-tighter">{value}</span>
+                <div className="flex items-baseline space-x-2 pt-1 md:pt-2">
+                    <span className="text-4xl md:text-6xl font-black text-white tracking-tighter">{value}</span>
                 </div>
             </div>
         </div>
 
         {mascot && (
-            <div className="absolute bottom-2 right-2 z-0 hidden md:block">
+            <div className="absolute -bottom-3 -right-2 md:bottom-2 md:right-2 z-0 opacity-100 scale-75 md:scale-100 origin-bottom-right">
                 {mascot}
             </div>
         )}
@@ -84,15 +85,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+
     return (
         <div className="relative">
+            {/* Tour Guide */}
+            <TourGuide />
+
             <AnimatePresence>
                 {isLoading && <DashboardLoader />}
             </AnimatePresence>
 
             <div className="space-y-10 p-2 sm:p-4">
                 {/* Vitals Strip */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div id="stats-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     <HeroCard
                         label={t('operation')}
                         value={patients.filter(p => p.operationDate && new Date(p.operationDate).toDateString() === new Date().toDateString()).length}

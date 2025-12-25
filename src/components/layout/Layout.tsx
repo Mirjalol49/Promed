@@ -49,10 +49,11 @@ const Layout: React.FC<LayoutProps> = ({
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const { t } = useLanguage();
 
-  const NavItem = ({ page, icon: Icon, label }: { page: PageView; icon: any; label: string }) => {
+  const NavItem = ({ page, icon: Icon, label, id }: { page: PageView; icon: any; label: string; id?: string }) => {
     const isActive = currentPage === page;
     return (
       <button
+        id={id}
         onClick={() => {
           onNavigate(page);
           setIsSidebarOpen(false);
@@ -118,7 +119,7 @@ const Layout: React.FC<LayoutProps> = ({
         {/* Navigation */}
         <nav className="flex-1 mt-2 px-3 overflow-y-auto no-scrollbar space-y-1 text-white">
           <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />
-          <NavItem page="PATIENTS" icon={Users} label={t('patients')} />
+          <NavItem page="PATIENTS" icon={Users} label={t('patients')} id="add-patient-btn" />
 
           {role === 'admin' && (
             <div className="pt-4 mt-4 border-t border-white/5 space-y-1">
