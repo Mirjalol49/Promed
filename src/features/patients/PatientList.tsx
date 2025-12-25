@@ -41,6 +41,9 @@ import { patientSchema, safeValidate } from '../../lib/validation';
 import DeleteModal from '../../components/ui/DeleteModal';
 import { CustomSelect } from '../../components/ui/CustomSelect';
 import Mascot from '../../components/mascot/Mascot';
+import thinkingImg from '../../assets/images/thinking.png';
+import injectionImg from '../../assets/images/injection.png';
+import { ImageUploadingOverlay } from '../../components/ui/ImageUploadingOverlay';
 
 // Helper to translate status
 const useStatusTranslation = () => {
@@ -224,12 +227,21 @@ export const PatientList: React.FC<{
   const totalPages = Math.ceil(patients.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
 
-  const currentPatients = useMemo(() => {
-    return patients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [patients, startIndex]);
+  // Simple slice (removed useMemo to prevent stale closure issues)
+  const currentPatients = patients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // --- SAFETY RESETS ---
+  useEffect(() => {
+    // If we have patients but current view is empty (e.g. deleted last item on page 2), reset to page 1
+    if (patients.length > 0 && currentPatients.length === 0) {
+      console.warn("⚠️ PatientList: Page empty but data exists. Resetting to Page 1.");
+      setCurrentPage(1);
+    }
+  }, [patients.length, currentPatients.length]);
 
   const startCount = patients.length > 0 ? startIndex + 1 : 0;
   const endCount = Math.min(startIndex + ITEMS_PER_PAGE, patients.length);
+
 
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage(p => p - 1);
@@ -296,92 +308,80 @@ export const PatientList: React.FC<{
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 relative">
-            <AnimatePresence mode="wait">
-              {currentPatients.length > 0 ? (
-                currentPatients.map((patient, idx) => {
-                  const nextInj = patient.injections.find(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date());
-                  return (
-                    <motion.tr
-                      key={patient.id}
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2, delay: idx * 0.05 }}
-                      className="hover:bg-teal-50/80 hover:scale-[1.01] hover:shadow-lg hover:border-promed-primary/20 hover:z-10 relative transition-all duration-200 cursor-pointer group border-b border-transparent hover:rounded-xl"
-                      onClick={() => onSelect(patient.id)}
-                    >
-                      <td className="p-5 pl-8 rounded-l-xl group-hover:rounded-l-xl transition-all relative">
-                        <div className="absolute left-0 top-3 bottom-3 w-1 bg-promed-primary rounded-r-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div className="flex items-center space-x-4">
-                          <div className="relative w-11 h-11">
-                            <ImageWithFallback
-                              src={patient.profileImage}
-                              alt={patient.fullName}
-                              className="w-full h-full rounded-xl shadow-sm ring-1 ring-slate-100"
-                              fallbackType="user"
-                              optimisticId={`${patient.id} _profile`}
-                            />
-
-                          </div>
-                          <div>
-                            <div className="font-bold text-slate-800 text-sm group-hover:text-promed-primary transition-colors">{patient.fullName}</div>
-                            <div className="text-xs text-slate-500 mt-0.5 font-medium">{patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y</div>
-                          </div>
+            {currentPatients.length > 0 ? (
+              currentPatients.map((patient, idx) => {
+                const nextInj = patient.injections.find(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date());
+                return (
+                  <tr
+                    key={patient.id}
+                    className="hover:bg-teal-50/80 hover:scale-[1.01] hover:shadow-lg hover:border-promed-primary/20 hover:z-10 relative transition-all duration-200 cursor-pointer group border-b border-transparent hover:rounded-xl"
+                    onClick={() => onSelect(patient.id)}
+                  >
+                    <td className="p-5 pl-8 rounded-l-xl group-hover:rounded-l-xl transition-all relative">
+                      <div className="absolute left-0 top-3 bottom-3 w-1 bg-promed-primary rounded-r-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="flex items-center space-x-4">
+                        <div className="relative w-11 h-11">
+                          <ImageWithFallback
+                            src={patient.profileImage}
+                            alt={patient.fullName}
+                            className="w-full h-full rounded-xl shadow-sm ring-1 ring-slate-100"
+                            fallbackType="user"
+                            optimisticId={`${patient.id}_profile`}
+                          />
                         </div>
-                      </td>
-                      <td className="p-5 text-sm font-medium text-slate-700">
-                        {new Date(patient.operationDate).toLocaleDateString(localeString)}
-                      </td>
-                      <td className="p-5">
-                        {nextInj ? (
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
-                              {new Date(nextInj.date).toLocaleDateString(localeString)}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400 italic font-medium">{t('none_scheduled')}</span>
-                        )}
-                      </td>
-                      <td className="p-5 rounded-r-xl group-hover:rounded-r-xl transition-all">
-                        <span className={`text - xs font - bold px - 3 py - 1.5 rounded - full inline - flex items - center space - x - 1.5 border ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                          patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                            'bg-slate-50 text-slate-700 border-slate-200'
-                          } `}>
-                          <span className={`w - 1.5 h - 1.5 rounded - full ${patient.technique === 'Hair' ? 'bg-indigo-600' :
-                            patient.technique === 'Eyebrow' ? 'bg-rose-600' : 'bg-slate-600'
-                            } `}></span>
-                          <span>
-                            {patient.technique === 'Hair' ? t('transplant_hair') :
-                              patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
-                                patient.technique === 'Beard' ? t('transplant_beard') : (patient.technique || 'N/A')}
+                        <div>
+                          <div className="font-bold text-slate-800 text-sm group-hover:text-promed-primary transition-colors">{patient.fullName}</div>
+                          <div className="text-xs text-slate-500 mt-0.5 font-medium">{patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-5 text-sm font-medium text-slate-700">
+                      {new Date(patient.operationDate).toLocaleDateString(localeString)}
+                    </td>
+                    <td className="p-5">
+                      {nextInj ? (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
+                            {new Date(nextInj.date).toLocaleDateString(localeString)}
                           </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic font-medium">{t('none_scheduled')}</span>
+                      )}
+                    </td>
+                    <td className="p-5 rounded-r-xl group-hover:rounded-r-xl transition-all">
+                      <span className={`text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center space-x-1.5 border ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                        patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                          'bg-slate-50 text-slate-700 border-slate-200'
+                        }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${patient.technique === 'Hair' ? 'bg-indigo-600' :
+                          patient.technique === 'Eyebrow' ? 'bg-rose-600' : 'bg-slate-600'
+                          }`}></span>
+                        <span>
+                          {patient.technique === 'Hair' ? t('transplant_hair') :
+                            patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
+                              patient.technique === 'Beard' ? t('transplant_beard') : (patient.technique || 'N/A')}
                         </span>
-                      </td>
-                    </motion.tr>
-                  );
-                })
-              ) : (
-                <motion.tr
-                  key="empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <td colSpan={4} className="p-12 text-center text-slate-500">
-                    <div className="flex flex-col items-center justify-center space-y-6">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-blue-100/50 blur-3xl rounded-full scale-150"></div>
-                        <Mascot mood="happy" size={140} floating={false} />
-                      </div>
-                      <div className="text-center relative z-10">
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">{t('empty_patient_list_title') || "No Patients Found"}</h3>
-                      </div>
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr key="empty">
+                <td colSpan={4} className="p-12 text-center text-slate-500">
+                  <div className="flex flex-col items-center justify-center space-y-6">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-blue-100/50 blur-3xl rounded-full scale-150"></div>
+                      <Mascot mood="happy" size={140} floating={false} />
                     </div>
-                  </td>
-                </motion.tr>
-              )}
-            </AnimatePresence>
+                    <div className="text-center relative z-10">
+                      <h3 className="text-xl font-bold text-slate-800 mb-2">{t('empty_patient_list_title') || "No Patients Found"}</h3>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -405,10 +405,10 @@ export const PatientList: React.FC<{
                   <button
                     key={idx}
                     onClick={() => setCurrentPage(page)}
-                    className={`min - w - [36px] h - 9 flex items - center justify - center rounded - xl text - sm font - bold transition - all border ${currentPage === page
+                    className={`min-w-[36px] h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all border ${currentPage === page
                       ? 'bg-promed-primary text-white border-promed-primary shadow-md shadow-teal-900/10'
                       : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                      } `}
+                      }`}
                   >
                     {page}
                   </button>
@@ -553,7 +553,7 @@ export const PatientDetail: React.FC<{
         <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
         <div className="flex-shrink-0 relative w-40 h-40">
-          <ImageWithFallback src={patient.profileImage} optimisticId={`${patient.id} _profile`} className="w-full h-full rounded-2xl object-cover shadow-lg ring-4 ring-white border border-slate-100" alt="Profile" fallbackType="user" />
+          <ImageWithFallback src={patient.profileImage} optimisticId={`${patient.id}_profile`} className="w-full h-full rounded-2xl object-cover shadow-lg ring-4 ring-white border border-slate-100" alt="Profile" fallbackType="user" />
         </div>
 
         <div className="flex-1 space-y-6 z-10">
@@ -636,7 +636,7 @@ export const PatientDetail: React.FC<{
             <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer shadow-inner relative group border border-slate-200" onClick={() => setSelectedImage(patient.beforeImage || null)}>
               {patient.beforeImage ? (
                 <>
-                  <ImageWithFallback src={patient.beforeImage} optimisticId={`${patient.id} _before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
+                  <ImageWithFallback src={patient.beforeImage} optimisticId={`${patient.id}_before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
                 </>
               ) : (
@@ -717,7 +717,7 @@ export const PatientDetail: React.FC<{
                     {/* Pulsing Aura */}
                     <div className="absolute inset-0 bg-promed-primary/5 blur-3xl rounded-full scale-150 animate-pulse"></div>
                     <img
-                      src="/images/thinking.png"
+                      src={thinkingImg}
                       alt="Thinking Mascot"
                       className="w-48 h-48 object-contain relative z-10 drop-shadow-2xl"
                     />
@@ -753,7 +753,7 @@ export const PatientDetail: React.FC<{
                       <div className="relative group/mascot z-10 transition-transform hover:scale-110 duration-300">
                         <div className="w-10 h-10 rounded-full border-4 border-slate-100 overflow-hidden bg-white shadow-md -ml-2 ring-1 ring-slate-200">
                           <img
-                            src="/images/injection.png"
+                            src={injectionImg}
                             alt="Mascot"
                             className="w-full h-full object-cover scale-125 translate-y-1"
                           />
@@ -937,7 +937,7 @@ export const AddPatientForm: React.FC<{
   initialData?: Patient;
   saving?: boolean;
 }> = ({ onSave, onCancel, initialData, saving = false }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   // States
   const [fullName, setFullName] = useState(initialData?.fullName || '');
@@ -978,18 +978,43 @@ export const AddPatientForm: React.FC<{
     return null;
   };
 
-  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, setPreview: (s: string) => void, setFile: (f: File) => void) => {
+  // Image states
+  const [isProfileUploading, setIsProfileUploading] = useState(false);
+  const [isBeforeUploading, setIsBeforeUploading] = useState(false);
+
+  const handleImageUpload = useCallback(async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setPreview: (s: string) => void,
+    setFile: (f: File) => void,
+    setLoading: (l: boolean) => void
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Compress image before preview
-      const compressedFile = await compressImage(file);
-      console.log('Patient image compressed:',
-        `${(file.size / 1024).toFixed(0)} KB → ${(compressedFile.size / 1024).toFixed(0)} KB`);
-
-      setFile(compressedFile);
-      // Create a stable object URL instead of reading as base64 to prevent flickering
-      const objectUrl = URL.createObjectURL(compressedFile);
+      // 1. INSTANT: Create Blob and set State immediately
+      const objectUrl = URL.createObjectURL(file);
       setPreview(objectUrl);
+      setLoading(true);
+
+      // 2. THE FIX: Wrap the heavy lifting in a setTimeout
+      // 50ms gives the browser plenty of time to paint the preview and start the overlay animation
+      setTimeout(async () => {
+        try {
+          // Compress image in background
+          const compressedFile = await compressImage(file);
+          console.log('Patient image compressed:',
+            `${(file.size / 1024).toFixed(0)} KB → ${(compressedFile.size / 1024).toFixed(0)} KB`);
+
+          setFile(compressedFile);
+
+          // We can update the preview with the compressed one if needed, 
+          // but usually the initial blob is fine until save.
+
+        } catch (error) {
+          console.error("Compression failed", error);
+        } finally {
+          setLoading(false);
+        }
+      }, 10);
 
       // Cleanup object URL when component unmounts
       return () => URL.revokeObjectURL(objectUrl);
@@ -1028,7 +1053,7 @@ export const AddPatientForm: React.FC<{
 
 
     const newPatient: Patient = {
-      id: initialData?.id || Date.now().toString(),
+      id: initialData?.id || `temp-${Date.now()}`,
       fullName,
       phone,
 
@@ -1125,10 +1150,16 @@ export const AddPatientForm: React.FC<{
                       </div>
 
                       {/* Floating camera icon cue */}
-                      <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1">
+                      <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1 z-20">
                         <Camera size={18} />
                       </div>
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setProfileImage, setProfileImageFile)} />
+
+                      {/* UPLOAD OVERLAY */}
+                      <AnimatePresence>
+                        {isProfileUploading && <ImageUploadingOverlay language={language as any} />}
+                      </AnimatePresence>
+
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setProfileImage, setProfileImageFile, setIsProfileUploading)} />
                     </label>
                     <p className="text-xs text-slate-500 font-medium">{t('click_upload')}</p>
                   </div>
@@ -1158,7 +1189,11 @@ export const AddPatientForm: React.FC<{
                           <span className="text-sm font-bold tracking-tight">{t('upload_image')}</span>
                         </div>
                       )}
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setBeforeImage, setBeforeImageFile)} />
+                      {/* UPLOAD OVERLAY */}
+                      <AnimatePresence>
+                        {isBeforeUploading && <ImageUploadingOverlay language={language as any} />}
+                      </AnimatePresence>
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setBeforeImage, setBeforeImageFile, setIsBeforeUploading)} />
                     </label>
                   </div>
                 </div>

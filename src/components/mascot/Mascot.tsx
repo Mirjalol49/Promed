@@ -1,4 +1,12 @@
+import React from 'react';
 import { motion, Variants } from 'framer-motion';
+
+// Import images directly to ensure Vite bundles them correctly
+import happyImg from '../../assets/images/happy.png';
+import thinkingImg from '../../assets/images/thinking.png';
+import upsetImg from '../../assets/images/upset.png';
+import operationImg from '../../assets/images/operation.png';
+import injectionImg from '../../assets/images/injection.png';
 
 export type MascotMood = 'happy' | 'thinking' | 'upset' | 'operation' | 'injection';
 
@@ -33,12 +41,12 @@ const mascotVariants: Variants = {
 const Mascot: React.FC<MascotProps> = ({ mood, size = 120, className = "", floating = true }) => {
     const getMascotSrc = (m: MascotMood) => {
         switch (m) {
-            case 'happy': return '/images/happy.png';
-            case 'thinking': return '/images/thinking.png';
-            case 'upset': return '/images/upset.png';
-            case 'operation': return '/images/operation.png';
-            case 'injection': return '/images/injection.png';
-            default: return '/images/happy.png';
+            case 'happy': return happyImg;
+            case 'thinking': return thinkingImg;
+            case 'upset': return upsetImg;
+            case 'operation': return operationImg;
+            case 'injection': return injectionImg;
+            default: return happyImg;
         }
     };
 
@@ -55,7 +63,7 @@ const Mascot: React.FC<MascotProps> = ({ mood, size = 120, className = "", float
                 src={getMascotSrc(mood)}
                 alt={`Mascot ${mood}`}
                 style={{ width: size, height: 'auto' }}
-                className="drop-shadow-2xl"
+                className=""
             />
         </motion.div>
     );

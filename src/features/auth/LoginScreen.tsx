@@ -6,7 +6,7 @@ import { loginSchema, safeValidate } from '../../lib/validation';
 
 
 interface LoginScreenProps {
-  onLogin: (accountId: string, userId: string, accountName: string) => void;
+  onLogin: (accountId: string, userId: string, name: string, email: string) => void;
 }
 
 const languages: { code: Language; name: string; flag: string }[] = [
@@ -114,10 +114,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             setError(t('login_error_disabled'));
             return;
           }
-          onLogin(profile.account_id, data.user.id, profile.full_name);
+          onLogin(profile.account_id, data.user.id, profile.full_name, data.user.email || '');
         } else {
           // No profile found - use email-based account_id for new data
-          onLogin('account_' + data.user.email, data.user.id, 'User');
+          onLogin('account_' + data.user.email, data.user.id, 'User', data.user.email || '');
         }
       }
 

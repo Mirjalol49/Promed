@@ -92,9 +92,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {/* Tour Guide */}
             <TourGuide />
 
-            <AnimatePresence>
-                {isLoading && <DashboardLoader />}
-            </AnimatePresence>
 
             <div className="space-y-10 p-2 sm:p-4">
                 {/* Vitals Strip */}

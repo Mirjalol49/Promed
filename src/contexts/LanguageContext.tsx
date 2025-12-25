@@ -271,7 +271,7 @@ export const translations = {
     settings: "Sozlamalar",
     logout: "Chiqish",
     search: "Qidirish...",
-    dr_name: "Account Owner",
+    dr_name: "Akaunt Egasi",
     total_patients: "Jami Bemorlar",
     new_patients_stat: "Yangi Bemorlar",
     total_appointments: "Jami Uchrashuvlar",

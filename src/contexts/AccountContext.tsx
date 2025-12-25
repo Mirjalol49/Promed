@@ -4,8 +4,9 @@ interface AccountContextType {
   accountId: string;
   userId: string;
   accountName: string;
+  userEmail: string;
   role: 'admin' | 'doctor' | 'staff';
-  setAccount: (id: string, userId: string, name: string, role?: 'admin' | 'doctor' | 'staff', verified?: boolean) => void;
+  setAccount: (id: string, userId: string, name: string, email: string, role?: 'admin' | 'doctor' | 'staff', verified?: boolean) => void;
   isLoggedIn: boolean;
   isLoading: boolean;
   isVerified: boolean;
@@ -23,6 +24,7 @@ interface StoredAccount {
   id: string;
   userId: string;
   name: string;
+  email: string;
   role: 'admin' | 'doctor' | 'staff';
 }
 
@@ -30,6 +32,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [accountId, setAccountId] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
   const [accountName, setAccountName] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>('');
   const [role, setRole] = useState<'admin' | 'doctor' | 'staff'>('doctor');
   const [subscriptionStatus, setSubscriptionStatus] = useState<'trial' | 'active' | 'frozen'>('trial');
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
@@ -46,6 +49,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
         setAccountId(account.id);
         setUserId(account.userId || '');
         setAccountName(account.name);
+        setUserEmail(account.email || '');
         setRole(account.role || 'doctor');
       } catch (e) {
         console.error('Failed to parse stored account:', e);
@@ -55,13 +59,14 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
     setIsLoading(false);
   }, []);
 
-  const setAccount = (id: string, userId: string, name: string, userRole: 'admin' | 'doctor' | 'staff' = 'doctor', verified: boolean = false) => {
+  const setAccount = (id: string, userId: string, name: string, email: string, userRole: 'admin' | 'doctor' | 'staff' = 'doctor', verified: boolean = false) => {
     setAccountId(id);
     setUserId(userId);
     setAccountName(name);
+    setUserEmail(email);
     setRole(userRole);
     if (verified) setIsVerified(true);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ id, userId, name, role: userRole }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ id, userId, name, email, role: userRole }));
   };
 
   const refreshProfile = async () => {
@@ -91,6 +96,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
     setAccountId('');
     setUserId('');
     setAccountName('');
+    setUserEmail('');
     setRole('doctor');
     setIsVerified(false);
     localStorage.removeItem(STORAGE_KEY);
@@ -100,7 +106,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   return (
     <AccountContext.Provider value={{
-      accountId, userId, accountName, role, setAccount, isLoggedIn, isLoading, isVerified,
+      accountId, userId, accountName, userEmail, role, setAccount, isLoggedIn, isLoading, isVerified,
       subscriptionStatus, subscriptionEnd, refreshProfile, logout
     }}>
       {children}

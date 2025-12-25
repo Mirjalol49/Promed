@@ -12,6 +12,7 @@ import {
     ChevronDown,
     Globe,
     Check,
+    Mail
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ProfileAvatar } from '../layout/ProfileAvatar';
@@ -21,6 +22,10 @@ import { useToast } from '../../contexts/ToastContext';
 import { compressImage } from '../../lib/imageOptimizer';
 import { uploadAvatar, setOptimisticImage } from '../../lib/imageService';
 import { useScrollLock } from '../../hooks/useScrollLock';
+import { useImageUpload } from '../../hooks/useImageUpload';
+import Mascot from '../mascot/Mascot';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ImageUploadingOverlay } from './ImageUploadingOverlay';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -29,6 +34,7 @@ interface EditProfileModalProps {
     onToggleLock: (enabled: boolean) => void;
     userPassword: string;
     userImage: string;
+    userEmail: string;
     onUpdateProfile: (data: { name: string; image?: File | string; password?: string }) => Promise<void>;
     userId: string;
     userName: string;
@@ -43,6 +49,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     userPassword,
     onUpdateProfile,
     userImage,
+    userEmail,
     userId: propUserId,
     userName,
     onLogout
@@ -68,6 +75,27 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     const [isSaving, setIsSaving] = useState(false);
 
     const pinRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+
+    // Use the new hook
+    const {
+        previewUrl,
+        uploading: isUploading,
+        progress: uploadProgress,
+        handleImageSelect: onImageSelect,
+        uploadedUrl: newAvatarUrl,
+        reset: resetUpload
+    } = useImageUpload({
+        bucketName: 'promed-images',
+        pathPrefix: `avatars/${propUserId}`, // Dynamic path
+        onUploadComplete: (url) => {
+            setProfileImage(url);
+            success(t('photo_added_title'), t('toast_photo_added'));
+        },
+        onUploadError: (err) => {
+            console.error("Hook Upload Error:", err);
+            showError(t('toast_error_title'), t('toast_upload_failed'));
+        }
+    });
 
     const handlePinChange = (index: number, value: string) => {
         if (value.length > 1) value = value.slice(-1);
@@ -96,20 +124,15 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             setProfileImage(userImage);
             setSelectedFile(null);
             setPin(['', '', '', '', '', '']);
+            resetUpload(); // Reset hook state
         }
-    }, [isOpen, userPassword, userImage, userName]);
+    }, [isOpen, userPassword, userImage, userName, resetUpload]);
 
     // Lock scroll when modal is open
     useScrollLock(isOpen);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setSelectedFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => setProfileImage(reader.result as string);
-            reader.readAsDataURL(file);
-        }
+        onImageSelect(e);
     };
 
     // ROBUST SAVE LOGIC (MATCH PATIENT LOGIC 100%)
@@ -142,36 +165,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 throw new Error(t('toast_password_numeric_6') || 'PIN must be exactly 6 digits');
             }
 
-            // 3. UPLOAD IMAGE (Phase 3: Storage Mirror)
-            if (selectedFile) {
-                console.log("• Compressing and uploading image...");
-
-                // Seed optimistic cache immediately to prevent flicker
-                const blobUrl = URL.createObjectURL(selectedFile);
-                setOptimisticImage(`${activeUserId}_profile`, blobUrl);
-
-                // Compress image before upload (Standard Practice)
-                const compressedFile = await compressImage(selectedFile);
-
-                // Construct Path (Matching Patient Style: bucket/category/id/file)
-                const fileExt = compressedFile.name.split('.').pop();
-                const fileName = `avatar_${Date.now()}.${fileExt}`;
-                const filePath = `avatars/${activeUserId}/${fileName}`;
-
-                // USE WORKING BUCKET: promed-images (standard for patients)
-                const { error: uploadError } = await supabase.storage
-                    .from('promed-images')
-                    .upload(filePath, compressedFile, { upsert: true });
-
-                if (uploadError) {
-                    console.error("Supabase Storage Error:", uploadError);
-                    throw new Error(`${t('toast_upload_failed')}: ${uploadError.message}`);
-                }
-
-                const { data } = supabase.storage.from('promed-images').getPublicUrl(filePath);
-                finalAvatarUrl = data.publicUrl;
-                console.log("✓ Image uploaded to storage:", finalAvatarUrl);
-            }
+            // 3. IMAGE IS ALREADY UPLOADED (Optimized)
+            // if (selectedFile) logic removed as we now upload immediately
+            finalAvatarUrl = profileImage;
 
             // 4. DATABASE UPDATE (Phase 3: Double-Write Strategy)
             console.log("• Updating database profile...");
@@ -233,18 +229,24 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     {/* Profile Image */}
                     <div className="flex justify-center mb-2">
                         <label className="relative group/photo cursor-pointer w-28 h-28">
-                            <div className="w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl group-hover/photo:ring-4 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 group-hover/photo:shadow-2xl group-hover/photo:shadow-promed-primary/20 transition-all duration-500 ring-1 ring-slate-100 relative">
+                            <div className="w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl group-hover/photo:ring-4 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 group-hover/photo:shadow-2xl group-hover/photo:shadow-promed-primary/20 transition-all duration-500 ring-1 ring-slate-100 relative bg-slate-50">
                                 <ProfileAvatar src={profileImage} alt="Profile" size={112} className="w-full h-full group-hover/photo:scale-110 transition duration-700" optimisticId={`${propUserId}_profile`} />
-                                {/* Hover Overlay */}
-                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition duration-500">
+
+                                {/* Standard Hover Overlay */}
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition duration-500 z-10">
                                     <Camera className="text-white drop-shadow-md transform scale-90 group-hover/photo:scale-110 group-hover/photo:-translate-y-1 transition duration-500" size={32} />
                                 </div>
+
+                                {/* UPLOAD ANIMATION OVERLAY */}
+                                <AnimatePresence>
+                                    {isUploading && <ImageUploadingOverlay language={language} />}
+                                </AnimatePresence>
                             </div>
                             {/* Floating camera icon cue */}
-                            <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1">
+                            <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1 z-20">
                                 <Camera size={18} />
                             </div>
-                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
                         </label>
                     </div>
 
@@ -300,6 +302,22 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                 onChange={(e) => setNameInput(e.target.value)}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary focus:bg-white transition-all text-sm shadow-sm"
                             />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('email') || 'Email Address'}</label>
+                            <div className="relative group/email">
+                                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/email:text-promed-primary transition-colors" size={16} />
+                                <input
+                                    type="email"
+                                    value={userEmail}
+                                    readOnly
+                                    className="w-full bg-slate-100 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-slate-500 cursor-not-allowed text-sm shadow-sm font-medium"
+                                />
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/email:opacity-100 transition-opacity pointer-events-none">
+                                    <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tight">Verified</span>
+                                </div>
+                            </div>
                         </div>
 
                         {isLockEnabled && (

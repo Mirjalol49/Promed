@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Joyride, { CallBackProps, STATUS, Step, Styles } from 'react-joyride';
 import { useLanguage } from '../../contexts/LanguageContext';
+import happyImg from '../../assets/images/happy.png';
 
 const TourGuide: React.FC = () => {
     const { t } = useLanguage();
@@ -29,7 +30,7 @@ const TourGuide: React.FC = () => {
             content: (
                 <div className="flex flex-col items-center text-center pt-4">
                     <img
-                        src="/images/happy.png"
+                        src={happyImg}
                         alt="Graft Mascot"
                         className="w-16 h-16 absolute -top-8 -left-8 drop-shadow-lg"
                     />
@@ -49,7 +50,7 @@ const TourGuide: React.FC = () => {
             content: (
                 <div className="relative pt-2">
                     <img
-                        src="/images/happy.png"
+                        src={happyImg}
                         alt="Graft Mascot"
                         className="w-12 h-12 absolute -top-10 -left-6 drop-shadow-md"
                     />
@@ -64,7 +65,7 @@ const TourGuide: React.FC = () => {
             content: (
                 <div className="relative pt-2">
                     <img
-                        src="/images/happy.png"
+                        src={happyImg}
                         alt="Graft Mascot"
                         className="w-12 h-12 absolute -top-10 -left-6 drop-shadow-md"
                     />

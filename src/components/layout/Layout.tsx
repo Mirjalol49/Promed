@@ -18,6 +18,7 @@ import { SystemAlertBanner } from './SystemAlertBanner';
 interface LayoutProps {
   children: React.ReactNode;
   userId: string;
+  userEmail: string;
   currentPage: PageView;
   onNavigate: (page: PageView) => void;
   isLockEnabled: boolean;
@@ -33,6 +34,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({
   children,
   userId,
+  userEmail,
   currentPage,
   onNavigate,
   isLockEnabled,
@@ -210,6 +212,7 @@ const Layout: React.FC<LayoutProps> = ({
         onToggleLock={onToggleLock}
         userPassword={userPassword}
         userImage={userImage}
+        userEmail={userEmail}
         onUpdateProfile={onUpdateProfile}
         userId={userId}
         userName={userName}

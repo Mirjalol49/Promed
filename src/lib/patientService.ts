@@ -82,13 +82,12 @@ export const subscribeToPatients = (
 
 export const addPatient = async (
   patient: Omit<Patient, 'id'>,
-  accountId?: string // Made optional as backend trigger now handles this
+  userId: string,
+  accountId?: string
 ): Promise<string> => {
-  const dbPatient = {
-    // If accountId is provided, use it (though trigger will overwrite it for security).
-    // If not, we rely on the trigger.
-    // However, if we don't send it, and the DB column is NOT NULL, it might error BEFORE trigger if we don't treat it right?
-    // Postgres triggers BEFORE INSERT can supply values for NOT NULL columns.
+  const dbPatient: any = {
+    // Both are used for maximum reliability in multi-tenant environments
+    user_id: userId,
     ...(accountId ? { account_id: accountId } : {}),
     full_name: patient.fullName,
     age: patient.age,
@@ -107,11 +106,14 @@ export const addPatient = async (
 
   const { data, error } = await supabase
     .from('patients')
-    .insert(dbPatient)
+    .insert([dbPatient])
     .select('id')
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('🔴 DB INSERT ERROR:', error);
+    throw error;
+  }
   return data.id;
 };
 

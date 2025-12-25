@@ -276,12 +276,8 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
 
 
 const App: React.FC = () => {
-  const { accountId, userId, accountName, setAccount, isLoggedIn, isLoading: isAuthLoading, logout } = useAccount();
+  const { accountId, userId, accountName, userEmail, setAccount, isLoggedIn, isLoading: isAuthLoading, logout } = useAccount();
 
-  // If authentication is still loading, show the mascot loader
-  if (isAuthLoading) {
-    return <DashboardLoader />;
-  }
 
   const [view, setView] = useState<PageView>('DASHBOARD');
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -363,12 +359,12 @@ const App: React.FC = () => {
 
         // Only set account if userId isn't already set
         if (!userId) {
-          setAccount(sessionUserId, sessionUserId, accountName || '', 'doctor', false); // Not verified yet
+          setAccount(sessionUserId, sessionUserId, accountName || '', session.user.email || '', 'doctor', false); // Not verified yet
         }
       }
     };
     checkSession();
-  }, []);
+  }, [userId, accountName, setAccount]);
 
   // ===== PROFILE AND SETTINGS SYNC =====
   useEffect(() => {
@@ -393,7 +389,7 @@ const App: React.FC = () => {
             finalAccount: finalAccountId
           });
 
-          setAccount(finalAccountId, userId, profile.name || accountName || '', profile.role || 'doctor', true); // Now VERIFIED
+          setAccount(finalAccountId, userId, profile.name || accountName || '', userEmail, profile.role || 'doctor', true); // Now VERIFIED
           if (profile.lockEnabled !== undefined) {
             console.log("  • Lock Enabled:", profile.lockEnabled);
             setIsLockEnabled(profile.lockEnabled);
@@ -423,55 +419,45 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, [userId, view]); // Added view to dependencies to ensure re-check on nav
 
-  // Subscribe to real-time patient updates when logged in
   useEffect(() => {
-    // 🔥 FIX: Race Condition Wrapper
-    // Don't do ANYTHING until we know for sure if the user is logged in or not.
-    // This keeps 'loading' true while Auth is initializing.
-    if (isAuthLoading) return;
+    let mounted = true;
+    let patientSubscription: (() => void) | null = null;
 
-    if (!isLoggedIn || !accountId) {
-      setPatients([]);
+    if (!accountId) {
+      console.log("⏳ [Subscription] Waiting for accountId...");
       setLoading(false);
       return;
     }
 
+    console.log("⚡ [Subscription] Starting for Account:", accountId);
     setLoading(true);
 
-    const unsubscribe = subscribeToPatients(
+    patientSubscription = subscribeToPatients(
       accountId,
       (updatedPatients) => {
-        setPatients(updatedPatients);
-        setLoading(false);
-        // We can show a subtle sync notification here if needed, but per user request, 
-        // they want one toast with mascot for "sync to data for whatever happening".
-      },
-      (error: any) => {
-        console.error('Error subscribing to patients:', error);
-        setLoading(false);
-        if (error.code === 'permission-denied') {
-          alert('Permission denied. Please log in again.');
-          logout();
+        if (mounted) {
+          console.log("✅ [Subscription] Data received. Count:", updatedPatients.length);
+          setPatients(prev => {
+            // Keep server patients, and merge with local-only 'temp-' patients
+            const optimisticPatients = prev.filter(p =>
+              p.id.startsWith('temp-') && !updatedPatients.find(up => up.id === p.id)
+            );
+            return [...optimisticPatients, ...updatedPatients];
+          });
+          setLoading(false);
         }
+      },
+      (error) => {
+        console.error('❌ [Subscription] Error:', error);
+        if (mounted) setLoading(false);
       }
     );
 
-    // Safety timeout: Forced stop loading after 3 seconds if DB hangs
-    const safetyTimer = setTimeout(() => {
-      setLoading((prev) => {
-        if (prev) {
-          console.warn("Forcing loading to false due to timeout");
-          return false;
-        }
-        return prev;
-      });
-    }, 10000);
-
     return () => {
-      clearTimeout(safetyTimer);
-      unsubscribe();
+      mounted = false;
+      if (patientSubscription) patientSubscription();
     };
-  }, [isLoggedIn, accountId, isAuthLoading]);
+  }, [accountId]); // Depends strictly on accountId for correct data isolation
 
   // Preload images for smoother navigation
   const allImageUrls = useMemo(() => {
@@ -507,15 +493,6 @@ const App: React.FC = () => {
     );
   }, [patients, searchQuery]);
 
-  // If authentication is still loading, show a splash screen or spinner
-  // This prevents the "Login Screen" from flashing while we check localStorage
-  if (isAuthLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-promed-primary"></div>
-      </div>
-    );
-  }
   const handleNavigate = useCallback((page: PageView) => {
     setView(page);
     if (page !== 'PATIENT_DETAIL') setSelectedPatientId(null);
@@ -526,8 +503,8 @@ const App: React.FC = () => {
     setView('PATIENT_DETAIL');
   }, []);
 
-  const handleLogin = (id: string, userId: string, name: string) => {
-    setAccount(id, userId, name);
+  const handleLogin = (id: string, userId: string, name: string, email: string) => {
+    setAccount(id, userId, name, email);
   };
 
   const handleLogout = async () => {
@@ -552,7 +529,7 @@ const App: React.FC = () => {
       if (data.image) {
         if (data.image instanceof File) {
           const blobUrl = URL.createObjectURL(data.image);
-          setOptimisticImage(`${userId} _profile`, blobUrl);
+          setOptimisticImage(`${userId}_profile`, blobUrl);
           avatarUrl = await uploadAvatar(data.image, userId);
         } else if (typeof data.image === 'string') {
           avatarUrl = data.image;
@@ -574,7 +551,7 @@ const App: React.FC = () => {
       });
 
       // 4. Update Local State
-      setAccount(accountId!, userId, data.name); // Updates name context
+      setAccount(accountId!, userId, data.name, userEmail); // Updates name context
       if (avatarUrl) setUserImage(avatarUrl);
 
       success(t('profile_updated_title'), t('profile_updated_msg'));
@@ -611,7 +588,7 @@ const App: React.FC = () => {
 
       if (isNewPatient) {
         setPatients(prev => [optimisticPatient, ...prev]);
-        success(t('patient_added_title'), t('patient_added_msg'));
+        // [GHOST FIX] SUCCESS TOAST MOVED TO AFTER DB VERIFICATION (Line 650)
       } else {
         setPatients(prev => prev.map(p => p.id === optimisticPatient.id ? optimisticPatient : p));
         success(t('patient_updated_title'), t('patient_updated_msg'));
@@ -628,8 +605,8 @@ const App: React.FC = () => {
       // 3) Background uploads & Supabase DB write
       if (files?.profileImage) {
         const url = URL.createObjectURL(files.profileImage);
-        setOptimisticImage(`${patientData.id} _profile`, url);
-        const remoteUrl = await uploadImage(files.profileImage, `patients / ${patientData.id}/profile`);
+        setOptimisticImage(`${patientData.id}_profile`, url);
+        const remoteUrl = await uploadImage(files.profileImage, `patients/${patientData.id}/profile`);
         patientData.profileImage = remoteUrl;
       }
 
@@ -642,7 +619,10 @@ const App: React.FC = () => {
 
       if (isNewPatient) {
         const { id: tempId, ...patientWithoutId } = patientData;
-        const realId = await addPatient(patientWithoutId, accountId);
+        const realId = await addPatient(patientWithoutId, userId, accountId);
+
+        // [GHOST FIX] DATABASE SUCCESS CONFIRMED - Show toast now!
+        success(t('patient_added_title'), t('patient_added_msg'));
 
         // 🔥 HANDOVER: Link the local blob to the new real ID
         const profileBlob = getOptimisticImage(`${tempId}_profile`);
@@ -1041,6 +1021,11 @@ const App: React.FC = () => {
     );
   };
 
+  // If authentication or initial data is loading, show the mascot loader
+  if (isAuthLoading || (loading && patients.length === 0)) {
+    return <DashboardLoader />;
+  }
+
   // Show login screen if not logged in
   if (!isLoggedIn) {
     return <LoginScreen onLogin={handleLogin} />;
@@ -1078,6 +1063,7 @@ const App: React.FC = () => {
       }}
       userPassword={userPassword}
       userImage={userImage}
+      userEmail={userEmail}
       onUpdateProfile={handleUpdateProfile}
       userName={accountName}
       onLogout={handleLogout}
