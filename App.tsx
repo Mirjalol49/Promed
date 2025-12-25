@@ -19,10 +19,10 @@ import {
   deletePatient as deletePatientFromDb,
   updatePatientInjections,
   addPatientAfterImage,
+  deletePatientAfterImage,
   COLUMNS,
 } from './lib/patientService';
 import { updateUserProfile, subscribeToUserProfile } from './lib/userService';
-import { billingService } from './lib/billingService';
 import { uploadImage, uploadAvatar, setOptimisticImage, getOptimisticImage } from './lib/imageService';
 import { ProfileAvatar } from './components/ProfileAvatar';
 import { useImagePreloader } from './lib/useImagePreloader';
@@ -280,6 +280,7 @@ const App: React.FC = () => {
     else if (view === 'PATIENTS') path = '/patients';
     else if (view === 'SETTINGS') path = '/settings';
 
+
     if (window.location.pathname !== path) {
       window.history.pushState({}, '', path);
     }
@@ -296,6 +297,7 @@ const App: React.FC = () => {
         setView('ADMIN_DASHBOARD');
       } else if (path === '/patients') {
         setView('PATIENTS');
+
       }
 
       if (session) {
@@ -356,6 +358,7 @@ const App: React.FC = () => {
             setUserImage(profile.profileImage);
           }
 
+
           // 🔥 SECURITY ALERT: If account is frozen, log out immediately
           if (profile.status === 'frozen') {
             console.warn("❄️ Account Frozen detected for user:", userId);
@@ -363,17 +366,13 @@ const App: React.FC = () => {
             handleLogout(); // Use the robust logout we just fixed
           }
 
-          // ❄️ AUTO-FREEZE: Check subscription health (periodic check on active sessions)
-          if (profile.role !== 'admin' && profile.status === 'active') {
-            billingService.checkAndEnforceSubscription(userId);
-          }
         }
       },
       (error) => console.error("Profile subscription error:", error)
     );
 
     return () => unsubscribe();
-  }, [userId]);
+  }, [userId, view]); // Added view to dependencies to ensure re-check on nav
 
   // Subscribe to real-time patient updates when logged in
   useEffect(() => {
@@ -521,7 +520,7 @@ const App: React.FC = () => {
       setAccount(accountId!, userId, data.name); // Updates name context
       if (avatarUrl) setUserImage(avatarUrl);
 
-      success(t('toast_profile_saved'));
+      success(t('toast_profile_updated'));
 
     } catch (err: any) {
       console.error("Error updating profile:", err);
@@ -558,7 +557,7 @@ const App: React.FC = () => {
         success(t('toast_patient_added'));
       } else {
         setPatients(prev => prev.map(p => p.id === optimisticPatient.id ? optimisticPatient : p));
-        success(t('toast_profile_saved'));
+        success(t('toast_patient_updated'));
       }
 
       // 2) Navigate immediately for responsiveness
@@ -654,7 +653,7 @@ const App: React.FC = () => {
     try {
       console.log('Updating injection status:', { patientId, injectionId, status });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('toast_profile_saved') || 'Updated successfully');
+      success(t('toast_injection_updated'));
     } catch (err: any) {
       console.error('Error updating injection:', err);
       showError(`${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
@@ -678,7 +677,7 @@ const App: React.FC = () => {
     try {
       console.log('Adding new injection:', { patientId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('toast_profile_saved') || 'Added successfully');
+      success(t('toast_injection_added'));
     } catch (err: any) {
       console.error('Error adding injection:', err);
       showError(`${t('toast_save_failed') || 'Add failed'}: ${err.message || 'Unknown error'}`);
@@ -696,7 +695,7 @@ const App: React.FC = () => {
     try {
       console.log('Editing injection:', { patientId, injectionId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('toast_profile_saved') || 'Saved successfully');
+      success(t('toast_injection_updated'));
     } catch (err: any) {
       console.error('Error editing injection:', err);
       showError(`${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
@@ -712,7 +711,7 @@ const App: React.FC = () => {
     try {
       console.log('Deleting injection:', { patientId, injectionId });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('toast_profile_saved') || 'Deleted successfully');
+      success(t('toast_injection_deleted'));
     } catch (err: any) {
       console.error('Error deleting injection:', err);
       showError(`${t('toast_save_failed') || 'Delete failed'}: ${err.message || 'Unknown error'}`);
@@ -745,7 +744,7 @@ const App: React.FC = () => {
         return { ...p, afterImages: [...(p.afterImages || []), optimisticImage] };
       }));
 
-      success(t('toast_profile_saved')); // Generic profile saved toast works here
+      success(t('toast_photo_added'));
 
       let photoUrl = typeof photoOrFile === 'string' ? photoOrFile : '';
 
@@ -771,6 +770,29 @@ const App: React.FC = () => {
       await addPatientAfterImage(patientId, newImage, patient.afterImages, accountId);
     } catch (error) {
       console.error('Error adding after photo:', error);
+    }
+  };
+
+  const handleDeleteAfterPhoto = async (patientId: string, photoId: string) => {
+    const patient = patients.find(p => p.id === patientId);
+    if (!patient) return;
+
+    try {
+      // 1) Optimistic UI Update
+      setPatients(prev => prev.map(p => {
+        if (p.id !== patientId) return p;
+        return {
+          ...p,
+          afterImages: (p.afterImages || []).filter(img => img.id !== photoId)
+        };
+      }));
+
+      // 2) DB & Storage Update
+      await deletePatientAfterImage(patientId, photoId, patient.afterImages);
+      success(t('toast_photo_deleted'));
+    } catch (error: any) {
+      console.error('Error deleting after photo:', error);
+      showError(`${t('toast_delete_failed') || 'Delete failed'}: ${error.message}`);
     }
   };
 
@@ -800,6 +822,8 @@ const App: React.FC = () => {
             isLoading={showSkeleton}
           />
         </div>
+
+
 
         {/* Admin Dashboard View - Protected Route */}
         {view === 'ADMIN_DASHBOARD' && (
@@ -843,6 +867,7 @@ const App: React.FC = () => {
                     onEditInjection={handleEditInjection}
                     onDeleteInjection={handleDeleteInjection}
                     onAddAfterPhoto={handleAddAfterPhoto}
+                    onDeleteAfterPhoto={handleDeleteAfterPhoto}
                     onEditPatient={() => setView('EDIT_PATIENT')}
                     onDeletePatient={handleDeletePatient}
                   />

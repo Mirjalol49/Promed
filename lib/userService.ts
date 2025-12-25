@@ -25,8 +25,8 @@ const mapProfile = (data: any): any => ({
   role: data.role || 'doctor',
   status: data.status || 'active',
   subscriptionStatus: data.subscription_status || 'trial',
-  subscriptionExpiry: data.subscription_expiry,
-  paymeId: data.payme_id,
+  subscriptionEnd: data.subscription_end,
+
   autoFreezeEnabled: data.auto_freeze_enabled,
   createdAt: data.created_at
 });
@@ -43,8 +43,8 @@ export const updateUserProfile = async (
     status?: 'active' | 'frozen' | 'banned',
     role?: 'admin' | 'doctor' | 'staff',
     subscriptionStatus?: string,
-    subscriptionExpiry?: string,
-    paymeId?: string,
+    subscriptionEnd?: string,
+
     autoFreezeEnabled?: boolean
   }
 ): Promise<void> => {
@@ -59,8 +59,8 @@ export const updateUserProfile = async (
   if (updates.status) dbUpdates.status = updates.status;
   if (updates.role) dbUpdates.role = updates.role;
   if (updates.subscriptionStatus) dbUpdates.subscription_status = updates.subscriptionStatus;
-  if (updates.subscriptionExpiry) dbUpdates.subscription_expiry = updates.subscriptionExpiry;
-  if (updates.paymeId) dbUpdates.payme_id = updates.paymeId;
+  if (updates.subscriptionEnd) dbUpdates.subscription_end = updates.subscriptionEnd;
+
   if (updates.autoFreezeEnabled !== undefined) dbUpdates.auto_freeze_enabled = updates.autoFreezeEnabled;
 
   // Robust Image Handling: Write to BOTH columns to ensure persistence across schema versions

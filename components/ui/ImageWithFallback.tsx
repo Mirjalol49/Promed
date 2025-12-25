@@ -60,6 +60,7 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
 
     // If no source, or error occurred
     if ((!src || error || src === '') && !optimisticUrl) {
+        if (error) console.warn(`ImageWithFallback: Failed to load ${src || 'empty src'}`);
         return (
             <div className={`flex items-center justify-center bg-slate-100 text-slate-300 ${className}`}>
                 {fallbackType === 'user' ? <User size={24} /> : <ImageIcon size={24} />}

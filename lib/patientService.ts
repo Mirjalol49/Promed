@@ -217,3 +217,31 @@ export const addPatientAfterImage = async (
 
   if (error) throw error;
 };
+
+export const deletePatientAfterImage = async (
+  patientId: string,
+  photoId: string,
+  currentImages: PatientImage[]
+): Promise<void> => {
+  const imageToDelete = currentImages.find(img => img.id === photoId);
+  const newImages = currentImages.filter(img => img.id !== photoId);
+
+  // 1. Update DB
+  const { error: dbError } = await supabase
+    .from('patients')
+    .update({ after_images: newImages })
+    .eq('id', patientId);
+
+  if (dbError) throw dbError;
+
+  // 2. Cleanup Storage (Background)
+  if (imageToDelete) {
+    const bucket = 'promed-images';
+    // Import extractPathFromUrl from imageService if needed, but it's likely available or used in service
+    const { extractPathFromUrl, deleteStorageFiles } = await import('./imageService');
+    const path = extractPathFromUrl(imageToDelete.url, bucket);
+    if (path) {
+      deleteStorageFiles(bucket, [path]);
+    }
+  }
+};

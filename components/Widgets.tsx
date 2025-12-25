@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Users,
   UserPlus,
@@ -81,89 +81,147 @@ interface InjectionAppointmentProps {
 }
 
 export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = ({ patients, onViewPatient }) => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const [filter, setFilter] = useState<'all' | 'Operation' | 'Injection'>('all');
 
   const today = new Date();
-  const todayString = today.toDateString();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
 
-  // Filter for today's injections from real patient data
-  const appointments = patients
+  // Helper to format date label
+  const getDateLabel = (dateObj: Date) => {
+    const d = new Date(dateObj);
+    d.setHours(0, 0, 0, 0);
+    if (d.getTime() === today.getTime()) return t('today') || 'Today';
+    if (d.getTime() === tomorrow.getTime()) return t('tomorrow') || 'Tomorrow';
+
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}.${month}.${year}`;
+  };
+
+  // Helper to check if date is today (for styling)
+  const isToday = (dateObj: Date) => {
+    const d = new Date(dateObj);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime() === today.getTime();
+  };
+
+  // 1. Get Injections (Scheduled, Upcoming)
+  const upcomingInjections = patients
     .flatMap(p => (p.injections || []).map(inj => ({
+      uniqueId: `inj-${p.id}-${inj.id}`,
       patientId: p.id,
       name: p.fullName,
       img: p.profileImage,
-      ...inj,
-      dateObj: new Date(inj.date)
+      type: 'Injection',
+      title: 'Plasma Injection',
+      detail: inj.notes || inj.dose || 'Plasma Injection',
+      dateObj: new Date(inj.date),
+      status: inj.status
     })))
-    .filter(appt => appt.dateObj.toDateString() === todayString)
-    .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+    .filter(item => item.status === InjectionStatus.SCHEDULED && item.dateObj >= today);
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case InjectionStatus.COMPLETED: return 'bg-emerald-100 text-emerald-700';
-      case InjectionStatus.SCHEDULED: return 'bg-blue-100 text-blue-700';
-      case InjectionStatus.CANCELLED: return 'bg-red-100 text-red-700';
-      case InjectionStatus.MISSED: return 'bg-orange-100 text-orange-700';
-      default: return 'bg-slate-100 text-slate-700';
-    }
-  };
+  // 2. Get Operations (Upcoming)
+  const upcomingOperations = patients
+    .filter(p => p.operationDate && new Date(p.operationDate) >= today)
+    .map(p => ({
+      uniqueId: `op-${p.id}`,
+      patientId: p.id,
+      name: p.fullName,
+      img: p.profileImage,
+      type: 'Operation',
+      title: 'Transplant',
+      detail: p.technique === 'Hair' ? t('transplant_hair') :
+        p.technique === 'Eyebrow' ? t('transplant_eyebrow') :
+          p.technique === 'Beard' ? t('transplant_beard') : (p.technique || 'N/A'),
+      dateObj: new Date(p.operationDate),
+      status: 'Scheduled'
+    }));
+
+  // 3. Merge and Sort
+  const upcomingEvents = [...upcomingInjections, ...upcomingOperations]
+    .filter(event => filter === 'all' || event.type === filter)
+    .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col">
-      <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+      <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center bg-slate-50/50 gap-4">
         <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
-          <Syringe size={20} className="text-teal-600" />
-          {t('injection_schedule') || 'Plasma Injections'}
+          <Calendar size={20} className="text-promed-primary" />
+          {t('upcoming_patients')}
         </h3>
-        <button className="text-sm font-bold hover:opacity-80 transition" style={{ color: 'hsl(176, 79%, 27%)' }}>
-          {t('see_all')}
-        </button>
+
+        <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filter === 'all' ? 'bg-promed-primary text-white shadow-sm shadow-promed-primary/20' : 'text-slate-500 hover:text-promed-primary'}`}
+          >
+            {t('filter_all')}
+          </button>
+          <button
+            onClick={() => setFilter('Operation')}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filter === 'Operation' ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/20' : 'text-slate-500 hover:text-rose-500'}`}
+          >
+            {t('filter_operations')}
+          </button>
+          <button
+            onClick={() => setFilter('Injection')}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filter === 'Injection' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/20' : 'text-slate-500 hover:text-blue-500'}`}
+          >
+            {t('filter_injections')}
+          </button>
+        </div>
       </div>
 
-      <div className="p-4 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
-        {appointments.map((appt) => (
-          <div key={appt.id + appt.patientId} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between group cursor-pointer" onClick={() => onViewPatient(appt.patientId)}>
+      <div className="p-4 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
+        {upcomingEvents.map((event) => (
+          <div key={event.uniqueId} className="bg-white rounded-2xl border border-slate-100 p-3.5 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer hover:border-promed-primary/20" onClick={() => onViewPatient(event.patientId)}>
             <div className="flex items-center space-x-4">
               {/* Avatar */}
               <div className="relative">
                 <img
-                  src={appt.img || "https://via.placeholder.com/40"}
-                  alt={appt.name}
-                  className="w-12 h-12 rounded-full object-cover border border-slate-100"
+                  src={event.img || "https://via.placeholder.com/40"}
+                  alt={event.name}
+                  className="w-12 h-12 rounded-full object-cover border border-slate-100 group-hover:scale-105 transition-transform duration-300"
                 />
+                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white ${event.type === 'Operation' ? 'bg-rose-500' : 'bg-blue-500'}`}>
+                  {event.type === 'Operation' ? <Activity size={10} className="text-white" /> : <Syringe size={10} className="text-white" />}
+                </div>
               </div>
 
               {/* Info */}
               <div>
-                <h4 className="font-bold text-slate-900 text-sm leading-tight group-hover:text-promed.primary transition">{appt.name}</h4>
-                <p className="text-xs text-slate-400 mt-1 font-medium">{appt.notes || 'Plasma Injection'}</p>
-                <div className="flex items-center space-x-1 mt-1 xl:hidden">
-                  <MapPin size={10} className="text-slate-300" />
-                  <span className="text-[10px] text-slate-400">Clinic</span>
+                <h4 className="font-bold text-slate-900 text-sm leading-tight group-hover:text-promed-primary transition">{event.name}</h4>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${event.type === 'Operation' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'}`}>
+                    {event.type === 'Operation' ? t('operation') : t('injection')}
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium truncate max-w-[100px]">{event.detail}</span>
                 </div>
               </div>
             </div>
 
             {/* Meta (Right Side) */}
-            <div className="flex flex-col items-end space-y-2">
-              <span className="text-xs font-bold text-slate-500">
-                {appt.dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 ${getStatusStyle(appt.status)}`}>
-                {appt.status}
-                {appt.status === InjectionStatus.COMPLETED && <CheckCircle size={10} />}
-                {appt.status === InjectionStatus.SCHEDULED && <Clock size={10} />}
-                {appt.status === InjectionStatus.CANCELLED && <XCircle size={10} />}
-                {appt.status === InjectionStatus.MISSED && <AlertCircle size={10} />}
+            <div className="flex flex-col items-end space-y-1.5">
+              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${isToday(event.dateObj)
+                ? 'bg-promed-primary text-white shadow-soft shadow-promed-primary/30'
+                : 'bg-slate-100 text-slate-500'
+                }`}>
+                {getDateLabel(event.dateObj)}
               </span>
             </div>
           </div>
         ))}
 
-        {appointments.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-40 text-slate-400">
-            <Calendar size={32} className="opacity-20 mb-2" />
-            <p>{t('no_upcoming') || 'No injections today'}</p>
+        {upcomingEvents.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+              <Calendar size={24} className="opacity-40" />
+            </div>
+            <p className="font-bold text-sm text-slate-300">{t('no_upcoming') || 'No upcoming patients'}</p>
           </div>
         )}
       </div>
@@ -180,6 +238,9 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
   const { t } = useLanguage();
 
   // Filter real patients for "Today's Operations"
+  // User requested to keep this empty for now
+  const operations: any[] = [];
+  /*
   const operations = patients
     .filter(p => p.operationDate && new Date(p.operationDate).toDateString() === new Date().toDateString())
     .map(p => ({
@@ -191,6 +252,7 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
       status: p.status === 'Active' ? 'Extraction' : p.status, // Simple mapping for now
       progress: p.status === 'Active' ? 45 : 100
     }));
+  */
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -235,9 +297,10 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight border ${op.technique === 'DHI' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-cyan-50 text-cyan-700 border-cyan-100'
-                      }`}>
-                      {op.technique}
+                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight border bg-slate-50 text-slate-700 border-slate-100">
+                      {op.technique === 'Hair' ? t('transplant_hair') :
+                        op.technique === 'Eyebrow' ? t('transplant_eyebrow') :
+                          op.technique === 'Beard' ? t('transplant_beard') : (op.technique || 'N/A')}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">
@@ -315,9 +378,9 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
       <div className="p-6 border-b border-slate-100 bg-slate-50/50">
         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <Syringe size={20} className="text-blue-500" />
-          Plasma & Follow-ups
+          {t('plasma_followups')}
         </h3>
-        <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">DUE WITHIN 24H</p>
+        <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">{t('due_within_24h')}</p>
       </div>
 
       <div className="divide-y divide-slate-50 flex-1 overflow-y-auto no-scrollbar">
@@ -329,7 +392,7 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
               </div>
               <div>
                 <h4 className="font-bold text-slate-800 text-sm group-hover:text-promed.primary transition whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">{item.patientName}</h4>
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">{item.notes || 'Routine Follow-up'}</p>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">{item.notes || t('routine_followup')}</p>
               </div>
             </div>
             <div className="flex space-x-1 ml-2">
@@ -349,7 +412,7 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
 
       <div className="p-4 border-t border-slate-100 bg-slate-50/30">
         <button className="w-full py-2.5 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-200 transition-colors uppercase tracking-widest">
-          View Master Schedule
+          {t('view_master_schedule')}
         </button>
       </div>
     </div>
@@ -427,7 +490,7 @@ export const StatsChart: React.FC = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h3 className="text-lg font-bold text-slate-800 tracking-tight">{t('patients_stats')}</h3>
-          <p className="text-sm text-slate-400 font-medium mt-0.5">Overview of patient registration</p>
+          <p className="text-sm text-slate-400 font-medium mt-0.5">{t('registration_overview')}</p>
         </div>
         <select className="text-sm bg-slate-50 border-slate-200 border rounded-xl px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-promed.primary/20 transition cursor-pointer font-bold">
           <option>{t('monthly')}</option>
@@ -502,7 +565,7 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
       <div className="flex justify-between items-center mb-6">
         <div>
           <h3 className="text-lg font-bold text-slate-800 tracking-tight">{t('todays_appointments')}</h3>
-          <p className="text-sm text-slate-400 font-medium mt-0.5">Upcoming schedule</p>
+          <p className="text-sm text-slate-400 font-medium mt-0.5">{t('upcoming_schedule')}</p>
         </div>
         <button className="text-sm text-promed.primary font-bold hover:bg-promed.primary/10 px-3 py-1.5 rounded-lg transition">{t('see_all')}</button>
       </div>
@@ -527,9 +590,7 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
                     alt={inj.patientName}
                     className="w-12 h-12 rounded-xl object-cover shadow-sm ring-1 ring-slate-100"
                   />
-                  <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
-                    <div className="bg-emerald-500 w-2.5 h-2.5 rounded-full border-2 border-white"></div>
-                  </div>
+
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-800 text-sm group-hover:text-promed.primary transition">{inj.patientName}</h4>

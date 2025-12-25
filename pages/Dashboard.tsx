@@ -9,7 +9,7 @@ import {
     Plus,
     Camera
 } from 'lucide-react';
-import { VitalsCard, SurgeryFloorWidget, InjectionAppointmentWidget } from '../components/Widgets';
+import { VitalsCard, InjectionAppointmentWidget } from '../components/Widgets';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Patient } from '../types';
 
@@ -65,14 +65,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             {/* Dashboard Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main: Surgery Floor Widget (Left 2/3) */}
-                <div className="lg:col-span-2 h-[500px]">
-                    <SurgeryFloorWidget patients={patients} />
-                </div>
-
-                {/* Side: Injection Appointments (Right 1/3) */}
-                <div className="h-[500px]">
+            <div className="grid grid-cols-1 gap-6">
+                {/* Main: Upcoming Schedule (Full Width) */}
+                <div className="h-[calc(100vh-250px)] min-h-[500px]">
                     <InjectionAppointmentWidget
                         patients={patients}
                         onViewPatient={onPatientSelect}

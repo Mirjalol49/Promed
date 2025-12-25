@@ -53,9 +53,10 @@ export interface Profile {
   profileImage?: string;
   role: 'admin' | 'doctor' | 'staff';
   status: 'active' | 'frozen' | 'banned';
-  subscriptionStatus: 'trial' | 'active' | 'overdue' | 'lifetime';
-  subscriptionExpiry?: string;
-  paymeId?: string;
+  subscription_status: 'trial' | 'active' | 'frozen';
+  subscription_end?: string;
+  trial_used?: boolean;
+
   autoFreezeEnabled?: boolean;
   accountId?: string;
   lockEnabled?: boolean;

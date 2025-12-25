@@ -35,6 +35,7 @@ import { DatePicker } from './ui/DatePicker';
 import { Portal } from './Portal';
 import { ImageWithFallback } from './ui/ImageWithFallback';
 import { compressImage } from '../lib/imageOptimizer';
+import ConfirmationModal from './ConfirmationModal';
 import { CustomSelect } from './CustomSelect';
 
 // Helper to translate status
@@ -145,8 +146,8 @@ const PhotoLabelModal: React.FC<{
         <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-modal border border-slate-200">
           <h3 className="text-xl font-bold mb-4 text-slate-800">{t('photo_label_title')}</h3>
           <div className="flex justify-center mb-6 bg-slate-50 rounded-xl p-2 border border-slate-200">
-            <div className="h-48 w-full max-w-[300px] mx-auto">
-              <ImageWithFallback src={image} alt="Preview" className="w-full h-full object-contain rounded-lg shadow-sm" fallbackType="image" />
+            <div className="h-48 w-full max-w-[300px] mx-auto overflow-hidden rounded-lg shadow-sm border border-slate-100">
+              <img src={image} alt="Preview" className="w-full h-full object-contain" />
             </div>
           </div>
           <div className="space-y-4">
@@ -241,7 +242,7 @@ export const PatientList: React.FC<{
               <th className="p-5 pl-8">{t('name')}</th>
               <th className="p-5">{t('operation_date')}</th>
               <th className="p-5">{t('next_injection')}</th>
-              <th className="p-5">{t('status')}</th>
+              <th className="p-5">{t('technique')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -263,7 +264,7 @@ export const PatientList: React.FC<{
                           fallbackType="user"
                           optimisticId={`${patient.id}_profile`}
                         />
-                        <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 border-2 border-white rounded-full ${patient.status === 'Active' ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
+
                       </div>
                       <div>
                         <div className="font-bold text-slate-800 text-sm group-hover:text-promed-primary transition-colors">{patient.fullName}</div>
@@ -286,14 +287,18 @@ export const PatientList: React.FC<{
                     )}
                   </td>
                   <td className="p-5">
-                    <span className={`text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center space-x-1.5 border ${patient.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                      patient.status === 'Recovered' ? 'bg-slate-100 text-slate-700 border-slate-200' :
-                        'bg-amber-50 text-amber-700 border-amber-200'
+                    <span className={`text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center space-x-1.5 border ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                      patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                        'bg-slate-50 text-slate-700 border-slate-200'
                       }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${patient.status === 'Active' ? 'bg-emerald-600' :
-                        patient.status === 'Recovered' ? 'bg-slate-600' : 'bg-amber-600'
+                      <span className={`w-1.5 h-1.5 rounded-full ${patient.technique === 'Hair' ? 'bg-indigo-600' :
+                        patient.technique === 'Eyebrow' ? 'bg-rose-600' : 'bg-slate-600'
                         }`}></span>
-                      <span>{translateStatus(patient.status)}</span>
+                      <span>
+                        {patient.technique === 'Hair' ? t('transplant_hair') :
+                          patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
+                            patient.technique === 'Beard' ? t('transplant_beard') : (patient.technique || 'N/A')}
+                      </span>
                     </span>
                   </td>
                 </tr>
@@ -325,9 +330,10 @@ export const PatientDetail: React.FC<{
   onEditInjection: (pId: string, iId: string, date: string, notes: string) => void;
   onDeleteInjection: (pId: string, iId: string) => void;
   onAddAfterPhoto: (pId: string, photoOrFile: string | File, label: string) => void;
+  onDeleteAfterPhoto: (pId: string, photoId: string) => void;
   onEditPatient: () => void;
   onDeletePatient: () => void;
-}> = ({ patient, onBack, onUpdateInjection, onAddInjection, onEditInjection, onDeleteInjection, onAddAfterPhoto, onEditPatient, onDeletePatient }) => {
+}> = ({ patient, onBack, onUpdateInjection, onAddInjection, onEditInjection, onDeleteInjection, onAddAfterPhoto, onDeleteAfterPhoto, onEditPatient, onDeletePatient }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isInjModalOpen, setInjModalOpen] = useState(false);
   const [editingInj, setEditingInj] = useState<Injection | null>(null);
@@ -335,6 +341,9 @@ export const PatientDetail: React.FC<{
   const [isPhotoModalOpen, setPhotoModalOpen] = useState(false);
   const [tempPhoto, setTempPhoto] = useState<string | null>(null);
   const [tempFile, setTempFile] = useState<File | null>(null);
+
+  const [photoToDeleteId, setPhotoToDeleteId] = useState<string | null>(null);
+  const [injToDeleteId, setInjToDeleteId] = useState<string | null>(null);
 
   const { language, t } = useLanguage();
   const localeString = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
@@ -390,8 +399,24 @@ export const PatientDetail: React.FC<{
 
   const handleDeleteClick = (e: React.MouseEvent, injId: string) => {
     e.stopPropagation();
-    if (window.confirm(t('confirm_delete'))) {
-      onDeleteInjection(patient.id, injId);
+    setInjToDeleteId(injId);
+  };
+
+  const confirmDeleteInjection = () => {
+    if (injToDeleteId) {
+      onDeleteInjection(patient.id, injToDeleteId);
+      setInjToDeleteId(null);
+    }
+  };
+
+  const handleDeleteAfterPhotoClick = (photoId: string) => {
+    setPhotoToDeleteId(photoId);
+  };
+
+  const confirmDeletePhoto = () => {
+    if (photoToDeleteId) {
+      onDeleteAfterPhoto(patient.id, photoToDeleteId);
+      setPhotoToDeleteId(null);
     }
   };
 
@@ -473,7 +498,12 @@ export const PatientDetail: React.FC<{
             </div>
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 hover:border-promed-primary/50 transition-colors">
               <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('tech')}</p>
-              <p className="font-bold text-xl text-slate-800">{patient.technique || 'N/A'}</p>
+              <p className="font-bold text-xl text-slate-800">
+                {patient.technique === 'Hair' ? t('transplant_hair') :
+                  patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
+                    patient.technique === 'Beard' ? t('transplant_beard') :
+                      (patient.technique || 'N/A')}
+              </p>
             </div>
           </div>
         </div>
@@ -509,27 +539,35 @@ export const PatientDetail: React.FC<{
                 </div>
                 <span>{t('progress')}</span>
               </h3>
-              <label className="cursor-pointer text-xs bg-slate-900 text-white px-3 py-2 rounded-lg hover:bg-slate-800 transition flex items-center space-x-2 font-bold shadow-lg shadow-slate-300">
-                <Upload size={14} />
-                <span>{t('add_photo')}</span>
-                <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
-              </label>
             </div>
             <div className="grid grid-cols-2 gap-3">
+              {/* Add Photo Card */}
+              <label className="cursor-pointer aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-300 bg-slate-50/50 group">
+                <PlusCircle size={28} className="group-hover:scale-110 transition-transform mb-1.5 opacity-60 group-hover:opacity-100" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('add_photo')}</span>
+                <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+              </label>
+
               {patient.afterImages.map((img, idx) => (
                 <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer group shadow-sm border border-slate-200" onClick={() => setSelectedImage(img.url)}>
                   <ImageWithFallback src={img.url} optimisticId={img.id} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt={img.label} fallbackType="image" />
+
+                  {/* Delete Button (Hover) */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteAfterPhotoClick(img.id);
+                    }}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500/90 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg z-20"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-8">
                     <p className="text-white text-xs text-center font-bold tracking-wide drop-shadow-md">{img.label}</p>
                   </div>
                 </div>
               ))}
-              {patient.afterImages.length === 0 && (
-                <div className="col-span-2 py-8 flex flex-col items-center justify-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
-                  <Camera size={32} className="opacity-20 mb-2" />
-                  <p className="text-sm font-medium">{t('no_progress')}</p>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -676,6 +714,30 @@ export const PatientDetail: React.FC<{
         image={tempPhoto}
         onClose={() => setPhotoModalOpen(false)}
         onSave={handleSavePhoto}
+      />
+
+      <ConfirmationModal
+        isOpen={!!photoToDeleteId}
+        onClose={() => setPhotoToDeleteId(null)}
+        onConfirm={confirmDeletePhoto}
+        title={t('delete_photo_title')}
+        description={t('delete_photo_desc')}
+        confirmText={t('yes')}
+        cancelText={t('no')}
+        icon={Trash2}
+        variant="danger"
+      />
+
+      <ConfirmationModal
+        isOpen={!!injToDeleteId}
+        onClose={() => setInjToDeleteId(null)}
+        onConfirm={confirmDeleteInjection}
+        title={t('delete_modal_title')}
+        description={t('delete_warning')}
+        confirmText={t('yes')}
+        cancelText={t('no')}
+        icon={Trash2}
+        variant="danger"
       />
     </div>
   );
@@ -1004,9 +1066,9 @@ export const AddPatientForm: React.FC<{
                           onChange={setTechnique}
                           placeholder={t('select_tech')}
                           options={[
-                            { value: 'FUE', label: 'FUE' },
-                            { value: 'DHI', label: 'DHI' },
-                            { value: 'Sapphire FUE', label: 'Sapphire FUE' },
+                            { value: 'Hair', label: t('transplant_hair') },
+                            { value: 'Eyebrow', label: t('transplant_eyebrow') },
+                            { value: 'Beard', label: t('transplant_beard') },
                           ]}
                         />
                       </div>

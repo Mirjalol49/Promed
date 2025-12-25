@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { subscribeToAllProfiles, updateUserProfile } from '../lib/userService';
 import { broadcastAlert, clearAlerts } from '../lib/notificationService';
-import { paymeService } from '../lib/paymeService';
 import { Profile } from '../types';
 import { useToast } from '../contexts/ToastContext';
 
@@ -59,8 +58,7 @@ export const AdminDashboard: React.FC = () => {
         const active = profiles.filter(p => p.status === 'active').length;
         const frozen = profiles.filter(p => p.status === 'frozen').length;
         // Mock revenue: $199 per active clinic
-        const revenue = active * 199;
-        return { active, frozen, revenue };
+        return { active, frozen };
     }, [profiles]);
 
     const filteredProfiles = useMemo(() => {
@@ -197,13 +195,7 @@ export const AdminDashboard: React.FC = () => {
                             color="bg-emerald-500"
                             sublabel="Running instances"
                         />
-                        <AdminStatCard
-                            label="Total Revenue"
-                            value={`$${stats.revenue.toLocaleString()}`}
-                            icon={DollarSign}
-                            color="bg-blue-500"
-                            sublabel="Monthly recurring"
-                        />
+
                         <AdminStatCard
                             label="Frozen Accounts"
                             value={stats.frozen}
@@ -238,8 +230,7 @@ export const AdminDashboard: React.FC = () => {
                                 <thead>
                                     <tr className="border-b border-slate-50">
                                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Clinic / User</th>
-                                        <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Subscription</th>
-                                        <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Expiry / Renewal</th>
+
                                         <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                                     </tr>
                                 </thead>
@@ -274,7 +265,7 @@ export const AdminDashboard: React.FC = () => {
                                                                 {profile.fullName?.charAt(0) || '?'}
                                                             </div>
                                                         )}
-                                                        <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white ${profile.status === 'active' ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : 'bg-rose-500'}`} />
+
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">{profile.fullName || 'Unnamed Account'}</p>
@@ -286,41 +277,10 @@ export const AdminDashboard: React.FC = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5">
-                                                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${profile.subscriptionStatus === 'active' || profile.subscriptionStatus === 'lifetime'
-                                                    ? 'bg-emerald-500/10 text-emerald-600 border-emerald-200'
-                                                    : profile.subscriptionStatus === 'overdue'
-                                                        ? 'bg-rose-500/10 text-rose-600 border-rose-200'
-                                                        : 'bg-amber-500/10 text-amber-600 border-amber-200'
-                                                    }`}>
-                                                    {profile.subscriptionStatus}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                {profile.subscriptionExpiry ? (
-                                                    <div className="flex items-center gap-2 text-slate-500">
-                                                        <Calendar size={14} className="text-slate-300" />
-                                                        <p className="text-xs font-bold">
-                                                            {new Date(profile.subscriptionExpiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">No Expiry Set</span>
-                                                )}
-                                            </td>
+
                                             <td className="px-8 py-5 text-right">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    <button
-                                                        onClick={() => {
-                                                            const url = paymeService.generateCheckoutUrl(profile.id, 199000);
-                                                            window.open(url, '_blank');
-                                                            success('Payment link generated & opened!');
-                                                        }}
-                                                        className="p-2.5 bg-blue-50 text-blue-500 hover:bg-blue-600 hover:text-white rounded-xl transition-all duration-200 active:scale-95"
-                                                        title="Generate Payme Link"
-                                                    >
-                                                        <CreditCard size={18} />
-                                                    </button>
+
                                                     <button
                                                         onClick={() => handleToggleFreeze(profile)}
                                                         className={`p-2.5 rounded-xl transition-all duration-200 ${profile.status === 'frozen'

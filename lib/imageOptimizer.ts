@@ -40,7 +40,7 @@ export async function compressImage(file: File): Promise<File> {
         // Return original file if compression fails
         return file;
     }
-}
+}   
 
 /**
  * Check if a file is an image

@@ -275,18 +275,18 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                             <>
                                 <div className="space-y-3">
                                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('current_password')}</label>
-                                    <div className="flex gap-2 justify-between opacity-80">
+                                    <div className="flex gap-2 justify-between opacity-100">
                                         {[...Array(6)].map((_, idx) => (
                                             <div
                                                 key={idx}
-                                                className="w-12 h-14 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-xl font-bold text-slate-400 shadow-inner"
+                                                className="w-12 h-14 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center text-xl font-bold text-promed-dark shadow-sm transition-all duration-200"
                                             >
                                                 {showCurrentPass ? (currentPassInput[idx] || '•') : '•'}
                                             </div>
                                         ))}
                                     </div>
                                     <div className="flex justify-end">
-                                        <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="text-slate-400 hover:text-slate-600 transition flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
+                                        <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="text-promed-primary hover:text-promed-dark transition flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-promed-light/50 px-2 py-1 rounded-md">
                                             {showCurrentPass ? <><EyeOff size={14} /> {t('hide')}</> : <><Eye size={14} /> {t('show')}</>}
                                         </button>
                                     </div>
@@ -299,18 +299,23 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                             <input
                                                 key={idx}
                                                 ref={el => { pinRefs.current[idx] = el; }}
-                                                type="password"
+                                                type={showNewPass ? "text" : "password"}
                                                 inputMode="numeric"
                                                 pattern="\d*"
                                                 maxLength={1}
                                                 value={digit}
                                                 onChange={(e) => handlePinChange(idx, e.target.value)}
                                                 onKeyDown={(e) => handlePinKeyDown(idx, e)}
-                                                className="w-12 h-14 bg-slate-50 border border-slate-200 rounded-xl text-center text-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary transition-all shadow-sm"
+                                                className="w-12 h-14 bg-white border border-slate-200 rounded-xl text-center text-xl font-bold text-promed-dark focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all shadow-sm"
                                             />
                                         ))}
                                     </div>
-                                    <p className="text-[10px] text-slate-400 font-medium italic">{t('lock_hint')}</p>
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-[10px] text-slate-400 font-medium italic">{t('lock_hint')}</p>
+                                        <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="text-promed-primary hover:text-promed-dark transition flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-promed-light/50 px-2 py-1 rounded-md">
+                                            {showNewPass ? <><EyeOff size={14} /> {t('hide')}</> : <><Eye size={14} /> {t('show')}</>}
+                                        </button>
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -360,8 +365,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     }}
                     title={t('confirm_logout_title')}
                     description={t('confirm_logout_desc')}
-                    confirmText={t('logout')}
-                    cancelText={t('keep_logged_in')}
+                    confirmText={t('yes')}
+                    cancelText={t('no')}
                     icon={LogOut}
                     variant="danger"
                 />

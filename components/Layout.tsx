@@ -157,7 +157,7 @@ const Layout: React.FC<LayoutProps> = ({
           >
             <div className="relative">
               <ProfileAvatar src={userImage} alt="Profile" size={36} className="rounded-lg shadow-lg shadow-black/20 border border-white/10 group-hover:scale-105 transition-transform" optimisticId={`${userId}_profile`} />
-              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-promed-dark rounded-full"></div>
+
             </div>
             <div className="text-left overflow-hidden">
               <p className="text-sm font-bold text-white truncate group-hover:text-promed-light transition">{userName || t('dr_name')}</p>
