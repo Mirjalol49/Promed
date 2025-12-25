@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { useScrollLock } from '../hooks/useScrollLock';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useScrollLock } from '../../hooks/useScrollLock';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface DeleteModalProps {
     isOpen: boolean;

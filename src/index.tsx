@@ -1,13 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import App from './App';
-
 import './index.css';
-import { LanguageProvider } from './contexts/LanguageContext';
+import App from './App';
 import { AccountProvider } from './contexts/AccountContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { SystemAlertProvider } from './contexts/SystemAlertContext';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

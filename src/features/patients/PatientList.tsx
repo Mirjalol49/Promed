@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
@@ -31,15 +31,16 @@ import {
   Pencil,
   Image as ImageIcon
 } from 'lucide-react';
-import { Patient, InjectionStatus, Injection } from '../types';
-import { useLanguage } from '../contexts/LanguageContext';
-import { DatePicker } from './ui/DatePicker';
-import { Portal } from './Portal';
-import { ImageWithFallback } from './ui/ImageWithFallback';
-import { compressImage } from '../lib/imageOptimizer';
-import DeleteModal from './DeleteModal';
-import { CustomSelect } from './CustomSelect';
-import Mascot from './Mascot';
+import { Patient, InjectionStatus, Injection } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { DatePicker } from '../../components/ui/DatePicker';
+import { Portal } from '../../components/ui/Portal';
+import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
+import { compressImage } from '../../lib/imageOptimizer';
+import { patientSchema, safeValidate } from '../../lib/validation';
+import DeleteModal from '../../components/ui/DeleteModal';
+import { CustomSelect } from '../../components/ui/CustomSelect';
+import Mascot from '../../components/mascot/Mascot';
 
 // Helper to translate status
 const useStatusTranslation = () => {
@@ -138,7 +139,7 @@ const PhotoLabelModal: React.FC<{
   const handleSave = () => {
     if (!value) return;
     const translatedUnit = unit === 'Months' ? t('months') : unit === 'Days' ? t('days') : t('weeks');
-    onSave(`${value} ${translatedUnit}`);
+    onSave(`${value} ${translatedUnit} `);
     setValue('');
     onClose();
   };
@@ -222,7 +223,11 @@ export const PatientList: React.FC<{
   // --- Computation ---
   const totalPages = Math.ceil(patients.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentPatients = patients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const currentPatients = useMemo(() => {
+    return patients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [patients, startIndex]);
+
   const startCount = patients.length > 0 ? startIndex + 1 : 0;
   const endCount = Math.min(startIndex + ITEMS_PER_PAGE, patients.length);
 
@@ -314,7 +319,7 @@ export const PatientList: React.FC<{
                               alt={patient.fullName}
                               className="w-full h-full rounded-xl shadow-sm ring-1 ring-slate-100"
                               fallbackType="user"
-                              optimisticId={`${patient.id}_profile`}
+                              optimisticId={`${patient.id} _profile`}
                             />
 
                           </div>
@@ -339,13 +344,13 @@ export const PatientList: React.FC<{
                         )}
                       </td>
                       <td className="p-5 rounded-r-xl group-hover:rounded-r-xl transition-all">
-                        <span className={`text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center space-x-1.5 border ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                        <span className={`text - xs font - bold px - 3 py - 1.5 rounded - full inline - flex items - center space - x - 1.5 border ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
                           patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                             'bg-slate-50 text-slate-700 border-slate-200'
-                          }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${patient.technique === 'Hair' ? 'bg-indigo-600' :
+                          } `}>
+                          <span className={`w - 1.5 h - 1.5 rounded - full ${patient.technique === 'Hair' ? 'bg-indigo-600' :
                             patient.technique === 'Eyebrow' ? 'bg-rose-600' : 'bg-slate-600'
-                            }`}></span>
+                            } `}></span>
                           <span>
                             {patient.technique === 'Hair' ? t('transplant_hair') :
                               patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
@@ -400,10 +405,10 @@ export const PatientList: React.FC<{
                   <button
                     key={idx}
                     onClick={() => setCurrentPage(page)}
-                    className={`min-w-[36px] h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all border ${currentPage === page
+                    className={`min - w - [36px] h - 9 flex items - center justify - center rounded - xl text - sm font - bold transition - all border ${currentPage === page
                       ? 'bg-promed-primary text-white border-promed-primary shadow-md shadow-teal-900/10'
                       : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                      }`}
+                      } `}
                   >
                     {page}
                   </button>
@@ -464,7 +469,7 @@ export const PatientDetail: React.FC<{
       // Compress image before preview
       const compressedFile = await compressImage(file);
       console.log('After photo compressed:',
-        `${(file.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB`);
+        `${(file.size / 1024).toFixed(0)} KB → ${(compressedFile.size / 1024).toFixed(0)} KB`);
 
       setTempFile(compressedFile);
       const reader = new FileReader();
@@ -548,7 +553,7 @@ export const PatientDetail: React.FC<{
         <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
         <div className="flex-shrink-0 relative w-40 h-40">
-          <ImageWithFallback src={patient.profileImage} optimisticId={`${patient.id}_profile`} className="w-full h-full rounded-2xl object-cover shadow-lg ring-4 ring-white border border-slate-100" alt="Profile" fallbackType="user" />
+          <ImageWithFallback src={patient.profileImage} optimisticId={`${patient.id} _profile`} className="w-full h-full rounded-2xl object-cover shadow-lg ring-4 ring-white border border-slate-100" alt="Profile" fallbackType="user" />
         </div>
 
         <div className="flex-1 space-y-6 z-10">
@@ -631,7 +636,7 @@ export const PatientDetail: React.FC<{
             <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer shadow-inner relative group border border-slate-200" onClick={() => setSelectedImage(patient.beforeImage || null)}>
               {patient.beforeImage ? (
                 <>
-                  <ImageWithFallback src={patient.beforeImage} optimisticId={`${patient.id}_before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
+                  <ImageWithFallback src={patient.beforeImage} optimisticId={`${patient.id} _before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
                 </>
               ) : (
@@ -705,7 +710,7 @@ export const PatientDetail: React.FC<{
               </button>
             </div>
 
-            <div className={`space-y-6 ${patient.injections.length > 0 ? 'pl-4' : ''} relative z-10 pb-48`}>
+            <div className={`space - y - 6 ${patient.injections.length > 0 ? 'pl-4' : ''} relative z - 10 pb - 48`}>
               {patient.injections.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-in fade-in zoom-in duration-700">
                   <div className="relative mb-10">
@@ -740,7 +745,7 @@ export const PatientDetail: React.FC<{
                   <div key={inj.id} className="relative flex gap-6 group">
                     {/* Vertical Line */}
                     {index !== patient.injections.length - 1 && (
-                      <div className={`absolute left-[11px] top-10 bottom-[-24px] w-0.5 ${isNextHero ? 'bg-emerald-100' : 'bg-slate-200'} group-hover:bg-slate-300 transition-colors`}></div>
+                      <div className={`absolute left - [11px] top - 10 bottom - [-24px] w - 0.5 ${isNextHero ? 'bg-emerald-100' : 'bg-slate-200'} group - hover: bg - slate - 300 transition - colors`}></div>
                     )}
 
                     {/* Indicator Dot / Mascot Avatar */}
@@ -761,19 +766,20 @@ export const PatientDetail: React.FC<{
                       </div>
                     ) : (
                       <div className={`
-                        flex-shrink-0 w-6 h-6 rounded-full border-[3px] z-10 mt-1 shadow-sm transition-all duration-300
+flex - shrink - 0 w - 6 h - 6 rounded - full border - [3px] z - 10 mt - 1 shadow - sm transition - all duration - 300
                         ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-500 border-white ring-2 ring-emerald-200' :
                           inj.status === InjectionStatus.MISSED ? 'bg-red-500 border-white ring-2 ring-red-200' :
-                            isToday ? 'bg-amber-500 border-white ring-2 ring-amber-200 scale-110' : 'bg-white border-slate-300'}
-                      `} />
+                            isToday ? 'bg-amber-500 border-white ring-2 ring-amber-200 scale-110' : 'bg-white border-slate-300'
+                        }
+`} />
                     )}
 
                     {/* Content */}
-                    <div className={`flex-1 ${isNextHero ? 'bg-white shadow-xl ring-1 ring-slate-200 border-slate-100' : 'bg-slate-50/50'} rounded-2xl p-5 hover:bg-white hover:shadow-card hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-slate-200`}>
+                    <div className={`flex - 1 ${isNextHero ? 'bg-white shadow-xl ring-1 ring-slate-200 border-slate-100' : 'bg-slate-50/50'} rounded - 2xl p - 5 hover: bg - white hover: shadow - card hover: -translate - y - 1 transition - all duration - 300 border border - transparent hover: border - slate - 200`}>
                       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3">
-                            <h4 className={`font-bold text-base ${isToday ? 'text-amber-700' : 'text-slate-800'}`}>
+                            <h4 className={`font - bold text - base ${isToday ? 'text-amber-700' : 'text-slate-800'} `}>
                               {t('injection')} #{index + 1}
                             </h4>
                             {/* Actions Container */}
@@ -826,8 +832,8 @@ export const PatientDetail: React.FC<{
                               </button>
                             </div>
                           ) : (
-                            <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm border whitespace-nowrap ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
-                              }`}>
+                            <span className={`px - 4 py - 1.5 rounded - xl text - xs font - bold uppercase tracking - wider shadow - sm border whitespace - nowrap ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
+                              } `}>
                               {translateStatus(inj.status)}
                             </span>
                           )}
@@ -954,21 +960,20 @@ export const AddPatientForm: React.FC<{
 
   // Validate form before submission
   const validateForm = (): string | null => {
-    if (!fullName.trim()) {
-      return t('validation_name_required') || 'Full name is required';
-    }
-    if (!phone.trim()) {
-      return t('validation_phone_required') || 'Phone number is required';
-    }
-    const ageNum = parseInt(age);
-    if (!age || isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
-      return t('validation_age_invalid') || 'Please enter a valid age (1-120)';
-    }
-    if (!technique) {
-      return t('validation_technique_required') || 'Please select a technique';
-    }
-    if (!operationDate) {
-      return t('validation_date_required') || 'Operation date is required';
+    const rawData = {
+      fullName,
+      phone,
+      age: parseInt(age),
+      gender,
+      technique: technique || undefined,
+      grafts: grafts ? parseInt(grafts) : undefined,
+      operationDate,
+      status: 'Active'
+    };
+
+    const result = safeValidate(patientSchema, rawData);
+    if (result.success === false) {
+      return result.error;
     }
     return null;
   };
@@ -979,7 +984,7 @@ export const AddPatientForm: React.FC<{
       // Compress image before preview
       const compressedFile = await compressImage(file);
       console.log('Patient image compressed:',
-        `${(file.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB`);
+        `${(file.size / 1024).toFixed(0)} KB → ${(compressedFile.size / 1024).toFixed(0)} KB`);
 
       setFile(compressedFile);
       // Create a stable object URL instead of reading as base64 to prevent flickering
@@ -995,7 +1000,7 @@ export const AddPatientForm: React.FC<{
   const handleAutoFill = () => {
     const randomNames = ["Azizbek Tursunov", "Jasur Rahimjonov", "Otabek Nurmatov", "Sardor Kamilov", "Bekzod Alimov"];
     const randomName = randomNames[Math.floor(Math.random() * randomNames.length)];
-    const randomPhone = `+998 ${Math.floor(Math.random() * 90 + 90)} ${Math.floor(Math.random() * 899 + 100)} ${Math.floor(Math.random() * 89 + 10)} ${Math.floor(Math.random() * 89 + 10)}`;
+    const randomPhone = `+ 998 ${Math.floor(Math.random() * 90 + 90)} ${Math.floor(Math.random() * 899 + 100)} ${Math.floor(Math.random() * 89 + 10)} ${Math.floor(Math.random() * 89 + 10)} `;
     const randomAge = Math.floor(Math.random() * 40 + 20).toString();
     const techniques = ['Hair', 'Eyebrow', 'Beard'];
     const randomTechnique = techniques[Math.floor(Math.random() * techniques.length)];

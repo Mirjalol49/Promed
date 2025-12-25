@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Users,
   UserPlus,
@@ -15,11 +15,11 @@ import {
   Check,
   MapPin
 } from 'lucide-react';
-import Mascot from './Mascot';
+import Mascot from '../../components/mascot/Mascot';
 import { motion } from 'framer-motion';
-import { Injection, InjectionStatus, Patient } from '../types';
+import { Injection, InjectionStatus, Patient } from '../../types';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // --- Vitals Card (Compact) ---
 interface VitalsCardProps {
@@ -111,42 +111,42 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
     return d.getTime() === today.getTime();
   };
 
-  // 1. Get Injections (Scheduled, Upcoming)
-  const upcomingInjections = patients
-    .flatMap(p => (p.injections || []).map(inj => ({
-      uniqueId: `inj-${p.id}-${inj.id}`,
-      patientId: p.id,
-      name: p.fullName,
-      img: p.profileImage,
-      type: 'Injection',
-      title: 'Plasma Injection',
-      detail: inj.notes || inj.dose || 'Plasma Injection',
-      dateObj: new Date(inj.date),
-      status: inj.status
-    })))
-    .filter(item => item.status === InjectionStatus.SCHEDULED && item.dateObj >= today);
-
-  // 2. Get Operations (Upcoming)
-  const upcomingOperations = patients
-    .filter(p => p.operationDate && new Date(p.operationDate) >= today)
-    .map(p => ({
-      uniqueId: `op-${p.id}`,
-      patientId: p.id,
-      name: p.fullName,
-      img: p.profileImage,
-      type: 'Operation',
-      title: 'Transplant',
-      detail: p.technique === 'Hair' ? t('transplant_hair') :
-        p.technique === 'Eyebrow' ? t('transplant_eyebrow') :
-          p.technique === 'Beard' ? t('transplant_beard') : (p.technique || 'N/A'),
-      dateObj: new Date(p.operationDate),
-      status: 'Scheduled'
-    }));
-
   // 3. Merge and Sort
-  const upcomingEvents = [...upcomingInjections, ...upcomingOperations]
-    .filter(event => filter === 'all' || event.type === filter)
-    .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+  const upcomingEvents = useMemo(() => {
+    const upcomingInjections = patients
+      .flatMap(p => (p.injections || []).map(inj => ({
+        uniqueId: `inj-${p.id}-${inj.id}`,
+        patientId: p.id,
+        name: p.fullName,
+        img: p.profileImage,
+        type: 'Injection',
+        title: 'Plasma Injection',
+        detail: inj.notes || inj.dose || 'Plasma Injection',
+        dateObj: new Date(inj.date),
+        status: inj.status
+      })))
+      .filter(item => item.status === InjectionStatus.SCHEDULED && item.dateObj >= today);
+
+    const upcomingOperations = patients
+      .filter(p => p.operationDate && new Date(p.operationDate) >= today)
+      .map(p => ({
+        uniqueId: `op-${p.id}`,
+        patientId: p.id,
+        name: p.fullName,
+        img: p.profileImage,
+        type: 'Operation',
+        title: 'Transplant',
+        detail: p.technique === 'Hair' ? t('transplant_hair') :
+          p.technique === 'Eyebrow' ? t('transplant_eyebrow') :
+            p.technique === 'Beard' ? t('transplant_beard') : (p.technique || 'N/A'),
+        dateObj: new Date(p.operationDate),
+        status: 'Scheduled'
+      }));
+
+    return [...upcomingInjections, ...upcomingOperations]
+      .filter(event => filter === 'all' || event.type === filter)
+      .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+  }, [patients, filter, today, t]);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col">

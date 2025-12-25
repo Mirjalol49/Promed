@@ -5,19 +5,22 @@ import {
     Eye,
     EyeOff,
     Lock,
+    Save,
+    Loader2,
+    AlertCircle,
     LogOut,
     ChevronDown,
     Globe,
     Check,
 } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
-import { ProfileAvatar } from './ProfileAvatar';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { ProfileAvatar } from '../layout/ProfileAvatar';
 import ConfirmationModal from './ConfirmationModal';
-import { supabase } from '../lib/supabaseClient';
-import { useToast } from '../contexts/ToastContext';
-import { compressImage } from '../lib/imageOptimizer';
-import { setOptimisticImage } from '../lib/imageService';
-import { useScrollLock } from '../hooks/useScrollLock';
+import { supabase } from '../../lib/supabaseClient';
+import { useToast } from '../../contexts/ToastContext';
+import { compressImage } from '../../lib/imageOptimizer';
+import { uploadAvatar, setOptimisticImage } from '../../lib/imageService';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface EditProfileModalProps {
     isOpen: boolean;

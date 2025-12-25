@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User } from 'lucide-react';
-import { getOptimisticImage } from '../lib/imageService';
+import { getOptimisticImage } from '../../lib/imageService';
 
 interface ProfileAvatarProps {
     src: string | null | undefined;

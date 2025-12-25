@@ -1,19 +1,21 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { DashboardLoader } from './components/ui/DashboardLoader';
 console.log("🛡️ PROMED SYSTEM BOOT: Version 1.25.0 - LockFix Loaded");
 import { motion } from 'framer-motion';
+import { StatCard, StatsChart, UpcomingInjections } from './features/dashboard/Widgets';
 import { Dashboard } from './pages/Dashboard';
-import Layout from './components/Layout';
-import { StatCard, StatsChart, UpcomingInjections } from './components/Widgets';
-import { PatientList, PatientDetail, AddPatientForm } from './components/PatientViews';
-import { LoginScreen } from './components/LoginScreen';
+import Layout from './components/layout/Layout';
+import { LoginScreen } from './features/auth/LoginScreen';
 import { AdminDashboard } from './pages/AdminDashboard';
-import { AdminRoute } from './components/AdminRoute';
+import { AdminRoute } from './components/layout/AdminRoute';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Users, UserPlus, Calendar, Activity, Bell, Shield, Smartphone, Lock, ArrowRight, LogOut } from 'lucide-react';
 import { Patient, PageView, InjectionStatus, PatientImage } from './types';
 import { useLanguage } from './contexts/LanguageContext';
 import { useAccount } from './contexts/AccountContext';
 import { useToast } from './contexts/ToastContext';
+import { PatientList, PatientDetail, AddPatientForm } from './features/patients/PatientList';
+import SyncToast from './components/ui/SyncToast';
 import {
   subscribeToPatients,
   addPatient,
@@ -26,10 +28,10 @@ import {
 } from './lib/patientService';
 import { updateUserProfile, subscribeToUserProfile } from './lib/userService';
 import { uploadImage, uploadAvatar, setOptimisticImage, getOptimisticImage } from './lib/imageService';
-import { ProfileAvatar } from './components/ProfileAvatar';
+import { ProfileAvatar } from './components/layout/ProfileAvatar';
 import { useImagePreloader } from './lib/useImagePreloader';
-import ToastContainer from './components/ToastContainer';
-import DeleteModal from './components/DeleteModal';
+import ToastContainer from './components/ui/ToastContainer';
+import DeleteModal from './components/ui/DeleteModal';
 import { Trash2 } from 'lucide-react';
 
 import { supabase } from './lib/supabaseClient';
@@ -514,15 +516,15 @@ const App: React.FC = () => {
       </div>
     );
   }
-  const handleNavigate = (page: PageView) => {
+  const handleNavigate = useCallback((page: PageView) => {
     setView(page);
     if (page !== 'PATIENT_DETAIL') setSelectedPatientId(null);
-  };
+  }, []);
 
-  const handleSelectPatient = (id: string) => {
+  const handleSelectPatient = useCallback((id: string) => {
     setSelectedPatientId(id);
     setView('PATIENT_DETAIL');
-  };
+  }, []);
 
   const handleLogin = (id: string, userId: string, name: string) => {
     setAccount(id, userId, name);

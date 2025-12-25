@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Lock, ArrowRight, AlertCircle, Globe, Mail, KeyRound } from 'lucide-react';
-import { useLanguage, Language } from '../contexts/LanguageContext';
-import { supabase } from '../lib/supabaseClient';
+import { useLanguage, Language } from '../../contexts/LanguageContext';
+import { supabase } from '../../lib/supabaseClient';
+import { loginSchema, safeValidate } from '../../lib/validation';
 
 
 interface LoginScreenProps {
@@ -67,6 +68,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     setLoading(true);
 
     try {
+      // 🛡️ SECURITY: Validate input before sending to Supabase
+      const validation = safeValidate(loginSchema, { email, password });
+      if (validation.success === false) {
+        throw new Error(validation.error);
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password

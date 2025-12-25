@@ -1,5 +1,5 @@
 import React from 'react';
-import { useToast } from '../contexts/ToastContext';
+import { useToast } from '../../contexts/ToastContext';
 
 const ToastTestPanel: React.FC = () => {
     const { success, error, info } = useToast();

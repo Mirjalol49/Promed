@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useScrollLock } from '../hooks/useScrollLock';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface PortalProps {
   children: React.ReactNode;

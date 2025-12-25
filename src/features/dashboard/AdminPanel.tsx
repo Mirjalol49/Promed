@@ -3,7 +3,7 @@ import {
   Search, Plus, LogOut, Users, RefreshCw, ToggleLeft, ToggleRight,
   Trash2, Lock, ArrowRight, AlertCircle, ArrowLeft, Shield
 } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../../lib/supabaseClient';
 
 
 interface User {

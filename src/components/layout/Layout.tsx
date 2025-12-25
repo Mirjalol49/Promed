@@ -8,11 +8,11 @@ import {
   Settings,
   Shield
 } from 'lucide-react';
-import { PageView } from '../types';
-import { useLanguage } from '../contexts/LanguageContext';
+import { PageView } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { ProfileAvatar } from './ProfileAvatar';
-import EditProfileModal from './EditProfileModal';
-import { useAccount } from '../contexts/AccountContext';
+import EditProfileModal from '../ui/EditProfileModal';
+import { useAccount } from '../../contexts/AccountContext';
 import { SystemAlertBanner } from './SystemAlertBanner';
 
 interface LayoutProps {

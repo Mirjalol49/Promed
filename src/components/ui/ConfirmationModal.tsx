@@ -1,7 +1,7 @@
 import React from 'react';
 import { LucideIcon, X } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
-import { useScrollLock } from '../hooks/useScrollLock';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface ConfirmationModalProps {
     isOpen: boolean;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Megaphone, X, AlertTriangle, Info, Bell, ShieldCheck } from 'lucide-react';
-import { useSystemAlert } from '../contexts/SystemAlertContext';
+import { useSystemAlert } from '../../contexts/SystemAlertContext';
 
 export const SystemAlertBanner: React.FC = () => {
     const { activeAlert, dismissAlert } = useSystemAlert();

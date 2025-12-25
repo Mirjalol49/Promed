@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useAccount } from '../contexts/AccountContext';
+import { useAccount } from '../../contexts/AccountContext';
 
 interface AdminRouteProps {
     children: React.ReactNode;

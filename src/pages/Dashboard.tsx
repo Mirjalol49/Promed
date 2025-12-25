@@ -6,13 +6,13 @@ import {
     Users,
     Syringe,
 } from 'lucide-react';
-import { InjectionAppointmentWidget } from '../components/Widgets';
+import { InjectionAppointmentWidget } from '../features/dashboard/Widgets';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAccount } from '../contexts/AccountContext';
 import { Patient } from '../types';
-import Mascot from '../components/Mascot';
+import Mascot from '../components/mascot/Mascot';
 import { DashboardLoader } from '../components/ui/DashboardLoader';
-import LockedOverlay from '../components/LockedOverlay';
+import LockedOverlay from '../components/ui/LockedOverlay';
 
 interface DashboardProps {
     stats: {
