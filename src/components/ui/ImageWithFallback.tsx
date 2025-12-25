@@ -34,6 +34,7 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
     useEffect(() => {
         if (src) {
             setLoaded(false);
+            setError(false); // 🔥 CRITICAL: Reset error state so new src can attempt to load!
             if (optimisticUrl) {
                 setShowOptimistic(true);
             }

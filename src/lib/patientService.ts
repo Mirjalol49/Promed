@@ -37,7 +37,7 @@ export const subscribeToPatients = (
   columns: string = COLUMNS.LIST // Default to list view columns
 ) => {
   if (!accountId) {
-    console.warn("⚠️ subscribeToPatients: No accountId provided. Multi-tenancy blocked.");
+    console.warn("⚠️ subscribeToPatients: No accountId provided.");
     return () => { };
   }
 
@@ -86,8 +86,7 @@ export const addPatient = async (
   accountId?: string
 ): Promise<string> => {
   const dbPatient: any = {
-    // Both are used for maximum reliability in multi-tenant environments
-    user_id: userId,
+    // Note: user_id is handled by DB default auth.uid() if column exists
     ...(accountId ? { account_id: accountId } : {}),
     full_name: patient.fullName,
     age: patient.age,
@@ -104,6 +103,8 @@ export const addPatient = async (
     technique: patient.technique,
   };
 
+  console.log("💾 DB INSERT START:", { account_id: dbPatient.account_id, full_name: dbPatient.full_name });
+
   const { data, error } = await supabase
     .from('patients')
     .insert([dbPatient])
@@ -112,8 +113,13 @@ export const addPatient = async (
 
   if (error) {
     console.error('🔴 DB INSERT ERROR:', error);
+    // Provide a more user-friendly message for common Supabase errors
+    if (error.code === '42703') throw new Error("Database schema mismatch: 'user_id' column missing. Please run the SQL fix.");
+    if (error.code === '42501') throw new Error("Permission denied: RLS policy blocking insert. Please refresh or run the SQL fix.");
     throw error;
   }
+
+  console.log("🟢 DB INSERT SUCCESS, ID:", data.id);
   return data.id;
 };
 

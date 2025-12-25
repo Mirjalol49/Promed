@@ -1,12 +1,6 @@
 import React from 'react';
 import { motion, Variants } from 'framer-motion';
-
-// Import images directly to ensure Vite bundles them correctly
-import happyImg from '../../assets/images/happy.png';
-import thinkingImg from '../../assets/images/thinking.png';
-import upsetImg from '../../assets/images/upset.png';
-import operationImg from '../../assets/images/operation.png';
-import injectionImg from '../../assets/images/injection.png';
+import { MascotImage } from '../ui/MascotImage';
 
 export type MascotMood = 'happy' | 'thinking' | 'upset' | 'operation' | 'injection';
 
@@ -40,14 +34,8 @@ const mascotVariants: Variants = {
 
 const Mascot: React.FC<MascotProps> = ({ mood, size = 120, className = "", floating = true }) => {
     const getMascotSrc = (m: MascotMood) => {
-        switch (m) {
-            case 'happy': return happyImg;
-            case 'thinking': return thinkingImg;
-            case 'upset': return upsetImg;
-            case 'operation': return operationImg;
-            case 'injection': return injectionImg;
-            default: return happyImg;
-        }
+        // Use absolute paths for stability on sub-pages and preloading support
+        return `/images/mascot/${m}.png`;
     };
 
     return (
@@ -59,11 +47,12 @@ const Mascot: React.FC<MascotProps> = ({ mood, size = 120, className = "", float
             custom={floating}
             whileHover="hover"
         >
-            <img
+            <MascotImage
                 src={getMascotSrc(mood)}
                 alt={`Mascot ${mood}`}
-                style={{ width: size, height: 'auto' }}
-                className=""
+                width={size}
+                height={size} // Explicit dimensions for layout stability
+                className="object-contain"
             />
         </motion.div>
     );

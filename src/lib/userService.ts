@@ -44,7 +44,7 @@ export const updateUserProfile = async (
     role?: 'admin' | 'doctor' | 'staff',
     subscriptionStatus?: string,
     subscriptionEnd?: string,
-
+    accountId?: string,
     autoFreezeEnabled?: boolean
   }
 ): Promise<void> => {
@@ -54,6 +54,7 @@ export const updateUserProfile = async (
   };
 
   if (updates.fullName) dbUpdates.full_name = updates.fullName;
+  if (updates.accountId) dbUpdates.account_id = updates.accountId;
   if (updates.lockEnabled !== undefined) dbUpdates.lock_enabled = updates.lockEnabled;
   if (updates.lockPassword) dbUpdates.lock_password = updates.lockPassword;
   if (updates.status) dbUpdates.status = updates.status;

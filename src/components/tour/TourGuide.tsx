@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Joyride, { CallBackProps, STATUS, Step, Styles } from 'react-joyride';
 import { useLanguage } from '../../contexts/LanguageContext';
-import happyImg from '../../assets/images/happy.png';
+import { MascotImage } from '../ui/MascotImage';
 
 const TourGuide: React.FC = () => {
     const { t } = useLanguage();
@@ -29,9 +29,11 @@ const TourGuide: React.FC = () => {
             target: 'body',
             content: (
                 <div className="flex flex-col items-center text-center pt-4">
-                    <img
-                        src={happyImg}
+                    <MascotImage
+                        src="/images/mascot/happy.png"
                         alt="Graft Mascot"
+                        width={64}
+                        height={64}
                         className="w-16 h-16 absolute -top-8 -left-8 drop-shadow-lg"
                     />
                     <h3 className="text-xl font-bold text-slate-800 mb-2">
@@ -49,9 +51,11 @@ const TourGuide: React.FC = () => {
             target: '#stats-grid',
             content: (
                 <div className="relative pt-2">
-                    <img
-                        src={happyImg}
+                    <MascotImage
+                        src="/images/mascot/happy.png"
                         alt="Graft Mascot"
+                        width={48}
+                        height={48}
                         className="w-12 h-12 absolute -top-10 -left-6 drop-shadow-md"
                     />
                     <p className="text-slate-700 font-medium">
@@ -64,9 +68,11 @@ const TourGuide: React.FC = () => {
             target: '#add-patient-btn',
             content: (
                 <div className="relative pt-2">
-                    <img
-                        src={happyImg}
+                    <MascotImage
+                        src="/images/mascot/happy.png"
                         alt="Graft Mascot"
+                        width={48}
+                        height={48}
                         className="w-12 h-12 absolute -top-10 -left-6 drop-shadow-md"
                     />
                     <p className="text-slate-700 font-medium">

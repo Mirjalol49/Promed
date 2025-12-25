@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { MascotImage } from './MascotImage';
 import { useScrollLock } from '../../hooks/useScrollLock';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -46,9 +47,11 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onConfirm })
 
                         {/* Mascot (The Guilt Trip) */}
                         <div className="relative mb-6 pt-4">
-                            <motion.img
-                                src="/images/upset.png"
+                            <MascotImage
+                                src="/images/mascot/upset.png"
                                 alt="Upset Mascot"
+                                width={140}
+                                height={140}
                                 className="w-[140px] h-auto drop-shadow-xl"
                                 animate={{ y: [0, 6, 0] }}
                                 transition={{

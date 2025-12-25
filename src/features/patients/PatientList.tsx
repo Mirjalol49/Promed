@@ -41,8 +41,7 @@ import { patientSchema, safeValidate } from '../../lib/validation';
 import DeleteModal from '../../components/ui/DeleteModal';
 import { CustomSelect } from '../../components/ui/CustomSelect';
 import Mascot from '../../components/mascot/Mascot';
-import thinkingImg from '../../assets/images/thinking.png';
-import injectionImg from '../../assets/images/injection.png';
+import { MascotImage } from '../../components/ui/MascotImage';
 import { ImageUploadingOverlay } from '../../components/ui/ImageUploadingOverlay';
 
 // Helper to translate status
@@ -289,6 +288,7 @@ export const PatientList: React.FC<{
             <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-promed-primary transition" size={18} />
           </div>
           <button
+            id="add-patient-btn"
             onClick={onAddPatient}
             className="flex items-center justify-center space-x-2 bg-promed-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-teal-800 transition shadow-lg shadow-teal-900/10 active:scale-95 whitespace-nowrap"
           >
@@ -710,15 +710,17 @@ export const PatientDetail: React.FC<{
               </button>
             </div>
 
-            <div className={`space - y - 6 ${patient.injections.length > 0 ? 'pl-4' : ''} relative z - 10 pb - 48`}>
+            <div className={`space-y-6 ${patient.injections.length > 0 ? 'pl-4' : ''} relative z-10 pb-48`}>
               {patient.injections.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-in fade-in zoom-in duration-700">
                   <div className="relative mb-10">
                     {/* Pulsing Aura */}
                     <div className="absolute inset-0 bg-promed-primary/5 blur-3xl rounded-full scale-150 animate-pulse"></div>
-                    <img
-                      src={thinkingImg}
+                    <MascotImage
+                      src="/images/mascot/thinking.png"
                       alt="Thinking Mascot"
+                      width={192}
+                      height={192}
                       className="w-48 h-48 object-contain relative z-10 drop-shadow-2xl"
                     />
                   </div>
@@ -745,16 +747,18 @@ export const PatientDetail: React.FC<{
                   <div key={inj.id} className="relative flex gap-6 group">
                     {/* Vertical Line */}
                     {index !== patient.injections.length - 1 && (
-                      <div className={`absolute left - [11px] top - 10 bottom - [-24px] w - 0.5 ${isNextHero ? 'bg-emerald-100' : 'bg-slate-200'} group - hover: bg - slate - 300 transition - colors`}></div>
+                      <div className={`absolute left-[11px] top-10 bottom-[-24px] w-0.5 ${isNextHero ? 'bg-emerald-100' : 'bg-slate-200'} group-hover:bg-slate-300 transition-colors`}></div>
                     )}
 
                     {/* Indicator Dot / Mascot Avatar */}
                     {isNextHero ? (
                       <div className="relative group/mascot z-10 transition-transform hover:scale-110 duration-300">
                         <div className="w-10 h-10 rounded-full border-4 border-slate-100 overflow-hidden bg-white shadow-md -ml-2 ring-1 ring-slate-200">
-                          <img
-                            src={injectionImg}
+                          <MascotImage
+                            src="/images/mascot/injection.png"
                             alt="Mascot"
+                            width={40}
+                            height={40}
                             className="w-full h-full object-cover scale-125 translate-y-1"
                           />
                         </div>
@@ -766,20 +770,20 @@ export const PatientDetail: React.FC<{
                       </div>
                     ) : (
                       <div className={`
-flex - shrink - 0 w - 6 h - 6 rounded - full border - [3px] z - 10 mt - 1 shadow - sm transition - all duration - 300
+                        flex-shrink-0 w-6 h-6 rounded-full border-[3px] z-10 mt-1 shadow-sm transition-all duration-300
                         ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-500 border-white ring-2 ring-emerald-200' :
                           inj.status === InjectionStatus.MISSED ? 'bg-red-500 border-white ring-2 ring-red-200' :
                             isToday ? 'bg-amber-500 border-white ring-2 ring-amber-200 scale-110' : 'bg-white border-slate-300'
                         }
-`} />
+                      `} />
                     )}
 
                     {/* Content */}
-                    <div className={`flex - 1 ${isNextHero ? 'bg-white shadow-xl ring-1 ring-slate-200 border-slate-100' : 'bg-slate-50/50'} rounded - 2xl p - 5 hover: bg - white hover: shadow - card hover: -translate - y - 1 transition - all duration - 300 border border - transparent hover: border - slate - 200`}>
+                    <div className={`flex-1 ${isNextHero ? 'bg-white shadow-xl ring-1 ring-slate-200 border-slate-100' : 'bg-slate-50/50'} rounded-2xl p-5 hover:bg-white hover:shadow-card hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-slate-200`}>
                       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3">
-                            <h4 className={`font - bold text - base ${isToday ? 'text-amber-700' : 'text-slate-800'} `}>
+                            <h4 className={`font-bold text-base ${isToday ? 'text-amber-700' : 'text-slate-800'}`}>
                               {t('injection')} #{index + 1}
                             </h4>
                             {/* Actions Container */}
@@ -832,8 +836,7 @@ flex - shrink - 0 w - 6 h - 6 rounded - full border - [3px] z - 10 mt - 1 shadow
                               </button>
                             </div>
                           ) : (
-                            <span className={`px - 4 py - 1.5 rounded - xl text - xs font - bold uppercase tracking - wider shadow - sm border whitespace - nowrap ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
-                              } `}>
+                            <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm border whitespace-nowrap ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
                               {translateStatus(inj.status)}
                             </span>
                           )}
@@ -847,9 +850,11 @@ flex - shrink - 0 w - 6 h - 6 rounded - full border - [3px] z - 10 mt - 1 shadow
 
             {/* The Big Mascot */}
             {patient.injections.length > 0 && (
-              <img
-                src="/images/injection.png"
+              <MascotImage
+                src="/images/mascot/injection.png"
                 alt="Mascot"
+                width={224}
+                height={224}
                 className="absolute -bottom-6 -right-6 w-56 opacity-100 pointer-events-none transform rotate-[-5deg] z-0 drop-shadow-xl"
               />
             )}

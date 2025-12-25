@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MascotImage } from './MascotImage';
 
 interface SyncToastProps {
     isVisible: boolean;
@@ -48,13 +49,13 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                 return {
                     border: 'border-rose-500',
                     progress: 'bg-rose-500',
-                    mascot: '/images/upset.png'
+                    mascot: '/images/mascot/upset.png'
                 };
             default:
                 return {
                     border: 'border-emerald-500',
                     progress: 'bg-emerald-500',
-                    mascot: '/images/happy.png'
+                    mascot: '/images/mascot/happy.png'
                 };
         }
     };
@@ -73,11 +74,13 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                 >
                     {/* Mascot Character */}
                     <div className="relative flex-shrink-0">
-                        <motion.img
+                        <MascotImage
                             initial={{ scale: 0.5, rotate: -20 }}
                             animate={{ scale: 1, rotate: 0 }}
                             src={theme.mascot}
                             alt="Mascot"
+                            width={96}
+                            height={96}
                             className="w-24 h-24 object-contain -mt-10 drop-shadow-lg"
                         />
                     </div>

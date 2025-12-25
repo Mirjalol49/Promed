@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { DashboardLoader } from './components/ui/DashboardLoader';
 console.log("🛡️ PROMED SYSTEM BOOT: Version 1.25.0 - LockFix Loaded");
 import { motion } from 'framer-motion';
-import { StatCard, StatsChart, UpcomingInjections } from './features/dashboard/Widgets';
-import { Dashboard } from './pages/Dashboard';
+const Dashboard = React.lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const LoginScreen = React.lazy(() => import('./features/auth/LoginScreen').then(m => ({ default: m.LoginScreen })));
+const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const PatientList = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientList })));
+const PatientDetail = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientDetail })));
+const AddPatientForm = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.AddPatientForm })));
+
 import Layout from './components/layout/Layout';
-import { LoginScreen } from './features/auth/LoginScreen';
-import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminRoute } from './components/layout/AdminRoute';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Users, UserPlus, Calendar, Activity, Bell, Shield, Smartphone, Lock, ArrowRight, LogOut } from 'lucide-react';
@@ -14,7 +17,6 @@ import { Patient, PageView, InjectionStatus, PatientImage } from './types';
 import { useLanguage } from './contexts/LanguageContext';
 import { useAccount } from './contexts/AccountContext';
 import { useToast } from './contexts/ToastContext';
-import { PatientList, PatientDetail, AddPatientForm } from './features/patients/PatientList';
 import SyncToast from './components/ui/SyncToast';
 import {
   subscribeToPatients,
@@ -275,8 +277,11 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
 
 
 
+import { useAuth } from './contexts/AuthContext';
+
 const App: React.FC = () => {
-  const { accountId, userId, accountName, userEmail, setAccount, isLoggedIn, isLoading: isAuthLoading, logout } = useAccount();
+  const { accountId, userId, accountName, userEmail, setAccount, isLoggedIn, logout } = useAccount();
+  const { loading: authLoading, session: authSession, signOut } = useAuth();
 
 
   const [view, setView] = useState<PageView>('DASHBOARD');
@@ -300,17 +305,22 @@ const App: React.FC = () => {
   const { success, error: showError } = useToast();
 
   // Handle Supabase Auth Events (especially password recovery)
+  // MOVED TO AuthContext, but keeping password recovery listener if specific to UI, 
+  // actually AuthContext handles the session update.
+  // We can just rely on 'authSession' from useAuth() to detect changes.
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("🔔 Supabase Auth Event:", event);
+    // If password recovery happened, AuthContext would update the session.
+    // We can check if the URL contains type=recovery or similar if needed, 
+    // but typically Supabase handles the session exchange.
+    // For the lock screen bypass:
+    supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         console.log("🔑 Password recovery detected! Bypassing lock screen...");
         setIsLocked(false);
         localStorage.setItem('appLockState', 'false');
       }
     });
-
-    return () => subscription.unsubscribe();
   }, []);
 
   // Persist lock state to localStorage whenever it changes
@@ -333,38 +343,32 @@ const App: React.FC = () => {
 
   // Validate session consistency
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    // 🔥 ROUTING: Check URL path on load
+    const path = window.location.pathname;
+    if (path === '/admin') {
+      setView('ADMIN_DASHBOARD');
+    } else if (path === '/patients') {
+      setView('PATIENTS');
+    }
 
-      // 🔥 ROUTING: Check URL path on load
-      const path = window.location.pathname;
-      if (path === '/admin') {
-        setView('ADMIN_DASHBOARD');
-      } else if (path === '/patients') {
-        setView('PATIENTS');
+    if (authSession) {
+      const persistedAccountId = localStorage.getItem('accountId');
+      const sessionUserId = authSession.user.id;
 
+      if (persistedAccountId && persistedAccountId !== sessionUserId) {
+        console.warn('⚠️ Session mismatch detected! Clearing corrupted state...');
+        localStorage.clear();
+        logout();
+        window.location.reload();
+        return;
       }
 
-      if (session) {
-        const persistedAccountId = localStorage.getItem('accountId');
-        const sessionUserId = session.user.id;
-
-        if (persistedAccountId && persistedAccountId !== sessionUserId) {
-          console.warn('⚠️ Session mismatch detected! Clearing corrupted state...');
-          localStorage.clear();
-          logout();
-          window.location.reload();
-          return;
-        }
-
-        // Only set account if userId isn't already set
-        if (!userId) {
-          setAccount(sessionUserId, sessionUserId, accountName || '', session.user.email || '', 'doctor', false); // Not verified yet
-        }
+      // Only set account if userId isn't already set
+      if (!userId) {
+        setAccount(sessionUserId, sessionUserId, accountName || '', authSession.user.email || '', 'doctor', false);
       }
-    };
-    checkSession();
-  }, [userId, accountName, setAccount]);
+    }
+  }, [authSession, userId, accountName, setAccount]);
 
   // ===== PROFILE AND SETTINGS SYNC =====
   useEffect(() => {
@@ -378,9 +382,15 @@ const App: React.FC = () => {
           // 🔥 FIX: ALWAYS prioritize the account_id from the database profile
           const databaseAccountId = profile.accountId;
           const currentAccountId = accountId;
-          const fallbackAccountId = userId;
+          const fallbackAccountId = profile.email ? `account_${profile.email}` : userId;
 
           const finalAccountId = databaseAccountId || currentAccountId || fallbackAccountId;
+
+          // 🔥 AUTOMATIC SYNC: If DB is missing the accountId, push it now!
+          if (!databaseAccountId && finalAccountId && finalAccountId !== userId) {
+            console.log("🛠️ Auto-Syncing Account ID to Database Profile:", finalAccountId);
+            updateUserProfile(userId, { accountId: finalAccountId }).catch(e => console.error("Auto-sync error:", e));
+          }
 
           console.log("🛡️ PROMED SECURITY SYNC:", {
             profileRole: profile.role,
@@ -417,7 +427,7 @@ const App: React.FC = () => {
     );
 
     return () => unsubscribe();
-  }, [userId, view]); // Added view to dependencies to ensure re-check on nav
+  }, [userId]); // Removed 'view' to prevent unnecessary re-subscriptions on navigation
 
   useEffect(() => {
     let mounted = true;
@@ -509,7 +519,7 @@ const App: React.FC = () => {
 
   const handleLogout = async () => {
     console.log("👋 Logging out...");
-    await supabase.auth.signOut();
+    await signOut(); // Use context signOut
     localStorage.clear();
     logout();
     setPatients([]);
@@ -602,24 +612,36 @@ const App: React.FC = () => {
         setView('PATIENTS');
       }
 
-      // 3) Background uploads & Supabase DB write
-      if (files?.profileImage) {
-        const url = URL.createObjectURL(files.profileImage);
-        setOptimisticImage(`${patientData.id}_profile`, url);
-        const remoteUrl = await uploadImage(files.profileImage, `patients/${patientData.id}/profile`);
-        patientData.profileImage = remoteUrl;
+      // 3) Background uploads (Non-blocking: don't let image failure break the whole save)
+      try {
+        if (files?.profileImage) {
+          const url = URL.createObjectURL(files.profileImage);
+          setOptimisticImage(`${patientData.id}_profile`, url);
+          const remoteUrl = await uploadImage(files.profileImage, `patients/${patientData.id}/profile`);
+          patientData.profileImage = remoteUrl;
+        }
+      } catch (imgErr) {
+        console.error("⚠️ Profile image upload failed, continuing with patient save:", imgErr);
       }
 
-      if (files?.beforeImage) {
-        const url = URL.createObjectURL(files.beforeImage);
-        setOptimisticImage(`${patientData.id}_before`, url);
-        const remoteUrl = await uploadImage(files.beforeImage, `patients/${patientData.id}/before`);
-        patientData.beforeImage = remoteUrl;
+      try {
+        if (files?.beforeImage) {
+          const url = URL.createObjectURL(files.beforeImage);
+          setOptimisticImage(`${patientData.id}_before`, url);
+          const remoteUrl = await uploadImage(files.beforeImage, `patients/${patientData.id}/before`);
+          patientData.beforeImage = remoteUrl;
+        }
+      } catch (imgErr) {
+        console.error("⚠️ Before image upload failed, continuing with patient save:", imgErr);
       }
 
       if (isNewPatient) {
+        console.log("📝 Adding new patient to DB...");
         const { id: tempId, ...patientWithoutId } = patientData;
-        const realId = await addPatient(patientWithoutId, userId, accountId);
+
+        // Ensure we use the best possible accountId
+        const activeAccountId = accountId || (userEmail ? `account_${userEmail}` : userId);
+        const realId = await addPatient(patientWithoutId, userId, activeAccountId);
 
         // [GHOST FIX] DATABASE SUCCESS CONFIRMED - Show toast now!
         success(t('patient_added_title'), t('patient_added_msg'));
@@ -630,6 +652,11 @@ const App: React.FC = () => {
 
         const beforeBlob = getOptimisticImage(`${tempId}_before`);
         if (beforeBlob) setOptimisticImage(`${realId}_before`, beforeBlob);
+
+        // IMMEDIATE UPDATE: Swap temp ID for real ID in patients state
+        // This prevents the patient from "disappearing" from the detail view 
+        // while waiting for the real-time sync to catch up.
+        setPatients(prev => prev.map(p => p.id === tempId ? { ...p, id: realId } : p));
 
         // Update navigation to use real ID
         setSelectedPatientId(realId);
@@ -1022,12 +1049,12 @@ const App: React.FC = () => {
   };
 
   // If authentication or initial data is loading, show the mascot loader
-  if (isAuthLoading || (loading && patients.length === 0)) {
+  if (authLoading) {
     return <DashboardLoader />;
   }
 
   // Show login screen if not logged in
-  if (!isLoggedIn) {
+  if (!authSession) {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
@@ -1068,7 +1095,9 @@ const App: React.FC = () => {
       userName={accountName}
       onLogout={handleLogout}
     >
-      {renderContent()}
+      <React.Suspense fallback={<DashboardLoader />}>
+        {renderContent()}
+      </React.Suspense>
       <ToastContainer />
 
       <DeleteModal
