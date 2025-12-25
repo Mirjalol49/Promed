@@ -59,7 +59,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ label, value, icon: Icon, color, sh
         </div>
 
         {mascot && (
-            <div className="absolute bottom-2 right-2 z-0">
+            <div className="absolute bottom-2 right-2 z-0 hidden md:block">
                 {mascot}
             </div>
         )}
@@ -92,7 +92,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             <div className="space-y-10 p-2 sm:p-4">
                 {/* Vitals Strip */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     <HeroCard
                         label={t('operation')}
                         value={patients.filter(p => p.operationDate && new Date(p.operationDate).toDateString() === new Date().toDateString()).length}

@@ -4,9 +4,6 @@ import {
   Users,
   Menu,
   X,
-  ChevronDown,
-  Check,
-  Globe,
   Lock,
   Settings,
   Shield
@@ -50,8 +47,7 @@ const Layout: React.FC<LayoutProps> = ({
   const { role } = useAccount();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   const NavItem = ({ page, icon: Icon, label }: { page: PageView; icon: any; label: string }) => {
     const isActive = currentPage === page;
@@ -84,13 +80,6 @@ const Layout: React.FC<LayoutProps> = ({
     }
   };
 
-  const languages = [
-    { code: 'en', label: 'English' },
-    { code: 'uz', label: "O'zbek" },
-    { code: 'ru', label: 'Русский' }
-  ];
-
-  const currentLangLabel = languages.find(l => l.code === language)?.label || 'English';
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900 font-sans">
@@ -170,9 +159,27 @@ const Layout: React.FC<LayoutProps> = ({
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
         {/* Header */}
-        <header className="sticky top-0 z-20 h-20">
+        <header className="sticky top-0 z-20 h-16 md:h-20">
           <div className="absolute inset-0 bg-white/90 backdrop-blur-md shadow-soft border-b border-slate-200" />
-          <div className="relative z-10 h-full flex items-center justify-between px-6 md:px-10">
+          <div className="relative z-10 h-full flex items-center justify-between px-4 md:px-10">
+
+            {/* Left Section: Logo (Mobile) or Title (Desktop) */}
+            <div className="flex items-center">
+              {/* Mobile Logo */}
+              <div className="flex items-center md:hidden gap-2">
+                <div className="w-8 h-8 bg-promed-primary rounded-lg flex items-center justify-center shadow-lg shadow-promed-primary/20">
+                  <div className="w-4 h-4 bg-white rounded-full" />
+                </div>
+                <span className="text-xl font-bold tracking-tight text-slate-900">PROMED</span>
+              </div>
+
+              {/* Desktop Title */}
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 hidden md:block tracking-tight">
+                {getPageTitle()}
+              </h1>
+            </div>
+
+            {/* Right Section: Mobile Menu Trigger */}
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setIsSidebarOpen(true)}
@@ -180,46 +187,6 @@ const Layout: React.FC<LayoutProps> = ({
               >
                 <Menu size={24} />
               </button>
-              <h1 className="text-2xl font-bold text-slate-900 hidden md:block tracking-tight text-white">
-                <span className="text-slate-900">{getPageTitle()}</span>
-              </h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {/* Language Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                  className="flex items-center space-x-2 bg-white border border-slate-200 hover:border-promed-primary/50 text-slate-700 px-3 py-2 rounded-xl transition-all font-bold text-xs shadow-sm hover:shadow-md"
-                >
-                  <Globe size={14} className="text-slate-400" />
-                  <span>{currentLangLabel}</span>
-                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isLangMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {isLangMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40 cursor-default" onClick={() => setIsLangMenuOpen(false)}></div>
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 text-white">
-                      {languages.map((lang) => (
-                        <button
-                          key={lang.code}
-                          onClick={() => {
-                            setLanguage(lang.code as any);
-                            setIsLangMenuOpen(false);
-                          }}
-                          className={`w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 transition flex items-center justify-between
-                          ${language === lang.code ? 'text-promed-primary bg-promed-light/30' : 'text-slate-600'}
-                        `}
-                        >
-                          <span>{lang.label}</span>
-                          {language === lang.code && <Check size={16} className="text-promed-primary" />}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
             </div>
           </div>
         </header>

@@ -7,6 +7,8 @@ import {
     Lock,
     LogOut,
     ChevronDown,
+    Globe,
+    Check,
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -42,7 +44,13 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     userName,
     onLogout
 }) => {
-    const { t } = useLanguage();
+    const { t, language, setLanguage } = useLanguage();
+
+    const languages = [
+        { code: 'en', label: 'English' },
+        { code: 'uz', label: "O'zbek" },
+        { code: 'ru', label: 'Русский' }
+    ];
     const { success, error: showError } = useToast();
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
     const [showCurrentPass, setShowCurrentPass] = useState(false);
@@ -235,6 +243,26 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                             </div>
                             <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                         </label>
+                    </div>
+
+
+                    {/* Language Settings */}
+                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3">
+                        <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('select_language')}</h4>
+                        <div className="grid grid-cols-3 gap-2">
+                            {languages.map((lang) => (
+                                <button
+                                    key={lang.code}
+                                    onClick={() => setLanguage(lang.code as any)}
+                                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-bold transition-all border ${language === lang.code
+                                        ? 'bg-white border-promed-primary text-promed-primary shadow-sm'
+                                        : 'bg-transparent border-transparent text-slate-500 hover:bg-white hover:shadow-sm'
+                                        }`}
+                                >
+                                    {lang.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Security Toggle Section */}

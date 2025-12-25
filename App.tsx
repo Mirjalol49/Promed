@@ -138,7 +138,7 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
                   '/images/happy.png'
             }
             alt="Mascot Guard"
-            className="w-32 h-32 object-contain relative z-10 drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
+            className="w-24 h-24 md:w-32 md:h-32 object-contain relative z-10 drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={
               lockState === 'idle' ? { opacity: 1, scale: 1, y: [0, -6, 0] } :
@@ -175,11 +175,11 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
                 value={digit}
                 onChange={(e) => handlePinChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
-                className={`w - 14 h - 18 sm: w - 16 sm: h - 20 bg - white border - 2 
+                className={`w-12 h-14 sm:w-16 sm:h-20 bg-white border-2 
                   ${pinError ? 'border-rose-500 shake shadow-[0_0_20px_rgba(244,63,94,0.2)]' : 'border-emerald-500/10'}
-rounded - 2xl text - center text - 3xl font - black text - [#0f2e2a] transition - all duration - 200
-focus: outline - none focus: border - emerald - 500 focus: ring - 4 focus: ring - emerald - 500 / 20
-placeholder - slate - 300 shadow - xl`}
+                  rounded-2xl text-center text-3xl font-black text-[#0f2e2a] transition-all duration-200
+                  focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20
+                  placeholder-slate-300 shadow-xl`}
                 maxLength={1}
                 autoFocus={idx === 0}
               />

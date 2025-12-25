@@ -14,6 +14,7 @@ import {
   Camera,
   Syringe,
   Activity,
+  Wand2,
   Save,
   Clock,
   Plus,
@@ -38,6 +39,7 @@ import { ImageWithFallback } from './ui/ImageWithFallback';
 import { compressImage } from '../lib/imageOptimizer';
 import DeleteModal from './DeleteModal';
 import { CustomSelect } from './CustomSelect';
+import Mascot from './Mascot';
 
 // Helper to translate status
 const useStatusTranslation = () => {
@@ -278,8 +280,8 @@ export const PatientList: React.FC<{
           </button>
         </div>
       </div>
-      <div className="overflow-x-auto min-h-[400px]">
-        <table className="w-full text-left border-collapse">
+      <div className="w-full overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 min-h-[400px]">
+        <table className="min-w-full text-left border-collapse">
           <thead className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
             <tr>
               <th className="p-5 pl-8">{t('name')}</th>
@@ -300,10 +302,11 @@ export const PatientList: React.FC<{
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.2, delay: idx * 0.05 }}
-                      className="hover:bg-slate-50 transition-colors cursor-pointer group"
+                      className="hover:bg-teal-50/80 hover:scale-[1.01] hover:shadow-lg hover:border-promed-primary/20 hover:z-10 relative transition-all duration-200 cursor-pointer group border-b border-transparent hover:rounded-xl"
                       onClick={() => onSelect(patient.id)}
                     >
-                      <td className="p-5 pl-8">
+                      <td className="p-5 pl-8 rounded-l-xl group-hover:rounded-l-xl transition-all relative">
+                        <div className="absolute left-0 top-3 bottom-3 w-1 bg-promed-primary rounded-r-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div className="flex items-center space-x-4">
                           <div className="relative w-11 h-11">
                             <ImageWithFallback
@@ -335,7 +338,7 @@ export const PatientList: React.FC<{
                           <span className="text-xs text-slate-400 italic font-medium">{t('none_scheduled')}</span>
                         )}
                       </td>
-                      <td className="p-5">
+                      <td className="p-5 rounded-r-xl group-hover:rounded-r-xl transition-all">
                         <span className={`text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center space-x-1.5 border ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
                           patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                             'bg-slate-50 text-slate-700 border-slate-200'
@@ -361,9 +364,14 @@ export const PatientList: React.FC<{
                   exit={{ opacity: 0 }}
                 >
                   <td colSpan={4} className="p-12 text-center text-slate-500">
-                    <div className="flex flex-col items-center justify-center space-y-3">
-                      <User size={48} className="text-slate-200" />
-                      <p className="font-medium">No patients found matching your search.</p>
+                    <div className="flex flex-col items-center justify-center space-y-6">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-blue-100/50 blur-3xl rounded-full scale-150"></div>
+                        <Mascot mood="happy" size={140} floating={true} />
+                      </div>
+                      <div className="text-center relative z-10">
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">{t('empty_patient_list_title') || "No Patients Found"}</h3>
+                      </div>
                     </div>
                   </td>
                 </motion.tr>
@@ -393,8 +401,8 @@ export const PatientList: React.FC<{
                     key={idx}
                     onClick={() => setCurrentPage(page)}
                     className={`min-w-[36px] h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all border ${currentPage === page
-                        ? 'bg-promed-primary text-white border-promed-primary shadow-md shadow-teal-900/10'
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      ? 'bg-promed-primary text-white border-promed-primary shadow-md shadow-teal-900/10'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                   >
                     {page}
@@ -983,6 +991,25 @@ export const AddPatientForm: React.FC<{
     }
   }, []);
 
+  // --- Auto-Fill Feature (Magic Button) ---
+  const handleAutoFill = () => {
+    const randomNames = ["Azizbek Tursunov", "Jasur Rahimjonov", "Otabek Nurmatov", "Sardor Kamilov", "Bekzod Alimov"];
+    const randomName = randomNames[Math.floor(Math.random() * randomNames.length)];
+    const randomPhone = `+998 ${Math.floor(Math.random() * 90 + 90)} ${Math.floor(Math.random() * 899 + 100)} ${Math.floor(Math.random() * 89 + 10)} ${Math.floor(Math.random() * 89 + 10)}`;
+    const randomAge = Math.floor(Math.random() * 40 + 20).toString();
+    const techniques = ['Hair', 'Eyebrow', 'Beard'];
+    const randomTechnique = techniques[Math.floor(Math.random() * techniques.length)];
+
+    setFullName(randomName);
+    setPhone(randomPhone);
+    setAge(randomAge);
+    setGender('Male');
+    setTechnique(randomTechnique);
+    setOperationDate(new Date().toISOString().split('T')[0]);
+    setGrafts(Math.floor(Math.random() * 2000 + 1500).toString());
+    setValidationError(null); // Clear errors if any
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -993,6 +1020,7 @@ export const AddPatientForm: React.FC<{
       return;
     }
     setValidationError(null);
+
 
     const newPatient: Patient = {
       id: initialData?.id || Date.now().toString(),
@@ -1043,9 +1071,22 @@ export const AddPatientForm: React.FC<{
               </h3>
               <p className="text-slate-500 text-sm mt-1 font-medium">{t('enter_patient_details')}</p>
             </div>
-            <button onClick={onCancel} className="text-slate-400 hover:text-slate-800 hover:bg-slate-100 p-2.5 rounded-full transition duration-200">
-              <X size={24} />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* ✨ Magic Auto-Fill Button (Dev Tool) */}
+              {!initialData && (
+                <button
+                  type="button"
+                  onClick={handleAutoFill}
+                  className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-2.5 rounded-full transition duration-200"
+                  title="Auto Fill"
+                >
+                  <Wand2 size={24} />
+                </button>
+              )}
+              <button onClick={onCancel} className="text-slate-400 hover:text-slate-800 hover:bg-slate-100 p-2.5 rounded-full transition duration-200">
+                <X size={24} />
+              </button>
+            </div>
           </div>
 
           {/* Content */}

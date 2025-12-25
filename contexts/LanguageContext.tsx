@@ -251,6 +251,17 @@ export const translations = {
 
     // Pagination
     pagination_showing: "Showing {start}-{end} of {total} patients",
+
+    // Validation
+    validation_name_required: "Full name is required",
+    validation_phone_required: "Phone number is required",
+    validation_age_invalid: "Please enter a valid age (1-120)",
+    validation_technique_required: "Please select a technique",
+    validation_date_required: "Operation date is required",
+
+    // Empty State
+    empty_patient_list_title: "No Patients Found",
+    empty_patient_list_desc: "It looks quiet here. Add a new patient to get started!",
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -516,6 +527,17 @@ export const translations = {
 
     // Pagination
     pagination_showing: "Jami {total} bemordan {start}-{end} ko'rsatilmoqda",
+
+    // Validation
+    validation_name_required: "To'liq ism kiritilishi shart",
+    validation_phone_required: "Telefon raqami kiritilishi shart",
+    validation_age_invalid: "Iltimos, to'g'ri yoshni kiriting (1-120)",
+    validation_technique_required: "Iltimos, operatsiya turini tanlang",
+    validation_date_required: "Operatsiya sanasi kiritilishi shart",
+
+    // Empty State
+    empty_patient_list_title: "Hozircha Bemorlar Yo'q",
+    empty_patient_list_desc: "Bu yer tinch ko'rinadi. Ishni boshlash uchun yangi bemor qo'shing!",
   },
   ru: {
     dashboard: "Панель управления",
@@ -779,6 +801,15 @@ export const translations = {
 
     // Pagination
     pagination_showing: "Показано {start}-{end} из {total} пациентов",
+
+    // Validation
+    validation_age_invalid: "Пожалуйста, введите правильный возраст (1-120)",
+    validation_technique_required: "Пожалуйста, выберите метод",
+    validation_date_required: "Дата операции обязательна",
+
+    // Empty State
+    empty_patient_list_title: "Пациентов Пока Нет",
+    empty_patient_list_desc: "Здесь пока тихо. Добавьте нового пациента, чтобы начать!",
   }
 };
 
