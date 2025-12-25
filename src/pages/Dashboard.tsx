@@ -59,15 +59,15 @@ const HeroCard: React.FC<HeroCardProps> = ({ label, value, icon: Icon, color, sh
             </div>
         </div>
 
+        {/* Decorative elements - moved behind mascot */}
+        <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl z-0" />
+        <div className="absolute -left-4 -bottom-4 w-32 h-32 bg-black/5 rounded-full blur-3xl opacity-50 z-0" />
+
         {mascot && (
-            <div className="absolute -bottom-3 -right-2 md:bottom-2 md:right-2 z-0 opacity-100 scale-75 md:scale-100 origin-bottom-right">
+            <div className="absolute bottom-0 right-0 md:bottom-2 md:right-2 z-[5] opacity-100 scale-75 md:scale-100 origin-bottom-right transform-gpu pointer-events-none">
                 {mascot}
             </div>
         )}
-
-        {/* Decorative elements */}
-        <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
-        <div className="absolute -left-4 -bottom-4 w-32 h-32 bg-black/5 rounded-full blur-3xl opacity-50" />
     </motion.div>
 );
 
