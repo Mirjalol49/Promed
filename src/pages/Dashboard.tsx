@@ -43,9 +43,10 @@ const HeroCard: React.FC<HeroCardProps> = ({ label, value, icon: Icon, color, sh
         initial="idle"
         whileHover="hover"
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className={`relative p-4 md:p-7 rounded-[24px] md:rounded-[32px] h-[110px] md:h-[180px] overflow-hidden ${color} bg-opacity-90 backdrop-blur-sm border border-white/20 shadow-xl ${shadow}`}
+        style={{ WebkitMaskImage: '-webkit-radial-gradient(white, black)' }} // Fix for Safari overflow:hidden + border-radius bug
+        className={`relative p-4 md:p-7 rounded-[24px] md:rounded-[32px] h-[110px] md:h-[180px] overflow-hidden ${color} bg-opacity-90 backdrop-blur-sm border border-white/20 shadow-xl ${shadow} isolate`}
     >
-        <div className="relative z-10 h-full flex flex-col justify-between">
+        <div className="relative z-10 h-full flex flex-col justify-between pointer-events-none">
             <div className="space-y-1">
                 <div className="flex items-center space-x-2">
                     <div className="p-1.5 bg-white/10 rounded-lg">
@@ -60,11 +61,11 @@ const HeroCard: React.FC<HeroCardProps> = ({ label, value, icon: Icon, color, sh
         </div>
 
         {/* Decorative elements - moved behind mascot */}
-        <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl z-0" />
-        <div className="absolute -left-4 -bottom-4 w-32 h-32 bg-black/5 rounded-full blur-3xl opacity-50 z-0" />
+        <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl z-0 pointer-events-none" />
+        <div className="absolute -left-4 -bottom-4 w-32 h-32 bg-black/5 rounded-full blur-3xl opacity-50 z-0 pointer-events-none" />
 
         {mascot && (
-            <div className="absolute bottom-0 right-0 md:bottom-2 md:right-2 z-[5] opacity-100 scale-75 md:scale-100 origin-bottom-right transform-gpu pointer-events-none">
+            <div className="absolute bottom-0 right-0 md:bottom-2 md:right-2 z-20 opacity-100 scale-75 md:scale-100 origin-bottom-right transform-gpu pointer-events-none">
                 {mascot}
             </div>
         )}

@@ -372,7 +372,7 @@ export const PatientList: React.FC<{
                     <div className="flex flex-col items-center justify-center space-y-6">
                       <div className="relative">
                         <div className="absolute inset-0 bg-blue-100/50 blur-3xl rounded-full scale-150"></div>
-                        <Mascot mood="happy" size={140} floating={true} />
+                        <Mascot mood="happy" size={140} floating={false} />
                       </div>
                       <div className="text-center relative z-10">
                         <h3 className="text-xl font-bold text-slate-800 mb-2">{t('empty_patient_list_title') || "No Patients Found"}</h3>
