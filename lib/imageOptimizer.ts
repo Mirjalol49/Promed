@@ -15,14 +15,22 @@ import imageCompression from 'browser-image-compression';
  */
 export async function compressImage(file: File): Promise<File> {
     const options = {
-        maxSizeMB: 0.5,              // Target 500KB max (good for medical images)
-        maxWidthOrHeight: 1920,       // Resize to HD (1920px max dimension)
-        useWebWorker: true,           // Non-blocking compression
-        initialQuality: 0.7,          // Quality setting (0-1, 0.7 is good balance)
+        maxSizeMB: 1,                 // Increased to 1MB for better high-res quality
+        maxWidthOrHeight: 2048,       // 2K max dimension
+        useWebWorker: true,           // Non-blocking
+        initialQuality: 0.8,          // Slightly higher initial quality
+        maxIteration: 10,             // More attempts to reach target size
     };
 
     try {
         const originalSizeMB = file.size / 1024 / 1024;
+        console.log(`📸 Compressing ${file.name} (${originalSizeMB.toFixed(2)}MB)...`);
+
+        // Extra check: if file is already small, don't compress
+        if (originalSizeMB < 0.2) {
+            console.log('⚡ File already small (<200KB), skipping compression.');
+            return file;
+        }
 
         const compressedFile = await imageCompression(file, options);
 
@@ -36,11 +44,10 @@ export async function compressImage(file: File): Promise<File> {
         return compressedFile;
     } catch (error) {
         console.error('❌ Image compression failed:', error);
-        console.warn('⚠️ Uploading original file as fallback');
-        // Return original file if compression fails
+        // If it's a "File is not an image" error, return original
         return file;
     }
-}   
+}
 
 /**
  * Check if a file is an image

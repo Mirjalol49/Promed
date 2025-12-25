@@ -15,6 +15,8 @@ import {
   Check,
   MapPin
 } from 'lucide-react';
+import Mascot from './Mascot';
+import { motion } from 'framer-motion';
 import { Injection, InjectionStatus, Patient } from '../types';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -217,11 +219,22 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
         ))}
 
         {upcomingEvents.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-48 text-slate-400">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
-              <Calendar size={24} className="opacity-40" />
-            </div>
-            <p className="font-bold text-sm text-slate-300">{t('no_upcoming') || 'No upcoming patients'}</p>
+          <div className="flex flex-col items-center justify-center p-12 h-full min-h-[300px]">
+            <motion.div
+              animate={{
+                scale: [0, 1.2, 1],
+                rotate: [0, -5, 5, 0]
+              }}
+              transition={{
+                duration: 1.5,
+                times: [0, 0.4, 0.7, 1],
+                ease: "circOut"
+              }}
+              className="mb-8"
+            >
+              <Mascot mood="thinking" size={180} />
+            </motion.div>
+            <h3 className="text-2xl font-black text-slate-800">{t('empty_state_peace')}</h3>
           </div>
         )}
       </div>

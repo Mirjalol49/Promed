@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { DashboardLoader } from './components/ui/DashboardLoader';
 console.log("🛡️ PROMED SYSTEM BOOT: Version 1.25.0 - LockFix Loaded");
+import { motion } from 'framer-motion';
 import { Dashboard } from './pages/Dashboard';
 import Layout from './components/Layout';
 import { StatCard, StatsChart, UpcomingInjections } from './components/Widgets';
@@ -27,7 +29,7 @@ import { uploadImage, uploadAvatar, setOptimisticImage, getOptimisticImage } fro
 import { ProfileAvatar } from './components/ProfileAvatar';
 import { useImagePreloader } from './lib/useImagePreloader';
 import ToastContainer from './components/ToastContainer';
-import ConfirmationModal from './components/ConfirmationModal';
+import DeleteModal from './components/DeleteModal';
 import { Trash2 } from 'lucide-react';
 
 import { supabase } from './lib/supabaseClient';
@@ -41,6 +43,7 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
   // Use a single ref for the array to ensure stability across re-renders
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
 
+  const [lockState, setLockState] = useState<'idle' | 'error' | 'success'>('idle');
   const [pinError, setPinError] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -90,13 +93,21 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
   const handleUnlock = (e?: React.FormEvent) => {
     e?.preventDefault();
     const enteredPin = pin.join('');
+
     if (enteredPin === correctPassword) {
-      onUnlock();
+      setLockState('success');
+      setTimeout(onUnlock, 500);
     } else {
+      setLockState('error');
       setPinError(true);
-      setPin(['', '', '', '', '', '']);
-      inputRefs.current[0]?.focus();
-      setTimeout(() => setPinError(false), 1000);
+
+      // Reset back to idle after 1s
+      setTimeout(() => {
+        setPin(['', '', '', '', '', '']);
+        setLockState('idle');
+        setPinError(false);
+        inputRefs.current[0]?.focus();
+      }, 1000);
     }
   };
 
@@ -108,18 +119,49 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
   console.log("✅ LockScreen: Reached JSX return phase");
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#0d3d38] flex flex-col items-center justify-center text-white animate-in fade-in duration-500">
+    <div className="fixed inset-0 z-[100] bg-[#0f2e2a] flex flex-col items-center justify-center text-white animate-in fade-in duration-500">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.15)_0%,transparent_70%)]"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0%,transparent_70%)]"></div>
       </div>
 
       <div className="relative z-10 flex flex-col items-center w-full max-w-xl px-6">
-        <div className="w-20 h-20 bg-slate-900 border border-slate-800 rounded-3xl flex items-center justify-center mb-10 shadow-2xl">
-          <Lock size={32} className="text-slate-400" strokeWidth={2} />
+        {/* Reactive Mascot */}
+        <div className="relative mb-10 flex items-center justify-center">
+          {/* Subtle Backing */}
+          <div className="absolute w-40 h-40 bg-white/5 blur-xl rounded-full" />
+
+          <motion.img
+            key={lockState}
+            src={
+              lockState === 'idle' ? '/images/thinking.png' :
+                lockState === 'error' ? '/images/upset.png' :
+                  '/images/happy.png'
+            }
+            alt="Mascot Guard"
+            className="w-32 h-32 object-contain relative z-10 drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={
+              lockState === 'idle' ? { opacity: 1, scale: 1, y: [0, -6, 0] } :
+                lockState === 'error' ? { opacity: 1, scale: 1, x: [-10, 10, -10, 10, 0] } :
+                  { opacity: 1, scale: [1, 1.2, 1], y: -20 }
+            }
+            transition={
+              lockState === 'idle' ? {
+                y: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+                default: { duration: 0.3 }
+              } :
+                lockState === 'error' ? { duration: 0.4 } :
+                  { duration: 0.5, ease: "easeOut" }
+            }
+          />
         </div>
 
-        <h2 className="text-4xl font-black mb-3 tracking-tighter text-white">{t('app_locked')}</h2>
-        <p className="text-white/60 mb-12 text-center font-medium">{t('login_subtitle')}</p>
+        <h2 className="text-4xl font-black mb-3 tracking-tighter text-white">
+          {t('security_check')}
+        </h2>
+        <p className="text-white/60 mb-12 text-center font-medium max-w-xs">
+          {t('remember_password')}
+        </p>
 
         <form onSubmit={handleUnlock} className="w-full flex flex-col items-center space-y-10">
           <div className="flex gap-4 sm:gap-6 justify-center">
@@ -133,10 +175,11 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
                 value={digit}
                 onChange={(e) => handlePinChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
-                className={`w-14 h-18 sm:w-16 sm:h-20 bg-white border-2 ${pinError ? 'border-red-500 shake' : 'border-emerald-500/10'} 
-                  rounded-2xl text-center text-3xl font-bold text-[#0d3d38] transition-all duration-200
-                  focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20
-                  placeholder-slate-300 shadow-lg`}
+                className={`w - 14 h - 18 sm: w - 16 sm: h - 20 bg - white border - 2 
+                  ${pinError ? 'border-rose-500 shake shadow-[0_0_20px_rgba(244,63,94,0.2)]' : 'border-emerald-500/10'}
+rounded - 2xl text - center text - 3xl font - black text - [#0f2e2a] transition - all duration - 200
+focus: outline - none focus: border - emerald - 500 focus: ring - 4 focus: ring - emerald - 500 / 20
+placeholder - slate - 300 shadow - xl`}
                 maxLength={1}
                 autoFocus={idx === 0}
               />
@@ -146,20 +189,18 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
           <div className="w-full max-w-sm space-y-6">
             <button
               type="submit"
-              className="w-full bg-white text-[#0d3d38] font-black py-5 rounded-[22px] hover:bg-slate-100 transition-all transform active:scale-95 flex items-center justify-center space-x-3 shadow-xl"
+              className="w-full bg-white text-[#0f2e2a] font-black py-5 rounded-[22px] hover:bg-slate-100 transition-all transform active:scale-[0.98] flex items-center justify-center space-x-3 shadow-xl"
             >
-              <span className="uppercase tracking-widest text-xs">{t('unlock')}</span>
+              <span className="uppercase tracking-widest text-xs font-black">{t('unlock')}</span>
               <ArrowRight size={18} />
             </button>
 
-            {pinError && <p className="text-red-400 text-sm text-center font-bold tracking-tight animate-pulse">{t('wrong_password')}</p>}
-
             {/* Forgot Password Link */}
-            <div className="text-center pt-4">
+            <div className="text-center pt-2">
               <button
                 type="button"
                 onClick={() => setShowForgotModal(true)}
-                className="text-white/40 hover:text-white text-sm font-bold transition-colors uppercase tracking-widest block w-full"
+                className="text-white/30 hover:text-white text-[11px] font-black transition-colors uppercase tracking-[0.2em] block w-full"
               >
                 {t('forgot_password_link')}
               </button>
@@ -234,6 +275,12 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
 
 const App: React.FC = () => {
   const { accountId, userId, accountName, setAccount, isLoggedIn, isLoading: isAuthLoading, logout } = useAccount();
+
+  // If authentication is still loading, show the mascot loader
+  if (isAuthLoading) {
+    return <DashboardLoader />;
+  }
+
   const [view, setView] = useState<PageView>('DASHBOARD');
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -376,6 +423,11 @@ const App: React.FC = () => {
 
   // Subscribe to real-time patient updates when logged in
   useEffect(() => {
+    // 🔥 FIX: Race Condition Wrapper
+    // Don't do ANYTHING until we know for sure if the user is logged in or not.
+    // This keeps 'loading' true while Auth is initializing.
+    if (isAuthLoading) return;
+
     if (!isLoggedIn || !accountId) {
       setPatients([]);
       setLoading(false);
@@ -389,6 +441,8 @@ const App: React.FC = () => {
       (updatedPatients) => {
         setPatients(updatedPatients);
         setLoading(false);
+        // We can show a subtle sync notification here if needed, but per user request, 
+        // they want one toast with mascot for "sync to data for whatever happening".
       },
       (error: any) => {
         console.error('Error subscribing to patients:', error);
@@ -415,7 +469,7 @@ const App: React.FC = () => {
       clearTimeout(safetyTimer);
       unsubscribe();
     };
-  }, [isLoggedIn, accountId]);
+  }, [isLoggedIn, accountId, isAuthLoading]);
 
   // Preload images for smoother navigation
   const allImageUrls = useMemo(() => {
@@ -480,6 +534,7 @@ const App: React.FC = () => {
     localStorage.clear();
     logout();
     setPatients([]);
+    success(t('logout'), t('logout_desc'));
     setView('DASHBOARD');
     window.location.href = '/'; // Reset everything
   };
@@ -495,7 +550,7 @@ const App: React.FC = () => {
       if (data.image) {
         if (data.image instanceof File) {
           const blobUrl = URL.createObjectURL(data.image);
-          setOptimisticImage(`${userId}_profile`, blobUrl);
+          setOptimisticImage(`${userId} _profile`, blobUrl);
           avatarUrl = await uploadAvatar(data.image, userId);
         } else if (typeof data.image === 'string') {
           avatarUrl = data.image;
@@ -520,11 +575,11 @@ const App: React.FC = () => {
       setAccount(accountId!, userId, data.name); // Updates name context
       if (avatarUrl) setUserImage(avatarUrl);
 
-      success(t('toast_profile_updated'));
+      success(t('profile_updated_title'), t('profile_updated_msg'));
 
     } catch (err: any) {
       console.error("Error updating profile:", err);
-      showError(`${t('toast_save_failed')}: ${err.message}`);
+      showError(t('toast_error_title'), `${t('toast_save_failed')}: ${err.message} `);
     }
   };
 
@@ -554,10 +609,10 @@ const App: React.FC = () => {
 
       if (isNewPatient) {
         setPatients(prev => [optimisticPatient, ...prev]);
-        success(t('toast_patient_added'));
+        success(t('patient_added_title'), t('patient_added_msg'));
       } else {
         setPatients(prev => prev.map(p => p.id === optimisticPatient.id ? optimisticPatient : p));
-        success(t('toast_patient_updated'));
+        success(t('patient_updated_title'), t('patient_updated_msg'));
       }
 
       // 2) Navigate immediately for responsiveness
@@ -571,8 +626,8 @@ const App: React.FC = () => {
       // 3) Background uploads & Supabase DB write
       if (files?.profileImage) {
         const url = URL.createObjectURL(files.profileImage);
-        setOptimisticImage(`${patientData.id}_profile`, url);
-        const remoteUrl = await uploadImage(files.profileImage, `patients/${patientData.id}/profile`);
+        setOptimisticImage(`${patientData.id} _profile`, url);
+        const remoteUrl = await uploadImage(files.profileImage, `patients / ${patientData.id}/profile`);
         patientData.profileImage = remoteUrl;
       }
 
@@ -601,7 +656,7 @@ const App: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error saving patient:', err);
-      showError(`${t('toast_save_failed')}: ${err.message || 'Unknown error'}`);
+      showError("Xatolik yuz berdi", `${t('toast_save_failed')}: ${err.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -629,13 +684,13 @@ const App: React.FC = () => {
       setView('PATIENTS');
 
       // 3) Show success toast immediately
-      success(t('toast_patient_deleted'));
+      success(t('deleted_title'), t('patient_deleted_msg'));
 
       // 4) Perform actual DB deletion in background
       await deletePatientFromDb(deletedId);
     } catch (err) {
       console.error('Error deleting patient:', err);
-      showError(t('toast_delete_failed'));
+      showError("Xatolik", t('toast_delete_failed'));
       // Note: In case of catastrophic failure, real-time sync would eventually restore 
       // the list if the delete actually failed on server, or we could manually re-fetch here.
     }
@@ -653,10 +708,10 @@ const App: React.FC = () => {
     try {
       console.log('Updating injection status:', { patientId, injectionId, status });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('toast_injection_updated'));
+      success(t('status_updated_title'), t('status_updated_msg'));
     } catch (err: any) {
       console.error('Error updating injection:', err);
-      showError(`${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
+      showError(t('toast_error_title'), `${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -677,10 +732,10 @@ const App: React.FC = () => {
     try {
       console.log('Adding new injection:', { patientId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('toast_injection_added'));
+      success(t('injection_added_title'), t('injection_added_msg'));
     } catch (err: any) {
       console.error('Error adding injection:', err);
-      showError(`${t('toast_save_failed') || 'Add failed'}: ${err.message || 'Unknown error'}`);
+      showError(t('toast_error_title'), `${t('toast_save_failed') || 'Add failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -695,10 +750,10 @@ const App: React.FC = () => {
     try {
       console.log('Editing injection:', { patientId, injectionId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('toast_injection_updated'));
+      success(t('profile_updated_title'), t('status_updated_msg'));
     } catch (err: any) {
       console.error('Error editing injection:', err);
-      showError(`${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
+      showError(t('toast_error_title'), `${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -711,88 +766,93 @@ const App: React.FC = () => {
     try {
       console.log('Deleting injection:', { patientId, injectionId });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('toast_injection_deleted'));
+      success(t('deleted_title'), t('toast_injection_deleted'));
     } catch (err: any) {
       console.error('Error deleting injection:', err);
-      showError(`${t('toast_save_failed') || 'Delete failed'}: ${err.message || 'Unknown error'}`);
+      showError(t('toast_error_title'), `${t('toast_save_failed') || 'Delete failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
   const handleAddAfterPhoto = async (patientId: string, photoOrFile: string | File, label: string) => {
-    const patient = patients.find(p => p.id === patientId);
-    if (!patient) return;
-
     try {
-      // Optimistic UI update for instant photo appearance
+      // 1. Generate stable ID and optimistic URL
+      const stablePhotoId = `img-${Date.now()}`;
       const optimisticUrl = typeof photoOrFile === 'string' ? photoOrFile : URL.createObjectURL(photoOrFile);
-      const tempId = `img-${Date.now()}`;
 
-      // Seed cache for after photo
-      if (typeof photoOrFile !== 'string') {
-        setOptimisticImage(tempId, optimisticUrl);
+      // 2. Fetch latest list from current closure to calculate update
+      const targetPatient = patients.find(p => p.id === patientId);
+      if (!targetPatient) {
+        console.error("Patient not found for photo upload");
+        return;
       }
 
       const optimisticImage: PatientImage = {
-        id: tempId,
+        id: stablePhotoId,
         url: optimisticUrl,
         date: new Date().toISOString(),
         label
       };
 
+      // 3. Optimistic Update
+      if (typeof photoOrFile !== 'string') {
+        setOptimisticImage(stablePhotoId, optimisticUrl);
+      }
+
       setPatients(prev => prev.map(p => {
         if (p.id !== patientId) return p;
-        return { ...p, afterImages: [...(p.afterImages || []), optimisticImage] };
+        return { ...p, afterImages: [optimisticImage, ...(p.afterImages || [])] };
       }));
 
-      success(t('toast_photo_added'));
+      success(t('photo_added_title'), t('photo_added_msg'));
 
-      let photoUrl = typeof photoOrFile === 'string' ? photoOrFile : '';
-
+      // 4. Background Upload
+      let finalPhotoUrl = typeof photoOrFile === 'string' ? photoOrFile : '';
       if (photoOrFile instanceof File) {
         try {
-          const timestamp = Date.now();
-          photoUrl = await uploadImage(photoOrFile, `patients/${patientId}/after_images/${timestamp}`);
+          finalPhotoUrl = await uploadImage(photoOrFile, `patients/${patientId}/after_images/${stablePhotoId}`);
         } catch (e) {
-          console.error('Failed to upload after photo', e);
-          showError(t('toast_upload_failed'));
+          console.error('❌ Upload failed:', e);
+          showError(t('toast_error_title'), t('toast_upload_failed'));
+          // Rollback
+          setPatients(prev => prev.map(p => (p.id === patientId ? { ...p, afterImages: p.afterImages.filter(img => img.id !== stablePhotoId) } : p)));
           return;
         }
       }
 
-      // Save image with URL
-      const newImage: PatientImage = {
-        id: `img-${Date.now()}`,
-        url: photoUrl,
+      // 5. Final DB Sync
+      const finalImage: PatientImage = {
+        id: stablePhotoId,
+        url: finalPhotoUrl,
         label,
         date: new Date().toISOString()
       };
 
-      await addPatientAfterImage(patientId, newImage, patient.afterImages, accountId);
+      // We use the images list from our initial 'targetPatient' check to ensure we don't duplicate
+      await addPatientAfterImage(patientId, finalImage, targetPatient.afterImages, accountId || '');
+
     } catch (error) {
-      console.error('Error adding after photo:', error);
+      console.error('❌ handleAddAfterPhoto error:', error);
     }
   };
 
   const handleDeleteAfterPhoto = async (patientId: string, photoId: string) => {
-    const patient = patients.find(p => p.id === patientId);
-    if (!patient) return;
-
     try {
-      // 1) Optimistic UI Update
+      const targetPatient = patients.find(p => p.id === patientId);
+      if (!targetPatient) return;
+
+      // 1. Optimistic Update
       setPatients(prev => prev.map(p => {
         if (p.id !== patientId) return p;
-        return {
-          ...p,
-          afterImages: (p.afterImages || []).filter(img => img.id !== photoId)
-        };
+        return { ...p, afterImages: (p.afterImages || []).filter(img => img.id !== photoId) };
       }));
 
-      // 2) DB & Storage Update
-      await deletePatientAfterImage(patientId, photoId, patient.afterImages);
-      success(t('toast_photo_deleted'));
+      // 2. DB & Storage Cleanup
+      await deletePatientAfterImage(patientId, photoId, targetPatient.afterImages);
+
+      success(t('photo_deleted_title'), t('photo_deleted_msg'));
     } catch (error: any) {
-      console.error('Error deleting after photo:', error);
-      showError(`${t('toast_delete_failed') || 'Delete failed'}: ${error.message}`);
+      console.error('❌ handleDeleteAfterPhoto error:', error);
+      showError(t('toast_error_title'), `${t('toast_delete_failed') || 'Delete failed'}: ${error.message}`);
     }
   };
 
@@ -892,7 +952,7 @@ const App: React.FC = () => {
               <div className="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
                 <div className="p-8 border-b border-gray-100 bg-gray-50/50">
                   <h3 className="text-xl font-bold text-gray-800 tracking-tight">{t('settings')}</h3>
-                  <p className="text-sm text-gray-500 mt-1">Manage your profile, preferences, and security</p>
+                  <p className="text-sm text-gray-500 mt-1">{t('settings_desc')}</p>
                 </div>
 
                 <div className="p-8 space-y-8">
@@ -904,14 +964,14 @@ const App: React.FC = () => {
                       </div>
                       <div>
                         <p className="font-bold text-lg text-gray-800">{accountName || t('dr_name')}</p>
-                        <p className="text-sm text-promed-primary font-bold mt-1">Account: {accountId}</p>
+                        <p className="text-sm text-promed-primary font-bold mt-1">{t('account_id_label')}: {accountId}</p>
                       </div>
                     </div>
                     <div className="flex gap-3">
                       {/* Removed direct edit button here, using Edit Profile Modal triggered from Sidebar */}
                       {/* This button could trigger the same modal if needed */}
                       <button className="px-6 py-2.5 bg-white text-gray-700 font-bold text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition shadow-sm">
-                        Edit Profile
+                        {t('edit_profile')}
                       </button>
                       <button
                         onClick={handleLogout}
@@ -919,7 +979,7 @@ const App: React.FC = () => {
                         data-oid="logout-btn"
                       >
                         <LogOut size={16} />
-                        Logout
+                        {t('logout')}
                       </button>
                     </div>
                   </div>
@@ -927,14 +987,14 @@ const App: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Preferences */}
                     <div className="space-y-4">
-                      <h4 className="font-bold text-gray-400 uppercase text-xs tracking-wider mb-2">Preferences</h4>
+                      <h4 className="font-bold text-gray-400 uppercase text-xs tracking-wider mb-2">{t('preferences')}</h4>
 
                       <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-white hover:shadow-md transition border border-transparent hover:border-gray-100 cursor-pointer group">
                         <div className="flex items-center space-x-3">
                           <div className="p-2.5 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition shadow-sm">
                             <Bell size={20} />
                           </div>
-                          <span className="font-semibold text-gray-700">Notifications</span>
+                          <span className="font-semibold text-gray-700">{t('notifications')}</span>
                         </div>
                         <div className="w-11 h-6 bg-promed-primary rounded-full relative shadow-inner">
                           <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
@@ -946,22 +1006,22 @@ const App: React.FC = () => {
                           <div className="p-2.5 bg-purple-100 text-purple-600 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition shadow-sm">
                             <Smartphone size={20} />
                           </div>
-                          <span className="font-semibold text-gray-700">App Appearance</span>
+                          <span className="font-semibold text-gray-700">{t('app_appearance')}</span>
                         </div>
-                        <span className="text-sm font-bold text-gray-400">Light</span>
+                        <span className="text-sm font-bold text-gray-400">{t('light_mode')}</span>
                       </div>
                     </div>
 
                     {/* Security */}
                     <div className="space-y-4">
-                      <h4 className="font-bold text-gray-400 uppercase text-xs tracking-wider mb-2">Security</h4>
+                      <h4 className="font-bold text-gray-400 uppercase text-xs tracking-wider mb-2">{t('security')}</h4>
 
                       <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-white hover:shadow-md transition border border-transparent hover:border-gray-100 cursor-pointer group">
                         <div className="flex items-center space-x-3">
                           <div className="p-2.5 bg-green-100 text-green-600 rounded-lg group-hover:bg-green-600 group-hover:text-white transition shadow-sm">
                             <Shield size={20} />
                           </div>
-                          <span className="font-semibold text-gray-700">Two-Factor Auth</span>
+                          <span className="font-semibold text-gray-700">{t('two_factor')}</span>
                         </div>
                         <div className="w-11 h-6 bg-gray-200 rounded-full relative shadow-inner">
                           <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
@@ -1023,19 +1083,13 @@ const App: React.FC = () => {
       {renderContent()}
       <ToastContainer />
 
-      <ConfirmationModal
+      <DeleteModal
         isOpen={isDeleteModalOpen}
         onClose={() => {
           setIsDeleteModalOpen(false);
           setPatientToDelete(null);
         }}
         onConfirm={confirmDeletePatient}
-        title={t('delete_patient_title') || t('delete_patient') || 'Delete Patient'}
-        description={t('delete_patient_confirm')}
-        confirmText={t('delete')}
-        cancelText={t('cancel')}
-        icon={Trash2}
-        variant="danger"
       />
     </Layout>
   );

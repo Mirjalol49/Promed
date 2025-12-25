@@ -21,6 +21,7 @@ import { subscribeToAllProfiles, updateUserProfile } from '../lib/userService';
 import { broadcastAlert, clearAlerts } from '../lib/notificationService';
 import { Profile } from '../types';
 import { useToast } from '../contexts/ToastContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const AdminDashboard: React.FC = () => {
     const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -33,6 +34,7 @@ export const AdminDashboard: React.FC = () => {
     const [isBroadcasting, setIsBroadcasting] = useState(false);
 
     const { success, error } = useToast();
+    const { t } = useLanguage();
 
     useEffect(() => {
         console.log("🚀 AdminDashboard: Mounting & Subscribing...");
@@ -74,24 +76,24 @@ export const AdminDashboard: React.FC = () => {
         const newStatus = profile.status === 'frozen' ? 'active' : 'frozen';
         try {
             await updateUserProfile(profile.id, { status: newStatus });
-            success(`User account ${newStatus === 'frozen' ? 'frozen' : 'activated'} successfully`);
+            success(t('status_updated_title'), `${t('account_id_label')} ${newStatus === 'frozen' ? 'muzlatildi' : 'faollashtirildi'}.`);
         } catch (err) {
-            error('Failed to update user status');
+            error(t('toast_error_title'), t('toast_save_failed'));
         }
     };
 
     const handleBroadcast = async () => {
         if (!broadcastData.title || !broadcastData.content) {
-            error('Please fill in both title and content');
+            error(t('toast_error_title'), t('empty_fields_error') || "Iltimos, barcha maydonlarni to'ldiring.");
             return;
         }
         setIsBroadcasting(true);
         try {
             await broadcastAlert(broadcastData);
-            success('Broadcast live on all screens! 📣');
+            success(t('megaphone_title'), t('megaphone_desc'));
             setBroadcastData({ title: '', content: '', type: 'info' });
         } catch (err) {
-            error('Megaphone failure. Check logs.');
+            error(t('toast_error_title'), t('toast_save_failed'));
         } finally {
             setIsBroadcasting(false);
         }
@@ -100,9 +102,9 @@ export const AdminDashboard: React.FC = () => {
     const handleClearAlerts = async () => {
         try {
             await clearAlerts();
-            success('All system alerts cleared.');
+            success(t('clear'), t('photo_deleted_msg'));
         } catch (err) {
-            error('Failed to clear alerts');
+            error(t('toast_error_title'), t('toast_save_failed'));
         }
     };
 
@@ -128,10 +130,10 @@ export const AdminDashboard: React.FC = () => {
                     <div className="flex items-center gap-3 mb-2">
                         <div className="px-3 py-1 bg-white/10 rounded-full border border-white/20 flex items-center gap-2">
                             <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300">God Mode Active</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300">{t('god_mode')}</span>
                         </div>
                     </div>
-                    <h2 className="text-3xl font-black tracking-tight mb-2">Super Admin Control Center</h2>
+                    <h2 className="text-3xl font-black tracking-tight mb-2">{t('admin_control_center')}</h2>
                     <p className="text-slate-400 font-medium tracking-wide">Managing {profiles.length} clinics across the system.</p>
                 </div>
                 <div className="flex gap-3 relative z-10">
@@ -170,12 +172,12 @@ export const AdminDashboard: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => {
-                                        success('Invitation sent! (Simulation)');
+                                        success(t('toast_info_title'), "Taklifnoma yuborildi.");
                                         setShowInviteModal(false);
                                     }}
                                     className="flex-1 py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition shadow-lg active:scale-95"
                                 >
-                                    Send Invitation
+                                    {t('transmit')}
                                 </button>
                             </div>
                         </div>
@@ -321,9 +323,9 @@ export const AdminDashboard: React.FC = () => {
                                 <div className="p-2.5 bg-rose-500 text-white rounded-xl shadow-lg shadow-rose-500/20">
                                     <Megaphone size={18} />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 tracking-tight">The Megaphone</h3>
+                                <h3 className="text-xl font-bold text-slate-900 tracking-tight">{t('megaphone_title')}</h3>
                             </div>
-                            <p className="text-sm text-slate-500 font-medium">Broadcast an instant alert to every active user.</p>
+                            <p className="text-sm text-slate-500 font-medium">{t('megaphone_desc')}</p>
                         </div>
 
                         <div className="p-8 space-y-6">
@@ -386,7 +388,7 @@ export const AdminDashboard: React.FC = () => {
                                     ) : (
                                         <>
                                             <Send size={18} />
-                                            <span>Transmit</span>
+                                            <span>{t('transmit')}</span>
                                         </>
                                     )}
                                 </button>

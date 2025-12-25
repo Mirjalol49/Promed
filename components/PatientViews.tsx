@@ -1,11 +1,12 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
   MapPin,
   Phone,
   Mail,
   ChevronLeft,
+  ChevronRight,
   ChevronDown,
   Check,
   X,
@@ -35,7 +36,7 @@ import { DatePicker } from './ui/DatePicker';
 import { Portal } from './Portal';
 import { ImageWithFallback } from './ui/ImageWithFallback';
 import { compressImage } from '../lib/imageOptimizer';
-import ConfirmationModal from './ConfirmationModal';
+import DeleteModal from './DeleteModal';
 import { CustomSelect } from './CustomSelect';
 
 // Helper to translate status
@@ -207,6 +208,48 @@ export const PatientList: React.FC<{
   const localeString = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
   const translateStatus = useStatusTranslation();
 
+  // --- Pagination State ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  // --- Reset Page on Search ---
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, patients.length]);
+
+  // --- Computation ---
+  const totalPages = Math.ceil(patients.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const currentPatients = patients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const startCount = patients.length > 0 ? startIndex + 1 : 0;
+  const endCount = Math.min(startIndex + ITEMS_PER_PAGE, patients.length);
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(p => p - 1);
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(p => p + 1);
+  };
+
+  // Generate page numbers for display
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      // Simple logic for large page counts: Show 1, 2, ..., curr-1, curr, curr+1, ..., last
+      if (currentPage <= 4) {
+        pages.push(1, 2, 3, 4, 5, '...', totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-card border border-slate-200 overflow-hidden">
       <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
@@ -235,7 +278,7 @@ export const PatientList: React.FC<{
           </button>
         </div>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto min-h-[400px]">
         <table className="w-full text-left border-collapse">
           <thead className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
             <tr>
@@ -245,78 +288,136 @@ export const PatientList: React.FC<{
               <th className="p-5">{t('technique')}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {patients.map((patient, idx) => {
-              const nextInj = patient.injections.find(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date());
-              return (
-                <tr
-                  key={patient.id}
-                  className="hover:bg-slate-50 transition-colors cursor-pointer group"
-                  onClick={() => onSelect(patient.id)}
-                >
-                  <td className="p-5 pl-8">
-                    <div className="flex items-center space-x-4">
-                      <div className="relative w-11 h-11">
-                        <ImageWithFallback
-                          src={patient.profileImage}
-                          alt={patient.fullName}
-                          className="w-full h-full rounded-xl shadow-sm ring-1 ring-slate-100"
-                          fallbackType="user"
-                          optimisticId={`${patient.id}_profile`}
-                        />
+          <tbody className="divide-y divide-slate-100 relative">
+            <AnimatePresence mode="wait">
+              {currentPatients.length > 0 ? (
+                currentPatients.map((patient, idx) => {
+                  const nextInj = patient.injections.find(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date());
+                  return (
+                    <motion.tr
+                      key={patient.id}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2, delay: idx * 0.05 }}
+                      className="hover:bg-slate-50 transition-colors cursor-pointer group"
+                      onClick={() => onSelect(patient.id)}
+                    >
+                      <td className="p-5 pl-8">
+                        <div className="flex items-center space-x-4">
+                          <div className="relative w-11 h-11">
+                            <ImageWithFallback
+                              src={patient.profileImage}
+                              alt={patient.fullName}
+                              className="w-full h-full rounded-xl shadow-sm ring-1 ring-slate-100"
+                              fallbackType="user"
+                              optimisticId={`${patient.id}_profile`}
+                            />
 
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-800 text-sm group-hover:text-promed-primary transition-colors">{patient.fullName}</div>
-                        <div className="text-xs text-slate-500 mt-0.5 font-medium">{patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y</div>
-                      </div>
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-800 text-sm group-hover:text-promed-primary transition-colors">{patient.fullName}</div>
+                            <div className="text-xs text-slate-500 mt-0.5 font-medium">{patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-5 text-sm font-medium text-slate-700">
+                        {new Date(patient.operationDate).toLocaleDateString(localeString)}
+                      </td>
+                      <td className="p-5">
+                        {nextInj ? (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
+                              {new Date(nextInj.date).toLocaleDateString(localeString)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic font-medium">{t('none_scheduled')}</span>
+                        )}
+                      </td>
+                      <td className="p-5">
+                        <span className={`text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center space-x-1.5 border ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                          patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                            'bg-slate-50 text-slate-700 border-slate-200'
+                          }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${patient.technique === 'Hair' ? 'bg-indigo-600' :
+                            patient.technique === 'Eyebrow' ? 'bg-rose-600' : 'bg-slate-600'
+                            }`}></span>
+                          <span>
+                            {patient.technique === 'Hair' ? t('transplant_hair') :
+                              patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
+                                patient.technique === 'Beard' ? t('transplant_beard') : (patient.technique || 'N/A')}
+                          </span>
+                        </span>
+                      </td>
+                    </motion.tr>
+                  );
+                })
+              ) : (
+                <motion.tr
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <td colSpan={4} className="p-12 text-center text-slate-500">
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <User size={48} className="text-slate-200" />
+                      <p className="font-medium">No patients found matching your search.</p>
                     </div>
                   </td>
-                  <td className="p-5 text-sm font-medium text-slate-700">
-                    {new Date(patient.operationDate).toLocaleDateString(localeString)}
-                  </td>
-                  <td className="p-5">
-                    {nextInj ? (
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
-                          {new Date(nextInj.date).toLocaleDateString(localeString)}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-slate-400 italic font-medium">{t('none_scheduled')}</span>
-                    )}
-                  </td>
-                  <td className="p-5">
-                    <span className={`text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center space-x-1.5 border ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                      patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                        'bg-slate-50 text-slate-700 border-slate-200'
-                      }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${patient.technique === 'Hair' ? 'bg-indigo-600' :
-                        patient.technique === 'Eyebrow' ? 'bg-rose-600' : 'bg-slate-600'
-                        }`}></span>
-                      <span>
-                        {patient.technique === 'Hair' ? t('transplant_hair') :
-                          patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
-                            patient.technique === 'Beard' ? t('transplant_beard') : (patient.technique || 'N/A')}
-                      </span>
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-            {patients.length === 0 && (
-              <tr>
-                <td colSpan={4} className="p-12 text-center text-slate-500">
-                  <div className="flex flex-col items-center justify-center space-y-3">
-                    <User size={48} className="text-slate-200" />
-                    <p className="font-medium">No patients found matching your search.</p>
-                  </div>
-                </td>
-              </tr>
-            )}
+                </motion.tr>
+              )}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>
+
+      {/* --- Pagination Footer --- */}
+      {patients.length > 0 && (
+        <div className="flex items-center justify-center border-t border-slate-100 p-4 bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handlePrevPage}
+              disabled={currentPage === 1}
+              className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-promed-primary hover:border-promed-primary/30 disabled:opacity-40 disabled:hover:bg-white disabled:text-slate-300 shadow-sm transition-all"
+              aria-label={t('previous_page') || "Previous Page"}
+            >
+              <ChevronLeft size={20} />
+            </button>
+
+            <div className="flex items-center gap-1.5 px-2">
+              {getPageNumbers().map((page, idx) => (
+                typeof page === 'number' ? (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentPage(page)}
+                    className={`min-w-[36px] h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all border ${currentPage === page
+                        ? 'bg-promed-primary text-white border-promed-primary shadow-md shadow-teal-900/10'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                  >
+                    {page}
+                  </button>
+                ) : (
+                  <span key={idx} className="w-9 h-9 flex items-center justify-center text-slate-400 text-sm font-medium">
+                    {page}
+                  </span>
+                )
+              ))}
+            </div>
+
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-promed-primary hover:border-promed-primary/30 disabled:opacity-40 disabled:hover:bg-white disabled:text-slate-300 shadow-sm transition-all"
+              aria-label={t('next_page') || "Next Page"}
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -420,6 +521,12 @@ export const PatientDetail: React.FC<{
     }
   };
 
+  // Find the next upcoming injection
+  const nextUpcomingInjection = [...patient.injections]
+    .filter(inj => inj.status === InjectionStatus.SCHEDULED)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .find(inj => new Date(inj.date).setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0));
+
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
       <button onClick={onBack} className="flex items-center space-x-2 text-slate-500 hover:text-promed-primary transition mb-2 font-bold hover:-translate-x-1 duration-200 px-1">
@@ -434,12 +541,6 @@ export const PatientDetail: React.FC<{
 
         <div className="flex-shrink-0 relative w-40 h-40">
           <ImageWithFallback src={patient.profileImage} optimisticId={`${patient.id}_profile`} className="w-full h-full rounded-2xl object-cover shadow-lg ring-4 ring-white border border-slate-100" alt="Profile" fallbackType="user" />
-          <div className="absolute -bottom-3 -right-3 bg-white p-1.5 rounded-xl shadow-md border border-slate-100">
-            <div className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border ${patient.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'
-              }`}>
-              {translateStatus(patient.status)}
-            </div>
-          </div>
         </div>
 
         <div className="flex-1 space-y-6 z-10">
@@ -585,37 +686,82 @@ export const PatientDetail: React.FC<{
                 </div>
                 <span>{t('injection_schedule')}</span>
               </h3>
+
+
               <button
                 onClick={openAddInjection}
-                className="flex items-center space-x-2 text-sm bg-promed-primary text-white px-4 py-2.5 rounded-xl hover:bg-teal-800 transition font-bold active:scale-95 shadow-md shadow-teal-900/10"
+                className="flex items-center space-x-2 text-sm bg-promed-primary text-white px-4 py-2.5 rounded-xl hover:bg-teal-800 transition font-bold active:scale-95 shadow-md shadow-teal-900/10 mr-0"
               >
                 <Plus size={16} />
                 <span>{t('add_injection')}</span>
               </button>
             </div>
 
-            <div className="space-y-6 pl-4 relative z-10">
-              {patient.injections.map((inj, index) => {
+            <div className={`space-y-6 ${patient.injections.length > 0 ? 'pl-4' : ''} relative z-10 pb-48`}>
+              {patient.injections.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-in fade-in zoom-in duration-700">
+                  <div className="relative mb-10">
+                    {/* Pulsing Aura */}
+                    <div className="absolute inset-0 bg-promed-primary/5 blur-3xl rounded-full scale-150 animate-pulse"></div>
+                    <img
+                      src="/images/thinking.png"
+                      alt="Thinking Mascot"
+                      className="w-48 h-48 object-contain relative z-10 drop-shadow-2xl"
+                    />
+                  </div>
+                  <h4 className="text-xl font-bold text-slate-800 mb-3">
+                    {t('schedule_empty_title') || "Hali inyeksiyalar yo'q"}
+                  </h4>
+                  <p className="text-slate-500 font-medium max-w-[320px] mb-10 leading-relaxed">
+                    {t('schedule_empty_mascot')}
+                  </p>
+                  <button
+                    onClick={openAddInjection}
+                    className="group relative flex items-center space-x-3 bg-promed-primary text-white px-8 py-4 rounded-2xl font-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-teal-900/20"
+                  >
+                    <PlusCircle size={22} className="group-hover:rotate-90 transition-transform duration-300" />
+                    <span>{t('add_first_injection')}</span>
+                  </button>
+                </div>
+              ) : patient.injections.map((inj, index) => {
                 const isPast = new Date(inj.date) < new Date();
                 const isToday = new Date(inj.date).toDateString() === new Date().toDateString();
+                const isNextHero = nextUpcomingInjection?.id === inj.id;
 
                 return (
                   <div key={inj.id} className="relative flex gap-6 group">
                     {/* Vertical Line */}
                     {index !== patient.injections.length - 1 && (
-                      <div className="absolute left-[11px] top-10 bottom-[-24px] w-0.5 bg-slate-200 group-hover:bg-slate-300 transition-colors"></div>
+                      <div className={`absolute left-[11px] top-10 bottom-[-24px] w-0.5 ${isNextHero ? 'bg-emerald-100' : 'bg-slate-200'} group-hover:bg-slate-300 transition-colors`}></div>
                     )}
 
-                    {/* Indicator Dot */}
-                    <div className={`
-                      flex-shrink-0 w-6 h-6 rounded-full border-[3px] z-10 mt-1 shadow-sm transition-all duration-300
-                      ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-500 border-white ring-2 ring-emerald-200' :
-                        inj.status === InjectionStatus.MISSED ? 'bg-red-500 border-white ring-2 ring-red-200' :
-                          isToday ? 'bg-amber-500 border-white ring-2 ring-amber-200 scale-110' : 'bg-white border-slate-300'}
-                    `} />
+                    {/* Indicator Dot / Mascot Avatar */}
+                    {isNextHero ? (
+                      <div className="relative group/mascot z-10 transition-transform hover:scale-110 duration-300">
+                        <div className="w-10 h-10 rounded-full border-4 border-slate-100 overflow-hidden bg-white shadow-md -ml-2 ring-1 ring-slate-200">
+                          <img
+                            src="/images/injection.png"
+                            alt="Mascot"
+                            className="w-full h-full object-cover scale-125 translate-y-1"
+                          />
+                        </div>
+                        {/* Custom Tooltip */}
+                        <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-[10px] font-bold py-1 px-3 rounded-lg opacity-0 group-hover/mascot:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-30">
+                          {t('next_injection_tooltip')}
+                          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-r-slate-900"></div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`
+                        flex-shrink-0 w-6 h-6 rounded-full border-[3px] z-10 mt-1 shadow-sm transition-all duration-300
+                        ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-500 border-white ring-2 ring-emerald-200' :
+                          inj.status === InjectionStatus.MISSED ? 'bg-red-500 border-white ring-2 ring-red-200' :
+                            isToday ? 'bg-amber-500 border-white ring-2 ring-amber-200 scale-110' : 'bg-white border-slate-300'}
+                      `} />
+                    )}
 
                     {/* Content */}
-                    <div className="flex-1 bg-slate-50/50 rounded-2xl p-5 hover:bg-white hover:shadow-card hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-slate-200">
+                    <div className={`flex-1 ${isNextHero ? 'bg-white shadow-xl ring-1 ring-slate-200 border-slate-100' : 'bg-slate-50/50'} rounded-2xl p-5 hover:bg-white hover:shadow-card hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-slate-200`}>
                       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3">
@@ -660,19 +806,19 @@ export const PatientDetail: React.FC<{
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={() => onUpdateInjection(patient.id, inj.id, InjectionStatus.COMPLETED)}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-50 transition shadow-sm"
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-50 transition shadow-sm whitespace-nowrap"
                               >
                                 <Check size={14} /> <span>{t('mark_done')}</span>
                               </button>
                               <button
                                 onClick={() => onUpdateInjection(patient.id, inj.id, InjectionStatus.MISSED)}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-red-200 text-red-700 rounded-lg text-xs font-bold hover:bg-red-50 transition shadow-sm"
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-red-200 text-red-700 rounded-lg text-xs font-bold hover:bg-red-50 transition shadow-sm whitespace-nowrap"
                               >
                                 <X size={14} /> <span>{t('mark_missed')}</span>
                               </button>
                             </div>
                           ) : (
-                            <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm border ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
+                            <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm border whitespace-nowrap ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
                               }`}>
                               {translateStatus(inj.status)}
                             </span>
@@ -684,6 +830,15 @@ export const PatientDetail: React.FC<{
                 );
               })}
             </div>
+
+            {/* The Big Mascot */}
+            {patient.injections.length > 0 && (
+              <img
+                src="/images/injection.png"
+                alt="Mascot"
+                className="absolute -bottom-6 -right-6 w-56 opacity-100 pointer-events-none transform rotate-[-5deg] z-0 drop-shadow-xl"
+              />
+            )}
           </div>
         </div>
       </div>
@@ -716,28 +871,16 @@ export const PatientDetail: React.FC<{
         onSave={handleSavePhoto}
       />
 
-      <ConfirmationModal
+      <DeleteModal
         isOpen={!!photoToDeleteId}
         onClose={() => setPhotoToDeleteId(null)}
         onConfirm={confirmDeletePhoto}
-        title={t('delete_photo_title')}
-        description={t('delete_photo_desc')}
-        confirmText={t('yes')}
-        cancelText={t('no')}
-        icon={Trash2}
-        variant="danger"
       />
 
-      <ConfirmationModal
+      <DeleteModal
         isOpen={!!injToDeleteId}
         onClose={() => setInjToDeleteId(null)}
         onConfirm={confirmDeleteInjection}
-        title={t('delete_modal_title')}
-        description={t('delete_warning')}
-        confirmText={t('yes')}
-        cancelText={t('no')}
-        icon={Trash2}
-        variant="danger"
       />
     </div>
   );

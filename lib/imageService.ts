@@ -20,14 +20,20 @@ export const uploadImage = async (file: File, path: string): Promise<string> => 
   if (!file) throw new Error('No file provided');
 
   // Ensure unique filename to prevent overwrites or browser caching issues
+  // Note: path usually includes patientId and category. We append timestamp.
   const uniquePath = `${path}_${Date.now()}`;
+
+  console.log(`🚀 Uploading image to: ${uniquePath}...`);
 
   const { data, error } = await supabase.storage
     .from('promed-images')
-    .upload(uniquePath, file);
+    .upload(uniquePath, file, {
+      upsert: true,
+      cacheControl: '3600'
+    });
 
   if (error) {
-    console.error('Error uploading image:', error);
+    console.error('❌ Error uploading image:', error);
     throw error;
   }
 
@@ -35,6 +41,7 @@ export const uploadImage = async (file: File, path: string): Promise<string> => 
     .from('promed-images')
     .getPublicUrl(data.path);
 
+  console.log('✅ Image uploaded successfully:', publicUrl);
   return publicUrl;
 };
 

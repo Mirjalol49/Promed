@@ -192,7 +192,65 @@ export const translations = {
     routine_followup: "Routine Follow-up",
     view_master_schedule: "View Master Schedule",
     registration_overview: "Overview of patient registration",
-    upcoming_schedule: "Upcoming schedule"
+    upcoming_schedule: "Upcoming schedule",
+
+    // Toasts
+    toast_success_title: "Success",
+    toast_error_title: "Error",
+    toast_info_title: "Info",
+    profile_updated_title: "Profile Updated",
+    profile_updated_msg: "Your changes have been saved successfully.",
+    patient_added_title: "Patient Added",
+    patient_added_msg: "A new profile has been created in the database.",
+    patient_updated_title: "Data Updated",
+    patient_updated_msg: "Patient data has been saved perfectly.",
+    deleted_title: "Deleted",
+    patient_deleted_msg: "Patient data has been completely removed.",
+    injection_added_title: "Injection Added",
+    injection_added_msg: "New procedure successfully added to schedule.",
+    photo_added_title: "Photo Added",
+    photo_added_msg: "New clinical photo has been successfully saved.",
+    photo_deleted_title: "Photo Deleted",
+    photo_deleted_msg: "Photo has been removed from gallery.",
+    status_updated_title: "Status Updated",
+    status_updated_msg: "Injection status has been successfully modified.",
+
+    // Lock Screen
+    security_check: "Security Check",
+    remember_password: "Doctor, can you remember the password?",
+
+    // Delete Modal
+    delete_modal_headline: "Are we really saying goodbye?",
+    delete_modal_subtext: "This action cannot be undone. All patient data, photos, and history will be permanently deleted.",
+    delete_modal_cancel: "No, keep it",
+    delete_modal_confirm: "Yes, delete",
+
+    // Empty States
+    empty_state_peace: "Peace for now...",
+    schedule_empty_title: "No Injections Yet",
+    schedule_empty_mascot: "No injections scheduled yet. Let's plan the first recovery step!",
+    add_first_injection: "Schedule First Injection",
+    next_injection_tooltip: "Next Injection!",
+
+    // Settings & Admin
+    settings_desc: "Manage your profile, preferences, and security",
+    account_id_label: "Account",
+    preferences: "Preferences",
+    notifications: "Notifications",
+    app_appearance: "App Appearance",
+    light_mode: "Light",
+    security: "Security",
+    two_factor: "Two-Factor Auth",
+    logout_desc: "End your current session",
+    admin_control_center: "Super Admin Control Center",
+    god_mode: "God Mode Active",
+    megaphone_title: "The Megaphone",
+    megaphone_desc: "Broadcast an instant alert to every active user.",
+    transmit: "Transmit",
+    clear: "Clear",
+
+    // Pagination
+    pagination_showing: "Showing {start}-{end} of {total} patients",
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -240,7 +298,7 @@ export const translations = {
     injection_schedule: "Plazma Inyeksiya Jadvali",
     injection: "Inyeksiya",
     mark_done: "Bajarildi",
-    mark_missed: "O'tkazib yuborilgan",
+    mark_missed: "O'tkazildi",
     new_patient_reg: "Yangi Bemor Ro'yxati",
     edit_patient_title: "Bemor Profilini Tahrirlash",
     full_name: "To'liq Ism",
@@ -263,7 +321,7 @@ export const translations = {
     status_observation: "Kuzatuvda",
     status_scheduled: "Rejalashtirilgan",
     status_completed: "Bajarildi",
-    status_missed: "O'tkazib yuborildi",
+    status_missed: "O'tkazildi",
     status_cancelled: "Bekor qilindi",
     gender_male: "Erkak",
     gender_female: "Ayol",
@@ -399,7 +457,65 @@ export const translations = {
     view_master_schedule: "Asosiy jadvalni ko'rish",
     registration_overview: "Bemorlarni ro'yxatga olish sharhi",
     upcoming_schedule: "Kelgusi jadval",
-    account_status: "Hisob Holati"
+    account_status: "Hisob Holati",
+
+    // Toasts
+    toast_success_title: "Sinxronizatsiya a'lo!",
+    toast_error_title: "Xatolik yuz berdi",
+    toast_info_title: "Bildirishnoma",
+    profile_updated_title: "Profil yangilandi",
+    profile_updated_msg: "Tahrirlangan ma'lumotlar muvaffaqiyatli saqlandi.",
+    patient_added_title: "Bemor qo'shildi",
+    patient_added_msg: "Yangi profil bazada muvaffaqiyatli yaratildi.",
+    patient_updated_title: "Ma'lumot yangilandi",
+    patient_updated_msg: "Bemor ma'lumotlari a'lo darajada saqlandi.",
+    deleted_title: "O'chirildi",
+    patient_deleted_msg: "Bemor ma'lumotlari butunlay olib tashlandi.",
+    injection_added_title: "Inyeksiya qo'shildi",
+    injection_added_msg: "Yangi muolaja jadvalga muvaffaqiyatli kiritildi.",
+    photo_added_title: "Rasm qo'shildi",
+    photo_added_msg: "Bemorning yangi jarayon fotosurati saqlandi.",
+    photo_deleted_title: "Rasm o'chirildi",
+    photo_deleted_msg: "Fotosurat galereyadan muvaffaqiyatli olib tashlandi.",
+    status_updated_title: "Holat yangilandi",
+    status_updated_msg: "Inyeksiya holati muvaffaqiyatli o'zgartirildi.",
+
+    // Lock Screen
+    security_check: "Xavfsizlik Tekshiruvi",
+    remember_password: "Doktor, parolni eslay olasizmi?",
+
+    // Delete Modal
+    delete_modal_headline: "Rostdan ham xayrlashamizmi?",
+    delete_modal_subtext: "Bu amalni ortga qaytarib bo'lmaydi. Bemorning barcha ma'lumotlari, rasmlari va tarixi butunlay o'chib ketadi.",
+    delete_modal_cancel: "Yo'q, qolsin",
+    delete_modal_confirm: "Ha, o'chirilsin",
+
+    // Empty States
+    empty_state_peace: "Hozircha tinchlik...",
+    schedule_empty_title: "Hali inyeksiyalar yo'q",
+    schedule_empty_mascot: "Hozircha inyeksiyalar belgilanmagan. Tiklanishning birinchi bosqichini rejalashtiramizmi?",
+    add_first_injection: "Birinchi inyeksiyani belgilash",
+    next_injection_tooltip: "Navbatdagi ukol!",
+
+    // Settings & Admin
+    settings_desc: "Profil, afzalliklar va xavfsizlikni boshqarish",
+    account_id_label: "Hisob",
+    preferences: "Afzalliklar",
+    notifications: "Bildirishnomalar",
+    app_appearance: "Ilova ko'rinishi",
+    light_mode: "Yorug'",
+    security: "Xavfsizlik",
+    two_factor: "Ikki Bosqichli Himoya",
+    logout_desc: "Tizimdan chiqish",
+    admin_control_center: "Super Admin Markazi",
+    god_mode: "Xudo rejimi faol",
+    megaphone_title: "Megafon",
+    megaphone_desc: "Barcha faol foydalanuvchilarga xabar yuborish.",
+    transmit: "Yuborish",
+    clear: "Tozalash",
+
+    // Pagination
+    pagination_showing: "Jami {total} bemordan {start}-{end} ko'rsatilmoqda",
   },
   ru: {
     dashboard: "Панель управления",
@@ -604,7 +720,65 @@ export const translations = {
     view_master_schedule: "Просмотреть общий график",
     registration_overview: "Обзор регистрации пациентов",
     upcoming_schedule: "Предстоящий график",
-    account_status: "Статус Аккаунта"
+    account_status: "Статус Аккаунта",
+
+    // Toasts
+    toast_success_title: "Успешно!",
+    toast_error_title: "Произошла ошибка",
+    toast_info_title: "Информация",
+    profile_updated_title: "Профиль обновлен",
+    profile_updated_msg: "Ваши изменения были успешно сохранены.",
+    patient_added_title: "Пациент добавлен",
+    patient_added_msg: "Новый профиль успешно создан в базе данных.",
+    patient_updated_title: "Данные обновлены",
+    patient_updated_msg: "Данные пациента успешно сохранены.",
+    deleted_title: "Удалено",
+    patient_deleted_msg: "Данные пациента полностью удалены.",
+    injection_added_title: "Инъекция добавлена",
+    injection_added_msg: "Новая процедура успешно добавлена в график.",
+    photo_added_title: "Фото добавлено",
+    photo_added_msg: "Новое клиническое фото успешно сохранено.",
+    photo_deleted_title: "Фото удалено",
+    photo_deleted_msg: "Фотография успешно удалена из галереи.",
+    status_updated_title: "Статус обновлен",
+    status_updated_msg: "Статус инъекции успешно изменен.",
+
+    // Lock Screen
+    security_check: "Проверка безопасности",
+    remember_password: "Доктор, вы помните пароль?",
+
+    // Delete Modal
+    delete_modal_headline: "Мы действительно прощаемся?",
+    delete_modal_subtext: "Это действие нельзя отменить. Все данные пациента, фотографии и история будут удалены безвозвратно.",
+    delete_modal_cancel: "Нет, оставить",
+    delete_modal_confirm: "Да, удалить",
+
+    // Empty States
+    empty_state_peace: "Пока спокойно...",
+    schedule_empty_title: "Инъекций пока нет",
+    schedule_empty_mascot: "Инъекции еще не запланированы. Давайте запланируем первый шаг к выздоровлению!",
+    add_first_injection: "Запланировать первую инъекцию",
+    next_injection_tooltip: "Следующая инъекция!",
+
+    // Settings & Admin
+    settings_desc: "Управление профилем, предпочтениями и безопасностью",
+    account_id_label: "Аккаунт",
+    preferences: "Предпочтения",
+    notifications: "Уведомления",
+    app_appearance: "Внешний вид",
+    light_mode: "Светлая",
+    security: "Безопасность",
+    two_factor: "Двухфакторная аутентификация",
+    logout_desc: "Завершить текущий сеанс",
+    admin_control_center: "Центр управления супер-администратора",
+    god_mode: "Режим бога активен",
+    megaphone_title: "Мегафон",
+    megaphone_desc: "Отправить мгновенье оповещение всем активным пользователям.",
+    transmit: "Отправить",
+    clear: "Очистить",
+
+    // Pagination
+    pagination_showing: "Показано {start}-{end} из {total} пациентов",
   }
 };
 

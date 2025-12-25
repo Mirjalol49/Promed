@@ -1,43 +1,47 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 
-interface Toast {
-    id: number;
-    type: 'success' | 'error' | 'info';
+interface ToastData {
+    title: string;
     message: string;
+    type: 'success' | 'error' | 'info';
 }
 
 interface ToastContextType {
-    toasts: Toast[];
-    addToast: (message: string, type: Toast['type']) => void;
-    removeToast: (id: number) => void;
-    success: (message: string) => void;
-    error: (message: string) => void;
-    info: (message: string) => void;
+    activeToast: ToastData | null;
+    showToast: (title: string, message: string, type: ToastData['type']) => void;
+    hideToast: () => void;
+    success: (title: string, message: string) => void;
+    error: (title: string, message: string) => void;
+    info: (title: string, message: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [toasts, setToasts] = useState<Toast[]>([]);
+    const [activeToast, setActiveToast] = useState<ToastData | null>(null);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    const removeToast = useCallback((id: number) => {
-        setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    const hideToast = useCallback(() => {
+        setActiveToast(null);
+        if (timerRef.current) clearTimeout(timerRef.current);
     }, []);
 
-    const addToast = useCallback((message: string, type: Toast['type']) => {
-        const id = Date.now();
-        setToasts((prev) => [...prev, { id, type, message }]);
+    const showToast = useCallback((title: string, message: string, type: ToastData['type']) => {
+        if (timerRef.current) clearTimeout(timerRef.current);
 
-        // Note: The auto-dismiss timer is now managed by ToastCard component
-        // This allows for proper pause-on-hover functionality
+        setActiveToast({ title, message, type });
+
+        timerRef.current = setTimeout(() => {
+            setActiveToast(null);
+        }, 4500); // Slightly longer than the progress bar for safety
     }, []);
 
-    const success = useCallback((message: string) => addToast(message, 'success'), [addToast]);
-    const error = useCallback((message: string) => addToast(message, 'error'), [addToast]);
-    const info = useCallback((message: string) => addToast(message, 'info'), [addToast]);
+    const success = useCallback((title: string, message: string) => showToast(title, message, 'success'), [showToast]);
+    const error = useCallback((title: string, message: string) => showToast(title, message, 'error'), [showToast]);
+    const info = useCallback((title: string, message: string) => showToast(title, message, 'info'), [showToast]);
 
     return (
-        <ToastContext.Provider value={{ toasts, addToast, removeToast, success, error, info }}>
+        <ToastContext.Provider value={{ activeToast, showToast, hideToast, success, error, info }}>
             {children}
         </ToastContext.Provider>
     );

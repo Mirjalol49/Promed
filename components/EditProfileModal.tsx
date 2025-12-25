@@ -189,7 +189,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             });
 
             console.log("✓ Profile saved successfully!");
-            success(t('toast_profile_saved'));
+            success(t('profile_updated_title'), t('profile_updated_msg'));
 
 
 
@@ -197,7 +197,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
         } catch (error: any) {
             console.error("CRITICAL SAVE FAILED:", error);
-            showError(`${t('toast_save_failed')}: ${error.message}`);
+            showError(t('toast_error_title'), `${t('toast_save_failed')}: ${error.message}`);
         } finally {
             setIsSaving(false);
         }
@@ -334,7 +334,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                 </div>
                                 <div className="text-left">
                                     <p className="text-sm font-bold text-red-600">{t('logout')}</p>
-                                    <p className="text-[11px] text-red-400 font-medium">End your current session</p>
+                                    <p className="text-[11px] text-red-400 font-medium">{t('logout_desc')}</p>
                                 </div>
                             </div>
                             <ChevronDown size={16} className="text-red-300 -rotate-90" />

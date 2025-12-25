@@ -62,11 +62,11 @@ const Layout: React.FC<LayoutProps> = ({
           setIsSidebarOpen(false);
         }}
         className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 mb-1 group border border-transparent ${isActive
-          ? 'bg-white/10 text-white shadow-inner backdrop-blur-sm border-white/5'
+          ? 'bg-white/10 text-white shadow-sm backdrop-blur-sm border-white/5'
           : 'text-slate-400 hover:bg-white/5 hover:text-white'
           }`}
       >
-        <Icon size={18} className={isActive ? 'text-promed-light' : 'text-slate-500 group-hover:text-slate-300'} />
+        <Icon size={18} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'} />
         <span className="font-medium tracking-wide text-sm">{label}</span>
       </button>
     );
@@ -105,7 +105,7 @@ const Layout: React.FC<LayoutProps> = ({
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:static inset-y-0 left-0 z-40 w-64 bg-promed-dark flex flex-col transition-transform duration-300 ease-out shadow-2xl border-r border-white/5
+        fixed md:static inset-y-0 left-0 z-40 w-64 bg-gradient-to-b from-[#134e4a] to-[#042f2e] flex flex-col transition-transform duration-300 ease-out shadow-2xl border-r border-white/10
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Logo */}
@@ -140,7 +140,7 @@ const Layout: React.FC<LayoutProps> = ({
         </nav>
 
         {/* Sidebar Footer with Profile & Lock */}
-        <div className="p-4 mt-auto border-t border-white/10 bg-black/10">
+        <div className="p-4 mt-auto border-t border-white/10 bg-black/20">
           {isLockEnabled && (
             <button
               onClick={onLock}
