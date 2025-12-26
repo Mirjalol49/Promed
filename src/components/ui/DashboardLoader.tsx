@@ -27,7 +27,7 @@ export const DashboardLoader: React.FC = () => {
                     <MascotImage
                         src="/images/mascot/happy.png"
                         alt="Happy Mascot"
-                        className="w-32 h-32 object-contain drop-shadow-2xl relative z-10"
+                        className="w-32 h-32 object-contain relative z-10"
                         width={128}
                         height={128}
                         loading="eager" // Hero/Critical image
