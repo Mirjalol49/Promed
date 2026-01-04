@@ -31,7 +31,7 @@ const TourGuide: React.FC = () => {
             target: 'body',
             content: (
                 <div className="flex flex-col items-center text-center pt-4">
-                    <img src={happyMascot} alt="Welcome" className="w-24 h-24 mb-4 object-contain drop-shadow-lg" />
+                    <img src={happyMascot} alt="Welcome" className="w-24 h-24 mb-4 object-contain " />
                     <h3 className="text-xl font-bold text-slate-800 mb-2">
                         {t('tour_welcome_title') || "Assalomu alaykum, Doktor!"}
                     </h3>
@@ -50,7 +50,7 @@ const TourGuide: React.FC = () => {
                     <img
                         src={operationMascot}
                         alt="Stats"
-                        className="w-16 h-16 absolute -top-12 -left-8 drop-shadow-md z-10"
+                        className="w-16 h-16 absolute -top-12 -left-8 z-10"
                     />
                     <p className="text-slate-700 font-medium pl-4">
                         {t('tour_stats_desc') || "Bu yerda operatsiya va inyeksiyalar statistikasini kuzatib borasiz."}
@@ -65,7 +65,7 @@ const TourGuide: React.FC = () => {
                     <img
                         src={injectionMascot}
                         alt="Add"
-                        className="w-16 h-16 absolute -top-12 -left-8 drop-shadow-md z-10"
+                        className="w-16 h-16 absolute -top-12 -left-8 z-10"
                     />
                     <p className="text-slate-700 font-medium pl-4">
                         {t('tour_add_btn_desc') || "Eng muhim tugma! Yangi bemor qo'shish uchun shu yerni bosing."}
@@ -88,7 +88,7 @@ const TourGuide: React.FC = () => {
             borderRadius: '16px',
             fontFamily: 'Inter, sans-serif',
             padding: '20px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            // boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         },
         buttonNext: {
             backgroundColor: '#10B981',

@@ -175,11 +175,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
 
 
             {/* Profile Section (Inline) */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-2xl p-6  border border-gray-100">
                 <div className="flex flex-col items-center mb-8">
                     <div className="relative group/avatar cursor-pointer" onClick={() => document.getElementById('file-upload-settings')?.click()}>
                         {/* Main Avatar Container */}
-                        <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-xl relative bg-slate-100 transition-all duration-300 group-hover/avatar:ring-4 group-hover/avatar:ring-promed-primary/20">
+                        <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white relative bg-slate-100 transition-all duration-300 group-hover/avatar:ring-4 group-hover/avatar:ring-promed-primary/20">
                             {/* Show Preview if exists, else ProfileAvatar */}
                             {previewUrl ? (
                                 <img src={previewUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover/avatar:scale-110" alt="Preview" />
@@ -194,7 +194,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                         </div>
 
                         {/* Side Badge */}
-                        <div className="absolute bottom-1 right-1 z-40 bg-promed-primary p-2.5 rounded-full shadow-lg border-2 border-white text-white transform transition-all duration-300 group-hover/avatar:scale-110 group-hover/avatar:rotate-12">
+                        <div className="absolute bottom-1 right-1 z-40 bg-promed-primary p-2.5 rounded-full border-2 border-white text-white transform transition-all duration-300 group-hover/avatar:scale-110 group-hover/avatar:rotate-12">
                             <Camera size={18} fill="currentColor" fillOpacity={0.2} />
                         </div>
                     </div>
@@ -226,7 +226,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                                     key={lang}
                                     onClick={() => setLanguage(lang as any)}
                                     className={`py-2 px-4 rounded-xl text-sm font-bold border transition-all ${language === lang
-                                        ? 'bg-promed-primary text-white border-promed-primary shadow-md'
+                                        ? 'bg-promed-primary text-white border-promed-primary '
                                         : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                                         }`}
                                 >
@@ -252,12 +252,29 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                         </div>
                     </div>
 
+                    {/* Email Display (Read-Only) */}
+                    <div>
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('email') || "Email Adres"}</label>
+                        <div className="relative">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <Mail size={18} />
+                            </div>
+                            <input
+                                type="text"
+                                value={userEmail || ''}
+                                readOnly
+                                disabled
+                                className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-200 rounded-xl font-medium text-gray-500 cursor-not-allowed select-none"
+                            />
+                        </div>
+                    </div>
+
                     {/* Security - Moved Above PIN Fields */}
                     <div>
                         <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('security')}</label>
                         <div className="bg-blue-50/50 p-5 rounded-[24px] border border-blue-100 flex items-center justify-between mb-8 group/security transition-all hover:bg-blue-50">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-white rounded-2xl text-promed-primary shadow-sm border border-promed-primary/10 group-hover/security:scale-110 transition-transform">
+                                <div className="p-3 bg-white rounded-2xl text-promed-primary  border border-promed-primary/10 group-hover/security:scale-110 transition-transform">
                                     <Shield size={22} />
                                 </div>
                                 <div>
@@ -268,9 +285,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                             <button
                                 type="button"
                                 onClick={() => setLockEnabled(!lockEnabled)}
-                                className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 ${lockEnabled ? 'bg-promed-primary shadow-[0_4px_12px_hsla(206,100%,34%,0.2)]' : 'bg-slate-200 shadow-inner'}`}
+                                className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 ${lockEnabled ? 'bg-promed-primary ' : 'bg-slate-200 '}`}
                             >
-                                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${lockEnabled ? 'left-8' : 'left-1'}`} />
+                                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 ${lockEnabled ? 'left-8' : 'left-1'}`} />
                             </button>
                         </div>
 
@@ -283,185 +300,131 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                                 <div className="flex items-center gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            setUseLongPassword(!useLongPassword);
-                                            setLongPasswordInput('');
-                                        }}
-                                        className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-promed-primary px-2 py-1 transition-all"
-                                    >
-                                        {useLongPassword ? "PIN orqali" : "Parol orqali"}
-                                    </button>
-                                    <button
-                                        type="button"
                                         onClick={() => setShowCurrentPin(!showCurrentPin)}
                                         className="flex items-center gap-2 text-[10px] font-black text-promed-primary uppercase tracking-widest hover:bg-promed-light px-3 py-1.5 rounded-lg transition-all"
                                     >
                                         {showCurrentPin ? <EyeOff size={14} /> : <Eye size={14} />}
-                                        <span>{showCurrentPin ? "Yashirish" : "Ko'rsatish"}</span>
+                                        <span>{showCurrentPin ? t('hide') : t('show')}</span>
                                     </button>
                                 </div>
                             </div>
-
-                            {useLongPassword ? (
-                                <div className="relative group/long">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/long:text-promed-primary transition-colors">
-                                        <Lock size={20} />
-                                    </div>
+                            <div className="flex gap-2 sm:gap-3 justify-start">
+                                {currentPinDigits.map((digit, idx) => (
                                     <input
+                                        key={idx}
+                                        ref={el => { currentPinRefs.current[idx] = el; }}
                                         type={showCurrentPin ? "text" : "password"}
-                                        value={longPasswordInput}
-                                        onChange={(e) => setLongPasswordInput(e.target.value)}
-                                        placeholder="Hisob parolini kiriting"
-                                        className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:ring-8 focus:ring-promed-primary/10 focus:border-promed-primary outline-none transition-all font-bold text-slate-900 shadow-sm"
-                                    />
-                                </div>
-                            ) : (
-                                <div className="flex gap-2 sm:gap-3 justify-start">
-                                    {currentPinDigits.map((digit, idx) => (
-                                        <input
-                                            key={idx}
-                                            ref={el => { currentPinRefs.current[idx] = el; }}
-                                            type={showCurrentPin ? "text" : "password"}
-                                            inputMode="numeric"
-                                            pattern="\d*"
-                                            value={digit}
-                                            onChange={(e) => {
-                                                const fullVal = e.target.value;
-                                                const val = fullVal.slice(-1); // Take the latest character
-                                                if (!/^\d*$/.test(val)) return;
+                                        inputMode="numeric"
+                                        pattern="\d*"
+                                        value={digit}
+                                        onChange={(e) => {
+                                            const fullVal = e.target.value;
+                                            const val = fullVal.slice(-1); // Take the latest character
+                                            if (!/^\d*$/.test(val)) return;
 
-                                                const newCurrent = [...currentPinDigits];
-                                                newCurrent[idx] = val;
-                                                setCurrentPinDigits(newCurrent);
+                                            const newCurrent = [...currentPinDigits];
+                                            newCurrent[idx] = val;
+                                            setCurrentPinDigits(newCurrent);
 
-                                                if (val && idx < 5) {
-                                                    currentPinRefs.current[idx + 1]?.focus();
-                                                }
-                                            }}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Backspace' && !currentPinDigits[idx] && idx > 0) {
-                                                    currentPinRefs.current[idx - 1]?.focus();
-                                                }
-                                            }}
-                                            autoComplete="off"
-                                            className={`w-10 h-14 sm:w-14 sm:h-16 bg-white border-2 
-                                                ${digit ? 'border-promed-primary ring-4 ring-promed-primary/5' : 'border-slate-100'}
-                                                rounded-2xl text-center text-xl font-black text-slate-900 transition-all duration-300
-                                                focus:outline-none focus:border-promed-primary focus:ring-8 focus:ring-promed-primary/10
-                                                placeholder:text-slate-100 shadow-sm`}
-                                            placeholder="0"
-                                            maxLength={1}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                            <p className="text-[10px] text-promed-primary mt-3 font-bold uppercase tracking-tight flex items-center gap-2">
-                                <span className="p-1 bg-blue-50 rounded-md">ⓘ</span> YANGI PINNI HISOB PAROLI SIFATIDA SAQLASH UCHUN TALAB QILINADI
-                            </p>
-                        </div>
-
-                        {/* 6-Digit PIN Boxes (New PIN) */}
-                        <div className="pt-2">
-                            <div className="flex items-center justify-between mb-4">
-                                <label className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">{t('new_password') || "Yangi PIN Kod"}</label>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setUseLongNewPin(!useLongNewPin);
-                                            setLongNewPinInput('');
+                                            if (val && idx < 5) {
+                                                currentPinRefs.current[idx + 1]?.focus();
+                                            }
                                         }}
-                                        className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-promed-primary px-2 py-1 transition-all"
-                                    >
-                                        {useLongNewPin ? "PIN orqali" : "Parol orqali"}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowNewPin(!showNewPin)}
-                                        className="flex items-center gap-2 text-[10px] font-black text-promed-primary uppercase tracking-widest hover:bg-promed-light px-3 py-1.5 rounded-lg transition-all"
-                                    >
-                                        {showNewPin ? <EyeOff size={14} /> : <Eye size={14} />}
-                                        <span>{showNewPin ? "Yashirish" : "Ko'rsatish"}</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {useLongNewPin ? (
-                                <div className="relative group/long-new">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/long-new:text-promed-primary transition-colors">
-                                        <Lock size={20} />
-                                    </div>
-                                    <input
-                                        type={showNewPin ? "text" : "password"}
-                                        value={longNewPinInput}
-                                        onChange={(e) => setLongNewPinInput(e.target.value)}
-                                        placeholder="Yangi parol yoki PIN kiriting"
-                                        className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:ring-8 focus:ring-promed-primary/10 focus:border-promed-primary outline-none transition-all font-bold text-slate-900 shadow-sm"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Backspace' && !currentPinDigits[idx] && idx > 0) {
+                                                currentPinRefs.current[idx - 1]?.focus();
+                                            }
+                                        }}
+                                        autoComplete="off"
+                                        className={`w-10 h-10 sm:w-12 sm:h-12 bg-white border
+                                                ${digit ? 'border-promed-primary ring-2 ring-promed-primary/10 shadow-sm' : 'border-slate-200'}
+                                                rounded-xl text-center text-lg font-bold text-slate-900 transition-all duration-200
+                                                focus:outline-none focus:border-promed-primary focus:ring-4 focus:ring-promed-primary/10
+                                                placeholder:text-slate-300`}
+                                        placeholder="•"
+                                        maxLength={1}
                                     />
-                                </div>
-                            ) : (
-                                <div className="flex gap-2 sm:gap-3 justify-start">
-                                    {pinDigits.map((digit, idx) => (
-                                        <input
-                                            key={idx}
-                                            ref={el => { pinRefs.current[idx] = el; }}
-                                            type={showNewPin ? "text" : "password"}
-                                            inputMode="numeric"
-                                            pattern="\d*"
-                                            value={digit}
-                                            onChange={(e) => {
-                                                const fullVal = e.target.value;
-                                                const val = fullVal.slice(-1); // Take the latest digit
-                                                if (!/^\d*$/.test(val)) return;
-
-                                                const newPin = [...pinDigits];
-                                                newPin[idx] = val;
-                                                setPinDigits(newPin);
-
-                                                if (val && idx < 5) {
-                                                    pinRefs.current[idx + 1]?.focus();
-                                                }
-                                            }}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Backspace' && !pinDigits[idx] && idx > 0) {
-                                                    pinRefs.current[idx - 1]?.focus();
-                                                }
-                                            }}
-                                            autoComplete="off"
-                                            className={`w-10 h-14 sm:w-14 sm:h-16 bg-white border-2 
-                                                ${digit ? 'border-promed-primary ring-4 ring-promed-primary/5' : 'border-slate-100'}
-                                                rounded-2xl text-center text-xl font-black text-slate-900 transition-all duration-300
-                                                focus:outline-none focus:border-promed-primary focus:ring-8 focus:ring-promed-primary/10
-                                                placeholder:text-slate-100 shadow-sm`}
-                                            placeholder="0"
-                                            maxLength={1}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                            <p className="text-[10px] text-gray-400 mt-3 font-medium tracking-wide">6 xonali PIN yoki istalgan uzunlikdagi parol yarating</p>
+                                ))}
+                            </div>
                         </div>
+
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="pt-4 flex items-center justify-between border-t border-gray-100">
-                        <button
-                            onClick={logout}
-                            className="px-6 py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition flex items-center gap-2"
-                        >
-                            <LogOut size={18} />
-                            {t('logout')}
-                        </button>
+                    {/* 6-Digit PIN Boxes (New PIN) */}
+                    <div className="pt-2">
+                        <div className="flex items-center justify-between mb-4">
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">{t('new_password')}</label>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowNewPin(!showNewPin)}
+                                    className="flex items-center gap-2 text-[10px] font-black text-promed-primary uppercase tracking-widest hover:bg-promed-light px-3 py-1.5 rounded-lg transition-all"
+                                >
+                                    {showNewPin ? <EyeOff size={14} /> : <Eye size={14} />}
+                                    <span>{showNewPin ? t('hide') : t('show')}</span>
+                                </button>
+                            </div>
+                        </div>
 
-                        <button
-                            onClick={handleSave}
-                            disabled={loading || imageUploading}
-                            className="px-8 py-3 bg-promed-primary text-white font-bold rounded-xl shadow-lg shadow-promed-primary/30 hover:bg-promed-primary-hover transition flex items-center gap-2 disabled:opacity-70"
-                        >
-                            {loading ? t('saving') : t('save')}
-                        </button>
+                        <div className="flex gap-2 sm:gap-3 justify-start">
+                            {pinDigits.map((digit, idx) => (
+                                <input
+                                    key={idx}
+                                    ref={el => { pinRefs.current[idx] = el; }}
+                                    type={showNewPin ? "text" : "password"}
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    value={digit}
+                                    onChange={(e) => {
+                                        const fullVal = e.target.value;
+                                        const val = fullVal.slice(-1); // Take the latest digit
+                                        if (!/^\d*$/.test(val)) return;
+
+                                        const newPin = [...pinDigits];
+                                        newPin[idx] = val;
+                                        setPinDigits(newPin);
+
+                                        if (val && idx < 5) {
+                                            pinRefs.current[idx + 1]?.focus();
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Backspace' && !pinDigits[idx] && idx > 0) {
+                                            pinRefs.current[idx - 1]?.focus();
+                                        }
+                                    }}
+                                    autoComplete="off"
+                                    className={`w-10 h-10 sm:w-12 sm:h-12 bg-white border
+                                        ${digit ? 'border-promed-primary ring-2 ring-promed-primary/10 shadow-sm' : 'border-slate-200'}
+                                        rounded-xl text-center text-lg font-bold text-slate-900 transition-all duration-200
+                                        focus:outline-none focus:border-promed-primary focus:ring-4 focus:ring-promed-primary/10
+                                        placeholder:text-slate-300`}
+                                    placeholder="•"
+                                    maxLength={1}
+                                />
+                            ))}
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-3 font-medium tracking-wide">{t('password_hint')}</p>
                     </div>
+                </div>
 
+                {/* Action Buttons */}
+                <div className="pt-4 flex items-center justify-between border-t border-gray-100">
+                    <button
+                        onClick={logout}
+                        className="px-6 py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition flex items-center gap-2"
+                    >
+                        <LogOut size={18} />
+                        {t('logout')}
+                    </button>
+
+                    <button
+                        onClick={handleSave}
+                        disabled={loading || imageUploading}
+                        className="px-8 py-3 bg-promed-primary text-white font-bold rounded-xl hover:bg-promed-primary-hover transition flex items-center gap-2 disabled:opacity-70"
+                    >
+                        {loading ? t('saving') : t('save')}
+                    </button>
                 </div>
             </div>
         </div>

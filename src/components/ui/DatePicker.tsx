@@ -138,13 +138,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             {isOpen && (
                 <div className="absolute z-50 mt-2 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 w-72 animate-in fade-in zoom-in-95 duration-200 left-0 sm:left-auto">
                     <div className="flex items-center justify-between mb-4">
-                        <button onClick={prevMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition">
+                        <button type="button" onClick={prevMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition">
                             <ChevronLeft size={20} />
                         </button>
                         <span className="font-bold text-slate-800 text-base capitalize">
                             {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                         </span>
-                        <button onClick={nextMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition">
+                        <button type="button" onClick={nextMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition">
                             <ChevronRight size={20} />
                         </button>
                     </div>

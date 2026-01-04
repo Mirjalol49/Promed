@@ -98,7 +98,7 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                                 animate={{ scale: 1, rotate: 0 }}
                                 src={mascot}
                                 alt="Mascot"
-                                className="w-20 h-20 object-contain -mt-6 drop-shadow-lg"
+                                className="w-20 h-20 object-contain -mt-6 drop-g"
                             />
                         </div>
                     )}

@@ -112,7 +112,7 @@ export const translations = {
     edit_profile: "Edit Profile",
     current_password: "Current Password",
     new_password: "New Password",
-    password_hint: "Use a strong password (at least 8 characters, numbers and letters)",
+    password_hint: "Create a 6-digit PIN code",
     optional_change: "(optional - only to change)",
     profile_photo: "Profile Photo",
     before_photo: "Clinical Photo (Before)",
@@ -271,6 +271,12 @@ export const translations = {
     // Empty State
     empty_patient_list_title: "No Patients Found",
     empty_patient_list_desc: "It looks quiet here. Add a new patient to get started!",
+
+    // Tour Guide
+    tour_welcome_title: "Welcome, Doctor!",
+    tour_welcome_desc: "I'm your Graft assistant. Let me show you around the dashboard.",
+    tour_stats_desc: "Here you can track operation and injection statistics.",
+    tour_add_btn_desc: "The most important button! Click here to add a new patient.",
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -380,7 +386,7 @@ export const translations = {
     edit_profile: "Profilni Tahrirlash",
     current_password: "Joriy Parol",
     new_password: "Yangi Parol",
-    password_hint: "Kuchli paroldan foydalaning (kamida 8 ta belgi, raqamlar va harflar)",
+    password_hint: "6 xonali PIN kod yarating",
     optional_change: "(ixtiyoriy - faqat o'zgartirish uchun)",
     profile_photo: "Profil Rasmi",
     before_photo: "Klinik Rasm (Oldin)",
@@ -556,6 +562,12 @@ export const translations = {
     // Empty State
     empty_patient_list_title: "Hozircha Bemorlar Yo'q",
     empty_patient_list_desc: "Bu yer tinch ko'rinadi. Ishni boshlash uchun yangi bemor qo'shing!",
+
+    // Tour Guide
+    tour_welcome_title: "Assalomu alaykum, Doktor!",
+    tour_welcome_desc: "Men Graft yordamchisiman. Keling, sizga ish stolini ko'rsataman.",
+    tour_stats_desc: "Bu yerda operatsiya va inyeksiyalar statistikasini kuzatib borasiz.",
+    tour_add_btn_desc: "Eng muhim tugma! Yangi bemor qo'shish uchun shu yerni bosing.",
   },
   ru: {
     dashboard: "Панель управления",
@@ -665,7 +677,7 @@ export const translations = {
     edit_profile: "Редактировать профиль",
     current_password: "Текущий пароль",
     new_password: "Новый пароль",
-    password_hint: "Используйте надежный пароль (минимум 8 символов, цифры и буквы)",
+    password_hint: "Создайте 6-значный PIN-код",
     optional_change: "(необязательно - только для изменения)",
     profile_photo: "Фото профиля",
     before_photo: "Клиническое фото (До)",
@@ -837,6 +849,12 @@ export const translations = {
     // Empty State
     empty_patient_list_title: "Пациентов Пока Нет",
     empty_patient_list_desc: "Здесь пока тихо. Добавьте нового пациента, чтобы начать!",
+
+    // Tour Guide
+    tour_welcome_title: "Добро пожаловать, Доктор!",
+    tour_welcome_desc: "Я ваш помощник Graft. Давайте я покажу вам рабочий стол.",
+    tour_stats_desc: "Здесь вы можете отслеживать статистику операций и инъекций.",
+    tour_add_btn_desc: "Самая важная кнопка! Нажмите здесь, чтобы добавить нового пациента.",
   }
 };
 

@@ -96,7 +96,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
 
     return (
         <div
-            className={`relative overflow-hidden rounded-full border border-white/10 shadow-sm ${className}`}
+            className={`relative overflow-hidden rounded-full border border-white/10  ${className}`}
             style={{ width: size, height: size }}
         >
             {/* Optimistic Overlay (Local Blob) */}

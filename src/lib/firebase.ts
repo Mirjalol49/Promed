@@ -24,7 +24,8 @@ export const auth = getAuth(app);
 // Standard initialization (default database)
 // Use Long Polling to avoid WebSocket issues
 export const db = initializeFirestore(app, {
-    experimentalForceLongPolling: true,
+    experimentalForceLongPolling: true, // Force XHR to avoid socket issues
+    localCache: undefined, // Disable default local persistence to fix corrupt state
 });
 export const storage = getStorage(app);
 // Analytics disabled to prevent content blocker issues

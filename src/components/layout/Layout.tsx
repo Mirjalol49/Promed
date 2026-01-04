@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AnimateIcon } from '../ui/AnimateIcon';
 import {
   LayoutDashboard,
   Users,
@@ -17,9 +18,6 @@ import { NotificationBell } from './NotificationBell';
 import { useSystemAlert } from '../../contexts/SystemAlertContext';
 import lockIcon from '../../assets/images/lock.png';
 import logoImg from '../../assets/images/logo.png';
-
-import dashboardImg from '../../assets/images/dashbaord.png';
-import patientsImg from '../../assets/images/patients.png';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -66,17 +64,19 @@ const Layout: React.FC<LayoutProps> = ({
           setIsSidebarOpen(false);
         }}
         className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-1 group border border-transparent ${isActive
-          ? 'bg-white/15 text-white shadow-[0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-md border-white/10'
-          : 'text-white/80 hover:bg-white/5 hover:text-white'
+          ? 'bg-[hsl(204deg,67%,92%)] border-slate-200 text-slate-900 shadow-sm'
+          : 'text-slate-900 hover:bg-[hsl(204deg,67%,92%)]'
           }`}
       >
         {iconImg ? (
-          <img src={iconImg} alt={label} className={`w-8 h-8 object-contain transition-transform duration-300 group-hover:scale-110 ${isActive ? 'scale-110' : ''}`} />
+          <img src={iconImg} alt={label} className={`w-8 h-8 object-contain transition-transform duration-300 group-hover:scale-110 ${isActive ? 'scale-110' : 'opacity-100'}`} />
         ) : (
-          <Icon size={20} className={isActive ? 'text-white' : 'text-white/70 group-hover:text-white'} />
+          <AnimateIcon>
+            <Icon size={20} className={`transition-colors ${isActive ? 'text-promed-primary' : 'text-slate-900'}`} />
+          </AnimateIcon>
         )}
-        <span className={`text-sm tracking-wide transition-all ${isActive ? 'font-bold' : 'font-medium'}`}>{label}</span>
-      </button>
+        <span className={`text-base font-sans transition-all duration-200 ${isActive ? 'font-semibold' : 'font-medium group-hover:font-semibold'}`}>{label}</span>
+      </button >
     );
   };
 
@@ -106,43 +106,43 @@ const Layout: React.FC<LayoutProps> = ({
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:static inset-y-0 left-0 z-40 w-[260px] bg-promed-primary flex flex-col transition-transform duration-300 ease-out shadow-2xl border-r border-white/10
+        fixed md:static inset-y-0 left-0 z-40 w-[260px] bg-[#ffffff] flex flex-col transition-transform duration-300 ease-out shadow-soft border-r border-[#E2E8F0]
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Logo */}
         <div className="p-6 flex items-center justify-between">
-          <div className="flex items-center space-x-3 text-white">
+          <div className="flex items-center space-x-3 text-slate-900">
             {/* Logo Image Only - No Background */}
             <img src={logoImg} alt="Promed Logo" className="w-40 h-auto object-contain" />
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-white/70 hover:text-white">
+          <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-slate-900">
             <X size={24} />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 mt-2 px-4 overflow-y-auto no-scrollbar space-y-2 text-white">
-          <NavItem page="DASHBOARD" icon={LayoutDashboard} iconImg={dashboardImg} label={t('dashboard')} />
-          <NavItem page="PATIENTS" icon={Users} iconImg={patientsImg} label={t('patients')} id="add-patient-btn" />
+        <nav className="flex-1 mt-2 px-4 overflow-y-auto no-scrollbar space-y-2 text-slate-900">
+          <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />
+          <NavItem page="PATIENTS" icon={Users} label={t('patients')} id="add-patient-btn" />
 
           {role === 'admin' && (
-            <div className="pt-4 mt-4 border-t border-white/5 space-y-1">
-              <p className="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Management</p>
+            <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">
+              <p className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Management</p>
               <NavItem page="ADMIN_DASHBOARD" icon={Shield} label="Admin Panel" />
             </div>
           )}
         </nav>
 
         {/* Sidebar Footer with Profile & Lock */}
-        <div className="p-4 mt-auto border-t border-white/10 bg-black/20 space-y-2">
+        <div className="p-4 mt-auto border-t border-slate-100 bg-white space-y-2">
 
           {isLockEnabled && (
             <button
               onClick={onLock}
-              className="w-full flex items-center space-x-3 text-white hover:text-white hover:bg-white/5 px-4 py-3 rounded-xl font-medium transition active:scale-95 group"
+              className="w-full flex items-center space-x-3 text-slate-900 hover:bg-[hsl(204deg,67%,92%)] px-4 py-3 rounded-xl font-medium transition active:scale-95 group"
             >
-              <img src={lockIcon} alt="Lock" className="w-8 h-8 object-contain opacity-80 group-hover:opacity-100 transition-opacity" />
-              <span className="text-sm tracking-wide font-medium">{t('lock_app')}</span>
+              <Lock size={20} />
+              <span className="text-base font-sans font-medium group-hover:font-semibold transition-all duration-200">{t('lock_app')}</span>
             </button>
           )}
 
@@ -151,25 +151,25 @@ const Layout: React.FC<LayoutProps> = ({
               onNavigate('SETTINGS');
               setIsSidebarOpen(false);
             }}
-            className="flex items-center w-full space-x-3 group px-4 py-3 rounded-xl hover:bg-white/5 transition duration-200 border border-transparent hover:border-white/5"
+            className="flex items-center w-full space-x-3 group px-4 py-3 rounded-xl hover:bg-[hsl(204deg,67%,92%)] transition duration-200 border border-transparent hover:border-slate-200"
           >
             <div className="relative">
-              <ProfileAvatar src={userImage} alt="Profile" size={44} className="rounded-lg shadow-lg shadow-black/20 border border-white/10 group-hover:scale-105 transition-transform" optimisticId={`${userId}_profile`} />
+              <ProfileAvatar src={userImage} alt="Profile" size={44} className="rounded-lg  shadow-slate-200 border border-slate-100 group-hover:border-slate-300 transition-colors" optimisticId={`${userId}_profile`} />
 
             </div>
             <div className="text-left overflow-hidden flex-1">
-              <p className="text-sm font-semibold text-white truncate group-hover:text-promed-light transition">{userName || t('dr_name')}</p>
+              <p className="text-sm font-sans font-medium group-hover:font-semibold text-slate-900 truncate group-hover:text-promed-primary transition-all duration-200">{userName || t('dr_name')}</p>
             </div>
             <Settings
               size={20}
-              className="ml-auto text-white/30 group-hover:text-white/70 transition-colors"
+              className="ml-auto text-slate-900 transition-colors"
             />
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-promed-bg">
+      <div className="flex-1 flex flex-col min-w-0 bg-[hsl(204deg,67%,92%)]">
         {/* Header */}
         <header className="sticky top-0 z-20 h-16 md:h-20">
           <div className="absolute inset-0 bg-white/80 backdrop-blur-xl shadow-soft border-b border-promed-primary/5" />

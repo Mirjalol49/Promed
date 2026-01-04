@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+// Force Rebuild 2
 import {
   UserPlus,
   Calendar,
@@ -10,18 +11,19 @@ import {
   Activity,
   Syringe,
   ArrowRight,
-
+  Search,
   Check,
-  MapPin
+  MapPin,
+  Heart,
+  Users,
+  Phone
 } from 'lucide-react';
-import dateIcon from '../../assets/images/date.png';
-import operationIcon from '../../assets/images/operation_icon.png';
-import patientsIcon from '../../assets/images/patients.png';
-import phoneIcon from '../../assets/images/phone.png';
+
 import { motion } from 'framer-motion';
 import { Injection, InjectionStatus, Patient } from '../../types';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { AnimateIcon } from '../../components/ui/AnimateIcon';
 
 // --- Vitals Card (Compact) ---
 interface VitalsCardProps {
@@ -35,7 +37,7 @@ interface VitalsCardProps {
 export const VitalsCard: React.FC<VitalsCardProps> = ({ label, value, icon: Icon, color, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-4 flex items-center space-x-4 border border-slate-100 animate-pulse">
+      <div className="bg-white rounded-xl  p-4 flex items-center space-x-4 border border-slate-100 animate-pulse">
         <div className="w-10 h-10 bg-slate-100 rounded-lg"></div>
         <div className="space-y-2 flex-1">
           <div className="h-3 bg-slate-100 rounded w-1/2"></div>
@@ -47,11 +49,11 @@ export const VitalsCard: React.FC<VitalsCardProps> = ({ label, value, icon: Icon
 
   // Map solid colors to gradients or custom solid backgrounds
   const getBackgroundClass = (baseColor: string) => {
-    if (baseColor.includes('rose')) return 'bg-gradient-to-br from-rose-400 to-rose-600 shadow-lg shadow-rose-500/30 border border-rose-400/20';
-    if (baseColor.includes('blue') || baseColor.includes('primary')) return 'bg-promed-primary shadow-glow border border-white/10';
-    if (baseColor.includes('emerald') || baseColor.includes('success')) return 'bg-[hsl(160,84%,39%)] shadow-lg shadow-emerald-500/30 border border-emerald-400/20';
-    if (baseColor.includes('teal')) return 'shadow-lg shadow-[hsl(176,79%,27%)]/40 border border-[hsl(176,79%,27%)]/20'; // No bg class, handled by style
-    if (baseColor.includes('purple')) return 'bg-gradient-to-br from-purple-400 to-purple-600 shadow-lg shadow-purple-500/30 border border-purple-400/20';
+    if (baseColor.includes('rose')) return 'bg-gradient-to-br from-rose-400 to-rose-600 border border-rose-400/20';
+    if (baseColor.includes('blue') || baseColor.includes('primary')) return 'bg-promed-primary border border-white/10';
+    if (baseColor.includes('emerald') || baseColor.includes('success')) return 'bg-[hsl(160,84%,39%)] border border-emerald-400/20';
+    if (baseColor.includes('teal')) return 'border border-[hsl(176,79%,27%)]/20'; // No bg class, handled by style
+    if (baseColor.includes('purple')) return 'bg-gradient-to-br from-purple-400 to-purple-600 border border-purple-400/20';
     return 'bg-white border border-promed-primary/10'; // Fallback
   };
 
@@ -65,15 +67,15 @@ export const VitalsCard: React.FC<VitalsCardProps> = ({ label, value, icon: Icon
 
   return (
     <div
-      className={`rounded - 2xl p - 5 flex items - center space - x - 4 transition - all duration - 300 hover: scale - [1.02] active: scale - [0.98] ${backgroundClass} ${isColored ? 'text-white' : 'shadow-sm text-slate-900'} `}
+      className={`rounded-2xl p-5 flex items-center space-x-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${backgroundClass} ${isColored ? 'text-white' : ' text-slate-900'}`}
       style={customStyle}
     >
-      <div className={`p - 3.5 rounded - 2xl backdrop - blur - md transition - colors ${isColored ? 'bg-white/20 text-white shadow-inner border border-white/10' : `${color} bg-opacity-10 text-slate-600`} `}>
+      <div className={`p-3.5 rounded-2xl backdrop-blur-md transition-colors ${isColored ? 'bg-white/20 text-white  border border-white/10' : `${color} bg-opacity-10 text-slate-600`}`}>
         <Icon size={26} strokeWidth={2.5} />
       </div>
       <div>
-        <p className={`text - [11px] font - bold uppercase tracking - widest mb - 1 opacity - 90 ${isColored ? 'text-white' : 'text-slate-500'} `}>{label}</p>
-        <p className={`text - 3xl font - extrabold tracking - tight ${isColored ? 'text-white drop-shadow-sm' : 'text-slate-900'} `}>{value}</p>
+        <p className={`text-[11px] font-bold uppercase tracking-widest mb-1 opacity-90 ${isColored ? 'text-white' : 'text-slate-500'}`}>{label}</p>
+        <p className={`text-3xl font-extrabold tracking-tight ${isColored ? 'text-white drop-' : 'text-slate-900'}`}>{value}</p>
       </div>
     </div>
   );
@@ -152,31 +154,31 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
   }, [patients, filter, today, t]);
 
   return (
-    <div className="bg-white rounded-[32px] shadow-soft border border-slate-200 overflow-hidden h-full flex flex-col">
+    <div className="bg-white rounded-2xl  border border-slate-200 overflow-hidden h-full flex flex-col">
       <div className="p-6 border-b border-promed-primary/5 flex flex-col sm:flex-row justify-between items-center bg-promed-bg/50 gap-4">
         <h3 className="text-lg font-bold text-promed-text tracking-tight flex items-center gap-2">
-          <div className="p-2 bg-promed-primary/10 rounded-xl border border-promed-primary/10 shadow-inner">
-            <img src={dateIcon} alt="Date" className="w-5 h-5 object-contain" />
+          <div className="p-2 bg-promed-primary/10 rounded-xl border border-promed-primary/10 ">
+            <Calendar className="w-5 h-5 text-promed-primary" />
           </div>
           {t('upcoming_patients')}
         </h3>
 
-        <div className="flex bg-slate-100/50 p-1 rounded-2xl border border-slate-200/50">
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
           <button
             onClick={() => setFilter('all')}
-            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${filter === 'all' ? 'bg-white text-promed-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'} `}
+            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${filter === 'all' ? 'bg-white text-promed-primary shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 bg-transparent'} `}
           >
             {t('filter_all')}
           </button>
           <button
             onClick={() => setFilter('Operation')}
-            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${filter === 'Operation' ? 'bg-white text-rose-500 shadow-sm' : 'text-slate-400 hover:text-slate-600'} `}
+            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${filter === 'Operation' ? 'bg-white text-rose-500 shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50 bg-transparent'} `}
           >
             {t('filter_operations')}
           </button>
           <button
             onClick={() => setFilter('Injection')}
-            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${filter === 'Injection' ? 'bg-white text-promed-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'} `}
+            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${filter === 'Injection' ? 'bg-white text-promed-primary shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-promed-primary hover:bg-promed-primary/5 bg-transparent'} `}
           >
             {t('filter_injections')}
           </button>
@@ -187,7 +189,7 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
         {upcomingEvents.map((event) => (
           <div
             key={event.uniqueId}
-            className="h-[72px] bg-white rounded-2xl border border-promed-primary/5 px-4 shadow-soft hover:shadow-card transition-all flex items-center justify-between group cursor-pointer hover:border-promed-primary/20 active:scale-[0.99]"
+            className="h-[72px] bg-white rounded-2xl border border-promed-primary/5 px-4 hover: transition-all flex items-center justify-between group cursor-pointer hover:border-promed-primary/20 active:scale-[0.99]"
             onClick={() => onViewPatient(event.patientId)}
           >
             <div className="flex items-center space-x-4">
@@ -198,8 +200,12 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
                   alt={event.name}
                   className="w-11 h-11 rounded-xl object-cover border border-slate-100 group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-lg flex items-center justify-center border-2 border-white shadow-sm ${event.type === 'Operation' ? 'bg-rose-500' : 'bg-promed-primary'}`}>
-                  {event.type === 'Operation' ? <img src={operationIcon} className="w-2.5 h-2.5 brightness-0 invert" /> : <img src={patientsIcon} className="w-2.5 h-2.5 brightness-0 invert" />}
+                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-lg flex items-center justify-center border-2 border-white  ${event.type === 'Operation' ? 'bg-rose-500' : 'bg-promed-primary'}`}>
+                  {event.type === 'Operation' ? (
+                    <Heart size={10} className="text-white fill-current" />
+                  ) : (
+                    <Syringe size={10} className="text-white" />
+                  )}
                 </div>
               </div>
 
@@ -218,7 +224,7 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
             {/* Meta (Right Side) */}
             <div className="flex flex-col items-end">
               <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest ${isToday(event.dateObj)
-                ? 'bg-promed-primary text-white shadow-soft shadow-promed-primary/30'
+                ? 'bg-promed-primary text-white '
                 : 'bg-slate-100 text-slate-500 border border-slate-200/50'
                 } `}>
                 {getDateLabel(event.dateObj)}
@@ -228,16 +234,15 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
         ))}
 
         {upcomingEvents.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full py-20 pb-28">
-            <div className="relative mb-8">
+          <div className="flex flex-col items-center justify-center h-full py-12">
+            <div className="relative mb-4">
               <div className="absolute inset-0 bg-promed-primary/5 blur-3xl rounded-full scale-150 animate-pulse"></div>
-              <img
-                src={patientsIcon}
-                alt="Relaxing"
-                className="w-48 h-48 object-contain relative z-10 drop-shadow-2xl opacity-100"
+              <Users
+                className="w-24 h-24 text-promed-primary/20 relative z-10"
+                strokeWidth={1}
               />
             </div>
-            <h3 className="text-xl font-black text-slate-800 uppercase tracking-widest opacity-50">{t('empty_state_peace')}</h3>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest opacity-80">{t('empty_state_peace')}</h3>
           </div>
         )}
       </div>
@@ -281,10 +286,10 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
+    <div className="bg-white rounded-2xl  border border-slate-200 overflow-hidden flex flex-col h-full">
       <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <img src={operationIcon} className="w-5 h-5 object-contain" />
+          <Activity className="w-5 h-5 text-promed-primary" />
           {t('todays_operations')}
         </h3>
         <span className="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-500">
@@ -308,7 +313,7 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
                 <tr key={op.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
-                      <img src={op.img} alt={op.name} className="w-9 h-9 rounded-lg object-cover ring-2 ring-white shadow-sm" />
+                      <img src={op.img} alt={op.name} className="w-9 h-9 rounded-lg object-cover ring-2 ring-white " />
                       <span className="font-bold text-slate-700 text-sm whitespace-nowrap">{op.name}</span>
                     </div>
                   </td>
@@ -345,7 +350,7 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
           </table>
         ) : (
           <div className="flex flex-col items-center justify-center h-full py-12 text-slate-400">
-            <img src={operationIcon} className="w-12 h-12 opacity-10 mb-4 grayscale" />
+            <Activity className="w-12 h-12 text-slate-400 opacity-20 mb-4" />
             <p className="text-sm font-bold uppercase tracking-widest">{t('no_operations') || 'No operations for today'}</p>
           </div>
         )}
@@ -390,7 +395,7 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden">
+    <div className="bg-white rounded-2xl  border border-slate-200 flex flex-col h-full overflow-hidden">
       <div className="p-6 border-b border-slate-100 bg-slate-50/50">
         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <Syringe size={20} className="text-promed-primary" />
@@ -402,7 +407,7 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
       {dueInjections.length > 0 ? dueInjections.map((item) => (
         <div key={item.id} className="p-4 flex items-center justify-between group hover:bg-slate-50/80 transition-all">
           <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${item.patientColor} shadow-sm border border-black/5`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${item.patientColor}  border border-black/5`}>
               {item.notes?.toLowerCase().includes('wash') ? '🌊' : item.notes?.toLowerCase().includes('prp') ? '💉' : '📋'}
             </div>
             <div>
@@ -412,7 +417,7 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
           </div>
           <div className="flex space-x-1 ml-2">
             <button className="p-2 text-slate-400 hover:text-promed-primary hover:bg-promed-light rounded-lg transition-colors border border-transparent hover:border-promed-primary/10 flex items-center justify-center">
-              <img src={phoneIcon} className="w-3.5 h-3.5 object-contain opacity-60 hover:opacity-100 transition-opacity" />
+              <Phone className="w-3.5 h-3.5 text-slate-400 opacity-60 hover:opacity-100 transition-opacity" />
             </button>
             <button
               onClick={() => onCheck(item.patientId)}
@@ -478,17 +483,18 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <div
-      className={`p-7 rounded-[32px] text-white relative overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${colorClass} shadow-xl group`}
-      style={{ boxShadow: `0 20px 40px -12px ${shadowColor}` }}
+      className={`p-7 rounded-2xl text-white relative overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${colorClass} group`}
     >
       <div className="relative z-10 h-full flex flex-col justify-between">
         <div className="space-y-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md border border-white/10 shadow-inner">
+            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md border border-white/10 ">
               {iconImg ? (
-                <img src={iconImg} alt={label} className="w-5 h-5 object-contain brightness-0 invert" />
+                <Activity className="w-5 h-5 text-promed-primary" />
               ) : (
-                <Icon size={20} className="text-white" />
+                <AnimateIcon>
+                  <Icon size={20} className="text-white" />
+                </AnimateIcon>
               )}
             </div>
             <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/90">{label}</span>
@@ -510,7 +516,7 @@ export const StatCard: React.FC<StatCardProps> = ({
         <img
           src={mascotImg}
           alt="Mascot"
-          className="absolute -bottom-4 -right-4 w-40 h-40 object-contain drop-shadow-2xl z-0 pointer-events-none transition-all duration-500 ease-out translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:scale-110 group-hover:-rotate-3"
+          className="absolute -bottom-12 -right-4 w-40 h-40 object-contain z-0 pointer-events-none transition-all duration-500 ease-in-out translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:scale-110 group-hover:-rotate-3"
         />
       )}
 
@@ -534,7 +540,7 @@ const chartData = [
 export const StatsChart: React.FC = () => {
   const { t } = useLanguage();
   return (
-    <div className="bg-white p-7 rounded-2xl shadow-card hover:shadow-card-hover transition-shadow duration-300 border border-slate-200">
+    <div className="bg-white p-7 rounded-2xl  hover:-hover transition-shadow duration-300 border border-slate-200">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h3 className="text-lg font-bold text-promed-text tracking-tight">{t('patients_stats')}</h3>
@@ -565,7 +571,7 @@ export const StatsChart: React.FC = () => {
               contentStyle={{
                 borderRadius: '12px',
                 border: '1px solid #E2E8F0',
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                // boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
                 padding: '12px 16px',
                 fontWeight: 'bold',
                 color: '#1E293B',
@@ -609,7 +615,7 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
     .slice(0, 4);
 
   return (
-    <div className="bg-white p-7 rounded-2xl shadow-card hover:shadow-card-hover transition-shadow duration-300 border border-slate-200 flex flex-col">
+    <div className="bg-white p-7 rounded-2xl  hover:-hover transition-shadow duration-300 border border-slate-200 flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h3 className="text-lg font-bold text-promed-text tracking-tight">{t('todays_appointments')}</h3>
@@ -636,7 +642,7 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
                   <img
                     src={inj.patientImg || "https://via.placeholder.com/40"}
                     alt={inj.patientName}
-                    className="w-12 h-12 rounded-xl object-cover shadow-sm ring-1 ring-slate-100"
+                    className="w-12 h-12 rounded-xl object-cover  ring-1 ring-slate-100"
                   />
 
                 </div>

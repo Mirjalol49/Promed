@@ -149,15 +149,15 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Header Section */}
-            <div className="group relative bg-white rounded-[40px] p-8 md:p-12 text-promed-text shadow-soft overflow-hidden border border-promed-primary/5 transition-all duration-500 hover:shadow-card">
+            <div className="group relative bg-white rounded-[40px] p-8 md:p-12 text-promed-text overflow-hidden border border-promed-primary/5 transition-all duration-500 ">
                 {/* Glossy Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-promed-primary/5 via-transparent to-transparent opacity-40 group-hover:opacity-60 transition-opacity duration-700" />
                 <div className="absolute top-0 right-0 w-96 h-96 bg-promed-primary/5 rounded-full blur-[100px] -mr-32 -mt-32 animate-pulse" />
 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-10">
                     <div className="space-y-4">
-                        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-promed-bg backdrop-blur-md rounded-full border border-promed-primary/10 shadow-inner">
-                            <div className="w-2 h-2 bg-promed-primary rounded-full animate-pulse shadow-[0_0_12px_hsla(206,100%,34%,0.8)]" />
+                        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-promed-bg backdrop-blur-md rounded-full border border-promed-primary/10 ">
+                            <div className="w-2 h-2 bg-promed-primary rounded-full animate-pulse " />
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-promed-primary">{t('god_mode')}</span>
                         </div>
                         <div>
@@ -183,7 +183,7 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                         <button
                             onClick={() => setShowInviteModal(true)}
-                            className="group/btn relative px-8 py-4 bg-promed-primary text-white font-black rounded-2xl hover:bg-promed-dark transition-all duration-300 shadow-glow flex items-center gap-3 active:scale-95 overflow-hidden"
+                            className="group/btn relative px-8 py-4 bg-promed-primary text-white font-black rounded-2xl hover:bg-promed-dark transition-all duration-300 flex items-center gap-3 active:scale-95 overflow-hidden"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
                             <UserPlus size={20} className="group-hover/btn:rotate-12 transition-transform" />
@@ -195,11 +195,11 @@ export const AdminDashboard: React.FC = () => {
 
             {/* Tab Switcher */}
             <div className="flex justify-center">
-                <div className="bg-slate-100/50 backdrop-blur-md p-1.5 rounded-[24px] flex gap-1 border border-slate-200/50 shadow-inner">
+                <div className="bg-slate-100/50 backdrop-blur-md p-1.5 rounded-[24px] flex gap-1 border border-slate-200/50 ">
                     <button
                         onClick={() => setActiveTab('registry')}
                         className={`px-8 py-3 rounded-[18px] text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300 flex items-center gap-2.5 ${activeTab === 'registry'
-                            ? 'bg-promed-primary text-white shadow-glow scale-[1.02]'
+                            ? 'bg-promed-primary text-white scale-[1.02]'
                             : 'text-promed-muted hover:text-promed-text hover:bg-white/50'
                             }`}
                     >
@@ -209,7 +209,7 @@ export const AdminDashboard: React.FC = () => {
                     <button
                         onClick={() => setActiveTab('broadcast')}
                         className={`px-8 py-3 rounded-[18px] text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300 flex items-center gap-2.5 ${activeTab === 'broadcast'
-                            ? 'bg-promed-primary text-white shadow-glow scale-[1.02]'
+                            ? 'bg-promed-primary text-white scale-[1.02]'
                             : 'text-promed-muted hover:text-promed-text hover:bg-white/50'
                             }`}
                     >
@@ -223,7 +223,7 @@ export const AdminDashboard: React.FC = () => {
             {showInviteModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-500">
                     <div className="absolute inset-0" onClick={() => setShowInviteModal(false)} />
-                    <div className="relative bg-promed-bg backdrop-blur-2xl rounded-[48px] p-12 w-full max-w-xl shadow-2xl border border-promed-primary/10 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
+                    <div className="relative bg-promed-bg backdrop-blur-2xl rounded-[48px] p-12 w-full max-w-xl border border-promed-primary/10 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
                         {/* Modal Glow */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-[80px] -mr-32 -mt-32" />
 
@@ -282,7 +282,7 @@ export const AdminDashboard: React.FC = () => {
                                     <button
                                         onClick={handleCreateAccount}
                                         disabled={isCreating}
-                                        className="flex-[2] py-5 bg-promed-primary text-white font-black uppercase tracking-widest text-[11px] rounded-[24px] hover:bg-promed-dark transition-all shadow-glow active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
+                                        className="flex-[2] py-5 bg-promed-primary text-white font-black uppercase tracking-widest text-[11px] rounded-[24px] hover:bg-promed-dark transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
                                     >
                                         {isCreating ? (
                                             <RefreshCw size={20} className="animate-spin" />
@@ -302,7 +302,7 @@ export const AdminDashboard: React.FC = () => {
 
             {activeTab === 'registry' ? (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <div className="bg-white/70 backdrop-blur-3xl rounded-[40px] shadow-[0_24px_50px_-12px_rgba(0,0,0,0.08)] border border-white/40 overflow-hidden group/table transition-all duration-500 hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.12)] max-w-6xl mx-auto">
+                    <div className="bg-white/70 backdrop-blur-3xl rounded-[40px] border border-white/40 overflow-hidden group/table transition-all duration-500 max-w-6xl mx-auto">
                         <div className="p-10 border-b border-slate-100/50 flex flex-col md:flex-row md:items-center justify-between gap-8 bg-gradient-to-b from-slate-50/50 to-transparent">
                             <div>
                                 <h3 className="text-2xl font-black text-promed-text tracking-tight flex items-center gap-3">
@@ -320,7 +320,7 @@ export const AdminDashboard: React.FC = () => {
                                     placeholder="Search registry by SID, identity, or node..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-14 pr-7 py-4.5 bg-white border border-promed-primary/10 rounded-[22px] w-full text-base focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all shadow-soft font-bold text-promed-text placeholder:text-promed-muted/30"
+                                    className="pl-14 pr-7 py-4.5 bg-white border border-promed-primary/10 rounded-[22px] w-full text-base focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all font-bold text-promed-text placeholder:text-promed-muted/30"
                                 />
                             </div>
                         </div>
@@ -364,13 +364,13 @@ export const AdminDashboard: React.FC = () => {
                                                     <div className="relative isolate">
                                                         <div className="absolute inset-0 bg-promed-primary/10 blur-lg rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                         {profile.profileImage ? (
-                                                            <img src={profile.profileImage} alt="" className="w-14 h-14 rounded-2xl object-cover shadow-md border border-white group-hover:scale-110 transition-transform duration-500 ring-4 ring-promed-primary/0 group-hover:ring-promed-primary/10" />
+                                                            <img src={profile.profileImage} alt="" className="w-14 h-14 rounded-2xl object-cover border border-white group-hover:scale-110 transition-transform duration-500 ring-4 ring-promed-primary/0 group-hover:ring-promed-primary/10" />
                                                         ) : (
-                                                            <div className="w-14 h-14 rounded-2xl bg-promed-bg flex items-center justify-center text-promed-muted font-black text-xl border border-promed-primary/10 group-hover:shadow-lg transition-all">
+                                                            <div className="w-14 h-14 rounded-2xl bg-promed-bg flex items-center justify-center text-promed-muted font-black text-xl border border-promed-primary/10 transition-all">
                                                                 {profile.fullName?.charAt(0) || '?'}
                                                             </div>
                                                         )}
-                                                        <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-4 border-white shadow-sm ${profile.status === 'frozen' ? 'bg-rose-500' : 'bg-promed-primary'}`} />
+                                                        <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-4 border-white  ${profile.status === 'frozen' ? 'bg-rose-500' : 'bg-promed-primary'}`} />
                                                     </div>
                                                     <div>
                                                         <p className="font-black text-promed-text text-lg group-hover:text-promed-primary transition-colors tracking-tight leading-tight">{profile.fullName || 'Unnamed Account'}</p>
@@ -411,7 +411,7 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
                                 Quantum Security Protocol Active
                             </p>
-                            <button onClick={() => window.location.reload()} className="group/sync px-4 py-2 bg-promed-bg hover:bg-promed-light text-promed-muted hover:text-promed-primary rounded-xl border border-promed-primary/10 transition-all flex items-center gap-3 active:scale-95 shadow-soft">
+                            <button onClick={() => window.location.reload()} className="group/sync px-4 py-2 bg-promed-bg hover:bg-promed-light text-promed-muted hover:text-promed-primary rounded-xl border border-promed-primary/10 transition-all flex items-center gap-3 active:scale-95 ">
                                 <RefreshCw size={14} className={`${loading ? 'animate-spin' : 'group-hover/sync:rotate-180'} transition-transform duration-500`} />
                                 <span className="text-[10px] font-black uppercase tracking-widest">Protocol Re-Sync</span>
                             </button>
@@ -420,11 +420,11 @@ export const AdminDashboard: React.FC = () => {
                 </div>
             ) : (
                 <div className="max-w-2xl mx-auto space-y-8 animate-in mt-10 fade-in slide-in-from-bottom-4 duration-700">
-                    <div className="bg-white/80 backdrop-blur-3xl rounded-[40px] shadow-[0_24px_50px_-12px_rgba(0,0,0,0.06)] border border-white/40 overflow-hidden relative group/mega hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] transition-all duration-500">
+                    <div className="bg-white/80 backdrop-blur-3xl rounded-[40px] border border-white/40 overflow-hidden relative group/mega transition-all duration-500">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/[0.03] rounded-full blur-[80px] -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000" />
                         <div className="p-10 border-b border-slate-100/50 bg-gradient-to-b from-rose-500/[0.02] to-transparent">
                             <div className="flex items-center gap-4 mb-3">
-                                <div className="p-3.5 bg-promed-primary text-white rounded-2xl shadow-glow group-hover:rotate-[15deg] transition-transform duration-500 group-hover:scale-110">
+                                <div className="p-3.5 bg-promed-primary text-white rounded-2xl group-hover:rotate-[15deg] transition-transform duration-500 group-hover:scale-110">
                                     <Megaphone size={22} strokeWidth={2.5} />
                                 </div>
                                 <div>
@@ -444,7 +444,7 @@ export const AdminDashboard: React.FC = () => {
                                             key={type}
                                             onClick={() => setBroadcastData({ ...broadcastData, type: type })}
                                             className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${broadcastData.type === type
-                                                ? 'bg-promed-primary text-white border-promed-primary shadow-glow'
+                                                ? 'bg-promed-primary text-white border-promed-primary '
                                                 : 'bg-promed-bg text-promed-muted border-promed-primary/10 hover:bg-white hover:text-promed-text'
                                                 }`}
                                         >
@@ -488,7 +488,7 @@ export const AdminDashboard: React.FC = () => {
                                 <button
                                     onClick={handleBroadcast}
                                     disabled={isBroadcasting}
-                                    className="flex-[2] py-4 bg-rose-500 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-rose-600 transition shadow-lg shadow-rose-500/30 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                                    className="flex-[2] py-4 bg-rose-500 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-rose-600 transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
                                 >
                                     {isBroadcasting ? (
                                         <RefreshCw size={18} className="animate-spin" />
@@ -529,12 +529,12 @@ export const AdminDashboard: React.FC = () => {
             {selectedProfile && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-500">
                     <div className="absolute inset-0" onClick={() => setSelectedProfile(null)} />
-                    <div className="relative bg-white/90 backdrop-blur-2xl rounded-[48px] p-12 w-full max-w-xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] border border-white overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
+                    <div className="relative bg-white/90 backdrop-blur-2xl rounded-[48px] p-12 w-full max-w-xl border border-white overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-[80px] -mr-32 -mt-32" />
 
                         <div className="relative z-10">
                             <div className="flex items-center gap-4 mb-8">
-                                <div className="p-3 bg-promed-primary text-white rounded-2xl shadow-glow">
+                                <div className="p-3 bg-promed-primary text-white rounded-2xl ">
                                     <Lock size={24} strokeWidth={2.5} />
                                 </div>
                                 <div>
@@ -544,9 +544,9 @@ export const AdminDashboard: React.FC = () => {
                             </div>
 
                             <div className="space-y-8">
-                                <div className="flex items-center space-x-6 p-4 bg-white rounded-3xl border border-promed-primary/10 shadow-soft">
+                                <div className="flex items-center space-x-6 p-4 bg-white rounded-3xl border border-promed-primary/10 ">
                                     {selectedProfile.profileImage ? (
-                                        <img src={selectedProfile.profileImage} alt="" className="w-16 h-16 rounded-2xl object-cover shadow-md" />
+                                        <img src={selectedProfile.profileImage} alt="" className="w-16 h-16 rounded-2xl object-cover " />
                                     ) : (
                                         <div className="w-16 h-16 rounded-2xl bg-promed-bg flex items-center justify-center text-promed-muted font-black text-xl border border-promed-primary/10">
                                             {selectedProfile.fullName?.charAt(0) || '?'}
@@ -561,14 +561,14 @@ export const AdminDashboard: React.FC = () => {
                                 <div className="space-y-6">
                                     <div className="group/field space-y-2">
                                         <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-muted ml-2 group-hover/field:text-promed-primary transition-colors">Identity (Email)</label>
-                                        <div className="w-full px-7 py-5 bg-white border border-promed-primary/10 rounded-[24px] font-bold text-promed-text shadow-sm transition-all group-hover/field:border-promed-primary/20 group-hover/field:shadow-soft">
+                                        <div className="w-full px-7 py-5 bg-white border border-promed-primary/10 rounded-[24px] font-bold text-promed-text transition-all group-hover/field:border-promed-primary/20 ">
                                             {selectedProfile.email || 'no-identity@node.sys'}
                                         </div>
                                     </div>
 
                                     <div className="group/pass space-y-2">
                                         <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-primary ml-2 group-hover/pass:animate-pulse">Secure Access Key (Password)</label>
-                                        <div className="w-full px-7 py-5 bg-promed-bg text-promed-text border-2 border-dashed border-promed-primary/20 rounded-[24px] font-mono font-black text-3xl tracking-[0.4em] shadow-glow text-center transition-all group-hover/pass:scale-[1.02] active:scale-95">
+                                        <div className="w-full px-7 py-5 bg-promed-bg text-promed-text border-2 border-dashed border-promed-primary/20 rounded-[24px] font-mono font-black text-3xl tracking-[0.4em] text-center transition-all group-hover/pass:scale-[1.02] active:scale-95">
                                             {selectedProfile.lockPassword || '000000'}
                                         </div>
                                     </div>

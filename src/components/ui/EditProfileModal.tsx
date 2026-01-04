@@ -26,6 +26,7 @@ import { useScrollLock } from '../../hooks/useScrollLock';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImageUploadingOverlay } from './ImageUploadingOverlay';
+
 import lockIcon from '../../assets/images/lock.png';
 import cameraIcon from '../../assets/images/camera_icon.png';
 
@@ -208,7 +209,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     {/* Profile Image */}
                     <div className="flex justify-center mb-2">
                         <label className="relative group/photo cursor-pointer w-28 h-28">
-                            <div className="w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl group-hover/photo:ring-4 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 group-hover/photo:shadow-2xl group-hover/photo:shadow-promed-primary/20 transition-all duration-500 ring-1 ring-slate-100 relative bg-slate-50">
+                            <div className="w-full h-full rounded-full overflow-hidden border-4 border-white  group-hover/photo:ring-4 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 group-hover/photo: transition-all duration-500 ring-1 ring-slate-100 relative bg-slate-50">
                                 <ProfileAvatar src={profileImage} alt="Profile" size={112} className="w-full h-full group-hover/photo:scale-110 transition duration-700" optimisticId={`${propUserId}_profile`} />
 
                                 {/* Standard Hover Overlay */}
@@ -255,7 +256,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         <div className="flex items-center justify-between">
                             <div className="flex items-start space-x-3">
                                 <div className={`p-2 rounded-lg ${isLockEnabled ? 'bg-promed-primary text-white' : 'bg-slate-200 text-slate-500'} transition-colors`}>
-                                    <img src={lockIcon} alt="Lock" className="w-6 h-6 object-contain" />
+                                    <Lock size={24} />
                                 </div>
                                 <div>
                                     <p className="font-bold text-sm text-slate-800">{t('enable_lock')}</p>

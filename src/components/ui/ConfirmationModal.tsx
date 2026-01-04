@@ -71,7 +71,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             />
 
             {/* Modal Content */}
-            <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
+            <div className="relative bg-white rounded-3xl  w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
                 {/* Header Decoration */}
                 <div className={`h-2 ${style.bar} w-full`} />
 

@@ -100,22 +100,34 @@ export const subscribeToUserProfile = (
 
   const docRef = doc(db, "profiles", userId);
 
-  const unsubscribe = onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-      onUpdate(mapProfile(docSnap.id, docSnap.data()));
-    } else {
-      console.log("No profile found for user:", userId);
-      // Optional: handle missing profile (maybe create one?)
-      // For now, doing nothing or calling update with null? 
-      // Logic suggests we expect a profile.
-    }
-  }, (error) => {
-    console.error("Profile subscription error:", error);
-    if (onError) onError(error);
-  });
+  let unsub: (() => void) | null = null;
+  let isUnsubscribed = false;
+
+  try {
+    const unsubscribeFn = onSnapshot(docRef, (docSnap) => {
+      if (isUnsubscribed) return;
+      if (docSnap.exists()) {
+        onUpdate(mapProfile(docSnap.id, docSnap.data()));
+      } else {
+        console.log("No profile found for user:", userId);
+      }
+    }, (error) => {
+      if (isUnsubscribed) return;
+      console.error("Profile subscription error:", error);
+      if (onError) onError(error);
+    });
+
+    unsub = unsubscribeFn;
+  } catch (e) {
+    if (onError) onError(e);
+  }
 
   return () => {
-    unsubscribe();
+    isUnsubscribed = true;
+    if (unsub) {
+      unsub();
+      unsub = null;
+    }
   };
 };
 
@@ -126,21 +138,41 @@ export const subscribeToAllProfiles = (
   onUpdate: (profiles: any[]) => void,
   onError?: (error: any) => void
 ) => {
+  // Use a safe query that doesn't rely on complex ordering if it causes issues,
+  // or ensure we handle the snapshot safely.
+  // For now, keeping the query but adding cleanup safety.
   const q = query(
     collection(db, "profiles"),
     orderBy("created_at", "desc")
   );
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const profiles = snapshot.docs.map(doc => mapProfile(doc.id, doc.data()));
-    onUpdate(profiles);
-  }, (error) => {
-    console.error("All profiles subscription error:", error);
-    if (onError) onError(error);
-  });
+  let unsub: (() => void) | null = null;
+  let isUnsubscribed = false;
+
+  try {
+    const unsubscribeFn = onSnapshot(q, (snapshot) => {
+      if (isUnsubscribed) return;
+
+      const profiles = snapshot.docs.map(doc => mapProfile(doc.id, doc.data()));
+      onUpdate(profiles);
+    }, (error) => {
+      if (isUnsubscribed) return;
+      console.error("All profiles subscription error:", error);
+      if (onError) onError(error);
+    });
+
+    unsub = unsubscribeFn;
+  } catch (err) {
+    console.error("Failed to start subscription:", err);
+    if (onError) onError(err);
+  }
 
   return () => {
-    unsubscribe();
+    isUnsubscribed = true;
+    if (unsub) {
+      unsub();
+      unsub = null;
+    }
   };
 };
 

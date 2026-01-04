@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useScrollLock } from '../../hooks/useScrollLock';
-import trashIcon from '../../assets/images/trash.png';
+import trashIcon from '../mascot/upseet_mascot.png';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface DeleteModalProps {
@@ -50,7 +50,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onConfirm })
                             <img
                                 src={trashIcon}
                                 alt="Delete"
-                                className="w-24 h-24 object-contain drop-shadow-xl"
+                                className="w-24 h-24 object-contain"
                             />
                         </div>
 

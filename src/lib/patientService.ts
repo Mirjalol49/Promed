@@ -60,16 +60,31 @@ export const subscribeToPatients = (
     where("account_id", "==", accountId)
   );
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const patients = snapshot.docs.map(doc => mapPatient(doc.id, doc.data()));
-    onUpdate(patients);
-  }, (error) => {
-    console.error("Firebase subscription error:", error);
-    if (onError) onError(error);
-  });
+  let unsub: (() => void) | null = null;
+  let isUnsubscribed = false;
+
+  try {
+    const unsubscribeFn = onSnapshot(q, (snapshot) => {
+      if (isUnsubscribed) return;
+      const patients = snapshot.docs.map(doc => mapPatient(doc.id, doc.data()));
+      onUpdate(patients);
+    }, (error) => {
+      if (isUnsubscribed) return;
+      console.error("Firebase subscription error:", error);
+      if (onError) onError(error);
+    });
+
+    unsub = unsubscribeFn;
+  } catch (e) {
+    if (onError) onError(e);
+  }
 
   return () => {
-    unsubscribe();
+    isUnsubscribed = true;
+    if (unsub) {
+      unsub();
+      unsub = null;
+    }
   };
 };
 

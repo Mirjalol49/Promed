@@ -7,7 +7,7 @@ const PasswordReveal: React.FC<{ value: string }> = ({ value }) => {
     const [show, setShow] = useState(false);
     return (
         <div className="flex items-center gap-2">
-            <span className="font-mono text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 min-w-[100px] text-center shadow-sm">
+            <span className="font-mono text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 min-w-[100px] text-center ">
                 {show ? value : '••••••'}
             </span>
             <button
@@ -143,7 +143,7 @@ export const SuperAdmin: React.FC = () => {
     return (
         <div className="p-6 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex justify-between items-center bg-promed-primary p-8 rounded-[40px] shadow-glow text-white border border-white/10 relative overflow-hidden group">
+            <div className="flex justify-between items-center bg-promed-primary p-8 rounded-[40px] text-white border border-white/10 relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                 <div className="relative z-10">
                     <h1 className="text-3xl font-black flex items-center gap-3 tracking-tight">
@@ -154,7 +154,7 @@ export const SuperAdmin: React.FC = () => {
                 </div>
                 <button
                     onClick={() => setShowForm(!showForm)}
-                    className="relative z-10 bg-white text-promed-primary hover:bg-promed-bg px-8 py-4 rounded-2xl font-black flex items-center gap-3 transition-all shadow-lg active:scale-95 overflow-hidden"
+                    className="relative z-10 bg-white text-promed-primary hover:bg-promed-bg px-8 py-4 rounded-2xl font-black flex items-center gap-3 transition-all active:scale-95 overflow-hidden"
                 >
                     <UserPlus className="w-5 h-5" />
                     Provision Node
@@ -171,7 +171,7 @@ export const SuperAdmin: React.FC = () => {
 
             {/* Create User Form */}
             {showForm && (
-                <div className="bg-white rounded-[32px] shadow-soft border border-promed-primary/10 p-10 animate-in slide-in-from-top-4 duration-500">
+                <div className="bg-white rounded-[32px] border border-promed-primary/10 p-10 animate-in slide-in-from-top-4 duration-500">
                     <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                         <Lock className="w-5 h-5 text-promed-primary" />
                         Create Credentials
@@ -227,7 +227,7 @@ export const SuperAdmin: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="bg-promed-primary hover:bg-promed-dark text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] flex items-center gap-3 transition-all shadow-glow disabled:opacity-50 active:scale-95"
+                                className="bg-promed-primary hover:bg-promed-dark text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] flex items-center gap-3 transition-all disabled:opacity-50 active:scale-95"
                             >
                                 {loading ? 'Creating...' : 'Establish Registry'}
                                 <ChevronRight className="w-4 h-4" />
@@ -239,7 +239,7 @@ export const SuperAdmin: React.FC = () => {
 
             {/* Edit User Form */}
             {editingUser && (
-                <div className="bg-white rounded-3xl shadow-xl border border-promed-primary/10 p-8 ring-2 ring-promed-primary/5 scale-in-center">
+                <div className="bg-white rounded-3xl border border-promed-primary/10 p-8 ring-2 ring-promed-primary/5 scale-in-center">
                     <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                         <Lock className="w-5 h-5 text-promed-primary" />
                         Edit User: <span className="text-promed-primary underline font-mono">{editingUser.email}</span>
@@ -281,21 +281,21 @@ export const SuperAdmin: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => setEditingUser({ ...editingUser, status: 'active' })}
-                                    className={`flex-1 py-3 rounded-xl text-xs font-black transition-all duration-300 ${editingUser.status === 'active' ? 'bg-white text-green-600 shadow-lg' : 'text-slate-400'}`}
+                                    className={`flex-1 py-3 rounded-xl text-xs font-black transition-all duration-300 ${editingUser.status === 'active' ? 'bg-white text-green-600 ' : 'text-slate-400'}`}
                                 >
                                     ACTIVE
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setEditingUser({ ...editingUser, status: 'frozen' })}
-                                    className={`flex-1 py-3 rounded-xl text-xs font-black transition-all duration-300 ${editingUser.status === 'frozen' ? 'bg-white text-amber-600 shadow-lg' : 'text-slate-400'}`}
+                                    className={`flex-1 py-3 rounded-xl text-xs font-black transition-all duration-300 ${editingUser.status === 'frozen' ? 'bg-white text-amber-600 ' : 'text-slate-400'}`}
                                 >
                                     FROZEN
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setEditingUser({ ...editingUser, status: 'banned' })}
-                                    className={`flex-1 py-3 rounded-xl text-xs font-black transition-all duration-300 ${editingUser.status === 'banned' ? 'bg-white text-red-600 shadow-lg' : 'text-slate-400'}`}
+                                    className={`flex-1 py-3 rounded-xl text-xs font-black transition-all duration-300 ${editingUser.status === 'banned' ? 'bg-white text-red-600 ' : 'text-slate-400'}`}
                                 >
                                     BANNED
                                 </button>
@@ -323,10 +323,10 @@ export const SuperAdmin: React.FC = () => {
             )}
 
             {/* Users List */}
-            <div className="bg-white rounded-[40px] shadow-soft border border-promed-primary/5 overflow-hidden">
+            <div className="bg-white rounded-[40px] border border-promed-primary/5 overflow-hidden">
                 <div className="p-8 border-b border-promed-primary/5 flex justify-between items-center bg-promed-bg/20">
                     <h2 className="text-xl font-black text-promed-text flex items-center gap-3">
-                        <div className="p-2 bg-promed-primary text-white rounded-xl shadow-glow">
+                        <div className="p-2 bg-promed-primary text-white rounded-xl ">
                             <Users className="w-5 h-5" />
                         </div>
                         System Registry
@@ -355,7 +355,7 @@ export const SuperAdmin: React.FC = () => {
                                         <div className="text-sm text-slate-400 font-mono">{user.email}</div>
                                     </td>
                                     <td className="p-8">
-                                        <span className={`inline-flex px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-promed-primary text-white shadow-glow' :
+                                        <span className={`inline-flex px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-promed-primary text-white ' :
                                             user.role === 'doctor' ? 'bg-promed-bg text-promed-primary border border-promed-primary/10' :
                                                 'bg-slate-100 text-slate-600'
                                             }`}>
@@ -382,7 +382,7 @@ export const SuperAdmin: React.FC = () => {
                                                 </span>
                                             ) : (
                                                 <span className="text-amber-500 font-medium text-sm flex items-center gap-1">
-                                                    <div className="w-2 h-2 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50" />
+                                                    <div className="w-2 h-2 rounded-full bg-amber-500 " />
                                                     Frozen
                                                 </span>
                                             )}

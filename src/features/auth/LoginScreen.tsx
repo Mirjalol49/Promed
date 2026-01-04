@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, ArrowRight, AlertCircle, Globe, Mail, KeyRound } from 'lucide-react';
+import { Lock as LockIcon, ArrowRight, AlertCircle, Globe, Mail, KeyRound } from 'lucide-react';
 import { useLanguage, Language } from '../../contexts/LanguageContext';
 import { auth } from '../../lib/firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { loginSchema, safeValidate } from '../../lib/validation';
+
 import lockIcon from '../../assets/images/lock.png';
 import keyIcon from '../../assets/images/key.png';
 
@@ -119,8 +120,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       <div className="relative z-10 w-full max-w-md flex flex-col items-center">
 
         {/* Lock Icon */}
-        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-8 border border-promed-primary/10 shadow-2xl shadow-promed-primary/10">
-          <img src={lockIcon} alt="Secure" className="w-10 h-10 object-contain" />
+        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-8 border border-promed-primary/10 ">
+          <LockIcon className="w-10 h-10 text-promed-primary" />
         </div>
 
         {/* Title */}
@@ -172,7 +173,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-white text-promed-primary font-bold py-4 px-6 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-black/10 hover:shadow-2xl text-xl"
+            className="w-full flex items-center justify-center gap-2 bg-white text-promed-primary font-bold py-4 px-6 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed  hover: text-xl"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-promed-primary border-t-transparent rounded-full animate-spin" />
@@ -212,7 +213,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             </button>
 
             {showLanguageMenu && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-promed-dark/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-promed-dark/95 backdrop-blur-xl border border-white/10 rounded-xl  overflow-hidden">
                 {languages.map((lang) => (
                   <button
                     key={lang.code}
@@ -241,7 +242,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       {/* Forgot Password Modal */}
       {showForgotPassword && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-promed-bg border border-promed-primary/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+          <div className="bg-promed-bg border border-promed-primary/10 rounded-2xl p-6 w-full max-w-md ">
             <h3 className="text-xl font-bold text-promed-text mb-2">{t('reset_password_title')}</h3>
             <p className="text-promed-muted text-sm mb-6 font-medium">
               {t('reset_password_desc')}
@@ -289,7 +290,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 <button
                   type="submit"
                   disabled={resetLoading}
-                  className="flex-1 py-3 px-4 bg-promed-primary text-white font-bold rounded-2xl transition-all shadow-xl shadow-promed-primary/20 disabled:opacity-50"
+                  className="flex-1 py-3 px-4 bg-promed-primary text-white font-bold rounded-2xl transition-all  hover:bg-promed-dark active:scale-95 disabled:opacity-50"
                 >
                   {resetLoading ? (
                     <div className="w-5 h-5 border-2 border-blue-300 border-t-blue-700 rounded-full animate-spin mx-auto" />

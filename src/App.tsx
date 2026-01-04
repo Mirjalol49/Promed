@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { DashboardLoader } from './components/ui/DashboardLoader';
 console.log("🛡️ PROMED SYSTEM BOOT: Version 1.25.0 - LockFix Loaded");
-import { motion } from 'framer-motion';
+
 const Dashboard = React.lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const LoginScreen = React.lazy(() => import('./features/auth/LoginScreen').then(m => ({ default: m.LoginScreen })));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const PatientList = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientList })));
 const PatientDetail = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientDetail })));
-const AddPatientForm = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.AddPatientForm })));
+import { AddPatientForm } from './features/patients/PatientList';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
 import Layout from './components/layout/Layout';
 import { AdminRoute } from './components/layout/AdminRoute';
@@ -42,6 +43,7 @@ import { SuperAdmin } from './pages/SuperAdmin';
 import { SettingsPage } from './pages/SettingsPage';
 
 import { sendPasswordResetEmail } from 'firebase/auth';
+
 import lockIcon from './assets/images/lock.png';
 // New High-Res Assets for Toasts
 import happyIcon from './components/mascot/happy_mascot.png';
@@ -150,26 +152,14 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
       <div className="relative z-10 flex flex-col items-center w-full max-w-xl px-6">
         {/* Reactive Mascot */}
         <div className="relative mb-10 flex items-center justify-center">
-          <motion.img
-            key={lockState}
-            src={lockIcon}
-            alt="Security Lock"
-            className="w-24 h-24 md:w-32 md:h-32 object-contain relative z-10"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={
-              lockState === 'idle' ? { opacity: 1, scale: 1, y: [0, -6, 0] } :
-                lockState === 'error' ? { opacity: 1, scale: 1, x: [-10, 10, -10, 10, 0] } :
-                  { opacity: 1, scale: [1, 1.2, 1], y: -20 }
-            }
-            transition={
-              lockState === 'idle' ? {
-                y: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-                default: { duration: 0.3 }
-              } :
-                lockState === 'error' ? { duration: 0.4 } :
-                  { duration: 0.5, ease: "easeOut" }
-            }
-          />
+          <div className="flex items-center justify-center animate-float">
+            <img
+              src={lockIcon}
+              alt="Security Lock"
+              className="w-24 h-24 md:w-32 md:h-32 object-contain relative z-10"
+            />
+          </div>
+
         </div>
 
         <h2 className="text-4xl font-black mb-3 tracking-widest text-white">
@@ -193,10 +183,10 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
                   onChange={(e) => handlePinChange(idx, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(idx, e)}
                   className={`w-12 h-14 sm:w-16 sm:h-20 bg-white border-2 
-                    ${pinError ? 'border-rose-500 shake shadow-[0_0_20px_rgba(244,63,94,0.2)]' : 'border-white/20'}
+                    ${pinError ? 'border-rose-500 shake ' : 'border-white/20'}
                     rounded-2xl text-center text-3xl font-black text-promed-primary transition-all duration-200
                     focus:outline-none focus:border-white focus:ring-4 focus:ring-white/20
-                    placeholder-slate-300 shadow-xl`}
+                    placeholder-slate-300 `}
                   maxLength={1}
                   autoFocus={idx === 0}
                 />
@@ -209,8 +199,8 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
                 value={pin.join('')} // Reuse pin state or create new one? pin.join('') might be messy but let's use a single string if not pin
                 onChange={(e) => setPin(e.target.value.split(''))}
                 className={`w-full py-5 px-6 bg-white border-2 
-                  ${pinError ? 'border-rose-500 shake shadow-[0_0_20px_rgba(244,63,94,0.2)]' : 'border-white/20'}
-                  rounded-[24px] text-center text-2xl font-black text-promed-primary focus:outline-none focus:border-white shadow-xl`}
+                  ${pinError ? 'border-rose-500 shake ' : 'border-white/20'}
+                  rounded-[24px] text-center text-2xl font-black text-promed-primary focus:outline-none focus:border-white `}
                 placeholder="Parolni kiriting"
                 autoFocus
               />
@@ -227,7 +217,7 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
           <div className="w-full max-w-sm space-y-6">
             <button
               type="submit"
-              className="w-full bg-white text-promed-primary font-black py-5 rounded-[22px] hover:bg-slate-50 transition-all transform active:scale-[0.98] flex items-center justify-center space-x-3 shadow-xl shadow-black/10"
+              className="w-full bg-white text-promed-primary font-black py-5 rounded-[22px] hover:bg-slate-50 transition-all transform active:scale-[0.98] flex items-center justify-center space-x-3  shadow-black/10"
             >
               <span className="uppercase tracking-widest text-xl font-black">{t('unlock')}</span>
               <ArrowRight size={24} />
@@ -252,7 +242,7 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
       {/* Emergency Bypass Modal */}
       {showEmergencyBypass && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-promed-bg border border-promed-primary/10 rounded-2xl p-8 w-full max-w-sm shadow-2xl">
+          <div className="bg-promed-bg border border-promed-primary/10 rounded-2xl p-8 w-full max-w-sm ">
             <h3 className="text-xl font-bold text-promed-text mb-2 text-center">Emergency Unlock</h3>
             <p className="text-promed-muted text-[10px] font-bold uppercase tracking-widest mb-6 text-center">
               Verify your account password to bypass PIN
@@ -288,7 +278,7 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
                 <button
                   type="submit"
                   disabled={resetLoading}
-                  className="flex-[2] py-4 px-4 bg-promed-primary text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-promed-primary/20 active:scale-95 disabled:opacity-50"
+                  className="flex-[2] py-4 px-4 bg-promed-primary text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all  shadow-promed-primary/20 hover:bg-promed-dark active:scale-95 disabled:opacity-50"
                 >
                   {resetLoading ? (
                     <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-800 rounded-full animate-spin mx-auto" />
@@ -663,13 +653,8 @@ const App: React.FC = () => {
         success(t('patient_updated_title'), t('patient_updated_msg'), happyIcon);
       }
 
-      // 2) Navigate immediately for responsiveness
-      if (view === 'EDIT_PATIENT') {
-        setSelectedPatientId(patientData.id);
-        setView('PATIENT_DETAIL');
-      } else {
-        setView('PATIENTS');
-      }
+      // 2) Navigation moved to after successful save to prevent data loss on error
+      // if (view === 'EDIT_PATIENT') { ... }
 
       // 3) Background uploads (Non-blocking: don't let image failure break the whole save)
       try {
@@ -729,6 +714,14 @@ const App: React.FC = () => {
         setSelectedPatientId(realId);
       } else {
         await updatePatient(patientData.id, patientData, accountId);
+      }
+
+      // 4) Navigate after success
+      if (view === 'EDIT_PATIENT') {
+        setSelectedPatientId(patientData.id);
+        setView('PATIENT_DETAIL');
+      } else {
+        setView('PATIENTS');
       }
     } catch (err: any) {
       console.error('Error saving patient:', err);
@@ -815,7 +808,7 @@ const App: React.FC = () => {
     try {
       console.log('Updating injection status:', { patientId, injectionId, status });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('status_updated_title'), t('status_updated_msg'), '/images/mascot/injection.png');
+      success(t('status_updated_title'), t('status_updated_msg'), injectionIcon);
     } catch (err: any) {
       console.error('Error updating injection:', err);
       showError(t('toast_error_title'), `${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
@@ -839,7 +832,7 @@ const App: React.FC = () => {
     try {
       console.log('Adding new injection:', { patientId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('injection_added_title'), t('injection_added_msg'), '/images/mascot/injection.png');
+      success(t('injection_added_title'), t('injection_added_msg'), injectionIcon);
     } catch (err: any) {
       console.error('Error adding injection:', err);
       showError(t('toast_error_title'), `${t('toast_save_failed') || 'Add failed'}: ${err.message || 'Unknown error'}`);
@@ -857,7 +850,7 @@ const App: React.FC = () => {
     try {
       console.log('Editing injection:', { patientId, injectionId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('injection_updated_title'), t('injection_updated_msg'), '/images/mascot/injection.png');
+      success(t('injection_updated_title'), t('injection_updated_msg'), injectionIcon);
     } catch (err: any) {
       console.error('Error editing injection:', err);
       showError(t('toast_error_title'), `${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
@@ -881,7 +874,7 @@ const App: React.FC = () => {
       });
 
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('deleted_title'), t('toast_injection_deleted'), '/images/mascot/upset.png');
+      success(t('deleted_title'), t('toast_injection_deleted'), upsetIcon);
 
       setTimeout(() => {
         setPendingDeletes(prev => {
@@ -898,7 +891,7 @@ const App: React.FC = () => {
         next.delete(injectionId);
         return next;
       });
-      showError(t('toast_error_title'), `${t('toast_delete_failed') || 'Delete failed'}: ${err.message || 'Unknown error'}`, '/images/mascot/upset.png');
+      showError(t('toast_error_title'), `${t('toast_delete_failed') || 'Delete failed'}: ${err.message || 'Unknown error'}`, upsetIcon);
     }
   };
 
@@ -932,7 +925,7 @@ const App: React.FC = () => {
         return { ...p, afterImages: [optimisticImage, ...(p.afterImages || [])] };
       }));
 
-      success(t('photo_added_title'), t('photo_added_msg'), '/images/mascot/happy.png');
+      success(t('photo_added_title'), t('photo_added_msg'), happyIcon);
 
       // 4. Background Upload
       let finalPhotoUrl = typeof photoOrFile === 'string' ? photoOrFile : '';
@@ -985,7 +978,7 @@ const App: React.FC = () => {
 
       await deletePatientAfterImage(patientId, photoId, targetPatient.afterImages);
 
-      success(t('photo_deleted_title'), t('photo_deleted_msg'), '/images/mascot/happy.png');
+      success(t('photo_deleted_title'), t('photo_deleted_msg'), happyIcon);
 
       setTimeout(() => {
         setPendingDeletes(prev => {
@@ -1002,7 +995,7 @@ const App: React.FC = () => {
         next.delete(photoId);
         return next;
       });
-      showError(t('toast_error_title'), `${t('toast_delete_failed') || 'Delete failed'}: ${error.message}`, '/images/mascot/upset.png');
+      showError(t('toast_error_title'), `${t('toast_delete_failed') || 'Delete failed'}: ${error.message}`, upsetIcon);
     }
   };
 
@@ -1125,7 +1118,11 @@ const App: React.FC = () => {
   // Render Lock Screen if locked
   if (isLocked) {
     console.log("🔓 App component: Rendering LockScreen", { hasPassword: !!userPassword });
-    return <LockScreen onUnlock={() => setIsLocked(false)} correctPassword={userPassword} />;
+    return (
+      <ErrorBoundary>
+        <LockScreen onUnlock={() => setIsLocked(false)} correctPassword={userPassword} />
+      </ErrorBoundary>
+    );
   }
 
   return (
@@ -1158,9 +1155,11 @@ const App: React.FC = () => {
       userName={accountName}
       onLogout={handleLogout}
     >
-      <React.Suspense fallback={<DashboardLoader />}>
-        {renderContent()}
-      </React.Suspense>
+      <ErrorBoundary>
+        <React.Suspense fallback={<DashboardLoader />}>
+          {renderContent()}
+        </React.Suspense>
+      </ErrorBoundary>
       <ToastContainer />
       <DeleteModal
         isOpen={isDeleteModalOpen}

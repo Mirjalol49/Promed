@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-// Lock icon import
+import { Lock as LockIcon } from 'lucide-react';
 import lockIcon from '../../assets/images/lock.png';
 
 interface LockedOverlayProps {
@@ -26,15 +26,15 @@ const LockedOverlay: React.FC<LockedOverlayProps> = ({ onPay }) => {
                     />
 
                     {/* The Lock Container */}
-                    <div className="w-20 h-20 bg-slate-900 border-[3px] border-white/10 rounded-[28px] flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative z-10 overflow-hidden group">
+                    <div className="w-20 h-20 bg-slate-900 border-[3px] border-white/10 rounded-[28px] flex items-center justify-center relative z-10 overflow-hidden group">
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-transparent opacity-50" />
-                        <img src={lockIcon} alt="Locked" className="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
+                        <LockIcon className="w-10 h-10 text-emerald-500" />
                     </div>
                 </div>
             </div>
 
             {/* Frosted Glass Overlay Container */}
-            <div className="w-full h-full bg-white/60 backdrop-blur-md border-t border-white/40 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-[40px] flex flex-col items-center justify-center text-center animate-in fade-in slide-in-from-bottom-10 duration-700">
+            <div className="w-full h-full bg-white/60 backdrop-blur-md border-t border-white/40 rounded-t-[40px] flex flex-col items-center justify-center text-center animate-in fade-in slide-in-from-bottom-10 duration-700">
 
                 <div className="max-w-md px-6 space-y-6">
                     <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
@@ -52,10 +52,10 @@ const LockedOverlay: React.FC<LockedOverlayProps> = ({ onPay }) => {
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 400, damping: 25 }}
                         onClick={onPay}
-                        className="group relative flex items-center justify-center gap-3 w-full bg-slate-900 text-white font-black py-5 rounded-[24px] shadow-2xl shadow-slate-900/20 overflow-hidden"
+                        className="group relative flex items-center justify-center gap-3 w-full bg-slate-900 text-white font-black py-5 rounded-[24px] overflow-hidden"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        <img src={lockIcon} alt="Subscribe" className="w-6 h-6 object-contain group-hover:scale-110 transition-transform" />
+                        <LockIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
                         <span className="uppercase tracking-[0.2em] text-[10px] sm:text-xs">Obuna uchun to'lash</span>
                     </motion.button>
                 </div>

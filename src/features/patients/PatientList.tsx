@@ -29,12 +29,12 @@ import {
   ArrowRight,
   Eye,
   Pencil,
+  Phone,
+  Camera,
   Image as ImageIcon
 } from 'lucide-react';
 import { Patient, InjectionStatus, Injection } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
-import phoneIcon from '../../assets/images/phone.png';
-import cameraIcon from '../../assets/images/camera_icon.png';
 import thinkingMascot from '../../components/mascot/thinking_mascot.png';
 import injectionMascot from '../../components/mascot/injection_mascot.png';
 import { DatePicker } from '../../components/ui/DatePicker';
@@ -45,6 +45,10 @@ import { patientSchema, safeValidate } from '../../lib/validation';
 import DeleteModal from '../../components/ui/DeleteModal';
 import { CustomSelect } from '../../components/ui/CustomSelect';
 import { ImageUploadingOverlay } from '../../components/ui/ImageUploadingOverlay';
+
+// Re-importing to force build update
+import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
+
 import { useReliableUpload } from '../../hooks/useReliableUpload';
 import trashIcon from '../../assets/images/trash.png';
 import dateIcon from '../../assets/images/date.png';
@@ -93,7 +97,7 @@ const InjectionModal: React.FC<{
   return (
     <Portal>
       <div className="fixed inset-0 z-[9999] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-2xl w-full max-w-md p-8 shadow-modal transform scale-100 transition-all border border-slate-200">
+        <div className="bg-white rounded-2xl w-full max-w-md p-8 transform scale-100 transition-all border border-slate-200">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-2xl font-bold text-slate-800 tracking-tight">{initialData ? t('edit_injection') : t('add_injection')}</h3>
             <button onClick={onClose} className="text-slate-500 hover:text-slate-800 transition p-2 hover:bg-slate-100 rounded-lg"><X size={24} /></button>
@@ -120,7 +124,7 @@ const InjectionModal: React.FC<{
               <button onClick={onClose} className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition border border-transparent hover:border-slate-200">{t('cancel')}</button>
               <button
                 onClick={() => { onSave(date, notes); onClose(); }}
-                className="px-6 py-2.5 bg-promed-primary text-white font-bold rounded-xl hover:bg-blue-800 transition active:scale-95 shadow-lg shadow-blue-800/20"
+                className="px-6 py-2.5 bg-promed-primary text-white font-bold rounded-xl hover:bg-blue-800 transition active:scale-95 "
               >
                 {t('save')}
               </button>
@@ -155,10 +159,10 @@ const PhotoLabelModal: React.FC<{
   return (
     <Portal>
       <div className="fixed inset-0 z-[9999] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-modal border border-slate-200">
+        <div className="bg-white rounded-2xl w-full max-w-md p-6 border border-slate-200">
           <h3 className="text-xl font-bold mb-4 text-slate-800">{t('photo_label_title')}</h3>
           <div className="flex justify-center mb-6 bg-slate-50 rounded-xl p-2 border border-slate-200">
-            <div className="h-48 w-full max-w-[300px] mx-auto overflow-hidden rounded-lg shadow-sm border border-slate-100">
+            <div className="h-48 w-full max-w-[300px] mx-auto overflow-hidden rounded-lg  border border-slate-100">
               <img src={image} alt="Preview" className="w-full h-full object-contain" />
             </div>
           </div>
@@ -275,7 +279,7 @@ export const PatientList: React.FC<{
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-card border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-2xl  border border-slate-200 overflow-hidden">
       <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
         <div className="flex items-center space-x-3">
           <h2 className="text-xl font-bold text-slate-800 tracking-tight">{t('patient_directory')}</h2>
@@ -289,14 +293,14 @@ export const PatientList: React.FC<{
               placeholder={t('search')}
               value={searchQuery}
               onChange={(e) => onSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-promed-primary focus:border-promed-primary focus:outline-none transition-all shadow-sm"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-promed-primary focus:border-promed-primary focus:outline-none transition-all "
             />
             <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-promed-primary transition" size={18} />
           </div>
           <button
             id="add-patient-btn"
             onClick={onAddPatient}
-            className="flex items-center justify-center space-x-2 bg-promed-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-800 transition shadow-lg shadow-blue-800/20 active:scale-95 whitespace-nowrap"
+            className="flex items-center justify-center space-x-2 bg-promed-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-promed-dark transition active:scale-95 whitespace-nowrap"
           >
             <PlusCircle size={18} />
             <span>{t('new_patient')}</span>
@@ -320,7 +324,7 @@ export const PatientList: React.FC<{
                 return (
                   <tr
                     key={patient.id}
-                    className="hover:bg-blue-50/80 hover:scale-[1.01] hover:shadow-lg hover:border-promed-primary/20 hover:z-10 relative transition-all duration-200 cursor-pointer group border-b border-transparent hover:rounded-xl"
+                    className="hover:bg-blue-50/80 hover:scale-[1.01] hover:border-promed-primary/20 hover:z-10 relative transition-all duration-200 cursor-pointer group border-b border-transparent hover:rounded-xl"
                     onClick={() => onSelect(patient.id)}
                   >
                     <td className="p-5 pl-8 rounded-l-xl group-hover:rounded-l-xl transition-all relative">
@@ -331,7 +335,7 @@ export const PatientList: React.FC<{
                             src={patient.profileImage}
                             alt={patient.fullName}
                             size={44}
-                            className="rounded-xl shadow-sm ring-1 ring-slate-100"
+                            className="rounded-xl  ring-1 ring-slate-100"
                             fallbackType="user"
                           />
                         </div>
@@ -382,11 +386,11 @@ export const PatientList: React.FC<{
                       <img
                         src={thinkingMascot}
                         alt="Thinking"
-                        className="w-48 h-48 object-contain relative z-10 drop-shadow-xl"
+                        className="w-24 h-24 object-contain relative z-10 "
                       />
                     </div>
                     <div className="text-center relative z-10">
-                      <h3 className="text-xl font-bold text-slate-800 mb-2">{t('empty_patient_list_title') || "No Patients Found"}</h3>
+                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest opacity-80 mb-2">{t('empty_patient_list_title') || "No Patients Found"}</h3>
                     </div>
                   </div>
                 </td>
@@ -403,7 +407,7 @@ export const PatientList: React.FC<{
             <button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-promed-primary hover:border-promed-primary/30 disabled:opacity-40 disabled:hover:bg-white disabled:text-slate-300 shadow-sm transition-all"
+              className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-promed-primary hover:border-promed-primary/30 disabled:opacity-40 disabled:hover:bg-white disabled:text-slate-300  transition-all"
               aria-label={t('previous_page') || "Previous Page"}
             >
               <ChevronLeft size={20} />
@@ -416,7 +420,7 @@ export const PatientList: React.FC<{
                     key={idx}
                     onClick={() => setCurrentPage(page)}
                     className={`min-w-[36px] h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all border ${currentPage === page
-                      ? 'bg-promed-primary text-white border-promed-primary shadow-md shadow-blue-800/20'
+                      ? 'bg-promed-primary text-white border-promed-primary '
                       : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                   >
@@ -433,7 +437,7 @@ export const PatientList: React.FC<{
             <button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-promed-primary hover:border-promed-primary/30 disabled:opacity-40 disabled:hover:bg-white disabled:text-slate-300 shadow-sm transition-all"
+              className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-promed-primary hover:border-promed-primary/30 disabled:opacity-40 disabled:hover:bg-white disabled:text-slate-300  transition-all"
               aria-label={t('next_page') || "Next Page"}
             >
               <ChevronRight size={20} />
@@ -558,7 +562,7 @@ export const PatientDetail: React.FC<{
       </button>
 
       {/* Header Info */}
-      <div className="bg-white rounded-3xl p-8 shadow-card border border-slate-200 flex flex-col md:flex-row gap-8 relative overflow-hidden">
+      <div className="bg-white rounded-3xl p-8  border border-slate-200 flex flex-col md:flex-row gap-8 relative overflow-hidden">
         {/* Background decorative blob */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
@@ -566,7 +570,7 @@ export const PatientDetail: React.FC<{
           <img
             src={patient.profileImage || "https://via.placeholder.com/150?text=No+Image"}
             alt={patient.fullName}
-            className="w-full h-full rounded-2xl object-cover shadow-lg ring-4 ring-white border border-slate-100"
+            className="w-full h-full rounded-2xl object-cover ring-4 ring-white border border-slate-100"
             onError={(e) => {
               (e.target as HTMLImageElement).src = "https://via.placeholder.com/150?text=Error";
             }}
@@ -579,11 +583,11 @@ export const PatientDetail: React.FC<{
               <h2 className="text-4xl font-bold text-slate-900 tracking-tight">{patient.fullName}</h2>
               <div className="flex flex-wrap items-center gap-6 text-slate-600 mt-3">
                 <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                  <img src={dateIcon} alt="Date" className="w-4 h-4 object-contain opacity-70" />
+                  <Calendar className="w-4 h-4 text-slate-400" />
                   <span className="font-semibold text-sm">{t('operation_date')}: {new Date(patient.operationDate).toLocaleDateString(localeString)}</span>
                 </span>
                 <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                  <img src={phoneIcon} alt="Phone" className="w-4 h-4 object-contain opacity-70" />
+                  <Phone className="w-4 h-4 text-slate-400" />
                   <span className="font-semibold text-sm">{patient.phone}</span>
                 </span>
                 {patient.email && (
@@ -599,16 +603,16 @@ export const PatientDetail: React.FC<{
             <div className="flex items-center space-x-3 flex-shrink-0">
               <button
                 onClick={onEditPatient}
-                className="flex items-center space-x-2 bg-white text-slate-700 border border-slate-200 hover:border-promed-primary hover:text-promed-primary hover:bg-slate-50 px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-sm active:scale-95 whitespace-nowrap"
+                className="flex items-center space-x-2 bg-white text-slate-700 border border-slate-200 hover:border-promed-primary hover:text-promed-primary hover:bg-slate-50 px-5 py-2.5 rounded-xl font-bold text-sm transition  active:scale-95 whitespace-nowrap"
               >
-                <img src={editIcon} alt="Edit" className="w-6 h-6 object-contain opacity-100 group-hover:scale-105 transition-transform" />
+                <Pencil className="w-5 h-5 group-hover:scale-105 transition-transform" />
                 <span>{t('edit_patient')}</span>
               </button>
               <button
                 onClick={onDeletePatient}
-                className="flex items-center space-x-2 bg-white text-red-700 border border-red-200 hover:bg-red-50 hover:border-red-300 px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-sm active:scale-95 whitespace-nowrap group"
+                className="flex items-center space-x-2 bg-white text-red-700 border border-red-200 hover:bg-red-50 hover:border-red-300 px-5 py-2.5 rounded-xl font-bold text-sm transition  active:scale-95 whitespace-nowrap group"
               >
-                <img src={trashIcon} alt="Delete" className="w-6 h-6 object-contain group-hover:scale-110 transition-transform" />
+                <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 <span>{t('delete')}</span>
               </button>
             </div>
@@ -643,14 +647,14 @@ export const PatientDetail: React.FC<{
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Col: Photos */}
         <div className="lg:col-span-1 space-y-8">
-          <div className="bg-white rounded-2xl p-6 shadow-card border border-slate-200">
+          <div className="bg-white rounded-2xl p-6  border border-slate-200">
             <h3 className="font-bold text-slate-800 mb-5 flex items-center space-x-3">
               <div className="">
-                <img src={cameraIcon} alt="Camera" className="w-9 h-9 object-contain" />
+                <Camera className="w-9 h-9 text-slate-700" />
               </div>
               <span>{t('before_operation')}</span>
             </h3>
-            <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer shadow-inner relative group border border-slate-200" onClick={() => setSelectedImage(patient.beforeImage || null)}>
+            <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer relative group border border-slate-200" onClick={() => setSelectedImage(patient.beforeImage || null)}>
               {patient.beforeImage ? (
                 <>
                   <ImageWithFallback src={patient.beforeImage} optimisticId={`${patient.id}_before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
@@ -662,7 +666,7 @@ export const PatientDetail: React.FC<{
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-card border border-slate-200">
+          <div className="bg-white rounded-2xl p-6  border border-slate-200">
             <div className="flex justify-between items-center mb-5">
               <h3 className="font-bold text-slate-800 flex items-center space-x-3">
                 <div className="p-2 bg-promed-light rounded-lg text-promed-primary border border-promed-primary/20">
@@ -680,7 +684,7 @@ export const PatientDetail: React.FC<{
               </label>
 
               {patient.afterImages.map((img, idx) => (
-                <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer group shadow-sm border border-slate-200" onClick={() => setSelectedImage(img.url)}>
+                <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer group  border border-slate-200" onClick={() => setSelectedImage(img.url)}>
                   <ImageWithFallback src={img.url} optimisticId={img.id} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt={img.label} fallbackType="image" />
 
                   {/* Delete Button (Hover) */}
@@ -689,13 +693,13 @@ export const PatientDetail: React.FC<{
                       e.stopPropagation();
                       handleDeleteAfterPhotoClick(img.id);
                     }}
-                    className="absolute top-2 right-2 p-1.5 bg-red-500/90 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg z-20"
+                    className="absolute top-2 right-2 p-1.5 bg-red-500/90 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-20"
                   >
                     <Trash2 size={14} />
                   </button>
 
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-8">
-                    <p className="text-white text-xs text-center font-bold tracking-wide drop-shadow-md">{img.label}</p>
+                    <p className="text-white text-xs text-center font-bold tracking-wide ">{img.label}</p>
                   </div>
                 </div>
               ))}
@@ -705,7 +709,7 @@ export const PatientDetail: React.FC<{
 
         {/* Right Col: Injection Timeline */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl p-8 shadow-card border border-slate-200 h-full relative overflow-hidden">
+          <div className="bg-white rounded-2xl p-8  border border-slate-200 h-full relative overflow-hidden">
             {/* Decorative Background */}
             <div className="absolute -top-20 -right-20 w-80 h-80 bg-promed-light/40 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -720,7 +724,7 @@ export const PatientDetail: React.FC<{
 
               <button
                 onClick={openAddInjection}
-                className="flex items-center space-x-2 text-sm bg-promed-primary text-white px-4 py-2.5 rounded-xl hover:bg-blue-800 transition font-bold active:scale-95 shadow-md shadow-blue-800/20 mr-0"
+                className="flex items-center space-x-2 text-sm bg-promed-primary text-white px-4 py-2.5 rounded-xl hover:bg-promed-dark transition font-bold active:scale-95 mr-0"
               >
                 <Plus size={16} />
                 <span>{t('add_injection')}</span>
@@ -735,7 +739,7 @@ export const PatientDetail: React.FC<{
                     <img
                       src={thinkingMascot}
                       alt="No injections"
-                      className="w-40 h-40 object-contain relative z-10 drop-shadow-2xl"
+                      className="w-40 h-40 object-contain relative z-10 "
                     />
                   </div>
                   <h4 className="text-xl font-bold text-slate-800 mb-3">
@@ -746,7 +750,7 @@ export const PatientDetail: React.FC<{
                   </p>
                   <button
                     onClick={openAddInjection}
-                    className="group relative flex items-center space-x-3 bg-promed-primary text-white px-8 py-4 rounded-2xl font-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-blue-800/20"
+                    className="group relative flex items-center space-x-3 bg-promed-primary text-white px-8 py-4 rounded-2xl font-black transition-all hover:scale-105 active:scale-95 "
                   >
                     <PlusCircle size={22} className="group-hover:rotate-90 transition-transform duration-300" />
                     <span>{t('add_first_injection')}</span>
@@ -767,18 +771,18 @@ export const PatientDetail: React.FC<{
                     {/* Indicator Dot / Mascot Avatar */}
                     {isNextHero ? (
                       <div className="relative group/mascot z-10 transition-transform hover:scale-110 duration-300">
-                        <div className="w-10 h-10 rounded-full border-4 border-slate-100 overflow-hidden bg-white shadow-md -ml-2 ring-1 ring-slate-200">
-                          <img src={injectionMascot} alt="Scheduled" className="w-full h-full object-cover scale-125 translate-y-1" />
+                        <div className="w-10 h-10 rounded-full border-4 border-slate-100 overflow-hidden bg-white -ml-2 ring-1 ring-slate-200">
+                          <img src={injectionMascot} alt="Scheduled" className="w-full h-full object-cover scale-[1.2] object-top translate-y-1" />
                         </div>
                         {/* Custom Tooltip */}
-                        <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-[10px] font-bold py-1 px-3 rounded-lg opacity-0 group-hover/mascot:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-30">
+                        <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-[10px] font-bold py-1 px-3 rounded-lg opacity-0 group-hover/mascot:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
                           {t('next_injection_tooltip')}
                           <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-r-slate-900"></div>
                         </div>
                       </div>
                     ) : (
                       <div className={`
-                        flex-shrink-0 w-6 h-6 rounded-full border-[3px] z-10 mt-1 shadow-sm transition-all duration-300
+                        flex-shrink-0 w-6 h-6 rounded-full border-[3px] z-10 mt-1  transition-all duration-300
                         ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-500 border-white ring-2 ring-emerald-200' :
                           inj.status === InjectionStatus.MISSED ? 'bg-red-500 border-white ring-2 ring-red-200' :
                             isToday ? 'bg-amber-500 border-white ring-2 ring-amber-200 scale-110' : 'bg-white border-slate-300'
@@ -787,7 +791,7 @@ export const PatientDetail: React.FC<{
                     )}
 
                     {/* Content */}
-                    <div className={`flex-1 ${isNextHero ? 'bg-white shadow-xl ring-1 ring-slate-200 border-slate-100' : 'bg-slate-50/50'} rounded-2xl p-5 hover:bg-white hover:shadow-card hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-slate-200`}>
+                    <div className={`flex-1 ${isNextHero ? 'bg-white ring-1 ring-slate-200 border-slate-100' : 'bg-slate-50/50'} rounded-2xl p-5 hover:bg-white hover: hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-slate-200`}>
                       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3">
@@ -795,14 +799,14 @@ export const PatientDetail: React.FC<{
                               {t('injection')} #{index + 1}
                             </h4>
                             {/* Actions Container */}
-                            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0 duration-300">
+                            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                               <button
                                 type="button"
                                 onClick={(e) => handleEditClick(e, inj)}
                                 className="p-1.5 text-slate-400 hover:text-promed-primary hover:bg-white rounded-lg transition-all"
                                 title={t('edit_injection')}
                               >
-                                <img src={editIcon} alt="Edit" className="w-5 h-5 object-contain opacity-70 hover:opacity-100" />
+                                <Pencil className="w-4 h-4 opacity-70 hover:opacity-100 transition-opacity" />
                               </button>
                               <button
                                 type="button"
@@ -832,19 +836,19 @@ export const PatientDetail: React.FC<{
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={() => onUpdateInjection(patient.id, inj.id, InjectionStatus.COMPLETED)}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-50 transition shadow-sm whitespace-nowrap"
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-50 transition  whitespace-nowrap"
                               >
                                 <Check size={14} /> <span>{t('mark_done')}</span>
                               </button>
                               <button
                                 onClick={() => onUpdateInjection(patient.id, inj.id, InjectionStatus.MISSED)}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-red-200 text-red-700 rounded-lg text-xs font-bold hover:bg-red-50 transition shadow-sm whitespace-nowrap"
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-red-200 text-red-700 rounded-lg text-xs font-bold hover:bg-red-50 transition  whitespace-nowrap"
                               >
                                 <X size={14} /> <span>{t('mark_missed')}</span>
                               </button>
                             </div>
                           ) : (
-                            <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm border whitespace-nowrap ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                            <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider  border whitespace-nowrap ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
                               {translateStatus(inj.status)}
                             </span>
                           )}
@@ -861,7 +865,7 @@ export const PatientDetail: React.FC<{
               <img
                 src={injectionMascot}
                 alt="Mascot"
-                className="absolute -bottom-6 -right-6 w-56 opacity-100 pointer-events-none transform rotate-[-5deg] z-0 drop-shadow-xl"
+                className="absolute -bottom-10 -right-2 w-40 opacity-100 pointer-events-none transform rotate-[-5deg] z-0 "
               />
             )}
           </div>
@@ -875,7 +879,7 @@ export const PatientDetail: React.FC<{
             <button className="absolute top-6 right-6 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition">
               <X size={36} />
             </button>
-            <img src={selectedImage} alt="Full view" className="max-w-full max-h-[90vh] rounded-xl shadow-2xl scale-100 animate-in zoom-in-95 duration-300" />
+            <img src={selectedImage} alt="Full view" className="max-w-full max-h-[90vh] rounded-xl scale-100 animate-in zoom-in-95 duration-300" />
           </div>
         </Portal>
       )}
@@ -1138,7 +1142,7 @@ export const AddPatientForm: React.FC<{
     <Portal>
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={onCancel}>
         <div
-          className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transform scale-100 transition-all border border-slate-100"
+          className="bg-white w-full max-w-5xl rounded-3xl flex flex-col max-h-[90vh] overflow-hidden transform scale-100 transition-all border border-slate-100"
           onClick={e => e.stopPropagation()}
         >
           {/* Premium Header */}
@@ -1179,13 +1183,17 @@ export const AddPatientForm: React.FC<{
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto bg-slate-50/50">
-            <form id="patient-form" onSubmit={handleSubmit} className="p-8">
+            <form id="patient-form" onSubmit={handleSubmit} className="p-8" onKeyDown={(e) => {
+              if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+                e.preventDefault();
+              }
+            }}>
               <div className="flex flex-col lg:flex-row gap-8">
 
                 {/* Left Column: Photos & Visuals */}
                 <div className="w-full lg:w-1/3 flex flex-col gap-6">
                   {/* Profile Photo Card */}
-                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center text-center hover:shadow-md transition-all duration-300 group relative overflow-hidden">
+                  <div className="bg-white p-6 rounded-2xl  border border-slate-200 flex flex-col items-center text-center transition-all duration-300 group relative overflow-hidden">
                     <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-promed-primary to-teal-400"></div>
                     <h4 className="font-bold text-slate-800 mb-4 self-start flex items-center gap-2 text-sm uppercase tracking-wide">
                       <User size={16} className="text-promed-primary" />
@@ -1193,7 +1201,7 @@ export const AddPatientForm: React.FC<{
                     </h4>
 
                     <label className="relative mb-4 cursor-pointer group/photo">
-                      <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-100 shadow-xl ring-4 ring-slate-50 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 group-hover/photo:shadow-2xl group-hover/photo:shadow-promed-primary/20 transition-all duration-500 relative">
+                      <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-100 ring-4 ring-slate-50 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 transition-all duration-500 relative">
                         {profileImage ? (
                           <ImageWithFallback src={profileImage} alt="Profile" className="w-full h-full object-cover group-hover/photo:scale-110 transition duration-700" fallbackType="user" />
                         ) : (
@@ -1203,13 +1211,13 @@ export const AddPatientForm: React.FC<{
                         )}
                         {/* Hover Overlay */}
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity duration-500">
-                          <img src={cameraIcon} alt="Camera" className="w-8 h-8 object-contain brightness-0 invert drop-shadow-md transform scale-90 group-hover/photo:scale-110 group-hover/photo:-translate-y-1 transition duration-500" />
+                          <Camera className="w-8 h-8 text-white transform scale-90 group-hover/photo:scale-110 group-hover/photo:-translate-y-1 transition duration-500" />
                         </div>
                       </div>
 
                       {/* Floating camera icon cue */}
-                      <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1 z-20 flex items-center justify-center">
-                        <img src={cameraIcon} alt="Camera" className="w-[18px] h-[18px] object-contain opacity-70 group-hover/photo:brightness-0 group-hover/photo:invert" />
+                      <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1 z-20 flex items-center justify-center">
+                        <Camera className="w-[18px] h-[18px] text-slate-400 group-hover/photo:text-white" />
                       </div>
 
                       {/* UPLOAD OVERLAY */}
@@ -1223,7 +1231,7 @@ export const AddPatientForm: React.FC<{
                   </div>
 
                   {/* Before Photo Card */}
-                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-all duration-300 group flex-1">
+                  <div className="bg-white p-6 rounded-2xl  border border-slate-200 transition-all duration-300 group flex-1">
                     <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wide">
                       <ImageIcon size={16} className="text-promed-primary" />
                       {t('before_photo')}
@@ -1235,7 +1243,7 @@ export const AddPatientForm: React.FC<{
                           <ImageWithFallback src={beforeImage} alt="Before" className="w-full h-full object-cover group-hover/upload:scale-110 transition duration-700" fallbackType="image" />
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/upload:opacity-100 transition-opacity duration-300">
                             <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full border border-white/30 text-white transform scale-90 group-hover/upload:scale-100 transition duration-300 flex items-center justify-center">
-                              <img src={cameraIcon} alt="Camera" className="w-6 h-6 object-contain brightness-0 invert" />
+                              <Camera className="w-6 h-6 text-white" />
                             </div>
                           </div>
                         </>
@@ -1259,7 +1267,7 @@ export const AddPatientForm: React.FC<{
                 {/* Right Column: Form Inputs */}
                 <div className="w-full lg:w-2/3 space-y-8">
                   {/* Personal Specs */}
-                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <div className="bg-white p-6 rounded-2xl  border border-slate-200">
                     <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 text-sm uppercase tracking-wide border-b border-slate-100 pb-2">
                       <User size={18} className="text-promed-primary" />
                       {t('personal_info')}
@@ -1278,7 +1286,7 @@ export const AddPatientForm: React.FC<{
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('phone_number')}</label>
                         <div className="relative group">
-                          <img src={phoneIcon} alt="Phone" className="absolute left-3.5 top-3.5 w-[18px] h-[18px] object-contain opacity-40 group-focus-within:opacity-100 transition-opacity" />
+                          <Phone className="absolute left-3.5 top-3.5 w-[18px] h-[18px] text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                           <input
                             required
                             type="tel"
@@ -1327,7 +1335,7 @@ export const AddPatientForm: React.FC<{
                   </div>
 
                   {/* Medical Specs */}
-                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <div className="bg-white p-6 rounded-2xl  border border-slate-200">
                     <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 text-sm uppercase tracking-wide border-b border-slate-100 pb-2">
                       <Activity size={18} className="text-promed-primary" />
                       {t('medical_details')}
@@ -1387,7 +1395,7 @@ export const AddPatientForm: React.FC<{
                 type="submit"
                 form="patient-form"
                 disabled={saving || isSubmitting}
-                className="px-8 py-3 bg-promed-primary text-white font-bold rounded-xl hover:bg-teal-800 shadow-lg shadow-teal-900/20 transition transform active:scale-95 flex items-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 bg-promed-primary text-white font-bold rounded-xl hover:bg-promed-dark transition transform active:scale-95 flex items-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? (
                   <>
