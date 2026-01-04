@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
   MapPin,
-  Phone,
+
   Mail,
   ChevronLeft,
   ChevronRight,
@@ -11,7 +11,7 @@ import {
   Check,
   X,
   Upload,
-  Camera,
+
   Syringe,
   Activity,
   Wand2,
@@ -33,6 +33,10 @@ import {
 } from 'lucide-react';
 import { Patient, InjectionStatus, Injection } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
+import phoneIcon from '../../assets/images/phone.png';
+import cameraIcon from '../../assets/images/camera_icon.png';
+import thinkingMascot from '../../components/mascot/thinking_mascot.png';
+import injectionMascot from '../../components/mascot/injection_mascot.png';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { Portal } from '../../components/ui/Portal';
 import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
@@ -40,9 +44,11 @@ import { compressImage } from '../../lib/imageOptimizer';
 import { patientSchema, safeValidate } from '../../lib/validation';
 import DeleteModal from '../../components/ui/DeleteModal';
 import { CustomSelect } from '../../components/ui/CustomSelect';
-import Mascot from '../../components/mascot/Mascot';
-import { MascotImage } from '../../components/ui/MascotImage';
 import { ImageUploadingOverlay } from '../../components/ui/ImageUploadingOverlay';
+import { useReliableUpload } from '../../hooks/useReliableUpload';
+import trashIcon from '../../assets/images/trash.png';
+import dateIcon from '../../assets/images/date.png';
+import editIcon from '../../assets/images/edit.png';
 
 // Helper to translate status
 const useStatusTranslation = () => {
@@ -114,7 +120,7 @@ const InjectionModal: React.FC<{
               <button onClick={onClose} className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition border border-transparent hover:border-slate-200">{t('cancel')}</button>
               <button
                 onClick={() => { onSave(date, notes); onClose(); }}
-                className="px-6 py-2.5 bg-promed-primary text-white font-bold rounded-xl hover:bg-teal-800 transition active:scale-95 shadow-lg shadow-teal-700/20"
+                className="px-6 py-2.5 bg-promed-primary text-white font-bold rounded-xl hover:bg-blue-800 transition active:scale-95 shadow-lg shadow-blue-800/20"
               >
                 {t('save')}
               </button>
@@ -188,7 +194,7 @@ const PhotoLabelModal: React.FC<{
               <button
                 onClick={handleSave}
                 disabled={!value}
-                className="px-6 py-2.5 bg-promed-primary text-white font-bold rounded-xl hover:bg-teal-800 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition"
+                className="px-6 py-2.5 bg-promed-primary text-white font-bold rounded-xl hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition"
               >
                 {t('save')}
               </button>
@@ -290,7 +296,7 @@ export const PatientList: React.FC<{
           <button
             id="add-patient-btn"
             onClick={onAddPatient}
-            className="flex items-center justify-center space-x-2 bg-promed-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-teal-800 transition shadow-lg shadow-teal-900/10 active:scale-95 whitespace-nowrap"
+            className="flex items-center justify-center space-x-2 bg-promed-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-800 transition shadow-lg shadow-blue-800/20 active:scale-95 whitespace-nowrap"
           >
             <PlusCircle size={18} />
             <span>{t('new_patient')}</span>
@@ -314,19 +320,19 @@ export const PatientList: React.FC<{
                 return (
                   <tr
                     key={patient.id}
-                    className="hover:bg-teal-50/80 hover:scale-[1.01] hover:shadow-lg hover:border-promed-primary/20 hover:z-10 relative transition-all duration-200 cursor-pointer group border-b border-transparent hover:rounded-xl"
+                    className="hover:bg-blue-50/80 hover:scale-[1.01] hover:shadow-lg hover:border-promed-primary/20 hover:z-10 relative transition-all duration-200 cursor-pointer group border-b border-transparent hover:rounded-xl"
                     onClick={() => onSelect(patient.id)}
                   >
                     <td className="p-5 pl-8 rounded-l-xl group-hover:rounded-l-xl transition-all relative">
                       <div className="absolute left-0 top-3 bottom-3 w-1 bg-promed-primary rounded-r-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       <div className="flex items-center space-x-4">
-                        <div className="relative w-11 h-11">
-                          <ImageWithFallback
+                        <div className="relative">
+                          <ProfileAvatar
                             src={patient.profileImage}
                             alt={patient.fullName}
-                            className="w-full h-full rounded-xl shadow-sm ring-1 ring-slate-100"
+                            size={44}
+                            className="rounded-xl shadow-sm ring-1 ring-slate-100"
                             fallbackType="user"
-                            optimisticId={`${patient.id}_profile`}
                           />
                         </div>
                         <div>
@@ -373,7 +379,11 @@ export const PatientList: React.FC<{
                   <div className="flex flex-col items-center justify-center space-y-6">
                     <div className="relative">
                       <div className="absolute inset-0 bg-blue-100/50 blur-3xl rounded-full scale-150"></div>
-                      <Mascot mood="happy" size={140} floating={false} />
+                      <img
+                        src={thinkingMascot}
+                        alt="Thinking"
+                        className="w-48 h-48 object-contain relative z-10 drop-shadow-xl"
+                      />
                     </div>
                     <div className="text-center relative z-10">
                       <h3 className="text-xl font-bold text-slate-800 mb-2">{t('empty_patient_list_title') || "No Patients Found"}</h3>
@@ -406,7 +416,7 @@ export const PatientList: React.FC<{
                     key={idx}
                     onClick={() => setCurrentPage(page)}
                     className={`min-w-[36px] h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all border ${currentPage === page
-                      ? 'bg-promed-primary text-white border-promed-primary shadow-md shadow-teal-900/10'
+                      ? 'bg-promed-primary text-white border-promed-primary shadow-md shadow-blue-800/20'
                       : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                   >
@@ -553,7 +563,14 @@ export const PatientDetail: React.FC<{
         <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
         <div className="flex-shrink-0 relative w-40 h-40">
-          <ImageWithFallback src={patient.profileImage} optimisticId={`${patient.id}_profile`} className="w-full h-full rounded-2xl object-cover shadow-lg ring-4 ring-white border border-slate-100" alt="Profile" fallbackType="user" />
+          <img
+            src={patient.profileImage || "https://via.placeholder.com/150?text=No+Image"}
+            alt={patient.fullName}
+            className="w-full h-full rounded-2xl object-cover shadow-lg ring-4 ring-white border border-slate-100"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "https://via.placeholder.com/150?text=Error";
+            }}
+          />
         </div>
 
         <div className="flex-1 space-y-6 z-10">
@@ -562,11 +579,11 @@ export const PatientDetail: React.FC<{
               <h2 className="text-4xl font-bold text-slate-900 tracking-tight">{patient.fullName}</h2>
               <div className="flex flex-wrap items-center gap-6 text-slate-600 mt-3">
                 <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                  <Activity size={16} className="text-promed-primary" />
+                  <img src={dateIcon} alt="Date" className="w-4 h-4 object-contain opacity-70" />
                   <span className="font-semibold text-sm">{t('operation_date')}: {new Date(patient.operationDate).toLocaleDateString(localeString)}</span>
                 </span>
                 <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                  <Phone size={16} className="text-promed-primary" />
+                  <img src={phoneIcon} alt="Phone" className="w-4 h-4 object-contain opacity-70" />
                   <span className="font-semibold text-sm">{patient.phone}</span>
                 </span>
                 {patient.email && (
@@ -584,14 +601,14 @@ export const PatientDetail: React.FC<{
                 onClick={onEditPatient}
                 className="flex items-center space-x-2 bg-white text-slate-700 border border-slate-200 hover:border-promed-primary hover:text-promed-primary hover:bg-slate-50 px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-sm active:scale-95 whitespace-nowrap"
               >
-                <Pencil size={16} />
+                <img src={editIcon} alt="Edit" className="w-6 h-6 object-contain opacity-100 group-hover:scale-105 transition-transform" />
                 <span>{t('edit_patient')}</span>
               </button>
               <button
                 onClick={onDeletePatient}
-                className="flex items-center space-x-2 bg-white text-red-700 border border-red-200 hover:bg-red-50 hover:border-red-300 px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-sm active:scale-95 whitespace-nowrap"
+                className="flex items-center space-x-2 bg-white text-red-700 border border-red-200 hover:bg-red-50 hover:border-red-300 px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-sm active:scale-95 whitespace-nowrap group"
               >
-                <Trash2 size={16} />
+                <img src={trashIcon} alt="Delete" className="w-6 h-6 object-contain group-hover:scale-110 transition-transform" />
                 <span>{t('delete')}</span>
               </button>
             </div>
@@ -628,8 +645,8 @@ export const PatientDetail: React.FC<{
         <div className="lg:col-span-1 space-y-8">
           <div className="bg-white rounded-2xl p-6 shadow-card border border-slate-200">
             <h3 className="font-bold text-slate-800 mb-5 flex items-center space-x-3">
-              <div className="p-2 bg-promed-light rounded-lg text-promed-primary border border-promed-primary/20">
-                <Camera size={20} />
+              <div className="">
+                <img src={cameraIcon} alt="Camera" className="w-9 h-9 object-contain" />
               </div>
               <span>{t('before_operation')}</span>
             </h3>
@@ -703,7 +720,7 @@ export const PatientDetail: React.FC<{
 
               <button
                 onClick={openAddInjection}
-                className="flex items-center space-x-2 text-sm bg-promed-primary text-white px-4 py-2.5 rounded-xl hover:bg-teal-800 transition font-bold active:scale-95 shadow-md shadow-teal-900/10 mr-0"
+                className="flex items-center space-x-2 text-sm bg-promed-primary text-white px-4 py-2.5 rounded-xl hover:bg-blue-800 transition font-bold active:scale-95 shadow-md shadow-blue-800/20 mr-0"
               >
                 <Plus size={16} />
                 <span>{t('add_injection')}</span>
@@ -714,14 +731,11 @@ export const PatientDetail: React.FC<{
               {patient.injections.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-in fade-in zoom-in duration-700">
                   <div className="relative mb-10">
-                    {/* Pulsing Aura */}
                     <div className="absolute inset-0 bg-promed-primary/5 blur-3xl rounded-full scale-150 animate-pulse"></div>
-                    <MascotImage
-                      src="/images/mascot/thinking.png"
-                      alt="Thinking Mascot"
-                      width={192}
-                      height={192}
-                      className="w-48 h-48 object-contain relative z-10 drop-shadow-2xl"
+                    <img
+                      src={thinkingMascot}
+                      alt="No injections"
+                      className="w-40 h-40 object-contain relative z-10 drop-shadow-2xl"
                     />
                   </div>
                   <h4 className="text-xl font-bold text-slate-800 mb-3">
@@ -732,7 +746,7 @@ export const PatientDetail: React.FC<{
                   </p>
                   <button
                     onClick={openAddInjection}
-                    className="group relative flex items-center space-x-3 bg-promed-primary text-white px-8 py-4 rounded-2xl font-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-teal-900/20"
+                    className="group relative flex items-center space-x-3 bg-promed-primary text-white px-8 py-4 rounded-2xl font-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-blue-800/20"
                   >
                     <PlusCircle size={22} className="group-hover:rotate-90 transition-transform duration-300" />
                     <span>{t('add_first_injection')}</span>
@@ -754,13 +768,7 @@ export const PatientDetail: React.FC<{
                     {isNextHero ? (
                       <div className="relative group/mascot z-10 transition-transform hover:scale-110 duration-300">
                         <div className="w-10 h-10 rounded-full border-4 border-slate-100 overflow-hidden bg-white shadow-md -ml-2 ring-1 ring-slate-200">
-                          <MascotImage
-                            src="/images/mascot/injection.png"
-                            alt="Mascot"
-                            width={40}
-                            height={40}
-                            className="w-full h-full object-cover scale-125 translate-y-1"
-                          />
+                          <img src={injectionMascot} alt="Scheduled" className="w-full h-full object-cover scale-125 translate-y-1" />
                         </div>
                         {/* Custom Tooltip */}
                         <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-[10px] font-bold py-1 px-3 rounded-lg opacity-0 group-hover/mascot:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-30">
@@ -794,7 +802,7 @@ export const PatientDetail: React.FC<{
                                 className="p-1.5 text-slate-400 hover:text-promed-primary hover:bg-white rounded-lg transition-all"
                                 title={t('edit_injection')}
                               >
-                                <Edit2 size={16} />
+                                <img src={editIcon} alt="Edit" className="w-5 h-5 object-contain opacity-70 hover:opacity-100" />
                               </button>
                               <button
                                 type="button"
@@ -807,7 +815,7 @@ export const PatientDetail: React.FC<{
                             </div>
                           </div>
                           <p className="text-sm text-slate-600 flex items-center space-x-2 mt-2 font-medium">
-                            <Calendar size={14} className="text-slate-400" />
+                            <img src={dateIcon} alt="Date" className="w-3.5 h-3.5 object-contain opacity-50" />
                             <span>{new Date(inj.date).toLocaleDateString(localeString, { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                           </p>
                           {inj.notes && (
@@ -850,11 +858,9 @@ export const PatientDetail: React.FC<{
 
             {/* The Big Mascot */}
             {patient.injections.length > 0 && (
-              <MascotImage
-                src="/images/mascot/injection.png"
+              <img
+                src={injectionMascot}
                 alt="Mascot"
-                width={224}
-                height={224}
                 className="absolute -bottom-6 -right-6 w-56 opacity-100 pointer-events-none transform rotate-[-5deg] z-0 drop-shadow-xl"
               />
             )}
@@ -943,6 +949,10 @@ export const AddPatientForm: React.FC<{
   saving?: boolean;
 }> = ({ onSave, onCancel, initialData, saving = false }) => {
   const { t, language } = useLanguage();
+  const { upload: reliableUpload } = useReliableUpload();
+
+  // FIX: Local loading state for immediate double-click prevention
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // States
   const [fullName, setFullName] = useState(initialData?.fullName || '');
@@ -1045,8 +1055,14 @@ export const AddPatientForm: React.FC<{
     setValidationError(null); // Clear errors if any
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 1. Safety Check: Stop if already running (Race Condition Fix)
+    if (isSubmitting || saving) return;
+
+    // 2. Lock the door
+    setIsSubmitting(true);
 
     // Validate form before submission
     const error = validateForm();
@@ -1056,9 +1072,40 @@ export const AddPatientForm: React.FC<{
     }
     setValidationError(null);
 
+    let finalProfileUrl = profileImage;
+    let finalBeforeUrl = beforeImage;
+    const tempId = initialData?.id || `temp-${Date.now()}`;
+
+    // Perform Reliable Uploads
+    try {
+      if (profileImageFile) {
+        setIsProfileUploading(true);
+        finalProfileUrl = await reliableUpload({
+          bucket: 'promed-images',
+          path: `patients/${tempId}/profile`,
+          file: profileImageFile
+        });
+        setIsProfileUploading(false);
+      }
+
+      if (beforeImageFile) {
+        setIsBeforeUploading(true);
+        finalBeforeUrl = await reliableUpload({
+          bucket: 'promed-images',
+          path: `patients/${tempId}/before`,
+          file: beforeImageFile
+        });
+        setIsBeforeUploading(false);
+      }
+    } catch (err: any) {
+      setIsProfileUploading(false);
+      setIsBeforeUploading(false);
+      setValidationError(`Upload failed: ${err.message}`);
+      return;
+    }
 
     const newPatient: Patient = {
-      id: initialData?.id || `temp-${Date.now()}`,
+      id: tempId,
       fullName,
       phone,
 
@@ -1067,18 +1114,24 @@ export const AddPatientForm: React.FC<{
       operationDate,
       grafts: parseInt(grafts) || 0,
       technique,
-      profileImage: profileImage || `https://ui-avatars.com/api/?name=${fullName.replace(' ', '+')}&background=random`,
-      beforeImage,
+      profileImage: finalProfileUrl || `https://ui-avatars.com/api/?name=${fullName.replace(' ', '+')}&background=random`,
+      beforeImage: finalBeforeUrl,
       afterImages: initialData?.afterImages || [],
       injections: initialData?.injections || [],
       status: initialData?.status || 'Active'
     };
 
-    // Pass files if they exist
-    onSave(newPatient, {
-      profileImage: profileImageFile || undefined,
-      beforeImage: beforeImageFile || undefined
-    });
+    // Pass EMPTY files object so parent doesn't re-upload
+    // Pass EMPTY files object so parent doesn't re-upload
+    try {
+      await onSave(newPatient, {});
+    } catch (e) {
+      console.error("Save failed", e);
+    } finally {
+      // Unlock only after parent logic finishes (or if user stays on form due to error)
+      // This is critical to prevent double production during high latency
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -1150,13 +1203,13 @@ export const AddPatientForm: React.FC<{
                         )}
                         {/* Hover Overlay */}
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity duration-500">
-                          <Camera className="text-white drop-shadow-md transform scale-90 group-hover/photo:scale-110 group-hover/photo:-translate-y-1 transition duration-500" size={32} />
+                          <img src={cameraIcon} alt="Camera" className="w-8 h-8 object-contain brightness-0 invert drop-shadow-md transform scale-90 group-hover/photo:scale-110 group-hover/photo:-translate-y-1 transition duration-500" />
                         </div>
                       </div>
 
                       {/* Floating camera icon cue */}
-                      <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1 z-20">
-                        <Camera size={18} />
+                      <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1 z-20 flex items-center justify-center">
+                        <img src={cameraIcon} alt="Camera" className="w-[18px] h-[18px] object-contain opacity-70 group-hover/photo:brightness-0 group-hover/photo:invert" />
                       </div>
 
                       {/* UPLOAD OVERLAY */}
@@ -1181,8 +1234,8 @@ export const AddPatientForm: React.FC<{
                         <>
                           <ImageWithFallback src={beforeImage} alt="Before" className="w-full h-full object-cover group-hover/upload:scale-110 transition duration-700" fallbackType="image" />
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/upload:opacity-100 transition-opacity duration-300">
-                            <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full border border-white/30 text-white transform scale-90 group-hover/upload:scale-100 transition duration-300">
-                              <Camera size={24} />
+                            <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full border border-white/30 text-white transform scale-90 group-hover/upload:scale-100 transition duration-300 flex items-center justify-center">
+                              <img src={cameraIcon} alt="Camera" className="w-6 h-6 object-contain brightness-0 invert" />
                             </div>
                           </div>
                         </>
@@ -1225,7 +1278,7 @@ export const AddPatientForm: React.FC<{
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('phone_number')}</label>
                         <div className="relative group">
-                          <Phone size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
+                          <img src={phoneIcon} alt="Phone" className="absolute left-3.5 top-3.5 w-[18px] h-[18px] object-contain opacity-40 group-focus-within:opacity-100 transition-opacity" />
                           <input
                             required
                             type="tel"
@@ -1333,7 +1386,7 @@ export const AddPatientForm: React.FC<{
               <button
                 type="submit"
                 form="patient-form"
-                disabled={saving}
+                disabled={saving || isSubmitting}
                 className="px-8 py-3 bg-promed-primary text-white font-bold rounded-xl hover:bg-teal-800 shadow-lg shadow-teal-900/20 transition transform active:scale-95 flex items-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? (

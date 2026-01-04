@@ -4,15 +4,16 @@ interface ToastData {
     title: string;
     message: string;
     type: 'success' | 'error' | 'info';
+    mascot?: string;
 }
 
 interface ToastContextType {
     activeToast: ToastData | null;
-    showToast: (title: string, message: string, type: ToastData['type']) => void;
+    showToast: (title: string, message: string, type: ToastData['type'], mascot?: string) => void;
     hideToast: () => void;
-    success: (title: string, message: string) => void;
-    error: (title: string, message: string) => void;
-    info: (title: string, message: string) => void;
+    success: (title: string, message: string, mascot?: string) => void;
+    error: (title: string, message: string, mascot?: string) => void;
+    info: (title: string, message: string, mascot?: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -26,19 +27,19 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (timerRef.current) clearTimeout(timerRef.current);
     }, []);
 
-    const showToast = useCallback((title: string, message: string, type: ToastData['type']) => {
+    const showToast = useCallback((title: string, message: string, type: ToastData['type'], mascot?: string) => {
         if (timerRef.current) clearTimeout(timerRef.current);
 
-        setActiveToast({ title, message, type });
+        setActiveToast({ title, message, type, mascot });
 
         timerRef.current = setTimeout(() => {
             setActiveToast(null);
-        }, 4500); // Slightly longer than the progress bar for safety
+        }, 4000);
     }, []);
 
-    const success = useCallback((title: string, message: string) => showToast(title, message, 'success'), [showToast]);
-    const error = useCallback((title: string, message: string) => showToast(title, message, 'error'), [showToast]);
-    const info = useCallback((title: string, message: string) => showToast(title, message, 'info'), [showToast]);
+    const success = useCallback((title: string, message: string, mascot?: string) => showToast(title, message, 'success', mascot), [showToast]);
+    const error = useCallback((title: string, message: string, mascot?: string) => showToast(title, message, 'error', mascot), [showToast]);
+    const info = useCallback((title: string, message: string, mascot?: string) => showToast(title, message, 'info', mascot), [showToast]);
 
     return (
         <ToastContext.Provider value={{ activeToast, showToast, hideToast, success, error, info }}>

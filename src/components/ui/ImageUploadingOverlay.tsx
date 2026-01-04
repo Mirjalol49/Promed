@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import Mascot from '../mascot/Mascot';
 
 interface ImageUploadingOverlayProps {
     language: 'uz' | 'en' | 'ru';
@@ -33,11 +32,9 @@ export const ImageUploadingOverlay: React.FC<ImageUploadingOverlayProps> = ({ la
 
                     {/* Heartbeat Mascot */}
                     <motion.div
-                        animate={{ scale: [1, 1.05, 1] }}
                         transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                         className="relative z-10"
                     >
-                        <Mascot mood="happy" size={80} floating={false} />
                     </motion.div>
                 </div>
 

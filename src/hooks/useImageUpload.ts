@@ -1,11 +1,14 @@
 
 import { useState, useCallback, ChangeEvent } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { storage } from '../lib/firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { compressImage } from '../lib/imageOptimizer';
 import { useToast } from '../contexts/ToastContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import upsetIcon from '../components/mascot/upseet_mascot.png';
 
 interface UseImageUploadOptions {
-    bucketName?: string;
+    bucketName?: string; // Kept for compatibility but implicitly used via ref paths
     pathPrefix?: string;
     onUploadComplete?: (url: string) => void;
     onUploadError?: (error: any) => void;
@@ -22,7 +25,7 @@ interface UseImageUploadResult {
 
 export const useImageUpload = (options: UseImageUploadOptions = {}): UseImageUploadResult => {
     const {
-        bucketName = 'promed-images',
+        bucketName = 'promed-images', // Used as base folder if needed
         pathPrefix = 'public',
         onUploadComplete,
         onUploadError
@@ -33,6 +36,7 @@ export const useImageUpload = (options: UseImageUploadOptions = {}): UseImageUpl
     const [progress, setProgress] = useState(0);
     const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
     const { error: showError } = useToast();
+    const { t } = useLanguage();
 
     const handleImageSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -46,14 +50,6 @@ export const useImageUpload = (options: UseImageUploadOptions = {}): UseImageUpl
         setUploading(true);
         setProgress(0);
 
-        // Simulate progress for better UX
-        const progressInterval = setInterval(() => {
-            setProgress(prev => {
-                if (prev >= 90) return 90;
-                return prev + 10;
-            });
-        }, 100);
-
         // 3. THE FIX: Wrap the heavy lifting in a setTimeout
         // This forces the browser to "paint" the previewUrl to the screen 
         // BEFORE it starts the heavy CPU work of compression.
@@ -63,42 +59,49 @@ export const useImageUpload = (options: UseImageUploadOptions = {}): UseImageUpl
                 // Step B: The "Secret" Compression
                 const compressedFile = await compressImage(file);
 
-                // Step C: Background Upload
+                // Step C: Firebase Hub Upload
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+                // Construct path: bucketName/pathPrefix/filename or just pathPrefix/filename
+                // Firebase Storage uses a single bucket structure usually.
+                // We'll treat bucketName as a root folder if it's meant to simulate "buckets" in one physical bucket.
                 const filePath = `${pathPrefix}/${fileName}`;
 
-                const { error: uploadError } = await supabase.storage
-                    .from(bucketName)
-                    .upload(filePath, compressedFile, {
-                        cacheControl: '3600',
-                        upsert: false
-                    });
+                const storageRef = ref(storage, filePath);
+                const uploadTask = uploadBytesResumable(storageRef, compressedFile, {
+                    cacheControl: 'public,max-age=3600',
+                    contentType: compressedFile.type
+                });
 
-                if (uploadError) throw uploadError;
-
-                const { data } = supabase.storage
-                    .from(bucketName)
-                    .getPublicUrl(filePath);
-
-                const publicUrl = data.publicUrl;
-
-                // Complete
-                clearInterval(progressInterval);
-                setProgress(100);
-                setUploadedUrl(publicUrl);
-                onUploadComplete?.(publicUrl);
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const prog = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        setProgress(Math.round(prog));
+                    },
+                    (errorSnapshot) => {
+                        console.error('Upload failed:', errorSnapshot);
+                        setUploading(false);
+                        showError(t('toast_error_title'), `${t('toast_upload_failed')}: ${errorSnapshot.code}`, upsetIcon);
+                        onUploadError?.(errorSnapshot);
+                    },
+                    async () => {
+                        // Complete
+                        const publicUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                        setProgress(100);
+                        setUploadedUrl(publicUrl);
+                        setUploading(false);
+                        onUploadComplete?.(publicUrl);
+                    }
+                );
 
             } catch (err: any) {
-                clearInterval(progressInterval);
-                console.error('Upload failed:', err);
-                showError('Upload Failed', 'Could not upload image. Please try again.');
-                onUploadError?.(err);
-            } finally {
+                console.error('Compression/Init failed:', err);
                 setUploading(false);
+                showError(t('toast_error_title'), t('toast_upload_failed'), upsetIcon);
+                onUploadError?.(err);
             }
         }, 10); // 10ms delay is enough to let React render the preview
-    }, [bucketName, pathPrefix, onUploadComplete, onUploadError, showError]);
+    }, [bucketName, pathPrefix, onUploadComplete, onUploadError, showError, t]);
 
     const reset = useCallback(() => {
         setPreviewUrl(null);

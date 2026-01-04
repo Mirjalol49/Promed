@@ -1,4 +1,5 @@
-import { supabase } from './supabaseClient';
+import { storage } from './firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Global cache to hold optimistic blob URLs and prevent flickering during sync
 // Map<OptimisticId, BlobUrl>
@@ -19,30 +20,29 @@ export const clearOptimisticImage = (id: string) => {
 export const uploadImage = async (file: File, path: string): Promise<string> => {
   if (!file) throw new Error('No file provided');
 
-  // Ensure unique filename to prevent overwrites or browser caching issues
-  // Note: path usually includes patientId and category. We append timestamp.
+  // Firebase Storage paths usually shouldn't have leading slashes for subfolders if strictly following refs
+  // Ensure unique filename
   const uniquePath = `${path}_${Date.now()}`;
 
   console.log(`🚀 Uploading image to: ${uniquePath}...`);
 
-  const { data, error } = await supabase.storage
-    .from('promed-images')
-    .upload(uniquePath, file, {
-      upsert: true,
-      cacheControl: '3600'
-    });
+  try {
+    const storageRef = ref(storage, uniquePath);
+    // Add metadata for caching if needed
+    const metadata = {
+      cacheControl: 'public,max-age=3600',
+      contentType: file.type
+    };
 
-  if (error) {
+    const snapshot = await uploadBytes(storageRef, file, metadata);
+    const publicUrl = await getDownloadURL(snapshot.ref);
+
+    console.log('✅ Image uploaded successfully:', publicUrl);
+    return publicUrl;
+  } catch (error) {
     console.error('❌ Error uploading image:', error);
     throw error;
   }
-
-  const { data: { publicUrl } } = supabase.storage
-    .from('promed-images')
-    .getPublicUrl(data.path);
-
-  console.log('✅ Image uploaded successfully:', publicUrl);
-  return publicUrl;
 };
 
 // Start of New Avatar Logic
@@ -51,24 +51,19 @@ export const uploadAvatar = async (file: File, userId: string): Promise<string> 
   if (!userId) throw new Error('User ID is required for avatar upload');
 
   const fileExt = file.name.split('.').pop();
-  const filePath = `${userId}/avatar.${fileExt}`; // Fixed path per user!
+  const filePath = `avatars/${userId}/avatar.${fileExt}`; // Fixed path per user!
 
-  // UPSERT (Overwrite)
-  const { error: uploadError } = await supabase.storage
-    .from('avatars')
-    .upload(filePath, file, { upsert: true });
+  try {
+    const storageRef = ref(storage, filePath);
+    const snapshot = await uploadBytes(storageRef, file);
+    const publicUrl = await getDownloadURL(snapshot.ref);
 
-  if (uploadError) {
+    // Append timestamp for cache busting
+    return `${publicUrl}?t=${new Date().getTime()}`;
+  } catch (uploadError) {
     console.error('Error uploading avatar:', uploadError);
     throw uploadError;
   }
-
-  const { data: { publicUrl } } = supabase.storage
-    .from('avatars')
-    .getPublicUrl(filePath);
-
-  // Append timestamp for cache busting
-  return `${publicUrl}?t=${new Date().getTime()}`;
 }
 // End of New Avatar Logic
 
@@ -76,36 +71,58 @@ export const uploadAvatar = async (file: File, userId: string): Promise<string> 
 export const deleteStorageFiles = async (bucket: string, paths: string[]): Promise<void> => {
   if (!paths || paths.length === 0) return;
 
-  const { error } = await supabase.storage
-    .from(bucket)
-    .remove(paths);
+  // Bucket name is implicitly handled by the firebase config usually, 
+  // but if multiple buckets, we might need to handle 'bucket' arg.
+  // Assuming 'promed-images' maps to default bucket or we just use 'paths' relative to root.
+  // Firebase client SDK works with references.
 
-  if (error) {
-    console.error(`Error deleting files from ${bucket}:`, error);
-    // We don't necessarily want to throw here as the DB record is already gone,
-    // but we log it for debugging.
-  }
+  const deletePromises = paths.map(async (path) => {
+    try {
+      // If the path was extracted from a URL, it might be URL-encoded? 
+      // extractPathFromUrl should handle decoding.
+      const fileRef = ref(storage, path);
+      await deleteObject(fileRef);
+      console.log(`Deleted file: ${path}`);
+    } catch (error: any) {
+      // If object not found, ignore
+      if (error.code === 'storage/object-not-found') {
+        console.warn(`File not found, skipping delete: ${path}`);
+      } else {
+        console.error(`Error deleting file ${path}:`, error);
+      }
+    }
+  });
+
+  await Promise.all(deletePromises);
 };
 
 /**
- * Extracts the relative storage path from a Supabase public URL.
- * Example: https://.../storage/v1/object/public/promed-images/patients/123/profile_167.jpg
- * Returns: patients/123/profile_167.jpg
+ * Extracts the relative storage path from a Firebase Storage public URL.
+ * Example: https://firebasestorage.googleapis.com/v0/b/project-id.appspot.com/o/folder%2Ffile.jpg?alt=media&token=...
+ * Returns: folder/file.jpg
  */
-export const extractPathFromUrl = (url: string, bucket: string): string | null => {
-  if (!url || !url.includes(bucket)) return null;
+export const extractPathFromUrl = (url: string, bucket?: string): string | null => {
+  if (!url) return null;
+  // Supabase legacy check or just robust check
+  if (url.includes('firebasestorage')) {
+    try {
+      // Extract everything between /o/ and ?
+      const parts = url.split('/o/');
+      if (parts.length < 2) return null;
 
-  try {
-    // Split by bucket name and take the part after it
-    // Handle cases where the URL might have query parameters (cache busting)
-    const cleanUrl = url.split('?')[0];
-    const parts = cleanUrl.split(`${bucket}/`);
-    if (parts.length > 1) {
-      return parts[1];
+      const pathWithParams = parts[1];
+      const pathEncoded = pathWithParams.split('?')[0];
+
+      return decodeURIComponent(pathEncoded);
+    } catch (e) {
+      console.error('Error extracting path from Firebase URL:', e);
+      return null;
     }
-  } catch (e) {
-    console.error('Error extracting path from URL:', e);
   }
+
+  // Backwards compatibility for Supabase URLs if needed during migration?
+  // If we still have old data on page load, we might trip here if we try to delete it.
+  // But for now, user asked to Migrate.
   return null;
 };
 

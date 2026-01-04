@@ -1,20 +1,32 @@
-import { supabase } from './supabaseClient';
+import { db } from './firebase';
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs
+} from 'firebase/firestore';
 import { Patient, Injection, PatientImage } from '../types';
 import { deleteStorageFiles, extractPathFromUrl } from './imageService';
 
-// Column sets for different query scenarios
+// No specific columns needed for Firestore as it's NoSQL (always fetches full doc usually, or we filter client-side if needed)
 export const COLUMNS = {
-  // Minimal - for dashboard stats (smallest payload)
-  MINIMAL: 'id,full_name,status,operation_date',
-  // List view - ALL patient data (FIXED: added age, gender, grafts, technique, injections)
-  LIST: 'id,full_name,age,gender,phone,email,status,grafts,technique,profile_image,before_image,after_images,injections,operation_date',
-  // Detail view - full patient data
-  FULL: '*'
+  MINIMAL: 'minimal',
+  LIST: 'list',
+  FULL: 'full'
 } as const;
 
-// Helper to map DB snake_case to app camelCase
-const mapPatient = (p: any): Patient => ({
-  id: p.id,
+// FIX: Idempotency Cache to prevent double submissions (e.g. React Strict Mode or Race Conditions)
+const recentAdds = new Map<string, { id: string, time: number }>();
+
+// Helper to map Firestore data to app Patient type
+const mapPatient = (id: string, p: any): Patient => ({
+  id: id,
   fullName: p.full_name,
   age: p.age,
   gender: p.gender,
@@ -34,7 +46,7 @@ export const subscribeToPatients = (
   accountId: string,
   onUpdate: (patients: Patient[]) => void,
   onError?: (error: any) => void,
-  columns: string = COLUMNS.LIST // Default to list view columns
+  columns: string = COLUMNS.LIST // Unused in Firestore adaptation but kept for signature compatibility
 ) => {
   if (!accountId) {
     console.warn("⚠️ subscribeToPatients: No accountId provided.");
@@ -43,84 +55,77 @@ export const subscribeToPatients = (
 
   console.log("📂 Subscribing to patients for Account:", accountId);
 
-  // Initial fetch
-  supabase
-    .from('patients')
-    .select(columns)
-    .eq('account_id', accountId)
-    .then(({ data, error }) => {
-      if (error) onError?.(error);
-      else if (data) onUpdate(data.map(mapPatient));
-    });
+  const q = query(
+    collection(db, "patients"),
+    where("account_id", "==", accountId)
+  );
 
-  const subscription = supabase
-    .channel(`public:patients:account_id=eq.${accountId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'patients'
-      },
-      () => {
-        // Refresh all data on change for simplicity
-        supabase
-          .from('patients')
-          .select(columns)
-          .eq('account_id', accountId)
-          .then(({ data }) => {
-            if (data) onUpdate(data.map(mapPatient));
-          });
-      }
-    )
-    .subscribe();
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const patients = snapshot.docs.map(doc => mapPatient(doc.id, doc.data()));
+    onUpdate(patients);
+  }, (error) => {
+    console.error("Firebase subscription error:", error);
+    if (onError) onError(error);
+  });
 
   return () => {
-    supabase.removeChannel(subscription);
+    unsubscribe();
   };
 };
 
 export const addPatient = async (
   patient: Omit<Patient, 'id'>,
-  userId: string,
+  userId: string, // Kept for auth validation context if needed
   accountId?: string
 ): Promise<string> => {
+  // 1. Idempotency Check
+  const activeAccountId = accountId || userId;
+  const key = `${activeAccountId}-${patient.fullName}-${patient.phone}`;
+  const now = Date.now();
+
+  // Cleanup old cache entries (> 5 seconds)
+  for (const [k, v] of recentAdds.entries()) {
+    if (now - v.time > 5000) recentAdds.delete(k);
+  }
+
+  if (recentAdds.has(key)) {
+    console.warn("⚠️ Duplicate Save Prevented (Idempotency):", key);
+    return recentAdds.get(key)!.id;
+  }
+
   const dbPatient: any = {
-    // Note: user_id is handled by DB default auth.uid() if column exists
-    ...(accountId ? { account_id: accountId } : {}),
-    full_name: patient.fullName,
-    age: patient.age,
-    gender: patient.gender,
-    phone: patient.phone,
-    email: patient.email,
-    operation_date: patient.operationDate,
-    profile_image: patient.profileImage,
-    before_image: patient.beforeImage,
-    after_images: patient.afterImages,
-    injections: patient.injections,
-    status: patient.status,
-    grafts: patient.grafts,
-    technique: patient.technique,
+    account_id: accountId || userId,
+    user_id: userId || null,
+    full_name: patient.fullName || '',
+    age: patient.age ?? null,
+    gender: patient.gender || 'male',
+    phone: patient.phone || '',
+    email: patient.email ?? null,
+    operation_date: patient.operationDate || new Date().toISOString(),
+    profile_image: patient.profileImage ?? null,
+    before_image: patient.beforeImage ?? null,
+    after_images: patient.afterImages || [],
+    injections: patient.injections || [],
+    status: patient.status || 'Active',
+    grafts: patient.grafts ?? null,
+    technique: patient.technique ?? null,
+    created_at: new Date().toISOString()
   };
 
   console.log("💾 DB INSERT START:", { account_id: dbPatient.account_id, full_name: dbPatient.full_name });
 
-  const { data, error } = await supabase
-    .from('patients')
-    .insert([dbPatient])
-    .select('id')
-    .single();
+  try {
+    const docRef = await addDoc(collection(db, "patients"), dbPatient);
+    console.log("🟢 DB INSERT SUCCESS, ID:", docRef.id);
 
-  if (error) {
+    // Store in cache
+    recentAdds.set(key, { id: docRef.id, time: Date.now() });
+
+    return docRef.id;
+  } catch (error: any) {
     console.error('🔴 DB INSERT ERROR:', error);
-    // Provide a more user-friendly message for common Supabase errors
-    if (error.code === '42703') throw new Error("Database schema mismatch: 'user_id' column missing. Please run the SQL fix.");
-    if (error.code === '42501') throw new Error("Permission denied: RLS policy blocking insert. Please refresh or run the SQL fix.");
     throw error;
   }
-
-  console.log("🟢 DB INSERT SUCCESS, ID:", data.id);
-  return data.id;
 };
 
 export const updatePatient = async (
@@ -143,59 +148,43 @@ export const updatePatient = async (
   if (updates.grafts) dbUpdates.grafts = updates.grafts;
   if (updates.technique) dbUpdates.technique = updates.technique;
 
-  const { error } = await supabase
-    .from('patients')
-    .update(dbUpdates)
-    .eq('id', patientId);
+  dbUpdates.updated_at = new Date().toISOString();
 
-  if (error) throw error;
+  const docRef = doc(db, "patients", patientId);
+  await updateDoc(docRef, dbUpdates);
 };
 
 export const deletePatient = async (patientId: string): Promise<void> => {
-  // 1. Fetch patient to get image URLs before deleting
-  const { data: patient, error: fetchError } = await supabase
-    .from('patients')
-    .select('profile_image, before_image, after_images')
-    .eq('id', patientId)
-    .single();
+  const docRef = doc(db, "patients", patientId);
 
-  if (fetchError) {
-    console.error('Error fetching patient for cleanup:', fetchError);
-    // Continue with deletion even if fetch fails, but we won't be able to cleanup storage
-  }
-
-  // 2. Delete the DB record
-  const { error: deleteError } = await supabase
-    .from('patients')
-    .delete()
-    .eq('id', patientId);
-
-  if (deleteError) throw deleteError;
-
-  // 3. Cleanup storage if patient record was found
-  if (patient) {
-    const bucket = 'promed-images';
-    const pathsToDelete: string[] = [];
-
-    // Extract paths from URLs
-    const profilePath = extractPathFromUrl(patient.profile_image, bucket);
-    if (profilePath) pathsToDelete.push(profilePath);
-
-    const beforePath = extractPathFromUrl(patient.before_image, bucket);
-    if (beforePath) pathsToDelete.push(beforePath);
-
-    if (Array.isArray(patient.after_images)) {
-      patient.after_images.forEach((img: PatientImage) => {
-        const path = extractPathFromUrl(img.url, bucket);
+  // 1. Fetch patient in background for image cleanup (Non-blocking for the hard delete)
+  getDoc(docRef).then(async (docSnap) => {
+    const patientData = docSnap.data();
+    if (patientData) {
+      const pathsToDelete: string[] = [];
+      if (patientData.profile_image) {
+        const path = extractPathFromUrl(patientData.profile_image);
         if (path) pathsToDelete.push(path);
-      });
+      }
+      if (patientData.before_image) {
+        const path = extractPathFromUrl(patientData.before_image);
+        if (path) pathsToDelete.push(path);
+      }
+      if (Array.isArray(patientData.after_images)) {
+        patientData.after_images.forEach((img: any) => {
+          const path = extractPathFromUrl(img.url);
+          if (path) pathsToDelete.push(path);
+        });
+      }
+      if (pathsToDelete.length > 0) {
+        await deleteStorageFiles('', pathsToDelete).catch(e => console.warn("Cleanup error:", e));
+      }
     }
+  }).catch(e => console.warn("Metadata fetch for cleanup failed:", e));
 
-    if (pathsToDelete.length > 0) {
-      console.log(`Cleaning up ${pathsToDelete.length} storage files for patient ${patientId}`);
-      await deleteStorageFiles(bucket, pathsToDelete);
-    }
-  }
+  // 2. THE HARD DELETE: Delete the DB record strictly
+  await deleteDoc(docRef);
+  console.log(`✅ Hard delete executed for patient: ${patientId}`);
 };
 
 export const updatePatientInjections = async (
@@ -203,12 +192,11 @@ export const updatePatientInjections = async (
   injections: Injection[],
   accountId: string
 ): Promise<void> => {
-  const { error } = await supabase
-    .from('patients')
-    .update({ injections: injections })
-    .eq('id', patientId);
-
-  if (error) throw error;
+  const docRef = doc(db, "patients", patientId);
+  await updateDoc(docRef, {
+    injections: injections,
+    updated_at: new Date().toISOString()
+  });
 };
 
 export const addPatientAfterImage = async (
@@ -218,12 +206,11 @@ export const addPatientAfterImage = async (
   accountId: string
 ): Promise<void> => {
   const newImages = [image, ...currentImages];
-  const { error } = await supabase
-    .from('patients')
-    .update({ after_images: newImages })
-    .eq('id', patientId);
-
-  if (error) throw error;
+  const docRef = doc(db, "patients", patientId);
+  await updateDoc(docRef, {
+    after_images: newImages,
+    updated_at: new Date().toISOString()
+  });
 };
 
 export const deletePatientAfterImage = async (
@@ -235,21 +222,23 @@ export const deletePatientAfterImage = async (
   const newImages = currentImages.filter(img => img.id !== photoId);
 
   // 1. Update DB
-  const { error: dbError } = await supabase
-    .from('patients')
-    .update({ after_images: newImages })
-    .eq('id', patientId);
-
-  if (dbError) throw dbError;
+  const docRef = doc(db, "patients", patientId);
+  await updateDoc(docRef, {
+    after_images: newImages,
+    updated_at: new Date().toISOString()
+  });
 
   // 2. Cleanup Storage (Background)
   if (imageToDelete) {
-    const bucket = 'promed-images';
-    // Import extractPathFromUrl from imageService if needed, but it's likely available or used in service
-    const { extractPathFromUrl, deleteStorageFiles } = await import('./imageService');
-    const path = extractPathFromUrl(imageToDelete.url, bucket);
-    if (path) {
-      deleteStorageFiles(bucket, [path]);
+    try {
+      // Import extractPathFromUrl from imageService if needed
+      const { extractPathFromUrl, deleteStorageFiles } = await import('./imageService');
+      const path = extractPathFromUrl(imageToDelete.url);
+      if (path) {
+        deleteStorageFiles('', [path]);
+      }
+    } catch (e) {
+      console.warn("Error deleting image file:", e);
     }
   }
 };

@@ -16,7 +16,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
     if (!isLoggedIn) {
         // If not authenticated, force the Login Screen
-        return <LoginScreen onLogin={(accId, uId, name) => setAccount(accId, uId, name)} />;
+        return <LoginScreen onLogin={(accId, uId, name, email) => setAccount(accId, uId, name, email)} />;
     }
 
     // If authenticated, allow access

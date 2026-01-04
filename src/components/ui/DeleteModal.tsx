@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { MascotImage } from './MascotImage';
 import { useScrollLock } from '../../hooks/useScrollLock';
+import trashIcon from '../../assets/images/trash.png';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface DeleteModalProps {
@@ -45,20 +45,12 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onConfirm })
                             <X size={20} />
                         </button>
 
-                        {/* Mascot (The Guilt Trip) */}
+                        {/* Delete Icon */}
                         <div className="relative mb-6 pt-4">
-                            <MascotImage
-                                src="/images/mascot/upset.png"
-                                alt="Upset Mascot"
-                                width={140}
-                                height={140}
-                                className="w-[140px] h-auto drop-shadow-xl"
-                                animate={{ y: [0, 6, 0] }}
-                                transition={{
-                                    duration: 3,
-                                    ease: "easeInOut",
-                                    repeat: Infinity
-                                }}
+                            <img
+                                src={trashIcon}
+                                alt="Delete"
+                                className="w-24 h-24 object-contain drop-shadow-xl"
                             />
                         </div>
 
@@ -80,7 +72,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onConfirm })
                             </button>
                             <button
                                 onClick={onConfirm}
-                                className="w-full py-4 bg-emerald-50 text-emerald-600 border border-emerald-100 font-black rounded-2xl transition-all hover:bg-[#0d3d38] hover:text-white hover:border-[#0d3d38] active:scale-[0.98] shadow-sm shadow-emerald-200/20"
+                                className="w-full py-4 bg-rose-50 text-rose-600 border border-rose-100 font-black rounded-2xl transition-all hover:bg-rose-600 hover:text-white hover:border-rose-600 active:scale-[0.98] shadow-sm shadow-rose-200/20"
                             >
                                 {t('delete_modal_confirm')}
                             </button>

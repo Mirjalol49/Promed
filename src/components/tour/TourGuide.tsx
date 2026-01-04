@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import Joyride, { CallBackProps, STATUS, Step, Styles } from 'react-joyride';
+import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { MascotImage } from '../ui/MascotImage';
+import happyMascot from '../mascot/happy_mascot.png';
+import injectionMascot from '../mascot/injection_mascot.png';
+import operationMascot from '../mascot/operation_mascot.png';
 
 const TourGuide: React.FC = () => {
     const { t } = useLanguage();
@@ -29,18 +31,12 @@ const TourGuide: React.FC = () => {
             target: 'body',
             content: (
                 <div className="flex flex-col items-center text-center pt-4">
-                    <MascotImage
-                        src="/images/mascot/happy.png"
-                        alt="Graft Mascot"
-                        width={64}
-                        height={64}
-                        className="w-16 h-16 absolute -top-8 -left-8 drop-shadow-lg"
-                    />
+                    <img src={happyMascot} alt="Welcome" className="w-24 h-24 mb-4 object-contain drop-shadow-lg" />
                     <h3 className="text-xl font-bold text-slate-800 mb-2">
-                        Assalomu alaykum, Doktor!
+                        {t('tour_welcome_title') || "Assalomu alaykum, Doktor!"}
                     </h3>
                     <p className="text-slate-600 text-sm">
-                        Men Graft yordamchisiman. Keling, sizga ish stolini ko'rsataman.
+                        {t('tour_welcome_desc') || "Men Graft yordamchisiman. Keling, sizga ish stolini ko'rsataman."}
                     </p>
                 </div>
             ),
@@ -51,15 +47,13 @@ const TourGuide: React.FC = () => {
             target: '#stats-grid',
             content: (
                 <div className="relative pt-2">
-                    <MascotImage
-                        src="/images/mascot/happy.png"
-                        alt="Graft Mascot"
-                        width={48}
-                        height={48}
-                        className="w-12 h-12 absolute -top-10 -left-6 drop-shadow-md"
+                    <img
+                        src={operationMascot}
+                        alt="Stats"
+                        className="w-16 h-16 absolute -top-12 -left-8 drop-shadow-md z-10"
                     />
-                    <p className="text-slate-700 font-medium">
-                        Bu yerda operatsiya va inyeksiyalar statistikasini kuzatib borasiz.
+                    <p className="text-slate-700 font-medium pl-4">
+                        {t('tour_stats_desc') || "Bu yerda operatsiya va inyeksiyalar statistikasini kuzatib borasiz."}
                     </p>
                 </div>
             ),
@@ -68,22 +62,20 @@ const TourGuide: React.FC = () => {
             target: '#add-patient-btn',
             content: (
                 <div className="relative pt-2">
-                    <MascotImage
-                        src="/images/mascot/happy.png"
-                        alt="Graft Mascot"
-                        width={48}
-                        height={48}
-                        className="w-12 h-12 absolute -top-10 -left-6 drop-shadow-md"
+                    <img
+                        src={injectionMascot}
+                        alt="Add"
+                        className="w-16 h-16 absolute -top-12 -left-8 drop-shadow-md z-10"
                     />
-                    <p className="text-slate-700 font-medium">
-                        Eng muhim tugma! Yangi bemor qo'shish uchun shu yerni bosing.
+                    <p className="text-slate-700 font-medium pl-4">
+                        {t('tour_add_btn_desc') || "Eng muhim tugma! Yangi bemor qo'shish uchun shu yerni bosing."}
                     </p>
                 </div>
             ),
         }
     ];
 
-    const tourStyles: unknown = {
+    const tourStyles = {
         options: {
             zIndex: 10000,
             arrowColor: '#fff',
@@ -129,11 +121,11 @@ const TourGuide: React.FC = () => {
             callback={handleJoyrideCallback}
             styles={tourStyles}
             locale={{
-                back: 'Orqaga',
-                close: 'Yopish',
-                last: 'Tugatish',
-                next: 'Keyingisi',
-                skip: 'O\'tkazib yuborish',
+                back: t('back') || 'Orqaga',
+                close: t('close') || 'Yopish',
+                last: t('finish') || 'Tugatish',
+                next: t('next') || 'Keyingisi',
+                skip: t('skip') || 'O\'tkazib yuborish',
             }}
         />
     );

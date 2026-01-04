@@ -46,7 +46,7 @@ If you're having issues creating accounts:
 3. Check browser console for any errors
 4. Verify Firebase connection is working
 
-### Access Issues
+### Acces![alt text](image.png)s Issues
 - Make sure you're using the correct password
 - Clear browser cache and localStorage if needed
 - Check that the Next.js server is running on port 3000

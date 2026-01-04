@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Lock } from 'lucide-react';
+// Lock icon import
+import lockIcon from '../../assets/images/lock.png';
 
 interface LockedOverlayProps {
     onPay?: () => void;
@@ -27,7 +28,7 @@ const LockedOverlay: React.FC<LockedOverlayProps> = ({ onPay }) => {
                     {/* The Lock Container */}
                     <div className="w-20 h-20 bg-slate-900 border-[3px] border-white/10 rounded-[28px] flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative z-10 overflow-hidden group">
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-transparent opacity-50" />
-                        <Lock size={32} className="text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]" strokeWidth={2.5} />
+                        <img src={lockIcon} alt="Locked" className="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
                     </div>
                 </div>
             </div>
@@ -54,7 +55,7 @@ const LockedOverlay: React.FC<LockedOverlayProps> = ({ onPay }) => {
                         className="group relative flex items-center justify-center gap-3 w-full bg-slate-900 text-white font-black py-5 rounded-[24px] shadow-2xl shadow-slate-900/20 overflow-hidden"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        <Lock size={18} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                        <img src={lockIcon} alt="Subscribe" className="w-6 h-6 object-contain group-hover:scale-110 transition-transform" />
                         <span className="uppercase tracking-[0.2em] text-[10px] sm:text-xs">Obuna uchun to'lash</span>
                     </motion.button>
                 </div>

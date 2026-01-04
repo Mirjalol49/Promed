@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MascotImage } from './MascotImage';
 
 interface SyncToastProps {
     isVisible: boolean;
     title: string;
     message: string;
     type?: 'success' | 'error' | 'info';
+    mascot?: string;
     onClose: () => void;
 }
 
-const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type = 'success', onClose }) => {
+const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type = 'success', mascot, onClose }) => {
     const [progress, setProgress] = useState(100);
 
     useEffect(() => {
@@ -48,14 +48,12 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
             case 'error':
                 return {
                     border: 'border-rose-500',
-                    progress: 'bg-rose-500',
-                    mascot: '/images/mascot/upset.png'
+                    progress: 'bg-rose-500'
                 };
             default:
                 return {
                     border: 'border-emerald-500',
-                    progress: 'bg-emerald-500',
-                    mascot: '/images/mascot/happy.png'
+                    progress: 'bg-emerald-500'
                 };
         }
     };
@@ -72,18 +70,6 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     className={`fixed bottom-8 right-8 z-[1000] w-96 p-6 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl border-l-4 ${theme.border} flex items-center gap-4 overflow-visible pointer-events-auto`}
                 >
-                    {/* Mascot Character */}
-                    <div className="relative flex-shrink-0">
-                        <MascotImage
-                            initial={{ scale: 0.5, rotate: -20 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            src={theme.mascot}
-                            alt="Mascot"
-                            width={96}
-                            height={96}
-                            className="w-24 h-24 object-contain -mt-10 drop-shadow-lg"
-                        />
-                    </div>
 
                     {/* Content */}
                     <div className="flex flex-col gap-0.5 pr-2">
@@ -104,6 +90,18 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                             transition={{ ease: "linear" }}
                         />
                     </div>
+                    {/* Mascot Character - Only render if mascot is provided */}
+                    {mascot && (
+                        <div className="relative flex-shrink-0">
+                            <motion.img
+                                initial={{ scale: 0.5, rotate: -20 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                src={mascot}
+                                alt="Mascot"
+                                className="w-20 h-20 object-contain -mt-6 drop-shadow-lg"
+                            />
+                        </div>
+                    )}
 
                     {/* Glow Effect */}
                     <div className={`absolute -inset-1 ${theme.progress} opacity-[0.03] blur-xl -z-10 rounded-3xl`} />

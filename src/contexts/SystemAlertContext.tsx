@@ -3,21 +3,31 @@ import { subscribeToSystemAlerts, SystemAlert } from '../lib/notificationService
 
 interface SystemAlertContextType {
     activeAlert: SystemAlert | null;
+    alerts: SystemAlert[];
+    unreadCount: number;
     dismissAlert: () => void;
+    markAllAsRead: () => void;
 }
 
 const SystemAlertContext = createContext<SystemAlertContextType | undefined>(undefined);
 
 export const SystemAlertProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [alerts, setAlerts] = useState<SystemAlert[]>([]);
     const [activeAlert, setActiveAlert] = useState<SystemAlert | null>(null);
     const [dismissedAlertId, setDismissedAlertId] = useState<string | null>(null);
+    const [hasReadNotifications, setHasReadNotifications] = useState(false);
 
     useEffect(() => {
-        const unsubscribe = subscribeToSystemAlerts((alert) => {
-            // If we get a new alert that isn't the one we dismissed, show it
-            if (alert && alert.id !== dismissedAlertId) {
-                setActiveAlert(alert);
-            } else if (!alert) {
+        const unsubscribe = subscribeToSystemAlerts((newAlerts) => {
+            setAlerts(newAlerts);
+
+            // Find the most recent active alert
+            const currentActive = newAlerts.find(a => a.is_active);
+
+            if (currentActive && currentActive.id !== dismissedAlertId) {
+                setActiveAlert(currentActive);
+                setHasReadNotifications(false);
+            } else if (!currentActive) {
                 setActiveAlert(null);
             }
         });
@@ -32,8 +42,20 @@ export const SystemAlertProvider: React.FC<{ children: ReactNode }> = ({ childre
         }
     };
 
+    const markAllAsRead = () => {
+        setHasReadNotifications(true);
+    };
+
+    const unreadCount = (!hasReadNotifications && alerts.some(a => a.is_active && a.id !== dismissedAlertId)) ? 1 : 0;
+
     return (
-        <SystemAlertContext.Provider value={{ activeAlert, dismissAlert }}>
+        <SystemAlertContext.Provider value={{
+            activeAlert,
+            alerts,
+            unreadCount: alerts.filter(a => a.is_active).length > 0 && !hasReadNotifications ? 1 : 0,
+            dismissAlert,
+            markAllAsRead
+        }}>
             {children}
         </SystemAlertContext.Provider>
     );

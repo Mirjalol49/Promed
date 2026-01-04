@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Lock, ArrowRight, AlertCircle, Globe, Mail, KeyRound } from 'lucide-react';
 import { useLanguage, Language } from '../../contexts/LanguageContext';
-import { supabase } from '../../lib/supabaseClient';
+import { auth } from '../../lib/firebase';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { loginSchema, safeValidate } from '../../lib/validation';
+import lockIcon from '../../assets/images/lock.png';
+import keyIcon from '../../assets/images/key.png';
 
 
 interface LoginScreenProps {
-  onLogin: (accountId: string, userId: string, name: string, email: string) => void;
+  onLogin: (accountId: string, userId: string, name: string, email: string, password?: string) => void;
 }
 
 const languages: { code: Language; name: string; flag: string }[] = [
@@ -38,25 +42,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     setResetMessage('');
 
     try {
-      // Use signInWithOtp to send a magic link (logs user in directly when clicked)
-      const { error } = await supabase.auth.signInWithOtp({
-        email: resetEmail,
-        options: {
-          emailRedirectTo: window.location.origin,
-        }
-      });
+      // Use sendPasswordResetEmail from Firebase
+      await sendPasswordResetEmail(auth, resetEmail);
 
-      if (error) throw error;
-
-      setResetMessage(t('magic_link_sent') || 'Magic link sent! Check your email to log in.');
+      setResetMessage(t('magic_link_sent') || 'Password reset link sent! Check your email.');
       setTimeout(() => {
         setShowForgotPassword(false);
         setResetMessage('');
         setResetEmail('');
       }, 5000);
     } catch (err: any) {
-      console.error('Magic link error:', err);
-      setResetError(err.message || 'Failed to send magic link');
+      console.error('Reset password error:', err);
+      setResetError(err.message || 'Failed to send reset link');
     } finally {
       setResetLoading(false);
     }
@@ -68,86 +65,70 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      // 🛡️ SECURITY: Validate input before sending to Supabase
+      // 🛡️ SECURITY: Validate input before sending to Firebase
       const validation = safeValidate(loginSchema, { email, password });
       if (validation.success === false) {
         throw new Error(validation.error);
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-      if (error) {
-        if (error.message === 'Invalid login credentials') {
-          throw new Error(t('login_error_invalid_password'));
-        }
-        throw error;
-      }
+      if (user) {
+        // 🛡️ SECURITY: Check account status in Firestore before proceeding
+        const { db } = await import('../../lib/firebase');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const profileDoc = await getDoc(doc(db, 'profiles', user.uid));
 
-      if (data.user) {
-        // First try to find profile by EMAIL (for email-based data linking)
-        let profile = null;
-
-        const { data: profileByEmail } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('email', data.user.email)
-          .single();
-
-        if (profileByEmail) {
-          profile = profileByEmail;
-        } else {
-          // Fallback: lookup by user ID (legacy profiles)
-          const { data: profileById } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single();
-          profile = profileById;
-        }
-
-        if (profile) {
-          if (profile.is_disabled) {
-            await supabase.auth.signOut();
-            setError(t('login_error_disabled'));
+        if (profileDoc.exists()) {
+          const profileData = profileDoc.data();
+          if (profileData.status === 'banned' || profileData.status === 'frozen') {
+            const msg = profileData.status === 'banned'
+              ? 'This account has been banned.'
+              : 'This account is currently frozen.';
+            setError(msg);
+            const { signOut } = await import('firebase/auth');
+            await signOut(auth);
+            setLoading(false);
             return;
           }
-          onLogin(profile.account_id, data.user.id, profile.full_name, data.user.email || '');
-        } else {
-          // No profile found - use email-based account_id for new data
-          onLogin('account_' + data.user.email, data.user.id, 'User', data.user.email || '');
         }
+
+        onLogin('account_' + user.email, user.uid, user.email?.split('@')[0] || 'User', user.email || '', password);
       }
 
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.message || t('login_error_generic'));
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        setError(t('login_error_invalid_password'));
+      } else {
+        setError(err.message || t('login_error_generic'));
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0d3d38] via-[#0f4a44] to-[#134e4a] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-promed-primary flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Ambient Glow Effects */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-teal-500/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-white/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] bg-white/10 rounded-full blur-[120px] pointer-events-none" />
 
       {/* Main Content */}
       <div className="relative z-10 w-full max-w-md flex flex-col items-center">
 
         {/* Lock Icon */}
-        <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mb-8 border border-white/20 shadow-2xl">
-          <Lock size={36} className="text-white/90" strokeWidth={1.5} />
+        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-8 border border-promed-primary/10 shadow-2xl shadow-promed-primary/10">
+          <img src={lockIcon} alt="Secure" className="w-10 h-10 object-contain" />
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
+        {/* Title */}
+        <h1 className="text-3xl font-bold text-white mb-2 tracking-wider">
           {t('login_welcome')}
         </h1>
-        <p className="text-white/60 text-center mb-10">
+        <p className="text-white/80 text-center mb-10 font-medium">
           {t('login_subtitle')}
         </p>
 
@@ -155,12 +136,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         <form onSubmit={handleSubmit} className="w-full space-y-4">
           {/* Email Input */}
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-promed-muted/40" size={20} />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all text-center"
+              className="w-full pl-12 pr-4 py-4 bg-white border border-promed-primary/10 rounded-2xl text-promed-text placeholder-promed-muted/30 focus:outline-none focus:ring-4 focus:ring-promed-primary/10 transition-all text-center font-bold"
               placeholder={t('email_placeholder')}
               required
             />
@@ -168,12 +149,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
           {/* Password Input */}
           <div className="relative">
-            <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
+            <img src={keyIcon} alt="Key" className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 object-contain opacity-40" />
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all text-center"
+              className="w-full pl-12 pr-4 py-4 bg-white border border-promed-primary/10 rounded-2xl text-promed-text placeholder-promed-muted/30 focus:outline-none focus:ring-4 focus:ring-promed-primary/10 transition-all text-center font-bold"
               placeholder={t('enter_password')}
               required
             />
@@ -191,14 +172,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-white text-[#0f4a44] font-bold py-4 px-6 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl"
+            className="w-full flex items-center justify-center gap-2 bg-white text-promed-primary font-bold py-4 px-6 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-black/10 hover:shadow-2xl text-xl"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-teal-300 border-t-teal-700 rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-promed-primary border-t-transparent rounded-full animate-spin" />
             ) : (
               <>
                 <span>{t('login_btn')}</span>
-                <ArrowRight size={18} />
+                <ArrowRight size={20} />
               </>
             )}
           </button>
@@ -211,7 +192,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 setShowForgotPassword(true);
                 setResetEmail(email);
               }}
-              className="text-white/50 hover:text-white text-sm font-medium transition-colors"
+              className="text-white/70 hover:text-white text-sm font-bold transition-colors"
             >
               {t('forgot_password_link')}
             </button>
@@ -223,15 +204,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           <div className="relative">
             <button
               onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white/70 hover:text-white transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 border border-white/10 rounded-xl text-white hover:bg-white/20 shadow-sm transition-all backdrop-blur-sm"
             >
-              <Globe size={16} />
+              <Globe size={16} className="text-white" />
               <span className="text-sm">{languages.find(l => l.code === language)?.flag}</span>
-              <span className="text-sm font-medium">{languages.find(l => l.code === language)?.name}</span>
+              <span className="text-sm font-bold">{languages.find(l => l.code === language)?.name}</span>
             </button>
 
             {showLanguageMenu && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-[#0d3d38]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-promed-dark/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden">
                 {languages.map((lang) => (
                   <button
                     key={lang.code}
@@ -239,13 +220,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                       setLanguage(lang.code);
                       setShowLanguageMenu(false);
                     }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/10 transition-all ${language === lang.code ? 'bg-teal-600/20 text-teal-400' : 'text-white/80'
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/10 transition-all ${language === lang.code ? 'bg-white/20 text-white' : 'text-white/80'
                       }`}
                   >
                     <span className="text-xl">{lang.flag}</span>
                     <span className="font-medium">{lang.name}</span>
                     {language === lang.code && (
-                      <svg className="w-4 h-4 ml-auto text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 ml-auto text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -259,10 +240,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
       {/* Forgot Password Modal */}
       {showForgotPassword && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0d3d38] border border-white/20 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-2">{t('reset_password_title')}</h3>
-            <p className="text-white/60 text-sm mb-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-promed-bg border border-promed-primary/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h3 className="text-xl font-bold text-promed-text mb-2">{t('reset_password_title')}</h3>
+            <p className="text-promed-muted text-sm mb-6 font-medium">
               {t('reset_password_desc')}
             </p>
 
@@ -271,7 +252,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 type="email"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
-                className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all"
+                className="w-full px-4 py-4 bg-white border border-promed-primary/10 rounded-2xl text-promed-text placeholder-promed-muted/30 focus:outline-none focus:ring-4 focus:ring-promed-primary/10 transition-all font-bold text-center"
                 placeholder={t('email_placeholder')}
                 required
                 autoFocus
@@ -301,17 +282,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                     setResetError('');
                     setResetMessage('');
                   }}
-                  className="flex-1 py-3 px-4 bg-white/10 hover:bg-white/20 text-white font-medium rounded-2xl transition-all"
+                  className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-promed-muted font-bold rounded-2xl transition-all"
                 >
                   {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={resetLoading}
-                  className="flex-1 py-3 px-4 bg-white text-[#0f4a44] font-bold rounded-2xl transition-all disabled:opacity-50"
+                  className="flex-1 py-3 px-4 bg-promed-primary text-white font-bold rounded-2xl transition-all shadow-xl shadow-promed-primary/20 disabled:opacity-50"
                 >
                   {resetLoading ? (
-                    <div className="w-5 h-5 border-2 border-teal-300 border-t-teal-700 rounded-full animate-spin mx-auto" />
+                    <div className="w-5 h-5 border-2 border-blue-300 border-t-blue-700 rounded-full animate-spin mx-auto" />
                   ) : (
                     t('send_link')
                   )}

@@ -1,9 +1,8 @@
 import React, { createContext, useEffect, useState, useContext, ReactNode } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabaseClient';
+import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'; // Firebase imports
+import { auth } from '../lib/firebase'; // Custom Firebase instance
 
 interface AuthContextType {
-    session: Session | null;
     user: User | null;
     loading: boolean;
     signOut: () => Promise<void>;
@@ -12,50 +11,26 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // 1. Check active session on mount
-        const initSession = async () => {
-            try {
-                const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-                if (error) {
-                    console.error("Auth initialization error:", error);
-                }
-                setSession(initialSession);
-                setUser(initialSession?.user ?? null);
-            } catch (err) {
-                console.error("Unexpected auth error:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        initSession();
-
-        // 2. Listen for changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-            console.log("🔐 Auth State Change:", _event, newSession?.user?.email);
-            setSession(newSession);
-            setUser(newSession?.user ?? null);
+        // Listen for Firebase Auth changes
+        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+            console.log("🔐 Auth State Change:", firebaseUser?.email);
+            setUser(firebaseUser);
             setLoading(false);
         });
 
-        return () => {
-            subscription.unsubscribe();
-        };
+        return () => unsubscribe();
     }, []);
 
     const signOut = async () => {
-        await supabase.auth.signOut();
-        setSession(null);
+        await firebaseSignOut(auth);
         setUser(null);
     };
 
     const value = {
-        session,
         user,
         loading,
         signOut

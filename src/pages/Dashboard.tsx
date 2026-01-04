@@ -1,19 +1,22 @@
-
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Activity,
+    Search,
     Users,
+    Bell,
     Syringe,
 } from 'lucide-react';
-import { InjectionAppointmentWidget } from '../features/dashboard/Widgets';
+import { StatCard, InjectionAppointmentWidget } from '../features/dashboard/Widgets';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAccount } from '../contexts/AccountContext';
 import { Patient } from '../types';
-import Mascot from '../components/mascot/Mascot';
 import { DashboardLoader } from '../components/ui/DashboardLoader';
 import LockedOverlay from '../components/ui/LockedOverlay';
 import TourGuide from '../components/tour/TourGuide';
+import operationIcon from '../components/mascot/operation_mascot.png';
+import patientsIcon from '../components/mascot/happy_mascot.png';
+import injectionIcon from '../components/mascot/injection_mascot.png';
 
 interface DashboardProps {
     stats: {
@@ -29,49 +32,6 @@ interface DashboardProps {
     isLoading?: boolean;
 }
 
-interface HeroCardProps {
-    label: string;
-    value: string | number;
-    icon: React.ElementType;
-    color: string;
-    shadow: string;
-    mascot?: React.ReactNode;
-}
-
-const HeroCard: React.FC<HeroCardProps> = ({ label, value, icon: Icon, color, shadow, mascot }) => (
-    <motion.div
-        initial="idle"
-        whileHover="hover"
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        style={{ WebkitMaskImage: '-webkit-radial-gradient(white, black)' }} // Fix for Safari overflow:hidden + border-radius bug
-        className={`relative p-4 md:p-7 rounded-[24px] md:rounded-[32px] h-[110px] md:h-[180px] overflow-hidden ${color} bg-opacity-90 backdrop-blur-sm border border-white/20 shadow-xl ${shadow} isolate`}
-    >
-        <div className="relative z-10 h-full flex flex-col justify-between pointer-events-none">
-            <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                    <div className="p-1.5 bg-white/10 rounded-lg">
-                        <Icon size={16} className="text-white" />
-                    </div>
-                    <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-white/90">{label}</span>
-                </div>
-                <div className="flex items-baseline space-x-2 pt-1 md:pt-2">
-                    <span className="text-4xl md:text-6xl font-black text-white tracking-tighter">{value}</span>
-                </div>
-            </div>
-        </div>
-
-        {/* Decorative elements - moved behind mascot */}
-        <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl z-0 pointer-events-none" />
-        <div className="absolute -left-4 -bottom-4 w-32 h-32 bg-black/5 rounded-full blur-3xl opacity-50 z-0 pointer-events-none" />
-
-        {mascot && (
-            <div className="absolute bottom-0 right-0 md:bottom-2 md:right-2 z-20 opacity-100 scale-75 md:scale-100 origin-bottom-right transform-gpu pointer-events-none">
-                {mascot}
-            </div>
-        )}
-    </motion.div>
-);
-
 export const Dashboard: React.FC<DashboardProps> = ({
     stats,
     onNewPatient,
@@ -86,39 +46,41 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const todaysOperationsCount = patients.filter(p =>
+        p.operationDate && new Date(p.operationDate).toDateString() === new Date().toDateString()
+    ).length;
 
     return (
         <div className="relative">
             {/* Tour Guide */}
             <TourGuide />
 
-
             <div className="space-y-10 p-2 sm:p-4">
-                {/* Vitals Strip */}
-                <div id="stats-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    <HeroCard
+                {/* Vitals Strip - Strict 4px Spacing Rule */}
+                <div id="stats-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <StatCard
                         label={t('operation')}
-                        value={patients.filter(p => p.operationDate && new Date(p.operationDate).toDateString() === new Date().toDateString()).length}
+                        value={todaysOperationsCount}
                         icon={Activity}
-                        color="bg-gradient-to-br from-rose-500 to-rose-600"
-                        shadow="shadow-rose-500/30"
-                        mascot={<Mascot mood="operation" size={115} floating={false} />}
+                        mascotImg={operationIcon}
+                        colorClass="bg-rose-500"
+                        shadowColor="rgba(244, 63, 94, 0.3)"
                     />
-                    <HeroCard
+                    <StatCard
                         label={t('injection')}
                         value={stats.upcoming}
                         icon={Syringe}
-                        color="bg-gradient-to-br from-blue-500 to-blue-600"
-                        shadow="shadow-blue-500/30"
-                        mascot={<Mascot mood="injection" size={115} floating={false} />}
+                        mascotImg={injectionIcon}
+                        colorClass="bg-promed-primary"
+                        shadowColor="hsla(206, 100%, 34%, 0.3)"
                     />
-                    <HeroCard
+                    <StatCard
                         label={t('patients')}
-                        value={stats.total}
+                        value={stats.active}
                         icon={Users}
-                        color="bg-gradient-to-br from-emerald-500 to-teal-600"
-                        shadow="shadow-emerald-500/30"
-                        mascot={<Mascot mood="happy" size={115} floating={false} />}
+                        mascotImg={patientsIcon}
+                        colorClass="bg-[hsl(160,100%,30%)]"
+                        shadowColor="rgba(16, 185, 129, 0.3)"
                     />
                 </div>
 

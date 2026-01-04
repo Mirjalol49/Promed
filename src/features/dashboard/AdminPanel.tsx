@@ -3,7 +3,9 @@ import {
   Search, Plus, LogOut, Users, RefreshCw, ToggleLeft, ToggleRight,
   Trash2, Lock, ArrowRight, AlertCircle, ArrowLeft, Shield
 } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
+import { auth, db } from '../../lib/firebase';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 
 interface User {
@@ -31,14 +33,9 @@ const AdminLoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     setError('');
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-      if (error) throw error;
-
-      if (data.user) {
+      if (userCredential.user) {
         localStorage.setItem('isAdminAuthenticated', 'true'); // Keep this for existing logic if any
         onLogin();
       }
@@ -53,13 +50,13 @@ const AdminLoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 p-4">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-600/10 rounded-full blur-[120px]"></div>
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-promed-primary/10 rounded-full blur-[120px]"></div>
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[120px]"></div>
       </div>
 
       <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/30">
+          <div className="w-20 h-20 bg-gradient-to-br from-promed-primary to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-promed-primary/30">
             <Shield className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Superadmin Access</h1>
@@ -75,7 +72,7 @@ const AdminLoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-4 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none"
+              className="w-full px-4 py-4 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-promed-primary focus:border-transparent text-white placeholder-gray-500 transition-all outline-none"
               placeholder="admin@example.com"
             />
           </div>
@@ -90,7 +87,7 @@ const AdminLoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none"
+                className="w-full pl-12 pr-4 py-4 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-promed-primary focus:border-transparent text-white placeholder-gray-500 transition-all outline-none"
                 placeholder="Enter admin password"
                 autoFocus
               />
@@ -107,7 +104,7 @@ const AdminLoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-promed-primary to-purple-600 hover:from-promed-dark hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-promed-primary/30 flex items-center justify-center gap-2"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -166,25 +163,24 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setGlobalError('');
-    console.log('[AdminPanel] Fetching users from Supabase...');
+    console.log('[AdminPanel] Fetching users from Firestore...');
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*');
+      const querySnapshot = await getDocs(collection(db, "profiles"));
 
-      if (error) throw error;
-
-      const mappedUsers = (data || []).map((u: any) => ({
-        id: u.id,
-        username: u.username || u.phone || 'N/A', // Fallback for old users
-        phone: u.phone,
-        name: u.full_name,
-        role: u.role,
-        accountId: u.account_id,
-        disabled: u.is_disabled,
-        createdAt: u.created_at || u.updated_at
-      }));
+      const mappedUsers = querySnapshot.docs.map(doc => {
+        const u = doc.data();
+        return {
+          id: doc.id,
+          username: u.username || u.phone || 'N/A', // Fallback for old users
+          phone: u.phone,
+          name: u.full_name,
+          role: u.role,
+          accountId: u.account_id,
+          disabled: u.is_disabled,
+          createdAt: u.created_at || u.updated_at
+        };
+      });
 
       // Filter by search if needed
       let result = mappedUsers;
@@ -217,34 +213,10 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setGlobalError('');
 
     try {
-      // Validate
-      if (!formData.username || !formData.name || !formData.password) {
-        setFormError('All fields are required');
-        setFormLoading(false);
-        return;
-      }
+      // We cannot create Firebase Auth users from client side without logging out the current admin user.
+      // Requires Cloud Functions.
+      throw new Error("User creation is not available in this version (Requires Firebase Cloud Functions). Please create users via Firebase Console.");
 
-      // Use Edge Function to create tenant securely
-      const { data, error } = await supabase.functions.invoke('create-tenant', {
-        body: {
-          username: formData.username,
-          password: formData.password,
-          name: formData.name
-        }
-      });
-
-      if (error) throw new Error(error.message || 'Failed to invoke create-tenant function');
-
-      // If the function returns an error in json
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      console.log('[AdminPanel] User created successfully via Edge Function!');
-      setSuccessMessage(`User "${formData.name}" created successfully!`);
-      setShowModal(false);
-      setFormData({ username: '', name: '', password: '', role: 'user' });
-      fetchUsers(); // Refresh list
     } catch (error: any) {
       console.error('[AdminPanel] Error creating user:', error);
       setFormError(error?.message || 'Failed to create user');
@@ -258,16 +230,11 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     console.log('[AdminPanel] Toggling user:', id, 'disabled:', !disabled);
 
     try {
-      // Use Edge Function to securely toggle user status (ban/unban)
-      const { data, error } = await supabase.functions.invoke('toggle-user-status', {
-        body: {
-          userId: id,
-          disable: !disabled // if currently disabled=false, we want to disable=true
-        }
+      const userRef = doc(db, "profiles", id);
+      await updateDoc(userRef, {
+        is_disabled: !disabled,
+        updated_at: new Date().toISOString()
       });
-
-      if (error) throw new Error(error.message || 'Failed to invoke toggle-user-status function');
-      if (data?.error) throw new Error(data.error);
 
       // Update local state on success
       setUsers(prev => prev.map(u =>
@@ -282,25 +249,25 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   };
 
   const handleDeleteUser = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    if (!window.confirm('Are you sure you want to delete this user? This will only delete their profile data, not Auth account.')) return;
 
     setGlobalError('');
     console.log('[AdminPanel] Deleting user:', id);
 
     try {
-      // const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+      const userRef = doc(db, "profiles", id);
+      await deleteDoc(userRef);
 
-      alert("Delete User not implemented in this secure version yet. Please use Supabase Dashboard.");
-      // if (error) throw error;
-      // setSuccessMessage('User deleted successfully!');
-      // fetchUsers();
+      setSuccessMessage('User profile deleted successfully!');
+      fetchUsers();
     } catch (error: any) {
       console.error('[AdminPanel] Failed to delete user:', error);
       setGlobalError(error?.message || 'Failed to delete user');
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut(auth);
     localStorage.removeItem('isAdminAuthenticated');
     onLogout();
   };
@@ -315,7 +282,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               <ArrowLeft className="w-5 h-5 text-gray-400" />
             </a>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <div className="w-12 h-12 bg-gradient-to-br from-promed-primary to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-promed-primary/20">
                 <Users className="w-6 h-6" />
               </div>
               <div>
@@ -372,7 +339,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               placeholder="Search by phone or name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-promed-primary outline-none transition-all"
             />
           </div>
           <div className="flex gap-3">
@@ -385,7 +352,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
             </button>
             <button
               onClick={() => setShowModal(true)}
-              className="px-5 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl transition-all flex items-center gap-2 font-semibold shadow-lg shadow-blue-600/20"
+              className="px-5 py-3 bg-gradient-to-r from-promed-primary to-purple-600 hover:from-promed-dark hover:to-purple-700 rounded-xl transition-all flex items-center gap-2 font-semibold shadow-lg shadow-promed-primary/20"
             >
               <Plus className="w-4 h-4" />
               Add User
@@ -488,7 +455,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-promed-primary/20 rounded-lg flex items-center justify-center">
                 <Plus className="w-5 h-5 text-blue-400" />
               </div>
               Create New User
@@ -562,7 +529,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl transition-all font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-promed-primary to-purple-600 hover:from-promed-dark hover:to-purple-700 rounded-xl transition-all font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {formLoading ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

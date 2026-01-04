@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import dateIcon from '../../assets/images/date.png';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface DatePickerProps {
@@ -127,7 +128,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         `}
             >
                 <div className="flex items-center space-x-3 text-slate-700">
-                    <Calendar size={18} className="text-promed-primary" />
+                    <img src={dateIcon} alt="Calendar" className="w-5 h-5 object-contain opacity-70" />
                     <span className={value ? 'font-medium' : 'text-slate-400'}>
                         {value ? formatDateDisplay(value) : t('select_date')}
                     </span>

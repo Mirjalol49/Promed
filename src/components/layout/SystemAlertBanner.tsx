@@ -9,10 +9,10 @@ export const SystemAlertBanner: React.FC = () => {
 
     const styles = {
         info: {
-            bg: 'bg-blue-600',
+            bg: 'bg-promed-primary',
             icon: Info,
-            light: 'bg-blue-400/20',
-            border: 'border-blue-400/30'
+            light: 'bg-promed-primary/20',
+            border: 'border-promed-primary/30'
         },
         warning: {
             bg: 'bg-amber-500',
@@ -38,7 +38,7 @@ export const SystemAlertBanner: React.FC = () => {
 
     return (
         <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[200] w-[90%] max-w-2xl animate-in slide-in-from-top-full duration-500`}>
-            <div className={`${styles.bg} text-white p-1 rounded-[24px] shadow-2xl shadow-${activeAlert.type === 'danger' ? 'rose' : 'blue'}-500/20 border ${styles.border} backdrop-blur-md`}>
+            <div className={`${styles.bg} text-white p-1 rounded-[24px] shadow-2xl shadow-${activeAlert.type === 'danger' ? 'rose-500/20' : 'promed-primary/20'} border ${styles.border} backdrop-blur-md`}>
                 <div className="flex items-center gap-4 px-4 py-3">
                     <div className={`p-3 rounded-2xl ${styles.light} flex-shrink-0`}>
                         <Icon size={20} className="text-white" />

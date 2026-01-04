@@ -1,4 +1,15 @@
-import { supabase } from './supabaseClient';
+import { db } from './firebase';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  onSnapshot,
+  collection,
+  query,
+  orderBy,
+  getDocs
+} from 'firebase/firestore';
 
 export interface UserProfile {
   id: string;
@@ -10,9 +21,8 @@ export interface UserProfile {
 }
 
 // Map database fields to application fields if necessary
-// Map database fields to application fields if necessary
-const mapProfile = (data: any): any => ({
-  id: data.id,
+const mapProfile = (id: string, data: any): any => ({
+  id: id,
   phone: data.phone,
   email: data.email,
   name: data.full_name,
@@ -20,8 +30,8 @@ const mapProfile = (data: any): any => ({
   // PRIORITIZE avatar_url, fallback to profile_image (legacy)
   profileImage: data.avatar_url || data.profile_image,
   disabled: data.is_disabled,
-  lockEnabled: data.lock_enabled, // Lock screen enabled state
-  lockPassword: data.lock_password, // Lock screen password (plaintext)
+  lockEnabled: data.lock_enabled !== undefined ? data.lock_enabled : data.lockEnabled,
+  lockPassword: data.lock_password || data.lockPassword,
   role: data.role || 'doctor',
   status: data.status || 'active',
   subscriptionStatus: data.subscription_status || 'trial',
@@ -71,12 +81,11 @@ export const updateUserProfile = async (
     dbUpdates.profile_image = imageUrl;
   }
 
-  const { error } = await supabase
-    .from('profiles')
-    .update(dbUpdates)
-    .eq('id', userId);
-
-  if (error) {
+  try {
+    const docRef = doc(db, "profiles", userId);
+    // setDoc with merge: true will create if not exists, or update if exists
+    await setDoc(docRef, dbUpdates, { merge: true });
+  } catch (error) {
     console.error('Error updating profile:', error);
     throw error;
   }
@@ -89,35 +98,24 @@ export const subscribeToUserProfile = (
 ) => {
   if (!userId) return () => { };
 
-  // 🔥 FIX: Initial fetch
-  supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single()
-    .then(({ data, error }) => {
-      if (error) {
-        console.error('Initial profile fetch error:', error);
-        onError?.(error);
-      } else if (data) {
-        onUpdate(mapProfile(data));
-      }
-    });
+  const docRef = doc(db, "profiles", userId);
 
-  // Then subscribe to realtime updates
-  const subscription = supabase
-    .channel(`public:profiles:id=eq.${userId}`)
-    .on(
-      'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
-      (payload) => {
-        onUpdate(mapProfile(payload.new));
-      }
-    )
-    .subscribe();
+  const unsubscribe = onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      onUpdate(mapProfile(docSnap.id, docSnap.data()));
+    } else {
+      console.log("No profile found for user:", userId);
+      // Optional: handle missing profile (maybe create one?)
+      // For now, doing nothing or calling update with null? 
+      // Logic suggests we expect a profile.
+    }
+  }, (error) => {
+    console.error("Profile subscription error:", error);
+    if (onError) onError(error);
+  });
 
   return () => {
-    supabase.removeChannel(subscription);
+    unsubscribe();
   };
 };
 
@@ -128,41 +126,21 @@ export const subscribeToAllProfiles = (
   onUpdate: (profiles: any[]) => void,
   onError?: (error: any) => void
 ) => {
-  // Initial fill
-  supabase
-    .from('profiles')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .then(({ data, error }) => {
-      if (error) {
-        console.error('Error fetching all profiles:', error);
-        onError?.(error);
-      } else if (data) {
-        onUpdate(data.map(mapProfile));
-      }
-    });
+  const q = query(
+    collection(db, "profiles"),
+    orderBy("created_at", "desc")
+  );
 
-  // Realtime subscription for ALL profiles
-  const subscription = supabase
-    .channel('admin:all_profiles')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'profiles' },
-      () => {
-        // Simple strategy: Re-fetch list on any change for consistency
-        supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .then(({ data }) => {
-            if (data) onUpdate(data.map(mapProfile));
-          });
-      }
-    )
-    .subscribe();
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const profiles = snapshot.docs.map(doc => mapProfile(doc.id, doc.data()));
+    onUpdate(profiles);
+  }, (error) => {
+    console.error("All profiles subscription error:", error);
+    if (onError) onError(error);
+  });
 
   return () => {
-    supabase.removeChannel(subscription);
+    unsubscribe();
   };
 };
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     X,
-    Camera,
+
     Eye,
     EyeOff,
     Lock,
@@ -17,15 +17,17 @@ import {
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ProfileAvatar } from '../layout/ProfileAvatar';
 import ConfirmationModal from './ConfirmationModal';
-import { supabase } from '../../lib/supabaseClient';
+import { auth } from '../../lib/firebase';
+import { updatePassword } from 'firebase/auth';
 import { useToast } from '../../contexts/ToastContext';
 import { compressImage } from '../../lib/imageOptimizer';
 import { uploadAvatar, setOptimisticImage } from '../../lib/imageService';
 import { useScrollLock } from '../../hooks/useScrollLock';
 import { useImageUpload } from '../../hooks/useImageUpload';
-import Mascot from '../mascot/Mascot';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImageUploadingOverlay } from './ImageUploadingOverlay';
+import lockIcon from '../../assets/images/lock.png';
+import cameraIcon from '../../assets/images/camera_icon.png';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -139,12 +141,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // 1. FRESH AUTH CHECK (Phase 2 FIX)
-            const { data: { user: freshUser }, error: authError } = await supabase.auth.getUser();
-            if (authError || !freshUser) {
+            // 1. FRESH AUTH CHECK
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
                 throw new Error("No active session - please log out and log back in.");
             }
-            const activeUserId = freshUser.id;
+            const activeUserId = currentUser.uid;
             let finalAvatarUrl = profileImage;
 
             console.log("✓ Session verified for user:", activeUserId);
@@ -153,12 +155,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             const newPinValue = pin.join('');
             if (newPinValue.length === 6) {
                 console.log("• Updating Password...");
-                const { error: passError } = await supabase.auth.updateUser({
-                    password: newPinValue
-                });
-
-                if (passError) {
-                    console.error("Supabase Auth Error:", passError);
+                try {
+                    await updatePassword(currentUser, newPinValue);
+                } catch (passError: any) {
+                    console.error("Firebase Auth Error:", passError);
                     throw new Error(`Password update failed: ${passError.message}`);
                 }
             } else if (newPinValue.length > 0) {
@@ -169,26 +169,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             // if (selectedFile) logic removed as we now upload immediately
             finalAvatarUrl = profileImage;
 
-            // 4. DATABASE UPDATE (Phase 3: Double-Write Strategy)
-            console.log("• Updating database profile...");
-            const updates = {
-                full_name: nameInput,
-                avatar_url: finalAvatarUrl, // Standard
-                profile_image: finalAvatarUrl, // Double-write for backward compatibility
-                updated_at: new Date().toISOString(),
-            };
-
-            const { error: dbError } = await supabase
-                .from('profiles')
-                .update(updates)
-                .eq('id', activeUserId);
-
-            if (dbError) {
-                console.error("Supabase Database Error:", dbError);
-                throw new Error(`Failed to save profile: ${dbError.message}`);
-            }
-
-            // 5. SYNC APP STATE
+            // 4. SYNC APP STATE (Handles DB update via App.tsx -> userService)
             await onUpdateProfile({
                 name: nameInput,
                 image: finalAvatarUrl,
@@ -197,8 +178,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
             console.log("✓ Profile saved successfully!");
             success(t('profile_updated_title'), t('profile_updated_msg'));
-
-
 
             onClose();
 
@@ -234,7 +213,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
                                 {/* Standard Hover Overlay */}
                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition duration-500 z-10">
-                                    <Camera className="text-white drop-shadow-md transform scale-90 group-hover/photo:scale-110 group-hover/photo:-translate-y-1 transition duration-500" size={32} />
+                                    <img src={cameraIcon} alt="Camera" className="w-8 h-8 object-contain brightness-0 invert drop-shadow-md transform scale-90 group-hover/photo:scale-110 group-hover/photo:-translate-y-1 transition duration-500" />
                                 </div>
 
                                 {/* UPLOAD ANIMATION OVERLAY */}
@@ -243,8 +222,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                 </AnimatePresence>
                             </div>
                             {/* Floating camera icon cue */}
-                            <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1 z-20">
-                                <Camera size={18} />
+                            <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1 z-20 flex items-center justify-center">
+                                <img src={cameraIcon} alt="Camera" className="w-[18px] h-[18px] object-contain opacity-70 group-hover/photo:brightness-0 group-hover/photo:invert" />
                             </div>
                             <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
                         </label>
@@ -276,7 +255,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         <div className="flex items-center justify-between">
                             <div className="flex items-start space-x-3">
                                 <div className={`p-2 rounded-lg ${isLockEnabled ? 'bg-promed-primary text-white' : 'bg-slate-200 text-slate-500'} transition-colors`}>
-                                    <Lock size={18} />
+                                    <img src={lockIcon} alt="Lock" className="w-6 h-6 object-contain" />
                                 </div>
                                 <div>
                                     <p className="font-bold text-sm text-slate-800">{t('enable_lock')}</p>

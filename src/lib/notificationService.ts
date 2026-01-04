@@ -1,4 +1,15 @@
-import { supabase } from './supabaseClient';
+import { db } from './firebase';
+import {
+    collection,
+    query,
+    where,
+    orderBy,
+    limit,
+    onSnapshot,
+    addDoc,
+    getDocs,
+    writeBatch
+} from 'firebase/firestore';
 
 export interface SystemAlert {
     id: string;
@@ -10,51 +21,38 @@ export interface SystemAlert {
 }
 
 /**
- * Subscribe to the most recent active system alert
+ * Subscribe to the most recent system alerts
  */
 export const subscribeToSystemAlerts = (
-    onUpdate: (alert: SystemAlert | null) => void,
+    onUpdate: (alerts: SystemAlert[]) => void,
     onError?: (error: any) => void
 ) => {
-    // Initial fetch of the latest active alert
-    supabase
-        .from('system_alerts')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .then(({ data, error }) => {
-            if (error) {
-                console.error('Error fetching system alert:', error);
-                onError?.(error);
-            } else {
-                onUpdate(data && data.length > 0 ? data[0] : null);
-            }
-        });
+    const q = query(
+        collection(db, "system_alerts"),
+        orderBy("created_at", "desc"),
+        limit(5)
+    );
 
-    // Realtime subscription
-    const subscription = supabase
-        .channel('public:system_alerts')
-        .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'system_alerts' },
-            () => {
-                // Re-fetch latest active on any change
-                supabase
-                    .from('system_alerts')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .then(({ data }) => {
-                        onUpdate(data && data.length > 0 ? data[0] : null);
-                    });
-            }
-        )
-        .subscribe();
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const alerts: SystemAlert[] = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                title: data.title,
+                content: data.content,
+                type: data.type,
+                is_active: data.is_active,
+                created_at: data.created_at
+            };
+        });
+        onUpdate(alerts);
+    }, (error) => {
+        console.error("System alerts subscription error:", error);
+        if (onError) onError(error);
+    });
 
     return () => {
-        supabase.removeChannel(subscription);
+        unsubscribe();
     };
 };
 
@@ -66,31 +64,37 @@ export const broadcastAlert = async (alert: {
     content: string;
     type: 'info' | 'warning' | 'danger' | 'success';
 }): Promise<void> => {
-    // First, deactivate all previous alerts (simple one-at-a-time strategy)
-    await supabase
-        .from('system_alerts')
-        .update({ is_active: false })
-        .eq('is_active', true);
+    // First, deactivate all previous alerts
+    const q = query(collection(db, "system_alerts"), where("is_active", "==", true));
+    const snapshot = await getDocs(q);
 
-    // Insert new alert
-    const { error } = await supabase.from('system_alerts').insert([
-        {
-            ...alert,
-            is_active: true,
-        },
-    ]);
+    const batch = writeBatch(db);
+    snapshot.forEach(doc => {
+        batch.update(doc.ref, { is_active: false });
+    });
 
-    if (error) throw error;
+    // Commit deactivations
+    await batch.commit();
+
+    // Add new alert
+    await addDoc(collection(db, "system_alerts"), {
+        ...alert,
+        is_active: true,
+        created_at: new Date().toISOString()
+    });
 };
 
 /**
  * Admin: Clear current alert
  */
 export const clearAlerts = async (): Promise<void> => {
-    const { error } = await supabase
-        .from('system_alerts')
-        .update({ is_active: false })
-        .eq('is_active', true);
+    const q = query(collection(db, "system_alerts"), where("is_active", "==", true));
+    const snapshot = await getDocs(q);
 
-    if (error) throw error;
+    const batch = writeBatch(db);
+    snapshot.forEach(doc => {
+        batch.update(doc.ref, { is_active: false });
+    });
+
+    await batch.commit();
 };

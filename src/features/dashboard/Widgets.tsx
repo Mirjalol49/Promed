@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Users,
   UserPlus,
   Calendar,
   Clock,
@@ -11,11 +10,14 @@ import {
   Activity,
   Syringe,
   ArrowRight,
-  Phone,
+
   Check,
   MapPin
 } from 'lucide-react';
-import Mascot from '../../components/mascot/Mascot';
+import dateIcon from '../../assets/images/date.png';
+import operationIcon from '../../assets/images/operation_icon.png';
+import patientsIcon from '../../assets/images/patients.png';
+import phoneIcon from '../../assets/images/phone.png';
 import { motion } from 'framer-motion';
 import { Injection, InjectionStatus, Patient } from '../../types';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -46,31 +48,32 @@ export const VitalsCard: React.FC<VitalsCardProps> = ({ label, value, icon: Icon
   // Map solid colors to gradients or custom solid backgrounds
   const getBackgroundClass = (baseColor: string) => {
     if (baseColor.includes('rose')) return 'bg-gradient-to-br from-rose-400 to-rose-600 shadow-lg shadow-rose-500/30 border border-rose-400/20';
-    if (baseColor.includes('blue')) return 'bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-500/30 border border-blue-400/20';
-    if (baseColor.includes('emerald')) return 'bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/30 border border-emerald-400/20';
+    if (baseColor.includes('blue') || baseColor.includes('primary')) return 'bg-promed-primary shadow-glow border border-white/10';
+    if (baseColor.includes('emerald') || baseColor.includes('success')) return 'bg-[hsl(160,84%,39%)] shadow-lg shadow-emerald-500/30 border border-emerald-400/20';
     if (baseColor.includes('teal')) return 'shadow-lg shadow-[hsl(176,79%,27%)]/40 border border-[hsl(176,79%,27%)]/20'; // No bg class, handled by style
     if (baseColor.includes('purple')) return 'bg-gradient-to-br from-purple-400 to-purple-600 shadow-lg shadow-purple-500/30 border border-purple-400/20';
-    return 'bg-white border border-slate-100'; // Fallback
+    return 'bg-white border border-promed-primary/10'; // Fallback
   };
 
   const backgroundClass = getBackgroundClass(color);
   // Force solid teal usage if 'teal' is in the color prop (passed from Dashboard)
   const isTeal = color.includes('teal');
   const customStyle = isTeal ? { backgroundColor: 'hsl(176, 79%, 27%)' } : {};
+  // const brandColor = '#1E40AF';
 
   const isColored = backgroundClass.includes('gradient') || isTeal;
 
   return (
     <div
-      className={`rounded-2xl p-5 flex items-center space-x-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${backgroundClass} ${isColored ? 'text-white' : 'shadow-sm text-slate-900'}`}
+      className={`rounded - 2xl p - 5 flex items - center space - x - 4 transition - all duration - 300 hover: scale - [1.02] active: scale - [0.98] ${backgroundClass} ${isColored ? 'text-white' : 'shadow-sm text-slate-900'} `}
       style={customStyle}
     >
-      <div className={`p-3.5 rounded-2xl backdrop-blur-md transition-colors ${isColored ? 'bg-white/20 text-white shadow-inner border border-white/10' : `${color} bg-opacity-10 text-slate-600`}`}>
+      <div className={`p - 3.5 rounded - 2xl backdrop - blur - md transition - colors ${isColored ? 'bg-white/20 text-white shadow-inner border border-white/10' : `${color} bg-opacity-10 text-slate-600`} `}>
         <Icon size={26} strokeWidth={2.5} />
       </div>
       <div>
-        <p className={`text-[11px] font-bold uppercase tracking-widest mb-1 opacity-90 ${isColored ? 'text-white' : 'text-slate-500'}`}>{label}</p>
-        <p className={`text-3xl font-extrabold tracking-tight ${isColored ? 'text-white drop-shadow-sm' : 'text-slate-900'}`}>{value}</p>
+        <p className={`text - [11px] font - bold uppercase tracking - widest mb - 1 opacity - 90 ${isColored ? 'text-white' : 'text-slate-500'} `}>{label}</p>
+        <p className={`text - 3xl font - extrabold tracking - tight ${isColored ? 'text-white drop-shadow-sm' : 'text-slate-900'} `}>{value}</p>
       </div>
     </div>
   );
@@ -101,7 +104,7 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
-    return `${day}.${month}.${year}`;
+    return `${day}.${month}.${year} `;
   };
 
   // Helper to check if date is today (for styling)
@@ -149,69 +152,75 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
   }, [patients, filter, today, t]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col">
-      <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center bg-slate-50/50 gap-4">
-        <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
-          <Calendar size={20} className="text-promed-primary" />
+    <div className="bg-white rounded-[32px] shadow-soft border border-slate-200 overflow-hidden h-full flex flex-col">
+      <div className="p-6 border-b border-promed-primary/5 flex flex-col sm:flex-row justify-between items-center bg-promed-bg/50 gap-4">
+        <h3 className="text-lg font-bold text-promed-text tracking-tight flex items-center gap-2">
+          <div className="p-2 bg-promed-primary/10 rounded-xl border border-promed-primary/10 shadow-inner">
+            <img src={dateIcon} alt="Date" className="w-5 h-5 object-contain" />
+          </div>
           {t('upcoming_patients')}
         </h3>
 
-        <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex bg-slate-100/50 p-1 rounded-2xl border border-slate-200/50">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filter === 'all' ? 'bg-promed-primary text-white shadow-sm shadow-promed-primary/20' : 'text-slate-500 hover:text-promed-primary'}`}
+            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${filter === 'all' ? 'bg-white text-promed-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'} `}
           >
             {t('filter_all')}
           </button>
           <button
             onClick={() => setFilter('Operation')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filter === 'Operation' ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/20' : 'text-slate-500 hover:text-rose-500'}`}
+            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${filter === 'Operation' ? 'bg-white text-rose-500 shadow-sm' : 'text-slate-400 hover:text-slate-600'} `}
           >
             {t('filter_operations')}
           </button>
           <button
             onClick={() => setFilter('Injection')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filter === 'Injection' ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/20' : 'text-slate-500 hover:text-blue-500'}`}
+            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${filter === 'Injection' ? 'bg-white text-promed-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'} `}
           >
             {t('filter_injections')}
           </button>
         </div>
       </div>
 
-      <div className="p-4 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
+      <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
         {upcomingEvents.map((event) => (
-          <div key={event.uniqueId} className="bg-white rounded-2xl border border-slate-100 p-3.5 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer hover:border-promed-primary/20" onClick={() => onViewPatient(event.patientId)}>
+          <div
+            key={event.uniqueId}
+            className="h-[72px] bg-white rounded-2xl border border-promed-primary/5 px-4 shadow-soft hover:shadow-card transition-all flex items-center justify-between group cursor-pointer hover:border-promed-primary/20 active:scale-[0.99]"
+            onClick={() => onViewPatient(event.patientId)}
+          >
             <div className="flex items-center space-x-4">
               {/* Avatar */}
               <div className="relative">
                 <img
-                  src={event.img || "https://via.placeholder.com/40"}
+                  src={event.img || "https://via.placeholder.com/48"}
                   alt={event.name}
-                  className="w-12 h-12 rounded-full object-cover border border-slate-100 group-hover:scale-105 transition-transform duration-300"
+                  className="w-11 h-11 rounded-xl object-cover border border-slate-100 group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white ${event.type === 'Operation' ? 'bg-rose-500' : 'bg-blue-500'}`}>
-                  {event.type === 'Operation' ? <Activity size={10} className="text-white" /> : <Syringe size={10} className="text-white" />}
+                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-lg flex items-center justify-center border-2 border-white shadow-sm ${event.type === 'Operation' ? 'bg-rose-500' : 'bg-promed-primary'}`}>
+                  {event.type === 'Operation' ? <img src={operationIcon} className="w-2.5 h-2.5 brightness-0 invert" /> : <img src={patientsIcon} className="w-2.5 h-2.5 brightness-0 invert" />}
                 </div>
               </div>
 
               {/* Info */}
               <div>
-                <h4 className="font-bold text-slate-900 text-sm leading-tight group-hover:text-promed-primary transition">{event.name}</h4>
+                <h4 className="font-bold text-promed-text text-[14px] leading-tight group-hover:text-promed-primary transition">{event.name}</h4>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${event.type === 'Operation' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'}`}>
+                  <span className={`text-[9px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-md border ${event.type === 'Operation' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-promed-bg text-promed-primary border-promed-primary/10'} `}>
                     {event.type === 'Operation' ? t('operation') : t('injection')}
                   </span>
-                  <span className="text-xs text-slate-400 font-medium truncate max-w-[100px]">{event.detail}</span>
+                  <span className="text-[11px] text-promed-muted font-medium truncate max-w-[120px]">{event.detail}</span>
                 </div>
               </div>
             </div>
 
             {/* Meta (Right Side) */}
-            <div className="flex flex-col items-end space-y-1.5">
-              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${isToday(event.dateObj)
+            <div className="flex flex-col items-end">
+              <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest ${isToday(event.dateObj)
                 ? 'bg-promed-primary text-white shadow-soft shadow-promed-primary/30'
-                : 'bg-slate-100 text-slate-500'
-                }`}>
+                : 'bg-slate-100 text-slate-500 border border-slate-200/50'
+                } `}>
                 {getDateLabel(event.dateObj)}
               </span>
             </div>
@@ -219,22 +228,16 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
         ))}
 
         {upcomingEvents.length === 0 && (
-          <div className="flex flex-col items-center justify-center p-12 h-full min-h-[300px]">
-            <motion.div
-              animate={{
-                scale: [0, 1.2, 1],
-                rotate: [0, -5, 5, 0]
-              }}
-              transition={{
-                duration: 1.5,
-                times: [0, 0.4, 0.7, 1],
-                ease: "circOut"
-              }}
-              className="mb-8"
-            >
-              <Mascot mood="thinking" size={180} />
-            </motion.div>
-            <h3 className="text-2xl font-black text-slate-800">{t('empty_state_peace')}</h3>
+          <div className="flex flex-col items-center justify-center h-full py-20 pb-28">
+            <div className="relative mb-8">
+              <div className="absolute inset-0 bg-promed-primary/5 blur-3xl rounded-full scale-150 animate-pulse"></div>
+              <img
+                src={patientsIcon}
+                alt="Relaxing"
+                className="w-48 h-48 object-contain relative z-10 drop-shadow-2xl opacity-100"
+              />
+            </div>
+            <h3 className="text-xl font-black text-slate-800 uppercase tracking-widest opacity-50">{t('empty_state_peace')}</h3>
           </div>
         )}
       </div>
@@ -281,7 +284,7 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
       <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <Activity size={20} className="text-rose-500" />
+          <img src={operationIcon} className="w-5 h-5 object-contain" />
           {t('todays_operations')}
         </h3>
         <span className="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-500">
@@ -322,7 +325,7 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
                   <td className="px-6 py-4">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center mb-1">
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${getStatusColor(op.status)}`}>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${getStatusColor(op.status)} `}>
                           {op.status}
                         </span>
                         <span className="text-[10px] font-bold text-slate-400">{op.progress}%</span>
@@ -330,7 +333,7 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
                       <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                         <div
                           className={`h-full transition-all duration-1000 ${op.status === 'Extraction' ? 'bg-amber-400' : 'bg-emerald-500'
-                            }`}
+                            } `}
                           style={{ width: `${op.progress}%` }}
                         ></div>
                       </div>
@@ -342,7 +345,7 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
           </table>
         ) : (
           <div className="flex flex-col items-center justify-center h-full py-12 text-slate-400">
-            <Activity size={48} className="opacity-10 mb-4" />
+            <img src={operationIcon} className="w-12 h-12 opacity-10 mb-4 grayscale" />
             <p className="text-sm font-bold uppercase tracking-widest">{t('no_operations') || 'No operations for today'}</p>
           </div>
         )}
@@ -377,7 +380,7 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
       ...i,
       patientId: p.id,
       patientName: p.fullName,
-      patientColor: p.fullName.charCodeAt(0) % 2 === 0 ? 'text-blue-600 bg-blue-50' : 'text-rose-600 bg-rose-50'
+      patientColor: p.fullName.charCodeAt(0) % 2 === 0 ? 'text-promed-primary bg-promed-light' : 'text-rose-600 bg-rose-50'
     })))
     .filter(i => {
       const injDate = new Date(i.date);
@@ -390,38 +393,40 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden">
       <div className="p-6 border-b border-slate-100 bg-slate-50/50">
         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <Syringe size={20} className="text-blue-500" />
+          <Syringe size={20} className="text-promed-primary" />
           {t('plasma_followups')}
         </h3>
         <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">{t('due_within_24h')}</p>
       </div>
 
-      <div className="divide-y divide-slate-50 flex-1 overflow-y-auto no-scrollbar">
-        {dueInjections.map((item) => (
-          <div key={item.id} className="p-4 flex items-center justify-between group hover:bg-slate-50/80 transition-all">
-            <div className="flex items-center space-x-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${item.patientColor} shadow-sm border border-black/5`}>
-                {item.notes?.toLowerCase().includes('wash') ? '🌊' : item.notes?.toLowerCase().includes('prp') ? '💉' : '📋'}
-              </div>
-              <div>
-                <h4 className="font-bold text-slate-800 text-sm group-hover:text-promed.primary transition whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">{item.patientName}</h4>
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">{item.notes || t('routine_followup')}</p>
-              </div>
+      {dueInjections.length > 0 ? dueInjections.map((item) => (
+        <div key={item.id} className="p-4 flex items-center justify-between group hover:bg-slate-50/80 transition-all">
+          <div className="flex items-center space-x-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${item.patientColor} shadow-sm border border-black/5`}>
+              {item.notes?.toLowerCase().includes('wash') ? '🌊' : item.notes?.toLowerCase().includes('prp') ? '💉' : '📋'}
             </div>
-            <div className="flex space-x-1 ml-2">
-              <button className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100">
-                <Phone size={14} />
-              </button>
-              <button
-                onClick={() => onCheck(item.patientId)}
-                className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors border border-transparent hover:border-emerald-100"
-              >
-                <Check size={14} />
-              </button>
+            <div>
+              <h4 className="font-bold text-slate-800 text-sm group-hover:text-promed.primary transition whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">{item.patientName}</h4>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">{item.notes || t('routine_followup')}</p>
             </div>
           </div>
-        ))}
-      </div>
+          <div className="flex space-x-1 ml-2">
+            <button className="p-2 text-slate-400 hover:text-promed-primary hover:bg-promed-light rounded-lg transition-colors border border-transparent hover:border-promed-primary/10 flex items-center justify-center">
+              <img src={phoneIcon} className="w-3.5 h-3.5 object-contain opacity-60 hover:opacity-100 transition-opacity" />
+            </button>
+            <button
+              onClick={() => onCheck(item.patientId)}
+              className="p-2 text-promed-muted hover:text-promed-primary hover:bg-promed-bg rounded-lg transition-colors border border-transparent hover:border-promed-primary/10"
+            >
+              <Check size={14} />
+            </button>
+          </div>
+        </div>
+      )) : (
+        <div className="flex flex-col items-center justify-center h-full py-10 opacity-30 grayscale">
+          <p className="text-[10px] font-black uppercase tracking-widest">{t('empty_state_peace')}</p>
+        </div>
+      )}
 
       <div className="p-4 border-t border-slate-100 bg-slate-50/30">
         <button className="w-full py-2.5 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-200 transition-colors uppercase tracking-widest">
@@ -436,19 +441,31 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
 interface StatCardProps {
   label: string;
   value: string | number;
-  change: string;
-  icon: any;
+  change?: string;
+  icon?: any;
+  iconImg?: string;
+  mascotImg?: string;
   colorClass: string;
   shadowColor: string;
   isLoading?: boolean;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ label, value, change, icon: Icon, colorClass, shadowColor, isLoading }) => {
+export const StatCard: React.FC<StatCardProps> = ({
+  label,
+  value,
+  change,
+  icon: Icon,
+  iconImg,
+  mascotImg,
+  colorClass,
+  shadowColor,
+  isLoading
+}) => {
   const { t } = useLanguage();
 
   if (isLoading) {
     return (
-      <div className={`p-7 rounded-2xl relative overflow-hidden h-[160px] bg-slate-200 animate-pulse`}>
+      <div className="p-6 rounded-[32px] relative overflow-hidden h-[180px] bg-slate-200 animate-pulse">
         <div className="flex space-x-3 mb-5">
           <div className="w-10 h-10 bg-slate-300 rounded-lg"></div>
           <div className="h-4 bg-slate-300 rounded w-24 self-center"></div>
@@ -461,27 +478,45 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, change, icon: 
 
   return (
     <div
-      className={`p-7 rounded-2xl text-white relative overflow-hidden transition-transform hover:-translate-y-1 duration-300 ${colorClass}`}
-      style={{ boxShadow: `0 10px 30px -5px ${shadowColor}` }}
+      className={`p-7 rounded-[32px] text-white relative overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${colorClass} shadow-xl group`}
+      style={{ boxShadow: `0 20px 40px -12px ${shadowColor}` }}
     >
-      <div className="relative z-10">
-        <div className="flex items-center space-x-3 mb-5 opacity-90">
-          <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm shadow-inner">
-            <Icon size={22} className="text-white" />
+      <div className="relative z-10 h-full flex flex-col justify-between">
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md border border-white/10 shadow-inner">
+              {iconImg ? (
+                <img src={iconImg} alt={label} className="w-5 h-5 object-contain brightness-0 invert" />
+              ) : (
+                <Icon size={20} className="text-white" />
+              )}
+            </div>
+            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/90">{label}</span>
           </div>
-          <span className="font-bold text-sm tracking-wide uppercase opacity-90">{label}</span>
-        </div>
-        <div className="flex items-baseline space-x-3">
-          <span className="text-4xl font-bold tracking-tight text-white">{value}</span>
-          <div className="flex items-center space-x-1 bg-white/20 px-2.5 py-1 rounded-full backdrop-blur-sm border border-white/10">
-            <span className="text-xs font-bold text-white">{change}</span>
+          <div>
+            <span className="text-5xl font-black tracking-tight text-white block">{value}</span>
+            {change && (
+              <div className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-lg border border-white/10">
+                <span className="text-[10px] font-black">{change}</span>
+              </div>
+            )}
           </div>
         </div>
-        <p className="text-xs opacity-80 mt-2 pl-1 font-semibold">{t('last_month')}</p>
       </div>
-      {/* Decorative elements */}
-      <div className="absolute -right-6 -bottom-6 w-36 h-36 bg-white/10 rounded-full blur-2xl" />
-      <div className="absolute right-12 -top-8 w-24 h-24 bg-white/10 rounded-full blur-xl" />
+
+
+      {/* Mascot Image */}
+      {mascotImg && (
+        <img
+          src={mascotImg}
+          alt="Mascot"
+          className="absolute -bottom-4 -right-4 w-40 h-40 object-contain drop-shadow-2xl z-0 pointer-events-none transition-all duration-500 ease-out translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:scale-110 group-hover:-rotate-3"
+        />
+      )}
+
+      {/* Decorative Orbs */}
+      <div className="absolute -right-4 -top-4 w-32 h-32 bg-white/10 rounded-full blur-3xl pointer-events-none z-0" />
+      <div className="absolute -left-8 -bottom-8 w-40 h-40 bg-black/10 rounded-full blur-3xl pointer-events-none z-0" />
     </div>
   );
 };
@@ -502,10 +537,10 @@ export const StatsChart: React.FC = () => {
     <div className="bg-white p-7 rounded-2xl shadow-card hover:shadow-card-hover transition-shadow duration-300 border border-slate-200">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h3 className="text-lg font-bold text-slate-800 tracking-tight">{t('patients_stats')}</h3>
-          <p className="text-sm text-slate-400 font-medium mt-0.5">{t('registration_overview')}</p>
+          <h3 className="text-lg font-bold text-promed-text tracking-tight">{t('patients_stats')}</h3>
+          <p className="text-sm text-promed-muted font-medium mt-0.5">{t('registration_overview')}</p>
         </div>
-        <select className="text-sm bg-slate-50 border-slate-200 border rounded-xl px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-promed.primary/20 transition cursor-pointer font-bold">
+        <select className="text-sm bg-promed-bg border-promed-primary/10 border rounded-xl px-3 py-2 text-promed-text focus:outline-none focus:ring-2 focus:ring-promed-primary/20 transition cursor-pointer font-bold">
           <option>{t('monthly')}</option>
           <option>{t('weekly')}</option>
         </select>
@@ -515,8 +550,8 @@ export const StatsChart: React.FC = () => {
           <AreaChart data={chartData}>
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#0D7A72" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#0D7A72" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(206, 100%, 34%)" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="hsl(206, 100%, 34%)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
@@ -536,17 +571,17 @@ export const StatsChart: React.FC = () => {
                 color: '#1E293B',
                 backgroundColor: '#ffffff'
               }}
-              cursor={{ stroke: '#0D7A72', strokeWidth: 1, strokeDasharray: '4 4' }}
-              itemStyle={{ color: '#0D7A72' }}
+              cursor={{ stroke: 'hsl(206, 100%, 34%)', strokeWidth: 1, strokeDasharray: '4 4' }}
+              itemStyle={{ color: 'hsl(206, 100%, 34%)' }}
             />
             <Area
               type="monotone"
               dataKey="value"
-              stroke="#0D7A72"
+              stroke="hsl(206, 100%, 34%)"
               strokeWidth={3}
               fillOpacity={1}
               fill="url(#colorValue)"
-              activeDot={{ r: 6, strokeWidth: 0, fill: '#0D7A72' }}
+              activeDot={{ r: 6, strokeWidth: 0, fill: 'hsl(206, 100%, 34%)' }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -577,10 +612,10 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
     <div className="bg-white p-7 rounded-2xl shadow-card hover:shadow-card-hover transition-shadow duration-300 border border-slate-200 flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h3 className="text-lg font-bold text-slate-800 tracking-tight">{t('todays_appointments')}</h3>
-          <p className="text-sm text-slate-400 font-medium mt-0.5">{t('upcoming_schedule')}</p>
+          <h3 className="text-lg font-bold text-promed-text tracking-tight">{t('todays_appointments')}</h3>
+          <p className="text-sm text-promed-muted font-medium mt-0.5">{t('upcoming_schedule')}</p>
         </div>
-        <button className="text-sm text-promed.primary font-bold hover:bg-promed.primary/10 px-3 py-1.5 rounded-lg transition">{t('see_all')}</button>
+        <button className="text-sm text-promed-primary font-bold hover:bg-promed-bg px-3 py-1.5 rounded-lg transition">{t('see_all')}</button>
       </div>
 
       <div className="space-y-3 flex-1">
@@ -615,7 +650,7 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
               </div>
               <div className="flex flex-col items-end space-y-1">
                 <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${inj.date === today ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'
-                  }`}>
+                  } `}>
                   {inj.date === today ? t('today') : new Date(inj.date).toLocaleDateString(localeString, { month: 'short', day: 'numeric' })}
                 </span>
                 {inj.date === today && <span className="text-xs font-bold text-slate-700">10:00 AM</span>}

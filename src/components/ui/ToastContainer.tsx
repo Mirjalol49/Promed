@@ -12,6 +12,7 @@ const ToastContainer: React.FC = () => {
             title={activeToast?.title || ''}
             message={activeToast?.message || ''}
             type={activeToast?.type}
+            mascot={activeToast?.mascot}
             onClose={hideToast}
         />
     );

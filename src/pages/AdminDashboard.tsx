@@ -2,32 +2,43 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     Users,
     ShieldAlert,
-    DollarSign,
     Search,
-    LayoutGrid,
     Unlock,
     Trash2,
     UserPlus,
     RefreshCw,
     ShieldCheck,
-    CreditCard,
     Megaphone,
     Send,
     Trash,
-    MoreHorizontal,
-    Calendar
+    Lock
 } from 'lucide-react';
+import happyIcon from '../components/mascot/happy_mascot.png';
+import operationIcon from '../components/mascot/operation_mascot.png';
+import thinkingIcon from '../components/mascot/thinking_mascot.png';
 import { subscribeToAllProfiles, updateUserProfile } from '../lib/userService';
 import { broadcastAlert, clearAlerts } from '../lib/notificationService';
 import { Profile } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { createSystemUser } from '../lib/adminService';
 
 export const AdminDashboard: React.FC = () => {
     const [profiles, setProfiles] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showInviteModal, setShowInviteModal] = useState(false);
+    const [inviteForm, setInviteForm] = useState({
+        name: '',
+        email: '',
+        password: '',
+        role: 'user' as 'admin' | 'doctor' | 'staff' | 'user'
+    });
+    const [isCreating, setIsCreating] = useState(false);
+
+    // Navigation State
+    const [activeTab, setActiveTab] = useState<'registry' | 'broadcast'>('registry');
+    const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
 
     // Megaphone State
     const [broadcastData, setBroadcastData] = useState({ title: '', content: '', type: 'info' as any });
@@ -56,12 +67,6 @@ export const AdminDashboard: React.FC = () => {
         };
     }, []);
 
-    const stats = useMemo(() => {
-        const active = profiles.filter(p => p.status === 'active').length;
-        const frozen = profiles.filter(p => p.status === 'frozen').length;
-        // Mock revenue: $199 per active clinic
-        return { active, frozen };
-    }, [profiles]);
 
     const filteredProfiles = useMemo(() => {
         const q = searchQuery.toLowerCase();
@@ -76,7 +81,7 @@ export const AdminDashboard: React.FC = () => {
         const newStatus = profile.status === 'frozen' ? 'active' : 'frozen';
         try {
             await updateUserProfile(profile.id, { status: newStatus });
-            success(t('status_updated_title'), `${t('account_id_label')} ${newStatus === 'frozen' ? 'muzlatildi' : 'faollashtirildi'}.`);
+            success(t('status_updated_title'), newStatus === 'frozen' ? t('account_frozen_msg') : t('account_active_msg'), thinkingIcon);
         } catch (err) {
             error(t('toast_error_title'), t('toast_save_failed'));
         }
@@ -90,12 +95,38 @@ export const AdminDashboard: React.FC = () => {
         setIsBroadcasting(true);
         try {
             await broadcastAlert(broadcastData);
-            success(t('megaphone_title'), t('megaphone_desc'));
+            success(t('megaphone_title'), t('broadcast_success'), happyIcon);
             setBroadcastData({ title: '', content: '', type: 'info' });
         } catch (err) {
             error(t('toast_error_title'), t('toast_save_failed'));
         } finally {
             setIsBroadcasting(false);
+        }
+    };
+
+    const handleCreateAccount = async () => {
+        if (!inviteForm.email || !inviteForm.password || !inviteForm.name) {
+            error(t('toast_error_title'), "Iltimos, barcha maydonlarni to'ldiring.");
+            return;
+        }
+
+        setIsCreating(true);
+        try {
+            await createSystemUser({
+                email: inviteForm.email,
+                password: inviteForm.password,
+                message: inviteForm.name,
+                role: inviteForm.role
+            });
+
+            success(t('toast_info_title'), t('account_created'));
+            setShowInviteModal(false);
+            setInviteForm({ name: '', email: '', password: '', role: 'user' });
+        } catch (err: any) {
+            console.error("Create account error:", err);
+            error(t('toast_error_title'), err.message || "Xatolik yuz berdi.");
+        } finally {
+            setIsCreating(false);
         }
     };
 
@@ -108,121 +139,188 @@ export const AdminDashboard: React.FC = () => {
         }
     };
 
-    const AdminStatCard = ({ label, value, icon: Icon, color, sublabel }: any) => (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center space-x-5 hover:shadow-md transition-all duration-300">
-            <div className={`p-4 rounded-2xl ${color} bg-opacity-10 text-${color.split('-')[1]}-600`}>
-                <Icon size={24} />
-            </div>
-            <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{label}</p>
-                <p className="text-3xl font-extrabold text-slate-900 tracking-tight">{value}</p>
-                {sublabel && <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{sublabel}</p>}
-            </div>
-        </div>
-    );
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20 relative">
+            {/* Background Mesh Gradients */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-promed-bg">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-promed-primary/5 rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-promed-primary/5 rounded-full blur-[120px]" />
+            </div>
+
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -mr-32 -mt-32" />
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="px-3 py-1 bg-white/10 rounded-full border border-white/20 flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300">{t('god_mode')}</span>
+            <div className="group relative bg-white rounded-[40px] p-8 md:p-12 text-promed-text shadow-soft overflow-hidden border border-promed-primary/5 transition-all duration-500 hover:shadow-card">
+                {/* Glossy Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-promed-primary/5 via-transparent to-transparent opacity-40 group-hover:opacity-60 transition-opacity duration-700" />
+                <div className="absolute top-0 right-0 w-96 h-96 bg-promed-primary/5 rounded-full blur-[100px] -mr-32 -mt-32 animate-pulse" />
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-10">
+                    <div className="space-y-4">
+                        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-promed-bg backdrop-blur-md rounded-full border border-promed-primary/10 shadow-inner">
+                            <div className="w-2 h-2 bg-promed-primary rounded-full animate-pulse shadow-[0_0_12px_hsla(206,100%,34%,0.8)]" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-promed-primary">{t('god_mode')}</span>
+                        </div>
+                        <div>
+                            <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-3 text-promed-text">
+                                {t('admin_control_center')}
+                            </h2>
+                            <p className="text-promed-muted font-medium tracking-wide text-sm md:text-lg max-w-lg leading-relaxed">
+                                Orchestrating <span className="text-promed-primary font-bold">{profiles.length}</span> live healthcare instances with total sovereignty.
+                            </p>
                         </div>
                     </div>
-                    <h2 className="text-3xl font-black tracking-tight mb-2">{t('admin_control_center')}</h2>
-                    <p className="text-slate-400 font-medium tracking-wide">Managing {profiles.length} clinics across the system.</p>
+
+                    <div className="flex items-center gap-4">
+                        <div className="hidden lg:flex items-center gap-8 mr-8 border-r border-promed-primary/10 pr-8">
+                            <div className="text-right">
+                                <p className="text-[10px] font-black text-promed-muted uppercase tracking-widest mb-1">Server Load</p>
+                                <p className="text-xl font-mono font-bold text-promed-primary">12%</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] font-black text-promed-muted uppercase tracking-widest mb-1">Uptime</p>
+                                <p className="text-xl font-mono font-bold text-promed-primary">99.9%</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setShowInviteModal(true)}
+                            className="group/btn relative px-8 py-4 bg-promed-primary text-white font-black rounded-2xl hover:bg-promed-dark transition-all duration-300 shadow-glow flex items-center gap-3 active:scale-95 overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
+                            <UserPlus size={20} className="group-hover/btn:rotate-12 transition-transform" />
+                            <span className="relative tracking-tight">Provision New Clinic</span>
+                        </button>
+                    </div>
                 </div>
-                <div className="flex gap-3 relative z-10">
+            </div>
+
+            {/* Tab Switcher */}
+            <div className="flex justify-center">
+                <div className="bg-slate-100/50 backdrop-blur-md p-1.5 rounded-[24px] flex gap-1 border border-slate-200/50 shadow-inner">
                     <button
-                        onClick={() => setShowInviteModal(true)}
-                        className="px-6 py-3 bg-emerald-500 text-white font-bold rounded-2xl hover:bg-emerald-600 transition shadow-[0_10px_20px_rgba(16,185,129,0.3)] flex items-center gap-2 active:scale-95"
+                        onClick={() => setActiveTab('registry')}
+                        className={`px-8 py-3 rounded-[18px] text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300 flex items-center gap-2.5 ${activeTab === 'registry'
+                            ? 'bg-promed-primary text-white shadow-glow scale-[1.02]'
+                            : 'text-promed-muted hover:text-promed-text hover:bg-white/50'
+                            }`}
                     >
-                        <UserPlus size={18} />
-                        <span>Invite New Clinic</span>
+                        <Users size={16} strokeWidth={2.5} />
+                        System Registry
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('broadcast')}
+                        className={`px-8 py-3 rounded-[18px] text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300 flex items-center gap-2.5 ${activeTab === 'broadcast'
+                            ? 'bg-promed-primary text-white shadow-glow scale-[1.02]'
+                            : 'text-promed-muted hover:text-promed-text hover:bg-white/50'
+                            }`}
+                    >
+                        <Megaphone size={16} strokeWidth={2.5} />
+                        Global Broadcast
                     </button>
                 </div>
             </div>
 
             {/* Invite Modal Placeholder */}
             {showInviteModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[32px] p-8 w-full max-w-md shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-300">
-                        <h3 className="text-2xl font-black text-slate-900 mb-2">Invite Clinic</h3>
-                        <p className="text-slate-500 mb-8 font-medium">Enter the clinic email to send an access link.</p>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-500">
+                    <div className="absolute inset-0" onClick={() => setShowInviteModal(false)} />
+                    <div className="relative bg-promed-bg backdrop-blur-2xl rounded-[48px] p-12 w-full max-w-xl shadow-2xl border border-promed-primary/10 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
+                        {/* Modal Glow */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-[80px] -mr-32 -mt-32" />
 
-                        <div className="space-y-6 text-slate-900">
-                            <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Clinic Email Address</label>
-                                <input
-                                    type="email"
-                                    placeholder="clinic@example.com"
-                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium"
-                                />
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="p-3 bg-promed-primary text-white rounded-2xl">
+                                    <UserPlus size={24} strokeWidth={2.5} />
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-black text-promed-text tracking-tight">Provision Clinic</h3>
+                                    <p className="text-sm text-promed-muted font-bold uppercase tracking-widest mt-1">Registry Protocol 1.0</p>
+                                </div>
                             </div>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setShowInviteModal(false)}
-                                    className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition active:scale-95"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        success(t('toast_info_title'), "Taklifnoma yuborildi.");
-                                        setShowInviteModal(false);
-                                    }}
-                                    className="flex-1 py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition shadow-lg active:scale-95"
-                                >
-                                    {t('transmit')}
-                                </button>
+
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-muted ml-2">Clinic Identity</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Royal Clinic"
+                                        value={inviteForm.name}
+                                        onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
+                                        className="w-full px-7 py-4.5 bg-white border border-promed-primary/10 rounded-[24px] focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all font-bold text-promed-text placeholder:text-promed-muted/30"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-muted ml-2">Secure Link Identifier (Email)</label>
+                                    <input
+                                        type="email"
+                                        placeholder="admin@clinic.com"
+                                        value={inviteForm.email}
+                                        onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                                        className="w-full px-7 py-4.5 bg-white border border-promed-primary/10 rounded-[24px] focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all font-bold text-promed-text placeholder:text-promed-muted/30"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-muted ml-2">Access Key (Password)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Generate secure key..."
+                                        value={inviteForm.password}
+                                        onChange={(e) => setInviteForm({ ...inviteForm, password: e.target.value })}
+                                        className="w-full px-7 py-4.5 bg-white border border-promed-primary/10 rounded-[24px] focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all font-mono font-bold text-promed-text placeholder:font-sans placeholder:text-promed-muted/30"
+                                    />
+                                </div>
+
+                                <div className="flex gap-4 pt-8">
+                                    <button
+                                        onClick={() => setShowInviteModal(false)}
+                                        className="flex-1 py-5 bg-slate-100 text-promed-muted font-black uppercase tracking-widest text-[11px] rounded-[24px] hover:bg-slate-200 transition-all active:scale-95"
+                                    >
+                                        Abort
+                                    </button>
+                                    <button
+                                        onClick={handleCreateAccount}
+                                        disabled={isCreating}
+                                        className="flex-[2] py-5 bg-promed-primary text-white font-black uppercase tracking-widest text-[11px] rounded-[24px] hover:bg-promed-dark transition-all shadow-glow active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
+                                    >
+                                        {isCreating ? (
+                                            <RefreshCw size={20} className="animate-spin" />
+                                        ) : (
+                                            <>
+                                                <ShieldCheck size={20} />
+                                                <span>Finalize Provisioning</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Accounts Table */}
-                <div className="lg:col-span-2 space-y-8">
-                    {/* Stats row */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <AdminStatCard
-                            label="Active Clinics"
-                            value={stats.active}
-                            icon={Users}
-                            color="bg-emerald-500"
-                            sublabel="Running instances"
-                        />
-
-                        <AdminStatCard
-                            label="Frozen Accounts"
-                            value={stats.frozen}
-                            icon={ShieldAlert}
-                            color="bg-rose-500"
-                            sublabel="Restricted access"
-                        />
-                    </div>
-
-                    {/* Main Table Container */}
-                    <div className="bg-white rounded-[32px] shadow-soft border border-slate-100 overflow-hidden">
-                        <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-50/30">
+            {activeTab === 'registry' ? (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="bg-white/70 backdrop-blur-3xl rounded-[40px] shadow-[0_24px_50px_-12px_rgba(0,0,0,0.08)] border border-white/40 overflow-hidden group/table transition-all duration-500 hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.12)] max-w-6xl mx-auto">
+                        <div className="p-10 border-b border-slate-100/50 flex flex-col md:flex-row md:items-center justify-between gap-8 bg-gradient-to-b from-slate-50/50 to-transparent">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-900 tracking-tight">System Accounts</h3>
-                                <p className="text-sm text-slate-500 mt-1 font-medium italic">Synchronized with Supabase Realtime</p>
+                                <h3 className="text-2xl font-black text-promed-text tracking-tight flex items-center gap-3">
+                                    {t('system_accounts') || 'System Registry'}
+                                    <span className="w-2 h-2 bg-promed-primary rounded-full animate-ping" />
+                                </h3>
+                                <p className="text-sm text-promed-muted mt-1.5 font-bold uppercase tracking-widest opacity-80">Synchronized via Realtime Protocol</p>
                             </div>
 
-                            <div className="relative group flex-1 max-w-md">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={18} />
+                            <div className="relative group/search flex-1 max-w-md">
+                                <div className="absolute inset-0 bg-promed-primary/5 blur-xl group-focus-within/search:opacity-100 opacity-0 transition-opacity" />
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-promed-muted/40 group-focus-within/search:text-promed-primary transition-all duration-300 group-focus-within/search:scale-110" size={20} />
                                 <input
                                     type="text"
-                                    placeholder="Search by name, email or ID..."
+                                    placeholder="Search registry by SID, identity, or node..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-12 pr-6 py-3.5 bg-white border border-slate-200 rounded-2xl w-full text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all shadow-sm"
+                                    className="pl-14 pr-7 py-4.5 bg-white border border-promed-primary/10 rounded-[22px] w-full text-base focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all shadow-soft font-bold text-promed-text placeholder:text-promed-muted/30"
                                 />
                             </div>
                         </div>
@@ -230,10 +328,10 @@ export const AdminDashboard: React.FC = () => {
                         <div className="overflow-x-auto no-scrollbar">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="border-b border-slate-50">
-                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Clinic / User</th>
+                                    <tr className="border-b border-promed-primary/5">
+                                        <th className="px-8 py-5 text-[10px] font-black text-promed-muted uppercase tracking-widest">Clinic / User</th>
 
-                                        <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                        <th className="px-6 py-5 text-[10px] font-black text-promed-muted uppercase tracking-widest text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
@@ -241,8 +339,8 @@ export const AdminDashboard: React.FC = () => {
                                         <tr>
                                             <td colSpan={4} className="px-8 py-20 text-center">
                                                 <div className="flex flex-col items-center gap-4">
-                                                    <div className="w-12 h-12 border-4 border-slate-100 border-t-emerald-500 rounded-full animate-spin" />
-                                                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] animate-pulse">Establishing secure link...</p>
+                                                    <div className="w-12 h-12 border-4 border-promed-bg border-t-promed-primary rounded-full animate-spin" />
+                                                    <p className="text-promed-muted font-bold uppercase tracking-widest text-[10px] animate-pulse">Establishing secure link...</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -256,26 +354,31 @@ export const AdminDashboard: React.FC = () => {
                                             </td>
                                         </tr>
                                     ) : filteredProfiles.map((profile) => (
-                                        <tr key={profile.id} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="px-8 py-5">
-                                                <div className="flex items-center space-x-4">
-                                                    <div className="relative">
+                                        <tr
+                                            key={profile.id}
+                                            onClick={() => setSelectedProfile(profile)}
+                                            className="hover:bg-promed-bg transition-colors group cursor-pointer"
+                                        >
+                                            <td className="px-10 py-6">
+                                                <div className="flex items-center space-x-6">
+                                                    <div className="relative isolate">
+                                                        <div className="absolute inset-0 bg-promed-primary/10 blur-lg rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                         {profile.profileImage ? (
-                                                            <img src={profile.profileImage} alt="" className="w-11 h-11 rounded-xl object-cover shadow-sm border border-slate-200 group-hover:scale-105 transition-transform" />
+                                                            <img src={profile.profileImage} alt="" className="w-14 h-14 rounded-2xl object-cover shadow-md border border-white group-hover:scale-110 transition-transform duration-500 ring-4 ring-promed-primary/0 group-hover:ring-promed-primary/10" />
                                                         ) : (
-                                                            <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-sm">
+                                                            <div className="w-14 h-14 rounded-2xl bg-promed-bg flex items-center justify-center text-promed-muted font-black text-xl border border-promed-primary/10 group-hover:shadow-lg transition-all">
                                                                 {profile.fullName?.charAt(0) || '?'}
                                                             </div>
                                                         )}
-
+                                                        <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-4 border-white shadow-sm ${profile.status === 'frozen' ? 'bg-rose-500' : 'bg-promed-primary'}`} />
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">{profile.fullName || 'Unnamed Account'}</p>
-                                                        <p className="text-[10px] text-slate-400 font-medium group-hover:text-slate-500 transition-colors flex items-center gap-1.5 mt-0.5">
-                                                            {profile.email || 'no-email@graft.local'}
-                                                            <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                                                            {profile.id.slice(0, 8).toUpperCase()}
-                                                        </p>
+                                                        <p className="font-black text-promed-text text-lg group-hover:text-promed-primary transition-colors tracking-tight leading-tight">{profile.fullName || 'Unnamed Account'}</p>
+                                                        <div className="flex items-center gap-2 mt-1.5 px-3 py-1 bg-promed-bg rounded-lg w-fit border border-promed-primary/5">
+                                                            <span className="text-[10px] text-promed-muted font-black uppercase tracking-widest">{profile.email || 'no-identity@node.sys'}</span>
+                                                            <span className="w-1 h-1 bg-promed-primary/20 rounded-full" />
+                                                            <span className="text-[10px] text-promed-muted font-mono font-bold uppercase tracking-tighter">SID-{profile.id.slice(0, 8).toUpperCase()}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -286,9 +389,9 @@ export const AdminDashboard: React.FC = () => {
                                                     <button
                                                         onClick={() => handleToggleFreeze(profile)}
                                                         className={`p-2.5 rounded-xl transition-all duration-200 ${profile.status === 'frozen'
-                                                            ? 'bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-white'
+                                                            ? 'bg-promed-bg text-promed-primary hover:bg-promed-primary hover:text-white'
                                                             : 'bg-rose-50 text-rose-500 hover:bg-rose-600 hover:text-white'
-                                                            } active:scale-95`}
+                                                            } active:scale-95 border border-transparent hover:border-promed-primary/20`}
                                                         title={profile.status === 'frozen' ? 'Unfreeze Account' : 'Freeze Account/Access'}
                                                     >
                                                         {profile.status === 'frozen' ? <Unlock size={18} /> : <ShieldAlert size={18} />}
@@ -301,47 +404,51 @@ export const AdminDashboard: React.FC = () => {
                             </table>
                         </div>
 
-                        <div className="p-6 bg-slate-50/50 border-t border-slate-50 flex items-center justify-between">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                <ShieldCheck size={14} className="text-emerald-500" />
-                                Full System Sovereignty Guaranteed
+                        <div className="p-8 bg-white border-t border-promed-primary/5 flex items-center justify-between">
+                            <p className="text-[10px] font-black text-promed-muted uppercase tracking-[0.2em] flex items-center gap-3">
+                                <div className="p-1.5 bg-promed-primary/10 text-promed-primary rounded-lg border border-promed-primary/20">
+                                    <ShieldCheck size={16} />
+                                </div>
+                                Quantum Security Protocol Active
                             </p>
-                            <button onClick={() => window.location.reload()} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors flex items-center gap-2">
-                                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                                <span className="text-[9px] font-black uppercase tracking-widest">Forced Sync</span>
+                            <button onClick={() => window.location.reload()} className="group/sync px-4 py-2 bg-promed-bg hover:bg-promed-light text-promed-muted hover:text-promed-primary rounded-xl border border-promed-primary/10 transition-all flex items-center gap-3 active:scale-95 shadow-soft">
+                                <RefreshCw size={14} className={`${loading ? 'animate-spin' : 'group-hover/sync:rotate-180'} transition-transform duration-500`} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Protocol Re-Sync</span>
                             </button>
                         </div>
                     </div>
                 </div>
-
-                {/* Right Column: Megaphone */}
-                <div className="space-y-8">
-                    <div className="bg-white rounded-[32px] shadow-soft border border-slate-100 overflow-hidden relative">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl -mr-16 -mt-16" />
-                        <div className="p-8 border-b border-slate-50 bg-slate-50/30">
-                            <div className="flex items-center gap-3 mb-1">
-                                <div className="p-2.5 bg-rose-500 text-white rounded-xl shadow-lg shadow-rose-500/20">
-                                    <Megaphone size={18} />
+            ) : (
+                <div className="max-w-2xl mx-auto space-y-8 animate-in mt-10 fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="bg-white/80 backdrop-blur-3xl rounded-[40px] shadow-[0_24px_50px_-12px_rgba(0,0,0,0.06)] border border-white/40 overflow-hidden relative group/mega hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] transition-all duration-500">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/[0.03] rounded-full blur-[80px] -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000" />
+                        <div className="p-10 border-b border-slate-100/50 bg-gradient-to-b from-rose-500/[0.02] to-transparent">
+                            <div className="flex items-center gap-4 mb-3">
+                                <div className="p-3.5 bg-promed-primary text-white rounded-2xl shadow-glow group-hover:rotate-[15deg] transition-transform duration-500 group-hover:scale-110">
+                                    <Megaphone size={22} strokeWidth={2.5} />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 tracking-tight">{t('megaphone_title')}</h3>
+                                <div>
+                                    <h3 className="text-2xl font-black text-promed-text tracking-tight">{t('megaphone_title')}</h3>
+                                    <p className="text-[10px] font-black text-promed-primary/60 uppercase tracking-widest">Global Broadcast Node</p>
+                                </div>
                             </div>
-                            <p className="text-sm text-slate-500 font-medium">{t('megaphone_desc')}</p>
+                            <p className="text-sm text-slate-400 font-bold tracking-wide mt-4 opacity-70 italic">{t('megaphone_desc')}</p>
                         </div>
 
                         <div className="p-8 space-y-6">
                             <div>
                                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Alert Type</label>
                                 <div className="grid grid-cols-2 gap-3">
-                                    {['info', 'warning', 'danger', 'success'].map(t => (
+                                    {['info', 'warning', 'danger', 'success'].map(type => (
                                         <button
-                                            key={t}
-                                            onClick={() => setBroadcastData({ ...broadcastData, type: t })}
-                                            className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${broadcastData.type === t
-                                                ? 'bg-slate-900 text-white border-slate-900 shadow-lg'
-                                                : 'bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100'
+                                            key={type}
+                                            onClick={() => setBroadcastData({ ...broadcastData, type: type })}
+                                            className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${broadcastData.type === type
+                                                ? 'bg-promed-primary text-white border-promed-primary shadow-glow'
+                                                : 'bg-promed-bg text-promed-muted border-promed-primary/10 hover:bg-white hover:text-promed-text'
                                                 }`}
                                         >
-                                            {t}
+                                            {type}
                                         </button>
                                     ))}
                                 </div>
@@ -355,7 +462,7 @@ export const AdminDashboard: React.FC = () => {
                                         placeholder="e.g. System Maintenance"
                                         value={broadcastData.title}
                                         onChange={(e) => setBroadcastData({ ...broadcastData, title: e.target.value })}
-                                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all font-bold text-slate-900"
+                                        className="w-full px-5 py-4 bg-promed-bg border border-promed-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all font-bold text-promed-text"
                                     />
                                 </div>
                                 <div>
@@ -365,7 +472,7 @@ export const AdminDashboard: React.FC = () => {
                                         placeholder="Describe the alert..."
                                         value={broadcastData.content}
                                         onChange={(e) => setBroadcastData({ ...broadcastData, content: e.target.value })}
-                                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all font-medium text-slate-900 resize-none"
+                                        className="w-full px-5 py-4 bg-promed-bg border border-promed-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all font-medium text-promed-text resize-none"
                                     />
                                 </div>
                             </div>
@@ -396,29 +503,90 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Quick Tips */}
-                    <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[32px] p-8">
+                    <div className="bg-promed-primary/5 border border-promed-primary/10 rounded-[32px] p-8">
                         <div className="flex items-center gap-3 mb-4">
-                            <ShieldCheck className="text-emerald-600" size={20} />
-                            <h4 className="font-black text-[10px] uppercase tracking-widest text-emerald-800">Admin Protocol</h4>
+                            <ShieldCheck className="text-promed-primary" size={20} />
+                            <h4 className="font-black text-[10px] uppercase tracking-widest text-promed-text">Admin Protocol</h4>
                         </div>
-                        <ul className="space-y-3 text-xs font-medium text-emerald-700/80 leading-relaxed">
+                        <ul className="space-y-3 text-xs font-medium text-promed-muted leading-relaxed">
                             <li className="flex gap-2">
-                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-1 flex-shrink-0" />
+                                <span className="w-1.5 h-1.5 bg-promed-primary rounded-full mt-1 flex-shrink-0" />
                                 Broadcasts reach all users in real-time.
                             </li>
                             <li className="flex gap-2">
-                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-1 flex-shrink-0" />
+                                <span className="w-1.5 h-1.5 bg-promed-primary rounded-full mt-1 flex-shrink-0" />
                                 Freezing an account logs the user out instantly.
                             </li>
                             <li className="flex gap-2">
-                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-1 flex-shrink-0" />
+                                <span className="w-1.5 h-1.5 bg-promed-primary rounded-full mt-1 flex-shrink-0" />
                                 Only one active broadcast is allowed at a time.
                             </li>
                         </ul>
                     </div>
                 </div>
-            </div>
+            )}
+            {/* Account Details Modal */}
+            {selectedProfile && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-500">
+                    <div className="absolute inset-0" onClick={() => setSelectedProfile(null)} />
+                    <div className="relative bg-white/90 backdrop-blur-2xl rounded-[48px] p-12 w-full max-w-xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] border border-white overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-[80px] -mr-32 -mt-32" />
+
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="p-3 bg-promed-primary text-white rounded-2xl shadow-glow">
+                                    <Lock size={24} strokeWidth={2.5} />
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-black text-promed-text tracking-tight">Account Credentials</h3>
+                                    <p className="text-sm text-promed-muted font-bold uppercase tracking-widest mt-1">Registry Data Node</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-8">
+                                <div className="flex items-center space-x-6 p-4 bg-white rounded-3xl border border-promed-primary/10 shadow-soft">
+                                    {selectedProfile.profileImage ? (
+                                        <img src={selectedProfile.profileImage} alt="" className="w-16 h-16 rounded-2xl object-cover shadow-md" />
+                                    ) : (
+                                        <div className="w-16 h-16 rounded-2xl bg-promed-bg flex items-center justify-center text-promed-muted font-black text-xl border border-promed-primary/10">
+                                            {selectedProfile.fullName?.charAt(0) || '?'}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="font-black text-promed-text text-xl tracking-tight leading-none">{selectedProfile.fullName || 'Unnamed Account'}</p>
+                                        <p className="text-[10px] text-promed-muted font-black uppercase tracking-widest leading-none mt-2">Node SID-{selectedProfile.id.slice(0, 8).toUpperCase()}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="group/field space-y-2">
+                                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-muted ml-2 group-hover/field:text-promed-primary transition-colors">Identity (Email)</label>
+                                        <div className="w-full px-7 py-5 bg-white border border-promed-primary/10 rounded-[24px] font-bold text-promed-text shadow-sm transition-all group-hover/field:border-promed-primary/20 group-hover/field:shadow-soft">
+                                            {selectedProfile.email || 'no-identity@node.sys'}
+                                        </div>
+                                    </div>
+
+                                    <div className="group/pass space-y-2">
+                                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-primary ml-2 group-hover/pass:animate-pulse">Secure Access Key (Password)</label>
+                                        <div className="w-full px-7 py-5 bg-promed-bg text-promed-text border-2 border-dashed border-promed-primary/20 rounded-[24px] font-mono font-black text-3xl tracking-[0.4em] shadow-glow text-center transition-all group-hover/pass:scale-[1.02] active:scale-95">
+                                            {selectedProfile.lockPassword || '000000'}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-8">
+                                    <button
+                                        onClick={() => setSelectedProfile(null)}
+                                        className="w-full py-5 bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] rounded-[24px] hover:bg-slate-200 transition-all active:scale-95 border border-slate-200/50"
+                                    >
+                                        Close Registry Node
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
