@@ -54,9 +54,9 @@ const AdminLoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[120px]"></div>
       </div>
 
-      <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl w-full max-w-md">
+      <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-premium w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-promed-primary to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-promed-primary/30">
+          <div className="w-20 h-20 bg-gradient-to-br from-promed-primary to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm shadow-promed-primary/10">
             <Shield className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Superadmin Access</h1>
@@ -104,14 +104,14 @@ const AdminLoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-promed-primary to-purple-600 hover:from-promed-dark hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-promed-primary/30 flex items-center justify-center gap-2"
+            className="w-full btn-premium-blue !py-4"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
             ) : (
               <>
                 <span>Access Dashboard</span>
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-5 h-5 relative z-10" />
               </>
             )}
           </button>
@@ -282,7 +282,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               <ArrowLeft className="w-5 h-5 text-gray-400" />
             </a>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-promed-primary to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-promed-primary/20">
+              <div className="w-12 h-12 bg-gradient-to-br from-promed-primary to-purple-600 rounded-xl flex items-center justify-center shadow-sm shadow-promed-primary/10">
                 <Users className="w-6 h-6" />
               </div>
               <div>
@@ -352,16 +352,16 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
             </button>
             <button
               onClick={() => setShowModal(true)}
-              className="px-5 py-3 bg-gradient-to-r from-promed-primary to-purple-600 hover:from-promed-dark hover:to-purple-700 rounded-xl transition-all flex items-center gap-2 font-semibold shadow-lg shadow-promed-primary/20"
+              className="px-5 py-3 btn-premium-blue"
             >
-              <Plus className="w-4 h-4" />
-              Add User
+              <Plus className="w-4 h-4 relative z-10" />
+              <span>Add User</span>
             </button>
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-gray-800/30 border border-gray-700/50 rounded-2xl overflow-hidden backdrop-blur-sm">
+        <div className="bg-gray-800/30 border border-gray-700/50 rounded-2xl overflow-hidden backdrop-blur-sm shadow-premium">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-900/50">
@@ -453,7 +453,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md shadow-premium">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
               <div className="w-10 h-10 bg-promed-primary/20 rounded-lg flex items-center justify-center">
                 <Plus className="w-5 h-5 text-blue-400" />
@@ -529,12 +529,12 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-promed-primary to-purple-600 hover:from-promed-dark hover:to-purple-700 rounded-xl transition-all font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-3 btn-premium-blue"
                 >
                   {formLoading ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   ) : (
-                    'Create User'
+                    <span>Create User</span>
                   )}
                 </button>
               </div>

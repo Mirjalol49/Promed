@@ -8,20 +8,27 @@ interface AnimateIconProps {
 }
 
 export const AnimateIcon: React.FC<AnimateIconProps> = ({ children, animateOnHover = true, className = '' }) => {
+    const iconVariants = {
+        idle: { scale: 1, rotate: 0 },
+        hover: {
+            scale: 1.2,
+            rotate: [0, -5, 5, 0],
+            transition: {
+                type: "spring" as const,
+                stiffness: 300,
+                damping: 10,
+                duration: 0.4
+            }
+        }
+    };
+
     if (!animateOnHover) return <div className={className}>{children}</div>;
 
     return (
         <motion.div
             className={className}
-            whileHover={{
-                rotate: [0, -10, 10, -10, 10, 0],
-                scale: 1.1,
-                transition: { duration: 0.5 }
-            }}
-        // Also trigger when parent group is hovered if using CSS group-hover logic? 
-        // Framer motion 'whileHover' handles direct hover. 
-        // To handle parent hover, we usually need variants propagated from parent, 
-        // but here we might just rely on direct hover of the button which contains this.
+            variants={iconVariants}
+            initial="idle"
         >
             {children}
         </motion.div>

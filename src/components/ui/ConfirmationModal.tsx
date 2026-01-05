@@ -35,11 +35,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
     const variants = {
         danger: {
-            bar: 'bg-red-500',
-            bg: 'bg-red-50',
-            innerBg: 'bg-red-100',
-            text: 'text-red-600',
-            button: 'bg-red-600 hover:bg-red-700 shadow-red-200',
+            bar: 'bg-[#FF1493]',
+            bg: 'bg-[#FF1493]/10',
+            innerBg: 'bg-[#FF1493]/20',
+            text: 'text-[#FF1493]',
+            button: 'bg-[#FF1493] hover:bg-[#E01180] shadow-[#FF1493]/10',
             pulse: 'animate-pulse'
         },
         primary: {
@@ -47,7 +47,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             bg: 'bg-promed-primary/5',
             innerBg: 'bg-promed-primary/10',
             text: 'text-promed-primary',
-            button: 'bg-promed-primary hover:bg-teal-800 shadow-promed-primary/20',
+            button: 'bg-promed-primary hover:bg-promed-dark shadow-promed-primary/10',
             pulse: ''
         },
         warning: {
@@ -55,7 +55,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             bg: 'bg-amber-50',
             innerBg: 'bg-amber-100',
             text: 'text-amber-600',
-            button: 'bg-amber-600 hover:bg-amber-700 shadow-amber-200',
+            button: 'bg-amber-600 hover:bg-amber-700 shadow-amber-200/20',
             pulse: ''
         }
     };
@@ -71,7 +71,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             />
 
             {/* Modal Content */}
-            <div className="relative bg-white rounded-3xl  w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
+            <div className="relative bg-white rounded-3xl w-full max-w-md p-8 shadow-premium animate-in zoom-in-95 duration-300 border border-slate-100">
                 {/* Header Decoration */}
                 <div className={`h-2 ${style.bar} w-full`} />
 
@@ -95,9 +95,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     <div className="w-full space-y-3">
                         <button
                             onClick={onConfirm}
-                            className={`w-full py-4 ${style.button} text-white font-bold rounded-2xl transition-all active:scale-[0.98] shadow-lg flex items-center justify-center space-x-2`}
+                            className={`w-full ${variant === 'primary' ? 'btn-premium-blue !py-4' : `${style.button} py-4 text-white font-bold shadow-sm`} rounded-2xl transition-all active:scale-[0.98] flex items-center justify-center space-x-2`}
                         >
-                            <Icon size={20} />
+                            <Icon size={20} className="relative z-10" />
                             <span>{confirmText || t('confirm')}</span>
                         </button>
 

@@ -97,7 +97,7 @@ const InjectionModal: React.FC<{
   return (
     <Portal>
       <div className="fixed inset-0 z-[9999] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-2xl w-full max-w-md p-8 transform scale-100 transition-all border border-slate-200">
+        <div className="bg-white rounded-2xl w-full max-w-md p-8 transform scale-100 transition-all border border-slate-200 shadow-premium">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-2xl font-bold text-slate-800 tracking-tight">{initialData ? t('edit_injection') : t('add_injection')}</h3>
             <button onClick={onClose} className="text-slate-500 hover:text-slate-800 transition p-2 hover:bg-slate-100 rounded-lg"><X size={24} /></button>
@@ -116,7 +116,7 @@ const InjectionModal: React.FC<{
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full p-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-promed-primary focus:border-promed-primary focus:outline-none h-32 resize-none transition-all text-slate-900 placeholder-slate-400"
+                className="w-full p-3 bg-white border border-slate-300 rounded-xl h-32 resize-none transition-all text-slate-900 placeholder-slate-400"
                 placeholder={t('enter_notes')}
               />
             </div>
@@ -124,9 +124,9 @@ const InjectionModal: React.FC<{
               <button onClick={onClose} className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition border border-transparent hover:border-slate-200">{t('cancel')}</button>
               <button
                 onClick={() => { onSave(date, notes); onClose(); }}
-                className="px-6 py-2.5 bg-promed-primary text-white font-bold rounded-xl hover:bg-blue-800 transition active:scale-95 "
+                className="btn-premium-blue"
               >
-                {t('save')}
+                <span>{t('save')}</span>
               </button>
             </div>
           </div>
@@ -159,7 +159,7 @@ const PhotoLabelModal: React.FC<{
   return (
     <Portal>
       <div className="fixed inset-0 z-[9999] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-2xl w-full max-w-md p-6 border border-slate-200">
+        <div className="bg-white rounded-2xl w-full max-w-md p-6 border border-slate-200 shadow-premium">
           <h3 className="text-xl font-bold mb-4 text-slate-800">{t('photo_label_title')}</h3>
           <div className="flex justify-center mb-6 bg-slate-50 rounded-xl p-2 border border-slate-200">
             <div className="h-48 w-full max-w-[300px] mx-auto overflow-hidden rounded-lg  border border-slate-100">
@@ -175,7 +175,7 @@ const PhotoLabelModal: React.FC<{
                   type="number"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-promed-primary focus:border-promed-primary outline-none transition-all text-slate-900 font-medium"
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl outline-none transition-all text-slate-900 font-medium"
                   placeholder="3"
                   autoFocus
                 />
@@ -198,9 +198,9 @@ const PhotoLabelModal: React.FC<{
               <button
                 onClick={handleSave}
                 disabled={!value}
-                className="px-6 py-2.5 bg-promed-primary text-white font-bold rounded-xl hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition"
+                className="btn-premium-blue"
               >
-                {t('save')}
+                <span>{t('save')}</span>
               </button>
             </div>
           </div>
@@ -279,7 +279,7 @@ export const PatientList: React.FC<{
   };
 
   return (
-    <div className="bg-white rounded-2xl  border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-premium">
       <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
         <div className="flex items-center space-x-3">
           <h2 className="text-xl font-bold text-slate-800 tracking-tight">{t('patient_directory')}</h2>
@@ -293,16 +293,16 @@ export const PatientList: React.FC<{
               placeholder={t('search')}
               value={searchQuery}
               onChange={(e) => onSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-promed-primary focus:border-promed-primary focus:outline-none transition-all "
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white transition-all "
             />
             <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-promed-primary transition" size={18} />
           </div>
           <button
             id="add-patient-btn"
             onClick={onAddPatient}
-            className="flex items-center justify-center space-x-2 bg-promed-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-promed-dark transition active:scale-95 whitespace-nowrap"
+            className="btn-premium-blue"
           >
-            <PlusCircle size={18} />
+            <PlusCircle size={18} className="relative z-10" />
             <span>{t('new_patient')}</span>
           </button>
         </div>
@@ -402,15 +402,15 @@ export const PatientList: React.FC<{
 
       {/* --- Pagination Footer --- */}
       {patients.length > 0 && (
-        <div className="flex items-center justify-center border-t border-slate-100 p-4 bg-slate-50/50">
+        <div className="flex items-center justify-center border-t border-slate-100 p-6 bg-slate-50/50">
           <div className="flex items-center gap-3">
             <button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-promed-primary hover:border-promed-primary/30 disabled:opacity-40 disabled:hover:bg-white disabled:text-slate-300  transition-all"
+              className="btn-premium-white !p-2.5"
               aria-label={t('previous_page') || "Previous Page"}
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={20} className="relative z-10 opacity-70" />
             </button>
 
             <div className="flex items-center gap-1.5 px-2">
@@ -419,15 +419,15 @@ export const PatientList: React.FC<{
                   <button
                     key={idx}
                     onClick={() => setCurrentPage(page)}
-                    className={`min-w-[36px] h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all border ${currentPage === page
-                      ? 'bg-promed-primary text-white border-promed-primary '
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                    className={`min-w-[38px] h-10 flex items-center justify-center rounded-xl text-sm font-bold transition-all ${currentPage === page
+                      ? 'btn-premium-blue-sq !p-0 shadow-promed-primary/20'
+                      : 'btn-premium-white !p-0 !min-w-[38px]'
                       }`}
                   >
-                    {page}
+                    <span className="relative z-10">{page}</span>
                   </button>
                 ) : (
-                  <span key={idx} className="w-9 h-9 flex items-center justify-center text-slate-400 text-sm font-medium">
+                  <span key={idx} className="w-10 h-10 flex items-center justify-center text-slate-400 text-sm font-black tracking-widest">
                     {page}
                   </span>
                 )
@@ -437,10 +437,10 @@ export const PatientList: React.FC<{
             <button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-promed-primary hover:border-promed-primary/30 disabled:opacity-40 disabled:hover:bg-white disabled:text-slate-300  transition-all"
+              className="btn-premium-white !p-2.5"
               aria-label={t('next_page') || "Next Page"}
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={20} className="relative z-10 opacity-70" />
             </button>
           </div>
         </div>
@@ -562,7 +562,7 @@ export const PatientDetail: React.FC<{
       </button>
 
       {/* Header Info */}
-      <div className="bg-white rounded-3xl p-8  border border-slate-200 flex flex-col md:flex-row gap-8 relative overflow-hidden">
+      <div className="bg-white rounded-3xl p-8 border border-slate-200 flex flex-col md:flex-row gap-8 relative overflow-hidden shadow-premium">
         {/* Background decorative blob */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
@@ -603,35 +603,35 @@ export const PatientDetail: React.FC<{
             <div className="flex items-center space-x-3 flex-shrink-0">
               <button
                 onClick={onEditPatient}
-                className="flex items-center space-x-2 bg-white text-slate-700 border border-slate-200 hover:border-promed-primary hover:text-promed-primary hover:bg-slate-50 px-5 py-2.5 rounded-xl font-bold text-sm transition  active:scale-95 whitespace-nowrap"
+                className="btn-premium-white !px-5 !py-2.5"
               >
-                <Pencil className="w-5 h-5 group-hover:scale-105 transition-transform" />
-                <span>{t('edit_patient')}</span>
+                <Pencil className="w-5 h-5 relative z-10" />
+                <span className="relative z-10">{t('edit_patient')}</span>
               </button>
               <button
                 onClick={onDeletePatient}
-                className="flex items-center space-x-2 bg-white text-red-700 border border-red-200 hover:bg-red-50 hover:border-red-300 px-5 py-2.5 rounded-xl font-bold text-sm transition  active:scale-95 whitespace-nowrap group"
+                className="btn-premium-white !px-5 !py-2.5 !text-[#FF1493] !border-[#FF1493]/20 hover:!bg-[#FF1493]/5 group/del"
               >
-                <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span>{t('delete')}</span>
+                <Trash2 className="w-5 h-5 relative z-10 group-hover/del:scale-110 transition-transform" />
+                <span className="relative z-10">{t('delete')}</span>
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 hover:border-promed-primary/50 transition-colors">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-premium hover:border-promed-primary/50 transition-colors">
               <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('age')}</p>
               <p className="font-bold text-xl text-slate-800">{patient.age} <span className="text-sm text-slate-500 font-medium">{t('years')}</span></p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 hover:border-promed-primary/50 transition-colors">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-premium hover:border-promed-primary/50 transition-colors">
               <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('gender')}</p>
               <p className="font-bold text-xl text-slate-800">{patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}</p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 hover:border-promed-primary/50 transition-colors">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-premium hover:border-promed-primary/50 transition-colors">
               <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('grafts')}</p>
               <p className="font-bold text-xl text-slate-800">{patient.grafts ? patient.grafts.toLocaleString() : 'N/A'}</p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 hover:border-promed-primary/50 transition-colors">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-premium hover:border-promed-primary/50 transition-colors">
               <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('tech')}</p>
               <p className="font-bold text-xl text-slate-800">
                 {patient.technique === 'Hair' ? t('transplant_hair') :
@@ -647,7 +647,7 @@ export const PatientDetail: React.FC<{
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Col: Photos */}
         <div className="lg:col-span-1 space-y-8">
-          <div className="bg-white rounded-2xl p-6  border border-slate-200">
+          <div className="bg-white rounded-2xl p-6 shadow-premium border border-slate-200">
             <h3 className="font-bold text-slate-800 mb-5 flex items-center space-x-3">
               <div className="">
                 <Camera className="w-9 h-9 text-slate-700" />
@@ -666,7 +666,7 @@ export const PatientDetail: React.FC<{
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6  border border-slate-200">
+          <div className="bg-white rounded-2xl p-6 shadow-premium border border-slate-200">
             <div className="flex justify-between items-center mb-5">
               <h3 className="font-bold text-slate-800 flex items-center space-x-3">
                 <div className="p-2 bg-promed-light rounded-lg text-promed-primary border border-promed-primary/20">
@@ -709,7 +709,7 @@ export const PatientDetail: React.FC<{
 
         {/* Right Col: Injection Timeline */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl p-8  border border-slate-200 h-full relative overflow-hidden">
+          <div className="bg-white rounded-2xl p-8 border border-slate-200 h-full relative overflow-hidden shadow-premium">
             {/* Decorative Background */}
             <div className="absolute -top-20 -right-20 w-80 h-80 bg-promed-light/40 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -724,9 +724,9 @@ export const PatientDetail: React.FC<{
 
               <button
                 onClick={openAddInjection}
-                className="flex items-center space-x-2 text-sm bg-promed-primary text-white px-4 py-2.5 rounded-xl hover:bg-promed-dark transition font-bold active:scale-95 mr-0"
+                className="btn-premium-blue !px-4 !py-2 text-xs"
               >
-                <Plus size={16} />
+                <Plus size={16} className="relative z-10" />
                 <span>{t('add_injection')}</span>
               </button>
             </div>
@@ -750,9 +750,9 @@ export const PatientDetail: React.FC<{
                   </p>
                   <button
                     onClick={openAddInjection}
-                    className="group relative flex items-center space-x-3 bg-promed-primary text-white px-8 py-4 rounded-2xl font-black transition-all hover:scale-105 active:scale-95 "
+                    className="btn-premium-blue !px-8 !py-4"
                   >
-                    <PlusCircle size={22} className="group-hover:rotate-90 transition-transform duration-300" />
+                    <PlusCircle size={22} className="relative z-10 group-hover:rotate-90 transition-transform duration-300" />
                     <span>{t('add_first_injection')}</span>
                   </button>
                 </div>
@@ -791,7 +791,7 @@ export const PatientDetail: React.FC<{
                     )}
 
                     {/* Content */}
-                    <div className={`flex-1 ${isNextHero ? 'bg-white ring-1 ring-slate-200 border-slate-100' : 'bg-slate-50/50'} rounded-2xl p-5 hover:bg-white hover: hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-slate-200`}>
+                    <div className={`flex-1 ${isNextHero ? 'bg-white ring-1 ring-slate-200 border-slate-100' : 'bg-slate-50/50'} rounded-2xl p-5 hover:bg-white hover:shadow-premium hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-slate-200`}>
                       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3">
@@ -1279,7 +1279,7 @@ export const AddPatientForm: React.FC<{
                         <div className="relative group">
                           <User size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                           <input required type="text" value={fullName} onChange={e => setFullName(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                             placeholder="Mirjalol Shamsiddinov" />
                         </div>
                       </div>
@@ -1305,7 +1305,7 @@ export const AddPatientForm: React.FC<{
                                 // input.setSelectionRange(5, 5);
                               }
                             }}
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                             placeholder="+998 93 748 91 41"
                           />
                         </div>
@@ -1317,7 +1317,7 @@ export const AddPatientForm: React.FC<{
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('age')}</label>
                         <input required type="number" value={age} onChange={e => setAge(e.target.value)}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                           placeholder="32" />
                       </div>
                       <div className="space-y-1.5">
@@ -1367,7 +1367,7 @@ export const AddPatientForm: React.FC<{
                         <div className="relative group">
                           <Hash size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                           <input type="number" value={grafts} onChange={e => setGrafts(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                             placeholder="2500" />
                         </div>
                       </div>
@@ -1395,19 +1395,14 @@ export const AddPatientForm: React.FC<{
                 type="submit"
                 form="patient-form"
                 disabled={saving || isSubmitting}
-                className="px-8 py-3 bg-promed-primary text-white font-bold rounded-xl hover:bg-promed-dark transition transform active:scale-95 flex items-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-premium-blue !px-10 !py-3.5"
               >
-                {saving ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>{t('saving') || 'Saving...'}</span>
-                  </>
+                {isSubmitting || saving ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <>
-                    <Save size={18} />
-                    <span>{t('save_patient')}</span>
-                  </>
+                  <Save size={18} className="relative z-10" />
                 )}
+                <span>{isSubmitting || saving ? t('saving') : (initialData ? t('update_patient') : t('save'))}</span>
               </button>
             </div>
           </div>

@@ -25,7 +25,7 @@ const mapProfile = (id: string, data: any): any => ({
   id: id,
   phone: data.phone,
   email: data.email,
-  name: data.full_name,
+  fullName: data.full_name || data.fullName,
   accountId: data.account_id,
   // PRIORITIZE avatar_url, fallback to profile_image (legacy)
   profileImage: data.avatar_url || data.profile_image,

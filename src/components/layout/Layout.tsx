@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { AnimateIcon } from '../ui/AnimateIcon';
 import {
   LayoutDashboard,
@@ -13,7 +14,6 @@ import { PageView } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ProfileAvatar } from './ProfileAvatar';
 import { useAccount } from '../../contexts/AccountContext';
-import { SystemAlertBanner } from './SystemAlertBanner';
 import { NotificationBell } from './NotificationBell';
 import { useSystemAlert } from '../../contexts/SystemAlertContext';
 import lockIcon from '../../assets/images/lock.png';
@@ -57,26 +57,45 @@ const Layout: React.FC<LayoutProps> = ({
   const NavItem = ({ page, icon: Icon, label, id, iconImg }: { page: PageView; icon: any; label: string; id?: string; iconImg?: string }) => {
     const isActive = currentPage === page;
     return (
-      <button
+      <motion.button
         id={id}
         onClick={() => {
           onNavigate(page);
           setIsSidebarOpen(false);
         }}
+        whileHover="hover"
+        initial="idle"
         className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-1 group border border-transparent ${isActive
-          ? 'bg-[hsl(204deg,67%,92%)] border-slate-200 text-slate-900 shadow-sm'
-          : 'text-slate-900 hover:bg-[hsl(204deg,67%,92%)]'
+          ? 'bg-promed-primary/10 border-promed-primary/20 text-promed-primary shadow-sm'
+          : 'text-slate-900 hover:bg-promed-primary/5'
           }`}
       >
         {iconImg ? (
-          <img src={iconImg} alt={label} className={`w-8 h-8 object-contain transition-transform duration-300 group-hover:scale-110 ${isActive ? 'scale-110' : 'opacity-100'}`} />
+          <motion.img
+            src={iconImg}
+            alt={label}
+            variants={{
+              idle: { scale: isActive ? 1.1 : 1 },
+              hover: {
+                scale: 1.2,
+                rotate: [0, -5, 5, 0],
+                transition: {
+                  type: "spring" as const,
+                  stiffness: 300,
+                  damping: 10,
+                  duration: 0.4
+                }
+              }
+            }}
+            className={`w-8 h-8 object-contain transition-transform duration-300 ${isActive ? '' : 'opacity-100'}`}
+          />
         ) : (
           <AnimateIcon>
             <Icon size={20} className={`transition-colors ${isActive ? 'text-promed-primary' : 'text-slate-900'}`} />
           </AnimateIcon>
         )}
         <span className={`text-base font-sans transition-all duration-200 ${isActive ? 'font-semibold' : 'font-medium group-hover:font-semibold'}`}>{label}</span>
-      </button >
+      </motion.button >
     );
   };
 
@@ -95,7 +114,6 @@ const Layout: React.FC<LayoutProps> = ({
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900 font-sans">
-      <SystemAlertBanner />
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div
@@ -106,7 +124,7 @@ const Layout: React.FC<LayoutProps> = ({
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:static inset-y-0 left-0 z-40 w-[260px] bg-[#ffffff] flex flex-col transition-transform duration-300 ease-out shadow-soft border-r border-[#E2E8F0]
+        fixed md:static inset-y-0 left-0 z-40 w-[260px] bg-[#ffffff] flex flex-col transition-transform duration-300 ease-out shadow-premium border-r border-[#E2E8F0]
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Logo */}
@@ -139,7 +157,7 @@ const Layout: React.FC<LayoutProps> = ({
           {isLockEnabled && (
             <button
               onClick={onLock}
-              className="w-full flex items-center space-x-3 text-slate-900 hover:bg-[hsl(204deg,67%,92%)] px-4 py-3 rounded-xl font-medium transition active:scale-95 group"
+              className="w-full flex items-center space-x-3 text-slate-900 hover:bg-promed-primary/10 px-4 py-3 rounded-xl font-medium transition active:scale-95 group"
             >
               <Lock size={20} />
               <span className="text-base font-sans font-medium group-hover:font-semibold transition-all duration-200">{t('lock_app')}</span>
@@ -151,7 +169,7 @@ const Layout: React.FC<LayoutProps> = ({
               onNavigate('SETTINGS');
               setIsSidebarOpen(false);
             }}
-            className="flex items-center w-full space-x-3 group px-4 py-3 rounded-xl hover:bg-[hsl(204deg,67%,92%)] transition duration-200 border border-transparent hover:border-slate-200"
+            className="flex items-center w-full space-x-3 group px-4 py-3 rounded-xl hover:bg-promed-primary/5 transition duration-200 border border-transparent hover:border-promed-primary/10"
           >
             <div className="relative">
               <ProfileAvatar src={userImage} alt="Profile" size={44} className="rounded-lg  shadow-slate-200 border border-slate-100 group-hover:border-slate-300 transition-colors" optimisticId={`${userId}_profile`} />
@@ -169,10 +187,10 @@ const Layout: React.FC<LayoutProps> = ({
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[hsl(204deg,67%,92%)]">
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-50/50">
         {/* Header */}
         <header className="sticky top-0 z-20 h-16 md:h-20">
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-xl shadow-soft border-b border-promed-primary/5" />
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-xl shadow-premium border-b border-promed-primary/5" />
           <div className="relative z-10 h-full flex items-center justify-between px-4 md:px-10">
 
             {/* Left Section: Logo (Mobile) or Title (Desktop) */}

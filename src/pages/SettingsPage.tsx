@@ -421,9 +421,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                     <button
                         onClick={handleSave}
                         disabled={loading || imageUploading}
-                        className="px-8 py-3 bg-promed-primary text-white font-bold rounded-xl hover:bg-promed-primary-hover transition flex items-center gap-2 disabled:opacity-70"
+                        className="btn-premium-blue disabled:opacity-70"
                     >
-                        {loading ? t('saving') : t('save')}
+                        <span>{loading ? t('saving') : t('save')}</span>
                     </button>
                 </div>
             </div>

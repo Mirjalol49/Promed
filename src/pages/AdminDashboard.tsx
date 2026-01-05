@@ -17,11 +17,12 @@ import happyIcon from '../components/mascot/happy_mascot.png';
 import operationIcon from '../components/mascot/operation_mascot.png';
 import thinkingIcon from '../components/mascot/thinking_mascot.png';
 import { subscribeToAllProfiles, updateUserProfile } from '../lib/userService';
-import { broadcastAlert, clearAlerts } from '../lib/notificationService';
+import { broadcastAlert, sendTargetedNotifications, clearAlerts } from '../lib/notificationService';
 import { Profile } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { createSystemUser } from '../lib/adminService';
+import { auth } from '../lib/firebase';
 
 export const AdminDashboard: React.FC = () => {
     const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -43,6 +44,16 @@ export const AdminDashboard: React.FC = () => {
     // Megaphone State
     const [broadcastData, setBroadcastData] = useState({ title: '', content: '', type: 'info' as any });
     const [isBroadcasting, setIsBroadcasting] = useState(false);
+    const [targetAudience, setTargetAudience] = useState<'all' | 'specific'>('all');
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [notificationCategory, setNotificationCategory] = useState<'billing' | 'congratulations' | 'message'>('message');
+
+    // Mapped type based on category
+    useEffect(() => {
+        if (notificationCategory === 'billing') setBroadcastData(prev => ({ ...prev, type: 'warning' }));
+        else if (notificationCategory === 'congratulations') setBroadcastData(prev => ({ ...prev, type: 'success' }));
+        else setBroadcastData(prev => ({ ...prev, type: 'info' }));
+    }, [notificationCategory]);
 
     const { success, error } = useToast();
     const { t } = useLanguage();
@@ -92,17 +103,40 @@ export const AdminDashboard: React.FC = () => {
             error(t('toast_error_title'), t('empty_fields_error') || "Iltimos, barcha maydonlarni to'ldiring.");
             return;
         }
+
+        if (targetAudience === 'specific' && selectedUserIds.length === 0) {
+            error(t('toast_error_title'), "Iltimos, foydalanuvchilarni tanlang.");
+            return;
+        }
+
         setIsBroadcasting(true);
         try {
-            await broadcastAlert(broadcastData);
+            if (targetAudience === 'specific') {
+                await sendTargetedNotifications(selectedUserIds, {
+                    title: broadcastData.title,
+                    content: broadcastData.content,
+                    type: broadcastData.type, // Determined by category
+                    category: notificationCategory
+                });
+            } else {
+                await broadcastAlert({
+                    ...broadcastData,
+                    category: notificationCategory
+                });
+            }
             success(t('megaphone_title'), t('broadcast_success'), happyIcon);
             setBroadcastData({ title: '', content: '', type: 'info' });
-        } catch (err) {
-            error(t('toast_error_title'), t('toast_save_failed'));
+            setSelectedUserIds([]);
+            setTargetAudience('all');
+        } catch (err: any) {
+            console.error("Broadcast error detail:", err);
+            const errMsg = err?.code || err?.message || "Unknown error";
+            error(t('toast_error_title'), `Xatolik: ${errMsg}`);
         } finally {
             setIsBroadcasting(false);
         }
     };
+
 
     const handleCreateAccount = async () => {
         if (!inviteForm.email || !inviteForm.password || !inviteForm.name) {
@@ -115,7 +149,7 @@ export const AdminDashboard: React.FC = () => {
             await createSystemUser({
                 email: inviteForm.email,
                 password: inviteForm.password,
-                message: inviteForm.name,
+                fullName: inviteForm.name,
                 role: inviteForm.role
             });
 
@@ -149,7 +183,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Header Section */}
-            <div className="group relative bg-white rounded-[40px] p-8 md:p-12 text-promed-text overflow-hidden border border-promed-primary/5 transition-all duration-500 ">
+            <div className="group relative bg-white rounded-[40px] shadow-premium p-8 md:p-12 text-promed-text overflow-hidden border border-promed-primary/5 transition-all duration-500 ">
                 {/* Glossy Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-promed-primary/5 via-transparent to-transparent opacity-40 group-hover:opacity-60 transition-opacity duration-700" />
                 <div className="absolute top-0 right-0 w-96 h-96 bg-promed-primary/5 rounded-full blur-[100px] -mr-32 -mt-32 animate-pulse" />
@@ -183,11 +217,10 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                         <button
                             onClick={() => setShowInviteModal(true)}
-                            className="group/btn relative px-8 py-4 bg-promed-primary text-white font-black rounded-2xl hover:bg-promed-dark transition-all duration-300 flex items-center gap-3 active:scale-95 overflow-hidden"
+                            className="btn-premium-blue !px-8 !py-4"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
-                            <UserPlus size={20} className="group-hover/btn:rotate-12 transition-transform" />
-                            <span className="relative tracking-tight">Provision New Clinic</span>
+                            <UserPlus size={20} className="relative z-10" />
+                            <span>Provision New Clinic</span>
                         </button>
                     </div>
                 </div>
@@ -282,13 +315,13 @@ export const AdminDashboard: React.FC = () => {
                                     <button
                                         onClick={handleCreateAccount}
                                         disabled={isCreating}
-                                        className="flex-[2] py-5 bg-promed-primary text-white font-black uppercase tracking-widest text-[11px] rounded-[24px] hover:bg-promed-dark transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
+                                        className="flex-[2] btn-premium-blue !py-5"
                                     >
                                         {isCreating ? (
                                             <RefreshCw size={20} className="animate-spin" />
                                         ) : (
                                             <>
-                                                <ShieldCheck size={20} />
+                                                <ShieldCheck size={20} className="relative z-10" />
                                                 <span>Finalize Provisioning</span>
                                             </>
                                         )}
@@ -302,7 +335,7 @@ export const AdminDashboard: React.FC = () => {
 
             {activeTab === 'registry' ? (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <div className="bg-white/70 backdrop-blur-3xl rounded-[40px] border border-white/40 overflow-hidden group/table transition-all duration-500 max-w-6xl mx-auto">
+                    <div className="bg-white/70 backdrop-blur-3xl rounded-[40px] shadow-premium border border-white/40 overflow-hidden group/table transition-all duration-500 max-w-6xl mx-auto">
                         <div className="p-10 border-b border-slate-100/50 flex flex-col md:flex-row md:items-center justify-between gap-8 bg-gradient-to-b from-slate-50/50 to-transparent">
                             <div>
                                 <h3 className="text-2xl font-black text-promed-text tracking-tight flex items-center gap-3">
@@ -404,23 +437,25 @@ export const AdminDashboard: React.FC = () => {
                             </table>
                         </div>
 
-                        <div className="p-8 bg-white border-t border-promed-primary/5 flex items-center justify-between">
-                            <p className="text-[10px] font-black text-promed-muted uppercase tracking-[0.2em] flex items-center gap-3">
+                        <div className="p-8 bg-white border-t border-promed-primary/5 flex flex-wrap items-center justify-between gap-4">
+                            <div className="text-[10px] font-black text-promed-muted uppercase tracking-[0.2em] flex items-center gap-3">
                                 <div className="p-1.5 bg-promed-primary/10 text-promed-primary rounded-lg border border-promed-primary/20">
                                     <ShieldCheck size={16} />
                                 </div>
-                                Quantum Security Protocol Active
-                            </p>
-                            <button onClick={() => window.location.reload()} className="group/sync px-4 py-2 bg-promed-bg hover:bg-promed-light text-promed-muted hover:text-promed-primary rounded-xl border border-promed-primary/10 transition-all flex items-center gap-3 active:scale-95 ">
-                                <RefreshCw size={14} className={`${loading ? 'animate-spin' : 'group-hover/sync:rotate-180'} transition-transform duration-500`} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Protocol Re-Sync</span>
-                            </button>
+                                <span className="opacity-60">Quantum Security Protocol Active</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => window.location.reload()} className="group/sync px-4 py-2 bg-promed-bg hover:bg-promed-light text-promed-muted hover:text-promed-primary rounded-xl border border-promed-primary/10 transition-all flex items-center gap-3 active:scale-95 ">
+                                    <RefreshCw size={14} className={`${loading ? 'animate-spin' : 'group-hover/sync:rotate-180'} transition-transform duration-500`} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Protocol Re-Sync</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             ) : (
                 <div className="max-w-2xl mx-auto space-y-8 animate-in mt-10 fade-in slide-in-from-bottom-4 duration-700">
-                    <div className="bg-white/80 backdrop-blur-3xl rounded-[40px] border border-white/40 overflow-hidden relative group/mega transition-all duration-500">
+                    <div className="bg-white/80 backdrop-blur-3xl rounded-[40px] shadow-premium border border-white/40 overflow-hidden relative group/mega transition-all duration-500">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/[0.03] rounded-full blur-[80px] -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000" />
                         <div className="p-10 border-b border-slate-100/50 bg-gradient-to-b from-rose-500/[0.02] to-transparent">
                             <div className="flex items-center gap-4 mb-3">
@@ -436,21 +471,76 @@ export const AdminDashboard: React.FC = () => {
                         </div>
 
                         <div className="p-8 space-y-6">
-                            <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Alert Type</label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {['info', 'warning', 'danger', 'success'].map(type => (
+
+
+                            {/* Target Audience & Category Selection */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Audience */}
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Target Audience</label>
+                                    <div className="flex bg-promed-bg p-1 rounded-xl border border-promed-primary/10">
                                         <button
-                                            key={type}
-                                            onClick={() => setBroadcastData({ ...broadcastData, type: type })}
-                                            className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${broadcastData.type === type
-                                                ? 'bg-promed-primary text-white border-promed-primary '
-                                                : 'bg-promed-bg text-promed-muted border-promed-primary/10 hover:bg-white hover:text-promed-text'
-                                                }`}
+                                            onClick={() => setTargetAudience('all')}
+                                            className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${targetAudience === 'all' ? 'bg-white shadow-sm text-promed-primary' : 'text-slate-400 hover:text-slate-600'}`}
                                         >
-                                            {type}
+                                            All Users
                                         </button>
-                                    ))}
+                                        <button
+                                            onClick={() => setTargetAudience('specific')}
+                                            className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${targetAudience === 'specific' ? 'bg-white shadow-sm text-promed-primary' : 'text-slate-400 hover:text-slate-600'}`}
+                                        >
+                                            Specific Users
+                                        </button>
+                                    </div>
+
+                                    {targetAudience === 'specific' && (
+                                        <div className="mt-3 bg-white border border-slate-200 rounded-xl max-h-40 overflow-y-auto p-2 custom-scrollbar">
+                                            {profiles.map(p => (
+                                                <label key={p.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedUserIds.includes(p.id)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) setSelectedUserIds([...selectedUserIds, p.id]);
+                                                            else setSelectedUserIds(selectedUserIds.filter(id => id !== p.id));
+                                                        }}
+                                                        className="w-4 h-4 rounded border-slate-300 text-promed-primary focus:ring-promed-primary"
+                                                    />
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                                            {(p.fullName || p.email)?.charAt(0) || '?'}
+                                                        </div>
+                                                        <span className="text-xs font-bold text-slate-700">{p.fullName || p.email || 'Unknown'}</span>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Category */}
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Notification Type</label>
+                                    <div className="space-y-2">
+                                        {[
+                                            { id: 'billing', label: 'Billing / Invoice', color: 'bg-amber-500' },
+                                            { id: 'congratulations', label: 'Congratulations', color: 'bg-emerald-500' },
+                                            { id: 'message', label: 'General Message', color: 'bg-blue-500' }
+                                        ].map(cat => (
+                                            <button
+                                                key={cat.id}
+                                                // @ts-ignore
+                                                onClick={() => setNotificationCategory(cat.id)}
+                                                className={`w-full p-3 rounded-xl border flex items-center gap-3 transition-all ${notificationCategory === cat.id
+                                                    ? 'bg-white border-promed-primary ring-1 ring-promed-primary/20 shadow-sm'
+                                                    : 'bg-promed-bg border-transparent hover:bg-white hover:border-slate-200'}`}
+                                            >
+                                                <div className={`w-3 h-3 rounded-full ${cat.color}`} />
+                                                <span className={`text-xs font-bold ${notificationCategory === cat.id ? 'text-promed-text' : 'text-slate-500'}`}>{cat.label}</span>
+                                                {notificationCategory === cat.id && <div className="ml-auto w-2 h-2 rounded-full bg-promed-primary" />}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 
@@ -488,13 +578,13 @@ export const AdminDashboard: React.FC = () => {
                                 <button
                                     onClick={handleBroadcast}
                                     disabled={isBroadcasting}
-                                    className="flex-[2] py-4 bg-rose-500 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-rose-600 transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                                    className="flex-[2] btn-premium-blue !py-4"
                                 >
                                     {isBroadcasting ? (
                                         <RefreshCw size={18} className="animate-spin" />
                                     ) : (
                                         <>
-                                            <Send size={18} />
+                                            <Send size={18} className="relative z-10" />
                                             <span>{t('transmit')}</span>
                                         </>
                                     )}
@@ -523,71 +613,73 @@ export const AdminDashboard: React.FC = () => {
                             </li>
                         </ul>
                     </div>
-                </div>
+                </div >
             )}
             {/* Account Details Modal */}
-            {selectedProfile && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-500">
-                    <div className="absolute inset-0" onClick={() => setSelectedProfile(null)} />
-                    <div className="relative bg-white/90 backdrop-blur-2xl rounded-[48px] p-12 w-full max-w-xl border border-white overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-[80px] -mr-32 -mt-32" />
+            {
+                selectedProfile && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-500">
+                        <div className="absolute inset-0" onClick={() => setSelectedProfile(null)} />
+                        <div className="relative bg-white/90 backdrop-blur-2xl rounded-[48px] shadow-premium p-12 w-full max-w-xl border border-white overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-[80px] -mr-32 -mt-32" />
 
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className="p-3 bg-promed-primary text-white rounded-2xl ">
-                                    <Lock size={24} strokeWidth={2.5} />
-                                </div>
-                                <div>
-                                    <h3 className="text-3xl font-black text-promed-text tracking-tight">Account Credentials</h3>
-                                    <p className="text-sm text-promed-muted font-bold uppercase tracking-widest mt-1">Registry Data Node</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-8">
-                                <div className="flex items-center space-x-6 p-4 bg-white rounded-3xl border border-promed-primary/10 ">
-                                    {selectedProfile.profileImage ? (
-                                        <img src={selectedProfile.profileImage} alt="" className="w-16 h-16 rounded-2xl object-cover " />
-                                    ) : (
-                                        <div className="w-16 h-16 rounded-2xl bg-promed-bg flex items-center justify-center text-promed-muted font-black text-xl border border-promed-primary/10">
-                                            {selectedProfile.fullName?.charAt(0) || '?'}
-                                        </div>
-                                    )}
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="p-3 bg-promed-primary text-white rounded-2xl ">
+                                        <Lock size={24} strokeWidth={2.5} />
+                                    </div>
                                     <div>
-                                        <p className="font-black text-promed-text text-xl tracking-tight leading-none">{selectedProfile.fullName || 'Unnamed Account'}</p>
-                                        <p className="text-[10px] text-promed-muted font-black uppercase tracking-widest leading-none mt-2">Node SID-{selectedProfile.id.slice(0, 8).toUpperCase()}</p>
+                                        <h3 className="text-3xl font-black text-promed-text tracking-tight">Account Credentials</h3>
+                                        <p className="text-sm text-promed-muted font-bold uppercase tracking-widest mt-1">Registry Data Node</p>
                                     </div>
                                 </div>
 
-                                <div className="space-y-6">
-                                    <div className="group/field space-y-2">
-                                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-muted ml-2 group-hover/field:text-promed-primary transition-colors">Identity (Email)</label>
-                                        <div className="w-full px-7 py-5 bg-white border border-promed-primary/10 rounded-[24px] font-bold text-promed-text transition-all group-hover/field:border-promed-primary/20 ">
-                                            {selectedProfile.email || 'no-identity@node.sys'}
+                                <div className="space-y-8">
+                                    <div className="flex items-center space-x-6 p-4 bg-white rounded-3xl border border-promed-primary/10 ">
+                                        {selectedProfile.profileImage ? (
+                                            <img src={selectedProfile.profileImage} alt="" className="w-16 h-16 rounded-2xl object-cover " />
+                                        ) : (
+                                            <div className="w-16 h-16 rounded-2xl bg-promed-bg flex items-center justify-center text-promed-muted font-black text-xl border border-promed-primary/10">
+                                                {selectedProfile.fullName?.charAt(0) || '?'}
+                                            </div>
+                                        )}
+                                        <div>
+                                            <p className="font-black text-promed-text text-xl tracking-tight leading-none">{selectedProfile.fullName || 'Unnamed Account'}</p>
+                                            <p className="text-[10px] text-promed-muted font-black uppercase tracking-widest leading-none mt-2">Node SID-{selectedProfile.id.slice(0, 8).toUpperCase()}</p>
                                         </div>
                                     </div>
 
-                                    <div className="group/pass space-y-2">
-                                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-primary ml-2 group-hover/pass:animate-pulse">Secure Access Key (Password)</label>
-                                        <div className="w-full px-7 py-5 bg-promed-bg text-promed-text border-2 border-dashed border-promed-primary/20 rounded-[24px] font-mono font-black text-3xl tracking-[0.4em] text-center transition-all group-hover/pass:scale-[1.02] active:scale-95">
-                                            {selectedProfile.lockPassword || '000000'}
+                                    <div className="space-y-6">
+                                        <div className="group/field space-y-2">
+                                            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-muted ml-2 group-hover/field:text-promed-primary transition-colors">Identity (Email)</label>
+                                            <div className="w-full px-7 py-5 bg-white border border-promed-primary/10 rounded-[24px] font-bold text-promed-text transition-all group-hover/field:border-promed-primary/20 ">
+                                                {selectedProfile.email || 'no-identity@node.sys'}
+                                            </div>
+                                        </div>
+
+                                        <div className="group/pass space-y-2">
+                                            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-primary ml-2 group-hover/pass:animate-pulse">Secure Access Key (Password)</label>
+                                            <div className="w-full px-7 py-5 bg-promed-bg text-promed-text border-2 border-dashed border-promed-primary/20 rounded-[24px] font-mono font-black text-3xl tracking-[0.4em] text-center transition-all group-hover/pass:scale-[1.02] active:scale-95">
+                                                {selectedProfile.lockPassword || '000000'}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="pt-8">
-                                    <button
-                                        onClick={() => setSelectedProfile(null)}
-                                        className="w-full py-5 bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] rounded-[24px] hover:bg-slate-200 transition-all active:scale-95 border border-slate-200/50"
-                                    >
-                                        Close Registry Node
-                                    </button>
+                                    <div className="pt-8">
+                                        <button
+                                            onClick={() => setSelectedProfile(null)}
+                                            className="w-full py-5 bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] rounded-[24px] hover:bg-slate-200 transition-all active:scale-95 border border-slate-200/50"
+                                        >
+                                            Close Registry Node
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

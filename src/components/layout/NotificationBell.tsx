@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, X, Info, AlertTriangle, ShieldCheck, Megaphone, Clock } from 'lucide-react';
 import { useSystemAlert } from '../../contexts/SystemAlertContext';
+import { dismissNotification } from '../../lib/notificationService';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const NotificationBell: React.FC = () => {
@@ -49,13 +50,22 @@ export const NotificationBell: React.FC = () => {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={toggleDropdown}
-                className={`relative p-2.5 rounded-xl transition-all duration-300 ${isOpen ? 'bg-promed-light text-promed-primary' : 'text-slate-400 hover:bg-slate-100'
+                className={`relative p-2.5 rounded-xl transition-all duration-300 ${isOpen ? 'bg-promed-light text-promed-primary shadow-inner' : 'text-slate-600 hover:bg-slate-100 hover:text-promed-primary'
                     }`}
             >
-                <Bell size={24} className={unreadCount > 0 ? 'animate-bounce' : ''} />
-                {unreadCount > 0 && (
-                    <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 border-2 border-white rounded-full" />
-                )}
+                <div className="relative">
+                    <Bell
+                        size={24}
+                        className={`transition-all duration-500 ${unreadCount > 0 ? 'fill-slate-100' : ''}`}
+                        strokeWidth={2.5}
+                    />
+                    {unreadCount > 0 && (
+                        <>
+                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 border-2 border-white rounded-full z-10" />
+                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full animate-ping opacity-75" />
+                        </>
+                    )}
+                </div>
             </button>
 
             <AnimatePresence>
@@ -93,7 +103,18 @@ export const NotificationBell: React.FC = () => {
                                                     {getIcon(alert.type)}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <h4 className="font-bold text-sm text-slate-900 mb-0.5 leading-tight">{alert.title}</h4>
+                                                    <div className="flex justify-between items-start gap-2">
+                                                        <h4 className="font-bold text-sm text-slate-900 mb-0.5 leading-tight">{alert.title}</h4>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                dismissNotification(alert.id);
+                                                            }}
+                                                            className="p-1 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100"
+                                                        >
+                                                            <X size={12} />
+                                                        </button>
+                                                    </div>
                                                     <p className="text-xs text-slate-500 leading-relaxed break-words">{alert.content}</p>
                                                     <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-slate-400">
                                                         <Clock size={10} />
@@ -107,11 +128,6 @@ export const NotificationBell: React.FC = () => {
                             )}
                         </div>
 
-                        {alerts.length > 0 && (
-                            <div className="p-3 bg-slate-50/50 border-t border-slate-100 text-center">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tizim yangilanishlari real-vaqtda keladi</p>
-                            </div>
-                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

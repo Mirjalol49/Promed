@@ -17,16 +17,17 @@ export const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-// Initialize Firestore
-// Standard initialization (default database)
-// Use Long Polling to avoid WebSocket issues
-export const db = initializeFirestore(app, {
-    experimentalForceLongPolling: true, // Force XHR to avoid socket issues
-    localCache: undefined, // Disable default local persistence to fix corrupt state
-});
+// Initialize Firestore (Standard initialization)
+export const db = getFirestore(app);
+
+// Debug Logging - Confirm Connection
+console.log("🔥 Firebase Init: Project =", firebaseConfig.projectId);
+// @ts-ignore
+const dbName = (db as any)._databaseId?.database || "(default)";
+console.log("📦 Firestore Init: Database =", dbName);
 export const storage = getStorage(app);
 // Analytics disabled to prevent content blocker issues
 // export const analytics = getAnalytics(app);

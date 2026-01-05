@@ -37,7 +37,7 @@ interface VitalsCardProps {
 export const VitalsCard: React.FC<VitalsCardProps> = ({ label, value, icon: Icon, color, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl  p-4 flex items-center space-x-4 border border-slate-100 animate-pulse">
+      <div className="bg-white rounded-xl shadow-premium p-4 flex items-center space-x-4 border border-slate-100 animate-pulse">
         <div className="w-10 h-10 bg-slate-100 rounded-lg"></div>
         <div className="space-y-2 flex-1">
           <div className="h-3 bg-slate-100 rounded w-1/2"></div>
@@ -67,7 +67,7 @@ export const VitalsCard: React.FC<VitalsCardProps> = ({ label, value, icon: Icon
 
   return (
     <div
-      className={`rounded-2xl p-5 flex items-center space-x-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${backgroundClass} ${isColored ? 'text-white' : ' text-slate-900'}`}
+      className={`rounded-2xl p-5 flex items-center space-x-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-premium ${backgroundClass} ${isColored ? 'text-white' : ' text-slate-900'}`}
       style={customStyle}
     >
       <div className={`p-3.5 rounded-2xl backdrop-blur-md transition-colors ${isColored ? 'bg-white/20 text-white  border border-white/10' : `${color} bg-opacity-10 text-slate-600`}`}>
@@ -154,7 +154,7 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
   }, [patients, filter, today, t]);
 
   return (
-    <div className="bg-white rounded-2xl  border border-slate-200 overflow-hidden h-full flex flex-col">
+    <div className="bg-white rounded-2xl shadow-premium border border-slate-200 overflow-hidden h-full flex flex-col">
       <div className="p-6 border-b border-promed-primary/5 flex flex-col sm:flex-row justify-between items-center bg-promed-bg/50 gap-4">
         <h3 className="text-lg font-bold text-promed-text tracking-tight flex items-center gap-2">
           <div className="p-2 bg-promed-primary/10 rounded-xl border border-promed-primary/10 ">
@@ -163,22 +163,31 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
           {t('upcoming_patients')}
         </h3>
 
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+        <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50 backdrop-blur-sm">
           <button
             onClick={() => setFilter('all')}
-            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${filter === 'all' ? 'bg-white text-promed-primary shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 bg-transparent'} `}
+            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${filter === 'all'
+              ? 'bg-white text-promed-primary shadow-sm shadow-blue-500/5 ring-1 ring-black/5 scale-[1.02]'
+              : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 bg-transparent'
+              }`}
           >
             {t('filter_all')}
           </button>
           <button
             onClick={() => setFilter('Operation')}
-            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${filter === 'Operation' ? 'bg-white text-rose-500 shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50 bg-transparent'} `}
+            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${filter === 'Operation'
+              ? 'bg-white text-rose-500 shadow-sm shadow-rose-500/5 ring-1 ring-black/5 scale-[1.02]'
+              : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 bg-transparent'
+              }`}
           >
             {t('filter_operations')}
           </button>
           <button
             onClick={() => setFilter('Injection')}
-            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${filter === 'Injection' ? 'bg-white text-promed-primary shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-promed-primary hover:bg-promed-primary/5 bg-transparent'} `}
+            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${filter === 'Injection'
+              ? 'bg-white text-promed-primary shadow-sm shadow-blue-500/5 ring-1 ring-black/5 scale-[1.02]'
+              : 'text-slate-400 hover:text-promed-primary hover:bg-promed-primary/5 bg-transparent'
+              }`}
           >
             {t('filter_injections')}
           </button>
@@ -481,48 +490,73 @@ export const StatCard: React.FC<StatCardProps> = ({
     );
   }
 
+  const getGradient = (baseClass: string) => {
+    // Red / Operations - Deep Crimson/Rose
+    if (baseClass.includes('rose') || baseClass.includes('red')) {
+      return 'linear-gradient(135deg, #f43f5e 0%, #9f1239 100%)';
+    }
+    // Blue / Injections - Refined Gradient with requested color
+    if (baseClass.includes('blue') || baseClass.includes('primary')) {
+      return 'linear-gradient(135deg, hsl(243, 71%, 44%) 0%, hsl(243, 71%, 32%) 100%)';
+    }
+    // Green / Patients - Professional Emerald
+    if (baseClass.includes('emerald') || baseClass.includes('green') || baseClass.includes('hsl(160')) {
+      return 'linear-gradient(135deg, #10b981 0%, #064e3b 100%)';
+    }
+    // Default / Promed Primary
+    return 'linear-gradient(135deg, hsl(243, 71%, 32%) 0%, hsl(243, 71%, 22%) 100%)';
+  };
+
+  const gradient = getGradient(colorClass);
+
   return (
     <div
-      className={`p-7 rounded-2xl text-white relative overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${colorClass} group`}
+      className="p-7 rounded-[28px] text-white relative overflow-hidden transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] group shadow-premium"
+      style={{ background: gradient }}
     >
+      {/* Glossy Top Highlight */}
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/20 to-transparent opacity-50 h-1/2" />
+
       <div className="relative z-10 h-full flex flex-col justify-between">
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md border border-white/10 ">
+            <div className="p-2.5 bg-white/20 rounded-2xl backdrop-blur-md border border-white/20 shadow-inner">
               {iconImg ? (
-                <Activity className="w-5 h-5 text-promed-primary" />
+                <Activity className="w-5 h-5 text-white" />
               ) : (
                 <AnimateIcon>
-                  <Icon size={20} className="text-white" />
+                  <Icon size={22} className="text-white drop-shadow-sm" />
                 </AnimateIcon>
               )}
             </div>
-            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/90">{label}</span>
+            <span className="text-[11px] font-black uppercase tracking-[0.25em] text-white/90 drop-shadow-sm">{label}</span>
           </div>
-          <div>
-            <span className="text-5xl font-black tracking-tight text-white block">{value}</span>
+          <div className="flex items-baseline space-x-2">
+            <span className="text-6xl font-black tracking-tighter text-white drop-shadow-md">{value}</span>
             {change && (
-              <div className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-lg border border-white/10">
-                <span className="text-[10px] font-black">{change}</span>
+              <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/10 flex items-center gap-1">
+                <Activity size={10} className="text-white/80" />
+                <span className="text-[10px] font-bold text-white uppercase tracking-wider">{change}</span>
               </div>
             )}
           </div>
         </div>
       </div>
 
-
-      {/* Mascot Image */}
+      {/* Mascot Image (Hover Effect) */}
       {mascotImg && (
-        <img
-          src={mascotImg}
-          alt="Mascot"
-          className="absolute -bottom-12 -right-4 w-40 h-40 object-contain z-0 pointer-events-none transition-all duration-500 ease-in-out translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:scale-110 group-hover:-rotate-3"
-        />
+        <div className="absolute -bottom-6 -right-4 w-36 h-36 z-0 pointer-events-none transition-all duration-700 ease-out translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:scale-110 group-hover:-rotate-6 drop-shadow-2xl">
+          <img
+            src={mascotImg}
+            alt="Mascot"
+            className="w-full h-full object-contain"
+          />
+        </div>
       )}
 
-      {/* Decorative Orbs */}
-      <div className="absolute -right-4 -top-4 w-32 h-32 bg-white/10 rounded-full blur-3xl pointer-events-none z-0" />
-      <div className="absolute -left-8 -bottom-8 w-40 h-40 bg-black/10 rounded-full blur-3xl pointer-events-none z-0" />
+      {/* Modern Decorative Orbs */}
+      <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-[60px] pointer-events-none z-0" />
+      <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-black/5 rounded-full blur-[60px] pointer-events-none z-0" />
     </div>
   );
 };
@@ -540,7 +574,7 @@ const chartData = [
 export const StatsChart: React.FC = () => {
   const { t } = useLanguage();
   return (
-    <div className="bg-white p-7 rounded-2xl  hover:-hover transition-shadow duration-300 border border-slate-200">
+    <div className="bg-white p-7 rounded-2xl transition-shadow duration-300 border border-slate-200 shadow-premium">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h3 className="text-lg font-bold text-promed-text tracking-tight">{t('patients_stats')}</h3>
@@ -556,8 +590,8 @@ export const StatsChart: React.FC = () => {
           <AreaChart data={chartData}>
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(206, 100%, 34%)" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="hsl(206, 100%, 34%)" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(244, 86%, 50%)" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="hsl(244, 86%, 50%)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
@@ -571,23 +605,22 @@ export const StatsChart: React.FC = () => {
               contentStyle={{
                 borderRadius: '12px',
                 border: '1px solid #E2E8F0',
-                // boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
                 padding: '12px 16px',
                 fontWeight: 'bold',
                 color: '#1E293B',
                 backgroundColor: '#ffffff'
               }}
-              cursor={{ stroke: 'hsl(206, 100%, 34%)', strokeWidth: 1, strokeDasharray: '4 4' }}
-              itemStyle={{ color: 'hsl(206, 100%, 34%)' }}
+              cursor={{ stroke: 'hsl(244, 86%, 50%)', strokeWidth: 1, strokeDasharray: '4 4' }}
+              itemStyle={{ color: 'hsl(244, 86%, 50%)' }}
             />
             <Area
               type="monotone"
               dataKey="value"
-              stroke="hsl(206, 100%, 34%)"
+              stroke="hsl(244, 86%, 50%)"
               strokeWidth={3}
               fillOpacity={1}
               fill="url(#colorValue)"
-              activeDot={{ r: 6, strokeWidth: 0, fill: 'hsl(206, 100%, 34%)' }}
+              activeDot={{ r: 6, strokeWidth: 0, fill: 'hsl(244, 86%, 50%)' }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -615,7 +648,7 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
     .slice(0, 4);
 
   return (
-    <div className="bg-white p-7 rounded-2xl  hover:-hover transition-shadow duration-300 border border-slate-200 flex flex-col">
+    <div className="bg-white p-7 rounded-2xl shadow-premium hover:-hover transition-shadow duration-300 border border-slate-200 flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h3 className="text-lg font-bold text-promed-text tracking-tight">{t('todays_appointments')}</h3>

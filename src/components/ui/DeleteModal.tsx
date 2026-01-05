@@ -35,7 +35,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onConfirm })
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.9, opacity: 0 }}
                         transition={{ type: "spring", bounce: 0.4 }}
-                        className="relative bg-white rounded-[40px] shadow-2xl w-full max-w-sm overflow-hidden p-8 flex flex-col items-center text-center border border-slate-100"
+                        className="relative bg-white rounded-[40px] shadow-premium w-full max-w-sm overflow-hidden p-8 flex flex-col items-center text-center border border-slate-100"
                     >
                         {/* Close Button */}
                         <button
@@ -72,7 +72,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onConfirm })
                             </button>
                             <button
                                 onClick={onConfirm}
-                                className="w-full py-4 bg-rose-50 text-rose-600 border border-rose-100 font-black rounded-2xl transition-all hover:bg-rose-600 hover:text-white hover:border-rose-600 active:scale-[0.98] shadow-sm shadow-rose-200/20"
+                                className="w-full py-4 bg-[#FF1493] text-white font-black rounded-2xl transition-all hover:bg-[#E01180] active:scale-[0.98] shadow-sm"
                             >
                                 {t('delete_modal_confirm')}
                             </button>

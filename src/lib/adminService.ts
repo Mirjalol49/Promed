@@ -9,7 +9,7 @@ import { firebaseConfig, db as mainDb } from './firebase';
 
 export const createSystemUser = async (data: {
     email: string;
-    message: string; // "name"
+    fullName: string;
     role: 'admin' | 'doctor' | 'staff' | 'user';
     password: string;
 }) => {
@@ -43,7 +43,7 @@ export const createSystemUser = async (data: {
 
         // 3. Update their profile (Name)
         await updateProfile(user, {
-            displayName: data.message
+            displayName: data.fullName
         });
 
         // 4. Store user details in Firestore 'profiles' collection
@@ -52,11 +52,12 @@ export const createSystemUser = async (data: {
         await setDoc(doc(mainDb, 'profiles', user.uid), {
             id: user.uid,
             email: data.email,
-            full_name: data.message,
+            full_name: data.fullName, // Correctly mapped
+            fullName: data.fullName,   // Add both casing styles to be safe
             role: data.role,
             created_at: serverTimestamp(),
             status: 'active',
-            avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.message)}&background=random`,
+            avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.fullName)}&background=random`,
             is_disabled: false,
             lock_password: data.password,
             lock_enabled: true

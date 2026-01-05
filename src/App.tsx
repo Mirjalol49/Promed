@@ -144,7 +144,7 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
   console.log("✅ LockScreen: Reached JSX return phase");
 
   return (
-    <div className="fixed inset-0 z-[100] bg-promed-primary flex flex-col items-center justify-center text-white animate-in fade-in duration-500">
+    <div className="fixed inset-0 z-[100] bg-promed-deep flex flex-col items-center justify-center text-white animate-in fade-in duration-500">
       {/* Ambient Glow Effects (Consistent with Login) */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-white/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] bg-white/10 rounded-full blur-[120px] pointer-events-none" />
@@ -217,10 +217,10 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
           <div className="w-full max-w-sm space-y-6">
             <button
               type="submit"
-              className="w-full bg-white text-promed-primary font-black py-5 rounded-[22px] hover:bg-slate-50 transition-all transform active:scale-[0.98] flex items-center justify-center space-x-3  shadow-black/10"
+              className="w-full btn-premium-blue !py-5 !rounded-[22px] !shadow-black/10"
             >
               <span className="uppercase tracking-widest text-xl font-black">{t('unlock')}</span>
-              <ArrowRight size={24} />
+              <ArrowRight size={24} className="relative z-10" />
             </button>
 
             {/* Emergency Bypass Link - Only show for PIN type */}
@@ -278,12 +278,12 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
                 <button
                   type="submit"
                   disabled={resetLoading}
-                  className="flex-[2] py-4 px-4 bg-promed-primary text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all  shadow-promed-primary/20 hover:bg-promed-dark active:scale-95 disabled:opacity-50"
+                  className="flex-[2] btn-premium-blue"
                 >
                   {resetLoading ? (
                     <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-800 rounded-full animate-spin mx-auto" />
                   ) : (
-                    "Verify & Unlock"
+                    <span>Verify & Unlock</span>
                   )}
                 </button>
               </div>

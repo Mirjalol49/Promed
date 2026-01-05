@@ -111,7 +111,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-promed-primary flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-promed-deep flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Ambient Glow Effects */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-white/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] bg-white/10 rounded-full blur-[120px] pointer-events-none" />
@@ -173,14 +173,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-white text-promed-primary font-bold py-4 px-6 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed  hover: text-xl"
+            className="w-full btn-premium-blue !py-4"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-promed-primary border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               <>
                 <span>{t('login_btn')}</span>
-                <ArrowRight size={20} />
+                <ArrowRight size={20} className="relative z-10" />
               </>
             )}
           </button>
@@ -205,7 +205,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           <div className="relative">
             <button
               onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 border border-white/10 rounded-xl text-white hover:bg-white/20 shadow-sm transition-all backdrop-blur-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 border border-white/10 rounded-full text-white hover:bg-white/20 shadow-sm transition-all backdrop-blur-sm"
             >
               <Globe size={16} className="text-white" />
               <span className="text-sm">{languages.find(l => l.code === language)?.flag}</span>
@@ -283,14 +283,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                     setResetError('');
                     setResetMessage('');
                   }}
-                  className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-promed-muted font-bold rounded-2xl transition-all"
+                  className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-promed-muted font-bold rounded-full transition-all"
                 >
                   {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={resetLoading}
-                  className="flex-1 py-3 px-4 bg-promed-primary text-white font-bold rounded-2xl transition-all  hover:bg-promed-dark active:scale-95 disabled:opacity-50"
+                  className="flex-1 py-3 px-4 bg-promed-primary text-white font-bold rounded-full transition-all  hover:bg-promed-dark active:scale-95 disabled:opacity-50"
                 >
                   {resetLoading ? (
                     <div className="w-5 h-5 border-2 border-blue-300 border-t-blue-700 rounded-full animate-spin mx-auto" />

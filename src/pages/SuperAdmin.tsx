@@ -63,7 +63,7 @@ export const SuperAdmin: React.FC = () => {
             await createSystemUser({
                 email,
                 password,
-                message: name, // mapped to displayName
+                fullName: name,
                 role
             });
 
@@ -143,7 +143,7 @@ export const SuperAdmin: React.FC = () => {
     return (
         <div className="p-6 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex justify-between items-center bg-promed-primary p-8 rounded-[40px] text-white border border-white/10 relative overflow-hidden group">
+            <div className="flex justify-between items-center bg-promed-primary p-8 rounded-[40px] shadow-premium text-white border border-white/10 relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                 <div className="relative z-10">
                     <h1 className="text-3xl font-black flex items-center gap-3 tracking-tight">
@@ -154,10 +154,10 @@ export const SuperAdmin: React.FC = () => {
                 </div>
                 <button
                     onClick={() => setShowForm(!showForm)}
-                    className="relative z-10 bg-white text-promed-primary hover:bg-promed-bg px-8 py-4 rounded-2xl font-black flex items-center gap-3 transition-all active:scale-95 overflow-hidden"
+                    className="relative z-10 btn-premium-blue !py-4 !px-8"
                 >
-                    <UserPlus className="w-5 h-5" />
-                    Provision Node
+                    <UserPlus className="w-5 h-5 relative z-10" />
+                    <span>Provision Node</span>
                 </button>
             </div>
 
@@ -171,7 +171,7 @@ export const SuperAdmin: React.FC = () => {
 
             {/* Create User Form */}
             {showForm && (
-                <div className="bg-white rounded-[32px] border border-promed-primary/10 p-10 animate-in slide-in-from-top-4 duration-500">
+                <div className="bg-white rounded-[32px] border border-promed-primary/10 shadow-premium p-10 animate-in slide-in-from-top-4 duration-500">
                     <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                         <Lock className="w-5 h-5 text-promed-primary" />
                         Create Credentials
@@ -181,7 +181,7 @@ export const SuperAdmin: React.FC = () => {
                             <label className="text-sm font-medium text-slate-500">Full Name</label>
                             <input
                                 value={name} onChange={e => setName(e.target.value)}
-                                className="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-promed-primary/20 outline-none"
+                                className="w-full p-3 bg-slate-50 rounded-xl outline-none"
                                 placeholder="Dr. John Doe" required
                             />
                         </div>
@@ -190,7 +190,7 @@ export const SuperAdmin: React.FC = () => {
                             <input
                                 value={email} onChange={e => setEmail(e.target.value)}
                                 type="email"
-                                className="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-promed-primary/20 outline-none"
+                                className="w-full p-3 bg-slate-50 rounded-xl outline-none"
                                 placeholder="doctor@clinic.com" required
                             />
                         </div>
@@ -209,7 +209,7 @@ export const SuperAdmin: React.FC = () => {
                             <label className="text-sm font-medium text-slate-500">Role</label>
                             <select
                                 value={role} onChange={e => setRole(e.target.value as any)}
-                                className="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-promed-primary/20 outline-none"
+                                className="w-full p-3 bg-slate-50 rounded-xl outline-none"
                             >
                                 <option value="staff">Staff</option>
                                 <option value="doctor">Doctor</option>
@@ -227,10 +227,10 @@ export const SuperAdmin: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="bg-promed-primary hover:bg-promed-dark text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] flex items-center gap-3 transition-all disabled:opacity-50 active:scale-95"
+                                className="btn-premium-blue px-10 py-4"
                             >
-                                {loading ? 'Creating...' : 'Establish Registry'}
-                                <ChevronRight className="w-4 h-4" />
+                                <span>{loading ? 'Creating...' : 'Establish Registry'}</span>
+                                <ChevronRight className="w-4 h-4 relative z-10" />
                             </button>
                         </div>
                     </form>
@@ -239,7 +239,7 @@ export const SuperAdmin: React.FC = () => {
 
             {/* Edit User Form */}
             {editingUser && (
-                <div className="bg-white rounded-3xl border border-promed-primary/10 p-8 ring-2 ring-promed-primary/5 scale-in-center">
+                <div className="bg-white rounded-3xl border border-promed-primary/10 shadow-premium p-8 ring-2 ring-promed-primary/5 scale-in-center">
                     <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                         <Lock className="w-5 h-5 text-promed-primary" />
                         Edit User: <span className="text-promed-primary underline font-mono">{editingUser.email}</span>
@@ -249,7 +249,7 @@ export const SuperAdmin: React.FC = () => {
                             <label className="text-sm font-medium text-slate-500">Full Name</label>
                             <input
                                 value={name} onChange={e => setName(e.target.value)}
-                                className="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-promed-primary/20 outline-none"
+                                className="w-full p-3 bg-slate-50 rounded-xl outline-none"
                                 placeholder="Dr. John Doe" required
                             />
                         </div>
@@ -268,7 +268,7 @@ export const SuperAdmin: React.FC = () => {
                             <label className="text-sm font-medium text-slate-500">Role</label>
                             <select
                                 value={role} onChange={e => setRole(e.target.value as any)}
-                                className="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-promed-primary/20 outline-none"
+                                className="w-full p-3 bg-slate-50 rounded-xl outline-none"
                             >
                                 <option value="staff">Staff</option>
                                 <option value="doctor">Doctor</option>
@@ -312,10 +312,10 @@ export const SuperAdmin: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="bg-promed-primary hover:bg-promed-dark text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all disabled:opacity-50"
+                                className="btn-premium-blue px-8 py-3"
                             >
-                                {loading ? 'Saving...' : 'Save Changes'}
-                                <ChevronRight className="w-4 h-4" />
+                                <span>{loading ? 'Saving...' : 'Save Changes'}</span>
+                                <ChevronRight className="w-4 h-4 relative z-10" />
                             </button>
                         </div>
                     </form>
@@ -323,7 +323,7 @@ export const SuperAdmin: React.FC = () => {
             )}
 
             {/* Users List */}
-            <div className="bg-white rounded-[40px] border border-promed-primary/5 overflow-hidden">
+            <div className="bg-white rounded-[40px] border border-promed-primary/5 shadow-premium overflow-hidden">
                 <div className="p-8 border-b border-promed-primary/5 flex justify-between items-center bg-promed-bg/20">
                     <h2 className="text-xl font-black text-promed-text flex items-center gap-3">
                         <div className="p-2 bg-promed-primary text-white rounded-xl ">

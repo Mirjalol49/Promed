@@ -232,7 +232,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
 
                     {/* Language Settings */}
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3">
+                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3 shadow-premium">
                         <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('select_language')}</h4>
                         <div className="grid grid-cols-3 gap-2">
                             {languages.map((lang) => (
@@ -251,7 +251,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     </div>
 
                     {/* Security Toggle Section */}
-                    <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 space-y-3">
+                    <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 space-y-3 shadow-premium">
                         <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('security_settings')}</h4>
                         <div className="flex items-center justify-between">
                             <div className="flex items-start space-x-3">
@@ -280,7 +280,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                 type="text"
                                 value={nameInput}
                                 onChange={(e) => setNameInput(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary focus:bg-white transition-all text-sm shadow-sm"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:bg-white transition-all text-sm shadow-sm"
                             />
                         </div>
 
@@ -335,7 +335,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                                 value={digit}
                                                 onChange={(e) => handlePinChange(idx, e.target.value)}
                                                 onKeyDown={(e) => handlePinKeyDown(idx, e)}
-                                                className="w-12 h-14 bg-white border border-slate-200 rounded-xl text-center text-xl font-bold text-promed-dark focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all shadow-sm"
+                                                className="w-12 h-14 bg-white border border-slate-200 rounded-xl text-center text-xl font-bold text-promed-dark transition-all shadow-sm"
                                             />
                                         ))}
                                     </div>
@@ -352,21 +352,21 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
                     {/* Danger Zone */}
                     <div className="pt-6 border-t border-slate-100 mt-4">
-                        <h4 className="text-[11px] font-bold text-red-400 uppercase tracking-wider mb-3">{t('danger_zone')}</h4>
+                        <h4 className="text-[11px] font-bold text-[#FF1493]/60 uppercase tracking-wider mb-3">{t('danger_zone')}</h4>
                         <button
                             onClick={() => setIsLogoutModalOpen(true)}
-                            className="w-full flex items-center justify-between p-4 bg-red-50/50 hover:bg-red-50 border border-red-100 rounded-xl transition-all group"
+                            className="w-full flex items-center justify-between p-4 bg-[#FF1493]/5 hover:bg-[#FF1493]/10 border border-[#FF1493]/20 rounded-xl transition-all group"
                         >
                             <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-red-100 text-red-600 rounded-lg group-hover:scale-110 transition-transform">
+                                <div className="p-2 bg-[#FF1493]/10 text-[#FF1493] rounded-lg group-hover:scale-110 transition-transform">
                                     <LogOut size={18} />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-sm font-bold text-red-600">{t('logout')}</p>
-                                    <p className="text-[11px] text-red-400 font-medium">{t('logout_desc')}</p>
+                                    <p className="text-sm font-bold text-[#FF1493]">{t('logout')}</p>
+                                    <p className="text-[11px] text-[#FF1493]/60 font-medium">{t('logout_desc')}</p>
                                 </div>
                             </div>
-                            <ChevronDown size={16} className="text-red-300 -rotate-90" />
+                            <ChevronDown size={16} className="text-[#FF1493]/30 -rotate-90" />
                         </button>
                     </div>
                 </div>
@@ -379,9 +379,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="px-6 py-2.5 bg-promed-primary hover:bg-teal-800 text-white text-sm font-bold rounded-xl transition active:scale-95 shadow-md shadow-promed-primary/20 disabled:opacity-50"
+                        className="btn-premium-blue disabled:opacity-50"
                     >
-                        {isSaving ? t('saving') : t('save')}
+                        <span>{isSaving ? t('saving') : t('save')}</span>
                     </button>
                 </div>
 
