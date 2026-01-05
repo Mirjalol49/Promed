@@ -4,6 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './styles/magic-rainbow.css';
+
 @layer base {
     :root {
         --grid-unit: 4px;
@@ -237,5 +239,49 @@ select:focus {
     .btn-premium-white:active:not(:disabled) {
         @apply translate-y-0.5 scale-[0.98];
         box-shadow: none;
+    }
+
+    /* High-End Auth Button (Login / Lock) */
+    .btn-auth-premium {
+        @apply relative w-full inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-white text-lg font-black font-sans tracking-widest transition-all duration-300 border-none overflow-hidden disabled:opacity-50;
+        background: linear-gradient(135deg, hsl(244, 86%, 60%) 0%, hsl(244, 86%, 40%) 100%);
+        box-shadow:
+            0 10px 20px -5px hsla(244, 86%, 50%, 0.4),
+            inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    }
+
+    .btn-auth-premium::before {
+        content: '';
+        @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+        background: linear-gradient(135deg, hsl(244, 86%, 70%) 0%, hsl(244, 86%, 50%) 100%);
+    }
+
+    .btn-auth-premium:hover:not(:disabled)::before {
+        @apply opacity-100;
+    }
+
+    /* Glossy Edge */
+    .btn-auth-premium::after {
+        content: '';
+        @apply absolute inset-0 pointer-events-none;
+        background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    }
+
+    .btn-auth-premium:hover:not(:disabled) {
+        @apply -translate-y-1 scale-[1.02];
+        box-shadow:
+            0 20px 30px -10px hsla(244, 86%, 50%, 0.6),
+            inset 0 1px 1px rgba(255, 255, 255, 0.5);
+    }
+
+    .btn-auth-premium:active:not(:disabled) {
+        @apply translate-y-0.5 scale-[0.98];
+        box-shadow:
+            0 5px 10px -2px hsla(244, 86%, 50%, 0.4);
+    }
+
+    .btn-auth-premium span {
+        @apply relative z-10 flex items-center gap-2;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
     }
 }

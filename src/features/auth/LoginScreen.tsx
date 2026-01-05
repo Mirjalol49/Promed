@@ -119,9 +119,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       {/* Main Content */}
       <div className="relative z-10 w-full max-w-md flex flex-col items-center">
 
-        {/* Lock Icon */}
-        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-8 border border-promed-primary/10 ">
-          <LockIcon className="w-10 h-10 text-promed-primary" />
+        {/* Lock Icon - High Res 3D Asset */}
+        <div className="relative mb-10 flex items-center justify-center">
+          <div className="flex items-center justify-center animate-float">
+            <img
+              src={lockIcon}
+              alt="Security Lock"
+              className="w-24 h-24 md:w-32 md:h-32 object-contain relative z-10"
+            />
+          </div>
         </div>
 
         {/* Title */}
@@ -173,16 +179,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full btn-premium-blue !py-4"
+            className="btn-auth-premium group"
           >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <>
-                <span>{t('login_btn')}</span>
-                <ArrowRight size={20} className="relative z-10" />
-              </>
-            )}
+            <span>
+              {loading ? (
+                <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  {t('login_btn')}
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </span>
           </button>
 
           {/* Forgot Password Link */}

@@ -16,7 +16,7 @@ interface SettingsPageProps {
 export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
     const { t, language, setLanguage } = useLanguage();
     const { success, error: showError } = useToast();
-    const { accountName, userEmail, logout, refreshProfile } = useAccount();
+    const { accountName, userEmail, userImage, logout, refreshProfile } = useAccount();
     const auth = getAuth();
 
     const [nameInput, setNameInput] = useState(accountName);
@@ -31,7 +31,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
     const [loading, setLoading] = useState(false);
     const pinRefs = useRef<(HTMLInputElement | null)[]>([]);
     const currentPinRefs = useRef<(HTMLInputElement | null)[]>([]);
-    const [uploadedAvatarUrl, setUploadedAvatarUrl] = useState<string | null>(null);
+    const [uploadedAvatarUrl, setUploadedAvatarUrl] = useState<string | null>(userImage || null);
     const [lockEnabled, setLockEnabled] = useState(false);
 
     // Correct hook usage matching usage in EditProfileModal
@@ -54,6 +54,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
         setNameInput(accountName);
     }, [accountName]);
 
+    // Keep uploadedAvatarUrl in sync with global userImage if it's currently null or refreshing
+    useEffect(() => {
+        if (userImage && !uploadedAvatarUrl) {
+            setUploadedAvatarUrl(userImage);
+        }
+    }, [userImage, uploadedAvatarUrl]);
+
     useEffect(() => {
         const fetchSettings = async () => {
             if (!userId) return;
@@ -66,6 +73,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                     const password = data.lock_password || data.lockPassword;
 
                     if (data.lock_enabled !== undefined) setLockEnabled(data.lock_enabled);
+
+                    // Pull profile image/avatar
+                    const profileImg = data.profile_image || data.avatar_url || data.profileImage;
+                    if (profileImg) setUploadedAvatarUrl(profileImg);
 
                     if (password) {
                         const isPin = /^\d{6}$/.test(password);

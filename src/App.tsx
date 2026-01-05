@@ -217,10 +217,11 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
           <div className="w-full max-w-sm space-y-6">
             <button
               type="submit"
-              className="w-full btn-premium-blue !py-5 !rounded-[22px] !shadow-black/10"
+              className="btn-auth-premium group"
             >
-              <span className="uppercase tracking-widest text-xl font-black">{t('unlock')}</span>
-              <ArrowRight size={24} className="relative z-10" />
+              <span>
+                {t('unlock')} <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              </span>
             </button>
 
             {/* Emergency Bypass Link - Only show for PIN type */}
