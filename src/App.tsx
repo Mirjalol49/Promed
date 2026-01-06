@@ -816,7 +816,7 @@ const App: React.FC = () => {
     try {
       console.log('Updating injection status:', { patientId, injectionId, status });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('status_updated_title'), t('status_updated_msg'), injectionIcon);
+      // success(t('status_updated_title'), t('status_updated_msg'), injectionIcon); // User requested silent update
     } catch (err: any) {
       console.error('Error updating injection:', err);
       showError(t('toast_error_title'), `${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);

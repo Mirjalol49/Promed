@@ -15,11 +15,11 @@ import imageCompression from 'browser-image-compression';
  */
 export async function compressImage(file: File): Promise<File> {
     const options = {
-        maxSizeMB: 1,                 // Increased to 1MB for better high-res quality
-        maxWidthOrHeight: 2048,       // 2K max dimension
-        useWebWorker: true,           // Non-blocking
-        initialQuality: 0.8,          // Slightly higher initial quality
-        maxIteration: 10,             // More attempts to reach target size
+        maxSizeMB: 1,                 // 1MB allows good quality
+        maxWidthOrHeight: 1280,       // Safe resolution to prevent browser crashes on big files
+        useWebWorker: true,
+        initialQuality: 0.8,
+        maxIteration: 10,
     };
 
     try {
@@ -32,7 +32,13 @@ export async function compressImage(file: File): Promise<File> {
             return file;
         }
 
-        const compressedFile = await imageCompression(file, options);
+        // Race condition: If compression takes > 3s or fails, use original
+        const compressionPromise = imageCompression(file, options);
+        const timeoutPromise = new Promise<File>((_, reject) => {
+            setTimeout(() => reject(new Error('TIMEOUT')), 3000);
+        });
+
+        const compressedFile = await Promise.race([compressionPromise, timeoutPromise]);
 
         const compressedSizeMB = compressedFile.size / 1024 / 1024;
         const savingsPercent = ((1 - compressedSizeMB / originalSizeMB) * 100).toFixed(0);
@@ -42,9 +48,12 @@ export async function compressImage(file: File): Promise<File> {
         );
 
         return compressedFile;
-    } catch (error) {
-        console.error('❌ Image compression failed:', error);
-        // If it's a "File is not an image" error, return original
+    } catch (error: any) {
+        if (error.message === 'TIMEOUT') {
+            console.warn('⚠️ Compression timed out (3s). Uploading original to ensure speed.');
+        } else {
+            console.error('❌ Image compression failed:', error);
+        }
         return file;
     }
 }

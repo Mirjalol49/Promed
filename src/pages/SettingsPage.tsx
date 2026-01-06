@@ -190,7 +190,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
 
 
             {/* Profile Section (Inline) */}
-            <div className="bg-white rounded-2xl p-6  border border-gray-100">
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_4px_6px_rgba(0,0,0,0.2)]">
                 <div className="flex flex-col items-center mb-8">
                     <div className="relative group/avatar cursor-pointer" onClick={() => document.getElementById('file-upload-settings')?.click()}>
                         {/* Main Avatar Container */}
@@ -218,7 +218,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                         onClick={() => document.getElementById('file-upload-settings')?.click()}
                         className="mt-4 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-promed-primary transition-colors flex items-center gap-2"
                     >
-                        {t('upload_photo') || "Rasm yuklash"}
+                        {t('upload_image')}
                     </button>
 
                     <input
@@ -227,6 +227,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                         className="hidden"
                         accept="image/*"
                         onChange={handleImageSelect}
+                        onClick={(e) => (e.currentTarget.value = '')}
                     />
                     {imageUploading && <p className="text-xs text-promed-primary mt-2 animate-pulse font-bold uppercase tracking-tighter">Protocol: Uploading...</p>}
                 </div>
@@ -234,14 +235,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                 <div className="space-y-6">
                     {/* Language */}
                     <div>
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('language')}</label>
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('select_language')}</label>
                         <div className="grid grid-cols-3 gap-2">
                             {['en', 'uz', 'ru'].map((lang) => (
                                 <button
                                     key={lang}
                                     onClick={() => setLanguage(lang as any)}
-                                    className={`py-2 px-4 rounded-xl text-sm font-bold border transition-all ${language === lang
-                                        ? 'bg-promed-primary text-white border-promed-primary '
+                                    className={`py-2 px-4 rounded-xl text-sm font-bold border transition-all duration-300 ${language === lang
+                                        ? 'btn-gel-blue px-4 py-2 text-sm rounded-xl'
                                         : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                                         }`}
                                 >
@@ -254,9 +255,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                     {/* Sound Settings */}
                     <div>
                         <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('sound_settings') || 'Sound'}</label>
-                        <div className="bg-white p-5 rounded-[24px] border border-gray-200 flex items-center justify-between group/sound transition-all hover:bg-gray-50">
+                        <div className="bg-white p-5 rounded-[24px] border border-gray-200 flex items-center justify-between group/sound transition-all hover:bg-gray-50 duration-300 shadow-sm">
                             <div className="flex items-center gap-4">
-                                <div className={`p-3 rounded-2xl border transition-colors ${soundEnabled ? 'bg-promed-primary text-white border-promed-primary/10' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                                <div className={`p-3 rounded-2xl border transition-all duration-300 flex items-center justify-center ${soundEnabled
+                                    ? 'gel-blue-style p-3 rounded-2xl border-[#6b9dff] text-white'
+                                    : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
                                     {soundEnabled ? <Volume2 size={22} /> : <VolumeX size={22} />}
                                 </div>
                                 <div>
@@ -267,9 +270,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                             <button
                                 type="button"
                                 onClick={toggleSound}
-                                className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 ${soundEnabled ? 'bg-promed-primary ' : 'bg-slate-200 '}`}
+                                className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 border ${soundEnabled
+                                    ? 'gel-blue-style w-14 h-7 rounded-full border-none'
+                                    : 'bg-slate-200 border-transparent shadow-inner'}`}
                             >
-                                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 ${soundEnabled ? 'left-8' : 'left-1'}`} />
+                                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 shadow-sm z-20 ${soundEnabled ? 'left-8' : 'left-1'}`} />
                             </button>
                         </div>
                     </div>
@@ -323,9 +328,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                             <button
                                 type="button"
                                 onClick={() => setLockEnabled(!lockEnabled)}
-                                className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 ${lockEnabled ? 'bg-promed-primary ' : 'bg-slate-200 '}`}
+                                className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 ${lockEnabled ? 'gel-blue-style w-14 h-7 rounded-full border-none' : 'bg-slate-200 '}`}
                             >
-                                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 ${lockEnabled ? 'left-8' : 'left-1'}`} />
+                                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 shadow-sm z-20 ${lockEnabled ? 'left-8' : 'left-1'}`} />
                             </button>
                         </div>
 
@@ -459,9 +464,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                     <button
                         onClick={handleSave}
                         disabled={loading || imageUploading}
-                        className="btn-premium-blue disabled:opacity-70"
+                        className="btn-gel-blue min-w-[150px] sm:min-w-[180px] shadow-lg disabled:opacity-70"
                     >
-                        <span>{loading ? t('saving') : t('save')}</span>
+                        <span className="relative z-10">{loading ? t('saving') : t('save')}</span>
                     </button>
                 </div>
             </div>

@@ -12,21 +12,64 @@ const copy = {
     ru: "Сохранение..."
 };
 
-export const ImageUploadingOverlay: React.FC<ImageUploadingOverlayProps> = ({ language }) => {
+export const ImageUploadingOverlay: React.FC<ImageUploadingOverlayProps & { showText?: boolean; progress?: number }> = ({ language, showText = true, progress }) => {
     const title = copy[language] || copy['en'];
+    const hasProgress = typeof progress === 'number' && progress >= 0;
+
+    // Circular Progress Params
+    const radius = 18;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDashoffset = hasProgress ? circumference - ((progress || 0) / 100) * circumference : 0;
 
     return (
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm rounded-inherit transition-colors duration-300"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md rounded-inherit transition-all duration-300"
         >
-            <div className="flex flex-col items-center text-white">
-                <Loader2 className="w-8 h-8 animate-spin mb-2" strokeWidth={2.5} />
-                <h3 className="font-bold text-sm tracking-wide uppercase drop-shadow-md">
-                    {title}
-                </h3>
+            <div className="flex flex-col items-center text-white relative">
+                {hasProgress ? (
+                    <div className={`relative flex items-center justify-center ${showText ? 'mb-2' : ''}`}>
+                        {/* Background Circle */}
+                        <svg className="transform -rotate-90 w-12 h-12">
+                            <circle
+                                cx="24"
+                                cy="24"
+                                r={radius}
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                fill="transparent"
+                                className="text-white/20"
+                            />
+                            {/* Progress Circle */}
+                            <circle
+                                cx="24"
+                                cy="24"
+                                r={radius}
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                fill="transparent"
+                                strokeDasharray={circumference}
+                                strokeDashoffset={strokeDashoffset}
+                                strokeLinecap="round"
+                                className="text-white transition-all duration-300 ease-out"
+                            />
+                        </svg>
+                        {/* Percentage Text */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[10px] font-bold">{Math.round(progress || 0)}%</span>
+                        </div>
+                    </div>
+                ) : (
+                    <Loader2 className={`animate-spin ${showText ? 'w-8 h-8 mb-2' : 'w-10 h-10'}`} strokeWidth={2.5} />
+                )}
+
+                {showText && (
+                    <h3 className="font-bold text-sm tracking-wide uppercase drop-shadow-md text-center px-1">
+                        {title}
+                    </h3>
+                )}
             </div>
         </motion.div>
     );

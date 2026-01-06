@@ -225,14 +225,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
                                 {/* UPLOAD ANIMATION OVERLAY */}
                                 <AnimatePresence>
-                                    {isUploading && <ImageUploadingOverlay language={language} />}
+                                    {isUploading && <ImageUploadingOverlay language={language} showText={false} progress={uploadProgress} />}
                                 </AnimatePresence>
                             </div>
                             {/* Floating camera icon cue */}
                             <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1 z-20 flex items-center justify-center">
                                 <img src={cameraIcon} alt="Camera" className="w-[18px] h-[18px] object-contain opacity-70 group-hover/photo:brightness-0 group-hover/photo:invert" />
                             </div>
-                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
+                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} onClick={(e) => (e.currentTarget.value = '')} disabled={isUploading} />
                         </label>
                     </div>
 

@@ -17,7 +17,7 @@ import wrongSound from '../assets/sounds/wrong.mp3';
 export const useAppSounds = () => {
     const { soundEnabled } = useSettings();
     const [playConfetti] = useSound(confettiSound, { volume: 0.5 });
-    const [playNotification, { stop: stopNotification }] = useSound(notificationSound, { volume: 0.5 });
+    const [playNotification, { stop: stopNotification }] = useSound(toasterSound, { volume: 0.5 });
     const [playToaster] = useSound(toasterSound, { volume: 0.5 });
     const [playUnlock] = useSound(unlockSound, { volume: 0.5 });
     const [playError] = useSound(wrongSound, { volume: 0.5 });

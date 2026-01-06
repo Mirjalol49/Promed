@@ -284,4 +284,51 @@ select:focus {
         @apply relative z-10 flex items-center gap-2;
         filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
     }
+
+    /* Core Gel Visual Style (Gradient, Shadow, Gloss) - Flexible for any element */
+    .gel-blue-style {
+        @apply relative border overflow-hidden transition-all duration-300;
+        /* Original Premium Blue Gradient (Darker, Non-Neon) */
+        background: linear-gradient(180deg, hsl(244, 86%, 50%) 0%, hsl(244, 86%, 30%) 100%);
+        /* Darker Blue Border to match */
+        border-color: hsl(244, 86%, 25%);
+        /* Clean Shadow (No Neon) */
+        box-shadow:
+            0 4px 6px rgba(0, 0, 0, 0.2),
+            inset 0 2px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    /* The "Gel Cap" Reflection */
+    .gel-blue-style::before {
+        content: '';
+        @apply absolute inset-x-0 top-0 h-[45%] pointer-events-none;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, transparent 100%);
+        border-radius: inherit;
+    }
+
+    /* Standard Gel Button (Layout + Visuals) */
+    .btn-gel-blue {
+        @apply gel-blue-style inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-bold font-sans tracking-wide disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed;
+    }
+
+    .btn-gel-blue:hover:not(:disabled) {
+        transform: scale(1.02);
+        box-shadow:
+            0 8px 15px rgba(0, 0, 0, 0.2),
+            inset 0 2px 0 rgba(255, 255, 255, 0.2);
+        filter: brightness(1.05);
+    }
+
+    .btn-gel-blue:active:not(:disabled) {
+        transform: scale(0.98);
+        box-shadow:
+            0 2px 5px rgba(0, 0, 0, 0.2),
+            inset 0 2px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    /* Ensure text/icons are above the gloss */
+    .gel-blue-style>*,
+    .btn-gel-blue>* {
+        @apply relative z-10 drop-shadow-md;
+    }
 }
