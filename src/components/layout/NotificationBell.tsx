@@ -53,17 +53,36 @@ export const NotificationBell: React.FC = () => {
                 className={`relative p-2.5 rounded-xl transition-all duration-300 ${isOpen ? 'bg-promed-light text-promed-primary shadow-inner' : 'text-slate-600 hover:bg-slate-100 hover:text-promed-primary'
                     }`}
             >
+                <style>
+                    {`
+                    @keyframes ring {
+                        0% { transform: rotate(0); }
+                        10% { transform: rotate(15deg); }
+                        20% { transform: rotate(-10deg); }
+                        30% { transform: rotate(5deg); }
+                        40% { transform: rotate(-5deg); }
+                        50% { transform: rotate(0); }
+                        100% { transform: rotate(0); }
+                    }
+                    .bell-ringing {
+                        animation: ring 2s ease-in-out infinite;
+                        transform-origin: top center;
+                    }
+                    `}
+                </style>
                 <div className="relative">
-                    <Bell
-                        size={24}
-                        className={`transition-all duration-500 ${unreadCount > 0 ? 'fill-slate-100' : ''}`}
-                        strokeWidth={2.5}
-                    />
+                    <div className={`${unreadCount > 0 ? 'bell-ringing' : ''}`}>
+                        <Bell size={24} className={`text-slate-600 ${isOpen ? 'text-promed-primary fill-current' : ''}`} />
+                    </div>
                     {unreadCount > 0 && (
-                        <>
-                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 border-2 border-white rounded-full z-10" />
-                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full animate-ping opacity-75" />
-                        </>
+                        <div className="absolute -top-1.5 -right-1.5">
+                            <span className="relative flex h-5 w-5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 text-[10px] font-bold text-white items-center justify-center border-[2px] border-white shadow-[0_0_10px_rgba(239,68,68,0.6)]">
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </span>
+                            </span>
+                        </div>
                     )}
                 </div>
             </button>

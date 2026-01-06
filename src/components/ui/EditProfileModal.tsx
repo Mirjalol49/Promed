@@ -12,9 +12,12 @@ import {
     ChevronDown,
     Globe,
     Check,
-    Mail
+    Mail,
+    Volume2,
+    VolumeX
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSettings } from '../../contexts/SettingsContext';
 import { ProfileAvatar } from '../layout/ProfileAvatar';
 import ConfirmationModal from './ConfirmationModal';
 import { auth } from '../../lib/firebase';
@@ -58,6 +61,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     onLogout
 }) => {
     const { t, language, setLanguage } = useLanguage();
+    const { soundEnabled, toggleSound } = useSettings();
 
     const languages = [
         { code: 'en', label: 'English' },
@@ -92,6 +96,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         pathPrefix: `avatars/${propUserId}`, // Dynamic path
         onUploadComplete: (url) => {
             setProfileImage(url);
+            // 🔥 Global Optimistic Update: Update sidebar/header instantly
+            setOptimisticImage(`${propUserId}_profile`, url);
             success(t('photo_added_title'), t('toast_photo_added'));
         },
         onUploadError: (err) => {
@@ -210,7 +216,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     <div className="flex justify-center mb-2">
                         <label className="relative group/photo cursor-pointer w-28 h-28">
                             <div className="w-full h-full rounded-full overflow-hidden border-4 border-white  group-hover/photo:ring-4 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 group-hover/photo: transition-all duration-500 ring-1 ring-slate-100 relative bg-slate-50">
-                                <ProfileAvatar src={profileImage} alt="Profile" size={112} className="w-full h-full group-hover/photo:scale-110 transition duration-700" optimisticId={`${propUserId}_profile`} />
+                                <ProfileAvatar src={previewUrl || profileImage} alt="Profile" size={112} className="w-full h-full group-hover/photo:scale-110 transition duration-700" optimisticId={`${propUserId}_profile`} />
 
                                 {/* Standard Hover Overlay */}
                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition duration-500 z-10">
@@ -268,6 +274,28 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                 className={`w-11 h-6 rounded-full flex items-center p-0.5 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-promed-primary ${isLockEnabled ? 'bg-promed-primary' : 'bg-slate-200'}`}
                             >
                                 <div className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${isLockEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Sound Settings */}
+                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3 shadow-premium">
+                        <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('sound_settings') || 'Sound Preferences'}</h4>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-start space-x-3">
+                                <div className={`p-2 rounded-lg ${soundEnabled ? 'bg-promed-primary text-white' : 'bg-slate-200 text-slate-500'} transition-colors`}>
+                                    {soundEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}
+                                </div>
+                                <div>
+                                    <p className="font-bold text-sm text-slate-800">{t('enable_sound') || 'Enable Sound'}</p>
+                                    <p className="text-xs text-slate-500 leading-tight mt-0.5 pr-2">{t('sound_hint') || 'Play sound effects for notifications and actions'}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={toggleSound}
+                                className={`w-11 h-6 rounded-full flex items-center p-0.5 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-promed-primary ${soundEnabled ? 'bg-promed-primary' : 'bg-slate-200'}`}
+                            >
+                                <div className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${soundEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
                             </button>
                         </div>
                     </div>
@@ -352,21 +380,21 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
                     {/* Danger Zone */}
                     <div className="pt-6 border-t border-slate-100 mt-4">
-                        <h4 className="text-[11px] font-bold text-[#FF1493]/60 uppercase tracking-wider mb-3">{t('danger_zone')}</h4>
+                        <h4 className="text-[11px] font-bold text-red-500/60 uppercase tracking-wider mb-3">{t('danger_zone')}</h4>
                         <button
                             onClick={() => setIsLogoutModalOpen(true)}
-                            className="w-full flex items-center justify-between p-4 bg-[#FF1493]/5 hover:bg-[#FF1493]/10 border border-[#FF1493]/20 rounded-xl transition-all group"
+                            className="w-full flex items-center justify-between p-4 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 rounded-xl transition-all group"
                         >
                             <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-[#FF1493]/10 text-[#FF1493] rounded-lg group-hover:scale-110 transition-transform">
+                                <div className="p-2 bg-red-500/10 text-red-500 rounded-lg group-hover:scale-110 transition-transform">
                                     <LogOut size={18} />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-sm font-bold text-[#FF1493]">{t('logout')}</p>
-                                    <p className="text-[11px] text-[#FF1493]/60 font-medium">{t('logout_desc')}</p>
+                                    <p className="text-sm font-bold text-red-500">{t('logout')}</p>
+                                    <p className="text-[11px] text-red-500/60 font-medium">{t('logout_desc')}</p>
                                 </div>
                             </div>
-                            <ChevronDown size={16} className="text-[#FF1493]/30 -rotate-90" />
+                            <ChevronDown size={16} className="text-red-500/30 -rotate-90" />
                         </button>
                     </div>
                 </div>

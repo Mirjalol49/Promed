@@ -22,6 +22,7 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
     const [showOptimistic, setShowOptimistic] = useState(false);
     const optimisticUrl = optimisticId ? getOptimisticImage(optimisticId) : null;
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const imgRef = useRef<HTMLImageElement>(null);
 
     // If we have an optimistic URL, show it immediately
     useEffect(() => {
@@ -30,11 +31,17 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
         }
     }, [optimisticUrl]);
 
-    // 🔥 DEEP FIX: Reset states when src changes to bridge the sync gap
+    // Reset states when src changes
     useEffect(() => {
         if (src) {
-            setLoaded(false);
-            setError(false); // 🔥 CRITICAL: Reset error state so new src can attempt to load!
+            // Check if image is already loaded (cached)
+            if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0 && imgRef.current.src === src) {
+                setLoaded(true);
+            } else {
+                setLoaded(false);
+            }
+
+            setError(false);
             if (optimisticUrl) {
                 setShowOptimistic(true);
             }
@@ -51,6 +58,7 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
 
     const handleError = () => {
         setError(true);
+        setLoaded(true); // Ensure we don't stay in loading state
     };
 
     useEffect(() => {
@@ -59,12 +67,21 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
         };
     }, []);
 
-    // If no source, or error occurred
-    if ((!src || error || src === '') && !optimisticUrl) {
+    // Check complete state on mount (for cached images)
+    useEffect(() => {
+        if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+            setLoaded(true);
+        }
+    }, []);
+
+    // If no source, or logic says empty (but we need to be careful not to hide existing if valid)
+    const isInvalid = !src || src === '';
+
+    if ((isInvalid || error) && !optimisticUrl) {
         if (error) console.error(`Image fail: ${src}`);
         return (
-            <div className={`flex items-center justify-center bg-slate-100 text-slate-300 ${className}`}>
-                {fallbackType === 'user' ? <User size={24} /> : <ImageIcon size={24} />}
+            <div className={`flex flex-col items-center justify-center bg-slate-50 text-slate-400 border border-slate-100 ${className}`}>
+                {fallbackType === 'user' ? <User size={40} strokeWidth={1.5} className="opacity-50" /> : <ImageIcon size={40} strokeWidth={1.5} className="opacity-50" />}
             </div>
         );
     }
@@ -87,6 +104,7 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
 
             {/* Actual Image (Remote URL) */}
             <img
+                ref={imgRef}
                 src={src || optimisticUrl || ''}
                 alt={alt}
                 className={`w-full h-full object-cover transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}

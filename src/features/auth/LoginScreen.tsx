@@ -5,6 +5,7 @@ import { useLanguage, Language } from '../../contexts/LanguageContext';
 import { auth } from '../../lib/firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { loginSchema, safeValidate } from '../../lib/validation';
+import { useAppSounds } from '../../hooks/useAppSounds';
 
 import lockIcon from '../../assets/images/lock.png';
 import keyIcon from '../../assets/images/key.png';
@@ -22,9 +23,11 @@ const languages: { code: Language; name: string; flag: string }[] = [
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const { t, language, setLanguage } = useLanguage();
+  const { playUnlock, playError } = useAppSounds();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [shake, setShake] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
 
@@ -63,6 +66,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setShake(false);
     setLoading(true);
 
     try {
@@ -88,6 +92,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               ? 'This account has been banned.'
               : 'This account is currently frozen.';
             setError(msg);
+            setShake(true); // Shake on ban
+            playError(); // Play error sound
             const { signOut } = await import('firebase/auth');
             await signOut(auth);
             setLoading(false);
@@ -95,16 +101,28 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           }
         }
 
-        onLogin('account_' + user.email, user.uid, user.email?.split('@')[0] || 'User', user.email || '', password);
+        // Play unlock sound on success
+        playUnlock();
+
+        // Small delay to allow sound to start before unmounting or state change
+        setTimeout(() => {
+          onLogin('account_' + user.email, user.uid, user.email?.split('@')[0] || 'User', user.email || '', password);
+        }, 100);
       }
 
     } catch (err: any) {
       console.error('Login error:', err);
+      setShake(true); // Shake on error
+      playError(); // Play error sound
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
         setError(t('login_error_invalid_password'));
       } else {
         setError(err.message || t('login_error_generic'));
       }
+
+      // Reset shake after animation
+      setTimeout(() => setShake(false), 500);
+
     } finally {
       setLoading(false);
     }
@@ -148,7 +166,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-white border border-promed-primary/10 rounded-2xl text-promed-text placeholder-promed-muted/30 focus:outline-none focus:ring-4 focus:ring-promed-primary/10 transition-all text-center font-bold"
+              className={`w-full pl-12 pr-4 py-4 bg-white border rounded-2xl text-promed-text placeholder-promed-muted/30 focus:outline-none focus:ring-4 transition-all text-left font-bold
+                ${shake ? 'border-rose-500 shake focus:ring-rose-200' : 'border-promed-primary/10 focus:ring-promed-primary/10'}
+              `}
               placeholder={t('email_placeholder')}
               required
             />
@@ -161,7 +181,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-white border border-promed-primary/10 rounded-2xl text-promed-text placeholder-promed-muted/30 focus:outline-none focus:ring-4 focus:ring-promed-primary/10 transition-all text-center font-bold"
+              className={`w-full pl-12 pr-4 py-4 bg-white border rounded-2xl text-promed-text placeholder-promed-muted/30 focus:outline-none focus:ring-4 transition-all text-left font-bold
+                 ${shake ? 'border-rose-500 shake focus:ring-rose-200' : 'border-promed-primary/10 focus:ring-promed-primary/10'}
+              `}
               placeholder={t('enter_password')}
               required
             />

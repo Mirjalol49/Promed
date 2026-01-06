@@ -11,6 +11,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import { AuthProvider } from './contexts/AuthContext';
 
+import { SettingsProvider } from './contexts/SettingsContext';
+
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
@@ -23,13 +25,15 @@ root.render(
       <AuthProvider>
         <LanguageProvider>
           <AccountProvider>
-            <ToastProvider>
-              <SystemAlertProvider>
-                <Routes>
-                  <Route path="/*" element={<App />} />
-                </Routes>
-              </SystemAlertProvider>
-            </ToastProvider>
+            <SettingsProvider>
+              <ToastProvider>
+                <SystemAlertProvider>
+                  <Routes>
+                    <Route path="/*" element={<App />} />
+                  </Routes>
+                </SystemAlertProvider>
+              </ToastProvider>
+            </SettingsProvider>
           </AccountProvider>
         </LanguageProvider>
       </AuthProvider>

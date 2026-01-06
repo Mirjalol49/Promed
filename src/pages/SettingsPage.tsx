@@ -1,13 +1,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Lock, Mail, User, LogOut, Shield, Eye, EyeOff } from 'lucide-react';
+import { Camera, Lock, Mail, User, LogOut, Shield, Eye, EyeOff, Volume2, VolumeX } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { useToast } from '../contexts/ToastContext';
 import { useAccount } from '../contexts/AccountContext';
 import { ProfileAvatar } from '../components/layout/ProfileAvatar';
 import { useImageUpload } from '../hooks/useImageUpload'; // Correct import
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, getAuth } from 'firebase/auth';
 import happyIcon from '../components/mascot/happy_mascot.png';
+import { LogoutModal } from '../components/ui/LogoutModal';
 
 interface SettingsPageProps {
     userId: string;
@@ -17,6 +19,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
     const { t, language, setLanguage } = useLanguage();
     const { success, error: showError } = useToast();
     const { accountName, userEmail, userImage, logout, refreshProfile } = useAccount();
+    const { soundEnabled, toggleSound } = useSettings();
     const auth = getAuth();
 
     const [nameInput, setNameInput] = useState(accountName);
@@ -33,6 +36,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
     const currentPinRefs = useRef<(HTMLInputElement | null)[]>([]);
     const [uploadedAvatarUrl, setUploadedAvatarUrl] = useState<string | null>(userImage || null);
     const [lockEnabled, setLockEnabled] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     // Correct hook usage matching usage in EditProfileModal
     const {
@@ -247,6 +251,29 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                         </div>
                     </div>
 
+                    {/* Sound Settings */}
+                    <div>
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('sound_settings') || 'Sound'}</label>
+                        <div className="bg-white p-5 rounded-[24px] border border-gray-200 flex items-center justify-between group/sound transition-all hover:bg-gray-50">
+                            <div className="flex items-center gap-4">
+                                <div className={`p-3 rounded-2xl border transition-colors ${soundEnabled ? 'bg-promed-primary text-white border-promed-primary/10' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                                    {soundEnabled ? <Volume2 size={22} /> : <VolumeX size={22} />}
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-gray-800 text-[14px]">{t('enable_sound') || 'Enable Sound'}</h4>
+                                    <p className="text-xs text-slate-500 font-medium">{t('sound_hint') || 'Play sound effects'}</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={toggleSound}
+                                className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 ${soundEnabled ? 'bg-promed-primary ' : 'bg-slate-200 '}`}
+                            >
+                                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 ${soundEnabled ? 'left-8' : 'left-1'}`} />
+                            </button>
+                        </div>
+                    </div>
+
                     {/* Full Name */}
                     <div>
                         <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('full_name')}</label>
@@ -422,7 +449,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                 {/* Action Buttons */}
                 <div className="pt-4 flex items-center justify-between border-t border-gray-100">
                     <button
-                        onClick={logout}
+                        onClick={() => setShowLogoutModal(true)}
                         className="px-6 py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition flex items-center gap-2"
                     >
                         <LogOut size={18} />
@@ -438,6 +465,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                     </button>
                 </div>
             </div>
+
+            <LogoutModal
+                isOpen={showLogoutModal}
+                onClose={() => setShowLogoutModal(false)}
+                onConfirm={logout}
+            />
         </div>
     );
 };

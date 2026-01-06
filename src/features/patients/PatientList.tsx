@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import confetti from "canvas-confetti";
+import { useAppSounds } from '../../hooks/useAppSounds';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
@@ -31,7 +33,8 @@ import {
   Pencil,
   Phone,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Loader2
 } from 'lucide-react';
 import { Patient, InjectionStatus, Injection } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -463,6 +466,7 @@ export const PatientDetail: React.FC<{
   onDeletePatient: () => void;
 }> = ({ patient, onBack, onUpdateInjection, onAddInjection, onEditInjection, onDeleteInjection, onAddAfterPhoto, onDeleteAfterPhoto, onEditPatient, onDeletePatient }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const { playConfetti } = useAppSounds();
   const [isInjModalOpen, setInjModalOpen] = useState(false);
   const [editingInj, setEditingInj] = useState<Injection | null>(null);
 
@@ -472,6 +476,22 @@ export const PatientDetail: React.FC<{
 
   const [photoToDeleteId, setPhotoToDeleteId] = useState<string | null>(null);
   const [injToDeleteId, setInjToDeleteId] = useState<string | null>(null);
+
+  const [optimisticPhotos, setOptimisticPhotos] = useState<{ id: string, url: string, label: string }[]>([]);
+
+  // Sync optimistic photos with real data
+  useEffect(() => {
+    if (optimisticPhotos.length > 0 && patient.afterImages.length > 0) {
+      const latestReal = patient.afterImages[0];
+      // If we find a real image with the same label as our oldest optimistic one, we assume it's synced
+      // (Using a fuzzy match since ID is new)
+      const matchIndex = optimisticPhotos.findIndex(op => op.label === latestReal.label);
+      if (matchIndex !== -1) {
+        // Remove the matched optimistic photo
+        setOptimisticPhotos(prev => prev.filter((_, idx) => idx !== matchIndex));
+      }
+    }
+  }, [patient.afterImages, optimisticPhotos]);
 
   const { language, t } = useLanguage();
   const localeString = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
@@ -497,6 +517,10 @@ export const PatientDetail: React.FC<{
 
   const handleSavePhoto = (label: string) => {
     if (tempPhoto) {
+      // Optimistic Add
+      const tempId = `temp_${Date.now()}`;
+      setOptimisticPhotos(prev => [{ id: tempId, url: tempPhoto, label }, ...prev]);
+
       onAddAfterPhoto(patient.id, tempFile || tempPhoto, label);
     }
   };
@@ -610,7 +634,7 @@ export const PatientDetail: React.FC<{
               </button>
               <button
                 onClick={onDeletePatient}
-                className="btn-premium-white !px-5 !py-2.5 !text-[#FF1493] !border-[#FF1493]/20 hover:!bg-[#FF1493]/5 group/del"
+                className="btn-premium-white !px-5 !py-2.5 !text-red-600 !border-red-200 hover:!bg-red-50 group/del"
               >
                 <Trash2 className="w-5 h-5 relative z-10 group-hover/del:scale-110 transition-transform" />
                 <span className="relative z-10">{t('delete')}</span>
@@ -654,7 +678,7 @@ export const PatientDetail: React.FC<{
               </div>
               <span>{t('before_operation')}</span>
             </h3>
-            <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer relative group border border-slate-200" onClick={() => setSelectedImage(patient.beforeImage || null)}>
+            <div className="aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer relative group border border-slate-200" onClick={() => setSelectedImage(patient.beforeImage || null)}>
               {patient.beforeImage ? (
                 <>
                   <ImageWithFallback src={patient.beforeImage} optimisticId={`${patient.id}_before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
@@ -683,9 +707,34 @@ export const PatientDetail: React.FC<{
                 <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
               </label>
 
+              {/* Optimistic Photos (Pending) */}
+              {optimisticPhotos.map((img) => (
+                <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-promed-primary/30 shadow-sm animate-pulse">
+                  <ImageWithFallback
+                    src={img.url}
+                    optimisticId={img.id} // Use temp ID
+                    className="w-full h-full object-cover object-center opacity-80"
+                    alt={img.label}
+                    fallbackType="image"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-promed-primary/80 via-promed-primary/20 to-transparent p-4 pt-12 flex flex-col justify-end">
+                    <p className="text-white text-sm font-bold tracking-wide drop-shadow-md">{img.label}</p>
+                    <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider flex items-center gap-1">
+                      <Loader2 size={10} className="animate-spin" /> Saving...
+                    </p>
+                  </div>
+                </div>
+              ))}
+
               {patient.afterImages.map((img, idx) => (
-                <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 cursor-pointer group  border border-slate-200" onClick={() => setSelectedImage(img.url)}>
-                  <ImageWithFallback src={img.url} optimisticId={img.id} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt={img.label} fallbackType="image" />
+                <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer group border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300" onClick={() => setSelectedImage(img.url)}>
+                  <ImageWithFallback
+                    src={img.url}
+                    optimisticId={img.id}
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition duration-700 ease-in-out"
+                    alt={img.label}
+                    fallbackType="image"
+                  />
 
                   {/* Delete Button (Hover) */}
                   <button
@@ -693,13 +742,14 @@ export const PatientDetail: React.FC<{
                       e.stopPropagation();
                       handleDeleteAfterPhotoClick(img.id);
                     }}
-                    className="absolute top-2 right-2 p-1.5 bg-red-500/90 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-20"
+                    className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 shadow-sm z-20 hover:scale-110"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={16} />
                   </button>
 
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-8">
-                    <p className="text-white text-xs text-center font-bold tracking-wide ">{img.label}</p>
+                  {/* Gradient & Label */}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 pt-12 flex flex-col justify-end">
+                    <p className="text-white text-sm font-bold tracking-wide drop-shadow-md">{img.label}</p>
                   </div>
                 </div>
               ))}
@@ -834,8 +884,21 @@ export const PatientDetail: React.FC<{
                         <div className="flex flex-col items-end gap-2">
                           {inj.status === InjectionStatus.SCHEDULED ? (
                             <div className="flex items-center space-x-2">
+
                               <button
-                                onClick={() => onUpdateInjection(patient.id, inj.id, InjectionStatus.COMPLETED)}
+                                onClick={(e) => {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  const x = (rect.left + rect.width / 2) / window.innerWidth;
+                                  const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+                                  playConfetti();
+                                  confetti({
+                                    particleCount: 150,
+                                    spread: 60,
+                                    origin: { x, y }
+                                  });
+                                  onUpdateInjection(patient.id, inj.id, InjectionStatus.COMPLETED);
+                                }}
                                 className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-50 transition  whitespace-nowrap"
                               >
                                 <Check size={14} /> <span>{t('mark_done')}</span>

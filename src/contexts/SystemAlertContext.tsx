@@ -7,6 +7,7 @@ import {
     deleteExpiredUserNotifications
 } from '../lib/notificationService';
 import { useAccount } from './AccountContext';
+import { useAppSounds } from '../hooks/useAppSounds';
 
 interface SystemAlertContextType {
     activeAlert: SystemAlert | null;
@@ -19,7 +20,7 @@ interface SystemAlertContextType {
 const SystemAlertContext = createContext<SystemAlertContextType | undefined>(undefined);
 
 export const SystemAlertProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const { userId } = useAccount();
+    const { userId, createdAt } = useAccount();
     const [globalAlerts, setGlobalAlerts] = useState<SystemAlert[]>([]);
     const [userAlerts, setUserAlerts] = useState<SystemAlert[]>([]);
     const [activeAlert, setActiveAlert] = useState<SystemAlert | null>(null);
@@ -56,26 +57,66 @@ export const SystemAlertProvider: React.FC<{ children: ReactNode }> = ({ childre
         });
         return () => unsubscribe();
     }, [userId]);
+    const { playNotification, stopNotification } = useAppSounds();
 
-    // Merge and Sort Alerts
+    // Sound cooldown/init state
+    const [readyForSounds, setReadyForSounds] = useState(false);
+
+    // Filter old alerts for new accounts
     const alerts = useMemo(() => {
-        return [...userAlerts, ...globalAlerts].sort((a, b) =>
+        // Filter global alerts: Only show those created after the user joined
+        const visibleGlobalAlerts = globalAlerts.filter(alert => {
+            if (!createdAt) return true; // Fallback if no creation date yet
+            return new Date(alert.created_at) >= new Date(createdAt);
+        });
+
+        return [...userAlerts, ...visibleGlobalAlerts].sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
-    }, [globalAlerts, userAlerts]);
+    }, [globalAlerts, userAlerts, createdAt]);
 
-    // Handle Active Alert Logic
+    // Enable sounds after a short delay (so we don't ding on initial fetch)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setReadyForSounds(true);
+        }, 3000); // 3 seconds "soak" time
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Handle Active Alert Logic & Sounds
     useEffect(() => {
         // Find the most recent active alert
         const currentActive = alerts.find(a => a.is_active);
 
         if (currentActive && currentActive.id !== dismissedAlertId) {
+            // Check if this is truly a NEW top alert
+            const isNewAlert = !activeAlert || activeAlert.id !== currentActive.id;
+
+            // Always update the active alert reference (for content updates)
             setActiveAlert(currentActive);
-            setHasReadNotifications(false);
+
+            if (isNewAlert) {
+                setHasReadNotifications(false);
+
+                // only play sound if we are ready AND the alert is reasonably fresh (< 10 mins old)
+                // ensuring we don't play sounds for stale cached alerts that load late
+                if (readyForSounds) {
+                    const age = Date.now() - new Date(currentActive.created_at).getTime();
+                    const isFresh = age < 10 * 60 * 1000; // 10 minutes
+
+                    if (isFresh) {
+                        console.log("🔔 Ding! Fresh Alert:", currentActive.title);
+                        playNotification();
+                    } else {
+                        console.log("🔕 Silent (Old/Stale):", currentActive.title);
+                    }
+                }
+            }
+
         } else if (!currentActive) {
             setActiveAlert(null);
         }
-    }, [alerts, dismissedAlertId]);
+    }, [alerts, dismissedAlertId, playNotification, readyForSounds, activeAlert]);
 
     const dismissAlert = () => {
         if (activeAlert) {
@@ -85,6 +126,9 @@ export const SystemAlertProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     const markAllAsRead = async () => {
+        // Stop any playing sound immediately
+        stopNotification();
+
         setHasReadNotifications(true);
 
         // 1. Persist ALL current alert IDs as "seen" to stop the spotlight

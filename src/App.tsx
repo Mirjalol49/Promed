@@ -19,6 +19,7 @@ import { useLanguage } from './contexts/LanguageContext';
 import { useAccount } from './contexts/AccountContext';
 import { useToast } from './contexts/ToastContext';
 import SyncToast from './components/ui/SyncToast';
+import { useAppSounds } from './hooks/useAppSounds';
 import {
   subscribeToPatients,
   addPatient,
@@ -56,7 +57,10 @@ import thinkingIcon from './components/mascot/thinking_mascot.png';
 const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = ({ onUnlock, correctPassword }) => {
   console.log("🔒 LockScreen: Starting render...");
   const { t } = useLanguage();
+  const { playUnlock, playError } = useAppSounds();
   const [pin, setPin] = useState(['', '', '', '', '', '']);
+
+
 
   // Use a single ref for the array to ensure stability across re-renders
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
@@ -109,6 +113,7 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
       setLockState('success');
       setTimeout(onUnlock, 500);
     } catch (err: any) {
+      playError(); // Play error sound on emergency failure
       setResetError(t('login_error_invalid_password') || 'Invalid account password');
     } finally {
       setResetLoading(false);
@@ -121,10 +126,12 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
 
     if (enteredPin === correctPassword) {
       setLockState('success');
+      playUnlock();
       setTimeout(onUnlock, 500);
     } else {
       setLockState('error');
       setPinError(true);
+      playError(); // Play error sound on PIN failure
 
       // Reset back to idle after 1s
       setTimeout(() => {

@@ -13,6 +13,7 @@ interface AccountContextType {
   userImage: string;
   subscriptionStatus: 'trial' | 'active' | 'frozen';
   subscriptionEnd: string | null;
+  createdAt: string | null;
   refreshProfile: () => Promise<void>;
   logout: () => void;
 }
@@ -28,6 +29,7 @@ interface StoredAccount {
   email: string;
   role: 'admin' | 'doctor' | 'staff';
   image?: string;
+  createdAt?: string;
 }
 
 export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -39,6 +41,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [role, setRole] = useState<'admin' | 'doctor' | 'staff'>('doctor');
   const [subscriptionStatus, setSubscriptionStatus] = useState<'trial' | 'active' | 'frozen'>('trial');
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isVerified, setIsVerified] = useState<boolean>(false);
 
@@ -55,6 +58,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
         setUserEmail(account.email || '');
         setUserImage(account.image || '');
         setRole(account.role || 'doctor');
+        setCreatedAt(account.createdAt || null);
       } catch (e) {
         console.error('Failed to parse stored account:', e);
         localStorage.removeItem(STORAGE_KEY);
@@ -63,7 +67,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
     setIsLoading(false);
   }, []);
 
-  const setAccount = (id: string, userId: string, name: string, email: string, userRole: 'admin' | 'doctor' | 'staff' = 'doctor', verified: boolean = false, image: string = '') => {
+  const setAccount = (id: string, userId: string, name: string, email: string, userRole: 'admin' | 'doctor' | 'staff' = 'doctor', verified: boolean = false, image: string = '', createdAtDate: string = '') => {
     setAccountId(id);
     setUserId(userId);
     setAccountName(name);
@@ -71,7 +75,8 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
     setRole(userRole);
     if (image) setUserImage(image);
     if (verified) setIsVerified(true);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ id, userId, name, email, role: userRole, image: image || userImage }));
+    if (createdAtDate) setCreatedAt(createdAtDate);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ id, userId, name, email, role: userRole, image: image || userImage, createdAt: createdAtDate || createdAt }));
   };
 
   const refreshProfile = async () => {
@@ -88,6 +93,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Update Subscription
         setSubscriptionStatus(data.subscription_status as any || 'trial');
         setSubscriptionEnd(data.subscription_end || null);
+        if (data.created_at) setCreatedAt(data.created_at);
 
         // Update Identity
         if (data.full_name || data.avatar_url || data.profile_image) {
@@ -102,6 +108,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
             const parsed = JSON.parse(stored);
             if (data.full_name) parsed.name = data.full_name;
             if (newImage) parsed.image = newImage;
+            if (data.created_at) parsed.createdAt = data.created_at;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
           }
         }
@@ -132,6 +139,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
     setUserImage('');
     setRole('doctor');
     setIsVerified(false);
+    setCreatedAt(null);
     localStorage.removeItem(STORAGE_KEY);
 
     // Force a reload to clear all states and re-initialize the app
@@ -143,7 +151,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
   return (
     <AccountContext.Provider value={{
       accountId, userId, accountName, userEmail, userImage, role, setAccount, isLoggedIn, isLoading, isVerified,
-      subscriptionStatus, subscriptionEnd, refreshProfile, logout
+      subscriptionStatus, subscriptionEnd, createdAt, refreshProfile, logout
     }}>
       {children}
     </AccountContext.Provider>

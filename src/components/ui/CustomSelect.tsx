@@ -68,7 +68,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           ${disabled
                         ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
                         : isOpen
-                            ? 'bg-white border-teal-500 ring-2 ring-teal-500/20 shadow-lg'
+                            ? 'bg-white border-promed-primary ring-2 ring-promed-primary/20 shadow-lg'
                             : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm hover:shadow'
                     }
         `}
@@ -78,7 +78,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                 </span>
                 <ChevronDown
                     size={18}
-                    className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-teal-500' : ''}`}
+                    className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-promed-primary' : ''}`}
                 />
             </button>
 
@@ -94,14 +94,14 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                 w-full px-4 py-3 text-left flex items-center justify-between gap-2
                 transition-colors duration-150
                 ${option.value === value
-                                    ? 'bg-teal-50 text-teal-700 font-semibold'
+                                    ? 'bg-promed-bg text-promed-primary font-bold'
                                     : 'text-slate-700 hover:bg-slate-50'
                                 }
               `}
                         >
                             <span>{option.label}</span>
                             {option.value === value && (
-                                <Check size={16} className="text-teal-600" />
+                                <Check size={16} className="text-promed-primary" />
                             )}
                         </button>
                     ))}

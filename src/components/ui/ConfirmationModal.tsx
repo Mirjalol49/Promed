@@ -35,11 +35,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
     const variants = {
         danger: {
-            bar: 'bg-[#FF1493]',
-            bg: 'bg-[#FF1493]/10',
-            innerBg: 'bg-[#FF1493]/20',
-            text: 'text-[#FF1493]',
-            button: 'bg-[#FF1493] hover:bg-[#E01180] shadow-[#FF1493]/10',
+            bar: 'bg-red-500',
+            bg: 'bg-red-500/10',
+            innerBg: 'bg-red-500/20',
+            text: 'text-red-600',
+            button: 'bg-red-500 hover:bg-red-600 shadow-red-500/10',
             pulse: 'animate-pulse'
         },
         primary: {

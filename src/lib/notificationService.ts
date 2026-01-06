@@ -149,28 +149,35 @@ export const subscribeToUserNotifications = (
 
     const q = query(
         collection(db, "notifications"),
-        where("userId", "==", userId),
-        where("is_active", "==", true),
-        orderBy("created_at", "desc"),
-        limit(20)
+        where("userId", "==", userId)
+        // Removed complex filters/sorts to avoid needing a custom index immediately
+        // where("is_active", "==", true),
+        // orderBy("created_at", "desc"),
+        // limit(20)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        const alerts: SystemAlert[] = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                title: data.title,
-                content: data.content,
-                type: data.type,
-                is_active: data.is_active,
-                created_at: data.created_at,
-                viewed_at: data.viewed_at,
-                is_read: data.is_read,
-                // @ts-ignore
-                category: data.category
-            };
-        });
+        const alerts: SystemAlert[] = snapshot.docs
+            .map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    title: data.title,
+                    content: data.content,
+                    type: data.type,
+                    is_active: data.is_active,
+                    created_at: data.created_at,
+                    viewed_at: data.viewed_at,
+                    is_read: data.is_read,
+                    // @ts-ignore
+                    category: data.category
+                };
+            })
+            // Client-side filtering and sorting
+            .filter(a => a.is_active === true)
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, 20);
+
         onUpdate(alerts);
     }, (error) => {
         console.error("User notifications subscription error:", error);

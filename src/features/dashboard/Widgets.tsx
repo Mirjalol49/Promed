@@ -163,33 +163,45 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
           {t('upcoming_patients')}
         </h3>
 
-        <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50 backdrop-blur-sm">
+        <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50 backdrop-blur-sm relative">
           <button
             onClick={() => setFilter('all')}
-            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${filter === 'all'
-              ? 'bg-white text-promed-primary shadow-sm shadow-blue-500/5 ring-1 ring-black/5 scale-[1.02]'
+            className={`relative px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 overflow-hidden ${filter === 'all'
+              ? 'text-white shadow-[0_4px_14px_0_rgba(59,130,246,0.39)] bg-gradient-to-r from-blue-500 to-blue-600 border border-blue-400/50'
               : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 bg-transparent'
               }`}
           >
-            {t('filter_all')}
+            {filter === 'all' && (
+              <div className="absolute inset-0 bg-white/20 opacity-50 skew-x-12 -ml-4" />
+            )}
+            <span className="relative z-10">{t('filter_all')}</span>
           </button>
           <button
             onClick={() => setFilter('Operation')}
-            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${filter === 'Operation'
-              ? 'bg-white text-rose-500 shadow-sm shadow-rose-500/5 ring-1 ring-black/5 scale-[1.02]'
+            className={`relative px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 overflow-hidden ${filter === 'Operation'
+              ? 'text-white shadow-[0_4px_14px_0_rgba(244,63,94,0.39)] bg-gradient-to-r from-rose-500 to-rose-600 border border-rose-400/50'
               : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 bg-transparent'
               }`}
           >
-            {t('filter_operations')}
+            {filter === 'Operation' && (
+              <div className="absolute inset-x-0 top-0 h-[2px] bg-white/40 blur-[1px]" />
+            )}
+            {filter === 'Operation' && (
+              <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-80" />
+            )}
+            <span className="relative z-10">{t('filter_operations')}</span>
           </button>
           <button
             onClick={() => setFilter('Injection')}
-            className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${filter === 'Injection'
-              ? 'bg-white text-promed-primary shadow-sm shadow-blue-500/5 ring-1 ring-black/5 scale-[1.02]'
+            className={`relative px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 overflow-hidden ${filter === 'Injection'
+              ? 'text-white shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] bg-gradient-to-r from-promed-primary to-indigo-600 border border-indigo-400/50'
               : 'text-slate-400 hover:text-promed-primary hover:bg-promed-primary/5 bg-transparent'
               }`}
           >
-            {t('filter_injections')}
+            {filter === 'Injection' && (
+              <div className="absolute inset-0 bg-white/20 opacity-30 skew-x-12 -ml-2" />
+            )}
+            <span className="relative z-10">{t('filter_injections')}</span>
           </button>
         </div>
       </div>

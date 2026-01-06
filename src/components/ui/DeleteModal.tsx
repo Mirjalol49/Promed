@@ -72,7 +72,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onConfirm })
                             </button>
                             <button
                                 onClick={onConfirm}
-                                className="w-full py-4 bg-[#FF1493] text-white font-black rounded-2xl transition-all hover:bg-[#E01180] active:scale-[0.98] shadow-sm"
+                                className="w-full py-4 bg-red-500 text-white font-black rounded-2xl transition-all hover:bg-red-600 active:scale-[0.98] shadow-sm"
                             >
                                 {t('delete_modal_confirm')}
                             </button>

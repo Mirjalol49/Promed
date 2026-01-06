@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { useAppSounds } from '../hooks/useAppSounds';
 
 interface ToastData {
     title: string;
@@ -27,15 +28,20 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (timerRef.current) clearTimeout(timerRef.current);
     }, []);
 
+    const { playToaster } = useAppSounds();
+
     const showToast = useCallback((title: string, message: string, type: ToastData['type'], mascot?: string) => {
         if (timerRef.current) clearTimeout(timerRef.current);
 
         setActiveToast({ title, message, type, mascot });
 
+        // Perfect sync: Play sound immediately when state is set
+        playToaster();
+
         timerRef.current = setTimeout(() => {
             setActiveToast(null);
         }, 4000);
-    }, []);
+    }, [playToaster]);
 
     const success = useCallback((title: string, message: string, mascot?: string) => showToast(title, message, 'success', mascot), [showToast]);
     const error = useCallback((title: string, message: string, mascot?: string) => showToast(title, message, 'error', mascot), [showToast]);
