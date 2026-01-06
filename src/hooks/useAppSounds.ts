@@ -8,6 +8,8 @@ import confettiSound from '../assets/sounds/confetti.mp3';
 import notificationSound from '../assets/sounds/notification.mp3';
 // @ts-ignore
 import unlockSound from '../assets/sounds/unlock.mp3';
+// @ts-ignore
+import lockSound from '../assets/sounds/lock.mp3';
 
 // @ts-ignore
 import toasterSound from '../assets/sounds/toaster.mp3';
@@ -20,6 +22,7 @@ export const useAppSounds = () => {
     const [playNotification, { stop: stopNotification }] = useSound(notificationSound, { volume: 0.5 });
     const [playToaster] = useSound(toasterSound, { volume: 0.5 });
     const [playUnlock] = useSound(unlockSound, { volume: 0.5 });
+    const [playLock] = useSound(lockSound, { volume: 0.5 });
     const [playError] = useSound(wrongSound, { volume: 0.5 });
 
     const playIfEnabled = (playFn: () => void) => {
@@ -32,6 +35,7 @@ export const useAppSounds = () => {
         playToaster: () => playIfEnabled(playToaster),
         stopNotification,
         playUnlock: () => playIfEnabled(playUnlock),
+        playLock: () => playIfEnabled(playLock),
         playError: () => playIfEnabled(playError),
     };
 };

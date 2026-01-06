@@ -25,11 +25,29 @@ export const NotificationBell: React.FC = () => {
         setIsOpen(!isOpen);
     };
 
-    const getIcon = (type: string) => {
-        switch (type) {
+    const getIcon = (alert: any) => {
+        const text = ((alert.title || '') + ' ' + (alert.content || '')).toLowerCase();
+
+        // 1. Billing / Payment / Finance
+        if (text.match(/bill|payment|hisob|to'lov|invoice|narx|summa|cheque|receipt|pay|cost|price|subscription/)) {
+            return <span className="text-lg">💳</span>;
+        }
+
+        // 2. Congratulations / Success / Welcome
+        if (text.match(/congrat|tabrik|yutuq|sovg'a|bonus|welcome|xush kelibsiz|good job|great|muvaffaqiyat|winner|champion/)) {
+            return <span className="text-lg">🎉</span>;
+        }
+
+        // 3. General Messages / Updates
+        if (text.match(/xabar|message|sms|yangilik|news|update|read|info/)) {
+            return <span className="text-lg">💬</span>;
+        }
+
+        // 4. Default Type-Based Fallback
+        switch (alert.type) {
             case 'warning': return <AlertTriangle size={16} className="text-amber-500" />;
             case 'danger': return <ShieldCheck size={16} className="text-rose-500" />;
-            case 'success': return <Bell size={16} className="text-emerald-500" />;
+            case 'success': return <span className="text-lg">✅</span>; // User likes emojis
             default: return <Info size={16} className="text-promed-primary" />;
         }
     };
@@ -93,7 +111,7 @@ export const NotificationBell: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        className="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 z-50 overflow-hidden"
+                        className="fixed inset-x-4 top-20 md:absolute md:inset-auto md:top-full md:right-0 md:mt-3 md:w-80 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 z-50 overflow-hidden"
                     >
                         <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div className="flex items-center gap-2">
@@ -119,7 +137,7 @@ export const NotificationBell: React.FC = () => {
                                         <div key={alert.id} className={`p-4 hover:bg-slate-50 transition-colors group cursor-default ${alert.is_active ? 'bg-blue-50/20' : ''}`}>
                                             <div className="flex gap-4">
                                                 <div className="p-2.5 bg-white rounded-xl shadow-sm border border-slate-100 flex-shrink-0 self-start group-hover:scale-110 transition-transform">
-                                                    {getIcon(alert.type)}
+                                                    {getIcon(alert)}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-start gap-2">

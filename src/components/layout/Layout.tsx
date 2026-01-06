@@ -117,25 +117,22 @@ const Layout: React.FC<LayoutProps> = ({
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/80 z-30 md:hidden backdrop-blur-sm"
+          className="fixed top-16 bottom-0 left-0 right-0 bg-slate-900/80 z-30 md:hidden backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:static inset-y-0 left-0 z-40 w-[260px] bg-[#ffffff] flex flex-col transition-transform duration-300 ease-out shadow-premium border-r border-[#E2E8F0]
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        fixed md:static top-16 bottom-0 md:top-0 right-0 md:left-0 z-40 w-[260px] bg-[#ffffff] flex flex-col transition-transform duration-300 ease-out shadow-premium border-l md:border-l-0 md:border-r border-[#E2E8F0]
+        ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
       `}>
         {/* Logo */}
-        <div className="p-6 flex items-center justify-between">
-          <div className="flex items-center space-x-3 text-slate-900">
+        <div className="p-4 md:p-6 flex items-center justify-end md:justify-between">
+          <div className="hidden md:flex items-center space-x-3 text-slate-900">
             {/* Logo Image Only - No Background */}
             <img src={logoImg} alt="Promed Logo" className="w-40 h-auto object-contain" />
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-slate-900">
-            <X size={24} />
-          </button>
         </div>
 
         {/* Navigation */}
@@ -214,10 +211,29 @@ const Layout: React.FC<LayoutProps> = ({
               <NotificationBell />
 
               <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors relative w-10 h-10 flex items-center justify-center"
               >
-                <Menu size={24} />
+                <div className="w-6 h-5 relative flex flex-col justify-between">
+                  {/* Top Line */}
+                  <motion.span
+                    animate={isSidebarOpen ? { rotate: 45, y: 9.5 } : { rotate: 0, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-full h-0.5 bg-current rounded-full origin-center"
+                  />
+                  {/* Middle Line */}
+                  <motion.span
+                    animate={isSidebarOpen ? { opacity: 0 } : { opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-full h-0.5 bg-current rounded-full origin-center"
+                  />
+                  {/* Bottom Line */}
+                  <motion.span
+                    animate={isSidebarOpen ? { rotate: -45, y: -9.5 } : { rotate: 0, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-full h-0.5 bg-current rounded-full origin-center"
+                  />
+                </div>
               </button>
             </div>
           </div>

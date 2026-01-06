@@ -67,10 +67,10 @@ export const VitalsCard: React.FC<VitalsCardProps> = ({ label, value, icon: Icon
 
   return (
     <div
-      className={`rounded-2xl p-5 flex items-center space-x-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-premium ${backgroundClass} ${isColored ? 'text-white' : ' text-slate-900'}`}
+      className={`rounded-xl p-4 flex items-center space-x-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-premium ${backgroundClass} ${isColored ? 'text-white' : ' text-slate-900'}`}
       style={customStyle}
     >
-      <div className={`p-3.5 rounded-2xl backdrop-blur-md transition-colors ${isColored ? 'bg-white/20 text-white  border border-white/10' : `${color} bg-opacity-10 text-slate-600`}`}>
+      <div className={`p-2.5 rounded-xl backdrop-blur-md transition-colors ${isColored ? 'bg-white/20 text-white  border border-white/10' : `${color} bg-opacity-10 text-slate-600`}`}>
         <Icon size={26} strokeWidth={2.5} />
       </div>
       <div>
@@ -163,46 +163,48 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
           {t('upcoming_patients')}
         </h3>
 
-        <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50 backdrop-blur-sm relative">
-          <button
-            onClick={() => setFilter('all')}
-            className={`relative px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 overflow-hidden ${filter === 'all'
-              ? 'text-white shadow-[0_4px_14px_0_rgba(59,130,246,0.39)] bg-gradient-to-r from-blue-500 to-blue-600 border border-blue-400/50'
-              : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 bg-transparent'
-              }`}
-          >
-            {filter === 'all' && (
-              <div className="absolute inset-0 bg-white/20 opacity-50 skew-x-12 -ml-4" />
-            )}
-            <span className="relative z-10">{t('filter_all')}</span>
-          </button>
-          <button
-            onClick={() => setFilter('Operation')}
-            className={`relative px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 overflow-hidden ${filter === 'Operation'
-              ? 'text-white shadow-[0_4px_14px_0_rgba(244,63,94,0.39)] bg-gradient-to-r from-rose-500 to-rose-600 border border-rose-400/50'
-              : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 bg-transparent'
-              }`}
-          >
-            {filter === 'Operation' && (
-              <div className="absolute inset-x-0 top-0 h-[2px] bg-white/40 blur-[1px]" />
-            )}
-            {filter === 'Operation' && (
-              <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-80" />
-            )}
-            <span className="relative z-10">{t('filter_operations')}</span>
-          </button>
-          <button
-            onClick={() => setFilter('Injection')}
-            className={`relative px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 overflow-hidden ${filter === 'Injection'
-              ? 'text-white shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] bg-gradient-to-r from-promed-primary to-indigo-600 border border-indigo-400/50'
-              : 'text-slate-400 hover:text-promed-primary hover:bg-promed-primary/5 bg-transparent'
-              }`}
-          >
-            {filter === 'Injection' && (
-              <div className="absolute inset-0 bg-white/20 opacity-30 skew-x-12 -ml-2" />
-            )}
-            <span className="relative z-10">{t('filter_injections')}</span>
-          </button>
+        <div className="w-full sm:w-auto overflow-x-auto no-scrollbar">
+          <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50 backdrop-blur-sm relative min-w-min">
+            <button
+              onClick={() => setFilter('all')}
+              className={`relative px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 overflow-hidden flex-shrink-0 ${filter === 'all'
+                ? 'text-white shadow-[0_4px_14px_0_rgba(59,130,246,0.39)] bg-gradient-to-r from-blue-500 to-blue-600 border border-blue-400/50'
+                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 bg-transparent'
+                }`}
+            >
+              {filter === 'all' && (
+                <div className="absolute inset-0 bg-white/20 opacity-50 skew-x-12 -ml-4" />
+              )}
+              <span className="relative z-10">{t('filter_all')}</span>
+            </button>
+            <button
+              onClick={() => setFilter('Operation')}
+              className={`relative px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 overflow-hidden flex-shrink-0 ${filter === 'Operation'
+                ? 'text-white shadow-[0_4px_14px_0_rgba(244,63,94,0.39)] bg-gradient-to-r from-rose-500 to-rose-600 border border-rose-400/50'
+                : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 bg-transparent'
+                }`}
+            >
+              {filter === 'Operation' && (
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-white/40 blur-[1px]" />
+              )}
+              {filter === 'Operation' && (
+                <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-80" />
+              )}
+              <span className="relative z-10">{t('filter_operations')}</span>
+            </button>
+            <button
+              onClick={() => setFilter('Injection')}
+              className={`relative px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 overflow-hidden flex-shrink-0 ${filter === 'Injection'
+                ? 'text-white shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] bg-gradient-to-r from-promed-primary to-indigo-600 border border-indigo-400/50'
+                : 'text-slate-400 hover:text-promed-primary hover:bg-promed-primary/5 bg-transparent'
+                }`}
+            >
+              {filter === 'Injection' && (
+                <div className="absolute inset-0 bg-white/20 opacity-30 skew-x-12 -ml-2" />
+              )}
+              <span className="relative z-10">{t('filter_injections')}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -523,16 +525,16 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <div
-      className="p-7 rounded-[28px] text-white relative overflow-hidden transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] group shadow-premium"
+      className="p-5 md:p-6 rounded-[24px] text-white relative overflow-hidden transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] group shadow-premium"
       style={{ background: gradient }}
     >
       {/* Glossy Top Highlight */}
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/20 to-transparent opacity-50 h-1/2" />
 
       <div className="relative z-10 h-full flex flex-col justify-between">
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-white/20 rounded-2xl backdrop-blur-md border border-white/20 shadow-inner">
+            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md border border-white/20 shadow-inner">
               {iconImg ? (
                 <Activity className="w-5 h-5 text-white" />
               ) : (
@@ -544,7 +546,7 @@ export const StatCard: React.FC<StatCardProps> = ({
             <span className="text-[11px] font-black uppercase tracking-[0.25em] text-white/90 drop-shadow-sm">{label}</span>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-6xl font-black tracking-tighter text-white drop-shadow-md">{value}</span>
+            <span className="text-4xl md:text-5xl font-black tracking-tighter text-white drop-shadow-md">{value}</span>
             {change && (
               <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/10 flex items-center gap-1">
                 <Activity size={10} className="text-white/80" />

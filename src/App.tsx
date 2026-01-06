@@ -169,16 +169,16 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
 
         </div>
 
-        <h2 className="text-4xl font-black mb-3 tracking-widest text-white">
+        <h2 className="text-3xl md:text-4xl font-black mb-3 tracking-widest text-white text-center">
           {t('security_check')}
         </h2>
         <p className="text-white/80 mb-12 text-center font-medium max-w-xs">
           {isPinType ? t('remember_password') : "Hisob parolingizni kiriting"}
         </p>
 
-        <form onSubmit={handleUnlock} className="w-full flex flex-col items-center space-y-10">
+        <form onSubmit={handleUnlock} className="w-full flex flex-col items-center space-y-8 md:space-y-10">
           {isPinType ? (
-            <div className="flex gap-4 sm:gap-6 justify-center">
+            <div className="flex gap-3 sm:gap-6 justify-center">
               {pin.map((digit, idx) => (
                 <input
                   key={idx}
@@ -189,7 +189,7 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
                   value={digit}
                   onChange={(e) => handlePinChange(idx, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(idx, e)}
-                  className={`w-12 h-14 sm:w-16 sm:h-20 bg-white border-2 
+                  className={`w-11 h-14 sm:w-16 sm:h-20 bg-white border-2 
                     ${pinError ? 'border-rose-500 shake ' : 'border-white/20'}
                     rounded-2xl text-center text-3xl font-black text-promed-primary transition-all duration-200
                     focus:outline-none focus:border-white focus:ring-4 focus:ring-white/20
@@ -224,10 +224,10 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
           <div className="w-full max-w-sm space-y-6">
             <button
               type="submit"
-              className="btn-auth-premium group"
+              className="btn-glossy-blue group flex items-center justify-center !text-base"
             >
-              <span>
-                {t('unlock')} <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              <span className="flex items-center gap-2 relative z-10">
+                {t('unlock')} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
             </button>
 
@@ -311,6 +311,7 @@ import { useAuth } from './contexts/AuthContext';
 const App: React.FC = () => {
   const { accountId, userId, accountName, userEmail, userImage, setAccount, isLoggedIn, logout } = useAccount();
   const { loading: authLoading, user: authUser, signOut } = useAuth();
+  const { playLock } = useAppSounds();
 
 
   const [view, setView] = useState<PageView>('DASHBOARD');
@@ -1153,7 +1154,7 @@ const App: React.FC = () => {
         }
       }}
       onLock={() => {
-
+        playLock();
         setIsLocked(true);
       }}
       userPassword={userPassword}

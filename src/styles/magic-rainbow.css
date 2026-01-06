@@ -64,3 +64,65 @@
     @apply relative z-10 flex items-center gap-2;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
+
+
+/* --- NEW USER REQUESTED MAGICAL BUTTON --- */
+.magical-btn,
+.btn-rainbow {
+    width: 100%;
+    /* max-width: 180px;  <-- Relaxed this constraint for better mobile fit */
+    /* font-size: 20px;   <-- Let utility classes control font size */
+    font-weight: 700;
+    text-align: center;
+    transition: 0.2s all;
+    color: rgba(255, 255, 255, 0.9);
+    border-radius: 16px;
+    /* slightly more rounded for our UI */
+    background: linear-gradient(60deg,
+            hsl(21, 95%, 47%),
+            hsl(0, 100%, 50%),
+            hsl(322, 94%, 55%),
+            hsl(240, 86%, 52%),
+            hsla(260, 100%, 55%, 0.775),
+            hsl(325deg, 100%, 48%));
+    background-size: 600%;
+    animation: anime 15s linear infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.magical-btn:focus {
+    transform: scale(0.95);
+}
+
+.magical-btn:hover {
+    filter: brightness(1.1);
+    transform: scale(1.02);
+}
+
+.magical-btn:active {
+    transform: scale(0.98);
+}
+
+.btn-rainbow {
+    position: absolute;
+    z-index: -1;
+    filter: blur(50px);
+    opacity: 0.8;
+}
+
+@keyframes anime {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
