@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useRef } from 'react';
 import {
     subscribeToSystemAlerts,
     subscribeToUserNotifications,
@@ -61,6 +61,8 @@ export const SystemAlertProvider: React.FC<{ children: ReactNode }> = ({ childre
 
     // Sound cooldown/init state
     const [readyForSounds, setReadyForSounds] = useState(false);
+    // Track which alert IDs have already played a sound
+    const playedSoundIds = useRef<Set<string>>(new Set());
 
     // Filter old alerts for new accounts
     const alerts = useMemo(() => {
@@ -100,15 +102,19 @@ export const SystemAlertProvider: React.FC<{ children: ReactNode }> = ({ childre
 
                 // only play sound if we are ready AND the alert is reasonably fresh (< 10 mins old)
                 // ensuring we don't play sounds for stale cached alerts that load late
+                // only play sound if we are ready AND the alert is reasonably fresh (< 10 mins old)
+                // ensuring we don't play sounds for stale cached alerts that load late
                 if (readyForSounds) {
                     const age = Date.now() - new Date(currentActive.created_at).getTime();
                     const isFresh = age < 10 * 60 * 1000; // 10 minutes
 
-                    if (isFresh) {
+                    // CHECK: Have we played this specific alert ID before?
+                    if (isFresh && !playedSoundIds.current.has(currentActive.id)) {
                         console.log("🔔 Ding! Fresh Alert:", currentActive.title);
                         playNotification();
+                        playedSoundIds.current.add(currentActive.id);
                     } else {
-                        console.log("🔕 Silent (Old/Stale):", currentActive.title);
+                        console.log("🔕 Silent (Old/Stale or Already Played):", currentActive.title);
                     }
                 }
             }

@@ -314,10 +314,10 @@ export const PatientList: React.FC<{
         <table className="min-w-full text-left border-collapse">
           <thead className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
             <tr>
-              <th className="p-5 pl-8">{t('name')}</th>
-              <th className="p-5">{t('operation_date')}</th>
-              <th className="p-5">{t('next_injection')}</th>
-              <th className="p-5">{t('technique')}</th>
+              <th className="p-3 md:p-5 pl-4 md:pl-8">{t('name')}</th>
+              <th className="p-3 md:p-5">{t('operation_date')}</th>
+              <th className="p-3 md:p-5">{t('next_injection')}</th>
+              <th className="p-3 md:p-5">{t('technique')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 relative">
@@ -330,7 +330,7 @@ export const PatientList: React.FC<{
                     className="hover:bg-blue-50/80 hover:scale-[1.01] hover:border-promed-primary/20 hover:z-10 relative transition-all duration-200 cursor-pointer group border-b border-transparent hover:rounded-xl"
                     onClick={() => onSelect(patient.id)}
                   >
-                    <td className="p-5 pl-8 rounded-l-xl group-hover:rounded-l-xl transition-all relative">
+                    <td className="p-3 md:p-5 pl-4 md:pl-8 rounded-l-xl group-hover:rounded-l-xl transition-all relative">
                       <div className="absolute left-0 top-3 bottom-3 w-1 bg-promed-primary rounded-r-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       <div className="flex items-center space-x-4">
                         <div className="relative">
@@ -348,10 +348,10 @@ export const PatientList: React.FC<{
                         </div>
                       </div>
                     </td>
-                    <td className="p-5 text-sm font-medium text-slate-700">
+                    <td className="p-3 md:p-5 text-sm font-medium text-slate-700">
                       {new Date(patient.operationDate).toLocaleDateString(localeString)}
                     </td>
-                    <td className="p-5">
+                    <td className="p-3 md:p-5">
                       {nextInj ? (
                         <div className="flex items-center space-x-2">
                           <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
@@ -362,7 +362,7 @@ export const PatientList: React.FC<{
                         <span className="text-xs text-slate-400 italic font-medium">{t('none_scheduled')}</span>
                       )}
                     </td>
-                    <td className="p-5 rounded-r-xl group-hover:rounded-r-xl transition-all">
+                    <td className="p-3 md:p-5 rounded-r-xl group-hover:rounded-r-xl transition-all">
                       <span className={`text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center space-x-1.5 border ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
                         patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                           'bg-slate-50 text-slate-700 border-slate-200'
@@ -586,7 +586,7 @@ export const PatientDetail: React.FC<{
       </button>
 
       {/* Header Info */}
-      <div className="bg-white rounded-3xl p-8 border border-slate-200 flex flex-col md:flex-row gap-8 relative overflow-hidden shadow-premium">
+      <div className="bg-white rounded-3xl p-4 md:p-8 border border-slate-200 flex flex-col md:flex-row gap-8 relative overflow-hidden shadow-premium">
         {/* Background decorative blob */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
@@ -759,7 +759,7 @@ export const PatientDetail: React.FC<{
 
         {/* Right Col: Injection Timeline */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl p-8 border border-slate-200 h-full relative overflow-hidden shadow-premium">
+          <div className="bg-white rounded-2xl p-4 md:p-8 border border-slate-200 h-full relative overflow-hidden shadow-premium">
             {/* Decorative Background */}
             <div className="absolute -top-20 -right-20 w-80 h-80 bg-promed-light/40 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -1209,7 +1209,7 @@ export const AddPatientForm: React.FC<{
           onClick={e => e.stopPropagation()}
         >
           {/* Premium Header */}
-          <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-20">
+          <div className="px-4 md:px-8 py-4 md:py-6 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-20">
             <div>
               <h3 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
                 {initialData ? (
@@ -1246,7 +1246,7 @@ export const AddPatientForm: React.FC<{
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto bg-slate-50/50">
-            <form id="patient-form" onSubmit={handleSubmit} className="p-8" onKeyDown={(e) => {
+            <form id="patient-form" onSubmit={handleSubmit} className="p-4 md:p-8" onKeyDown={(e) => {
               if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
                 e.preventDefault();
               }
@@ -1442,7 +1442,7 @@ export const AddPatientForm: React.FC<{
           </div>
 
           {/* Fixed Footer */}
-          <div className="px-8 py-5 border-t border-slate-100 bg-white flex-shrink-0 z-20">
+          <div className="px-4 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-white flex-shrink-0 z-20">
             {/* Validation Error Display */}
             {validationError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm font-medium">

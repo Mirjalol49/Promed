@@ -190,7 +190,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
 
 
             {/* Profile Section (Inline) */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_4px_6px_rgba(0,0,0,0.2)]">
+            <div className="bg-white rounded-2xl p-4 md:p-6 border border-gray-100 shadow-[0_4px_6px_rgba(0,0,0,0.2)]">
                 <div className="flex flex-col items-center mb-8">
                     <div className="relative group/avatar cursor-pointer" onClick={() => document.getElementById('file-upload-settings')?.click()}>
                         {/* Main Avatar Container */}

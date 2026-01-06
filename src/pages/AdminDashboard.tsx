@@ -183,7 +183,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Header Section */}
-            <div className="group relative bg-white rounded-[40px] shadow-premium p-8 md:p-12 text-promed-text overflow-hidden border border-promed-primary/5 transition-all duration-500 ">
+            <div className="group relative bg-white rounded-[40px] shadow-premium p-6 md:p-12 text-promed-text overflow-hidden border border-promed-primary/5 transition-all duration-500 ">
                 {/* Glossy Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-promed-primary/5 via-transparent to-transparent opacity-40 group-hover:opacity-60 transition-opacity duration-700" />
                 <div className="absolute top-0 right-0 w-96 h-96 bg-promed-primary/5 rounded-full blur-[100px] -mr-32 -mt-32 animate-pulse" />
@@ -256,7 +256,7 @@ export const AdminDashboard: React.FC = () => {
             {showInviteModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-500">
                     <div className="absolute inset-0" onClick={() => setShowInviteModal(false)} />
-                    <div className="relative bg-promed-bg backdrop-blur-2xl rounded-[48px] p-12 w-full max-w-xl border border-promed-primary/10 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
+                    <div className="relative bg-promed-bg backdrop-blur-2xl rounded-[48px] p-6 md:p-12 w-full max-w-xl border border-promed-primary/10 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
                         {/* Modal Glow */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-[80px] -mr-32 -mt-32" />
 
@@ -336,7 +336,7 @@ export const AdminDashboard: React.FC = () => {
             {activeTab === 'registry' ? (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                     <div className="bg-white/70 backdrop-blur-3xl rounded-[40px] shadow-premium border border-white/40 overflow-hidden group/table transition-all duration-500 max-w-6xl mx-auto">
-                        <div className="p-10 border-b border-slate-100/50 flex flex-col md:flex-row md:items-center justify-between gap-8 bg-gradient-to-b from-slate-50/50 to-transparent">
+                        <div className="p-6 md:p-10 border-b border-slate-100/50 flex flex-col md:flex-row md:items-center justify-between gap-8 bg-gradient-to-b from-slate-50/50 to-transparent">
                             <div>
                                 <h3 className="text-2xl font-black text-promed-text tracking-tight flex items-center gap-3">
                                     {t('system_accounts') || 'System Registry'}
@@ -457,7 +457,7 @@ export const AdminDashboard: React.FC = () => {
                 <div className="max-w-2xl mx-auto space-y-8 animate-in mt-10 fade-in slide-in-from-bottom-4 duration-700">
                     <div className="bg-white/80 backdrop-blur-3xl rounded-[40px] shadow-premium border border-white/40 overflow-hidden relative group/mega transition-all duration-500">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/[0.03] rounded-full blur-[80px] -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000" />
-                        <div className="p-10 border-b border-slate-100/50 bg-gradient-to-b from-rose-500/[0.02] to-transparent">
+                        <div className="p-6 md:p-10 border-b border-slate-100/50 bg-gradient-to-b from-rose-500/[0.02] to-transparent">
                             <div className="flex items-center gap-4 mb-3">
                                 <div className="p-3.5 bg-promed-primary text-white rounded-2xl group-hover:rotate-[15deg] transition-transform duration-500 group-hover:scale-110">
                                     <Megaphone size={22} strokeWidth={2.5} />
@@ -620,7 +620,7 @@ export const AdminDashboard: React.FC = () => {
                 selectedProfile && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-500">
                         <div className="absolute inset-0" onClick={() => setSelectedProfile(null)} />
-                        <div className="relative bg-white/90 backdrop-blur-2xl rounded-[48px] shadow-premium p-12 w-full max-w-xl border border-white overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
+                        <div className="relative bg-white/90 backdrop-blur-2xl rounded-[48px] shadow-premium p-6 md:p-12 w-full max-w-xl border border-white overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-[80px] -mr-32 -mt-32" />
 
                             <div className="relative z-10">

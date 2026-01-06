@@ -102,7 +102,7 @@ const Layout: React.FC<LayoutProps> = ({
   const getPageTitle = () => {
     switch (currentPage) {
       case 'DASHBOARD': return t('dashboard');
-      case 'ADMIN_DASHBOARD': return 'Admin Control Center';
+      case 'ADMIN_DASHBOARD': return t('admin_control_center');
       case 'PATIENTS': return t('patient_list');
       case 'ADD_PATIENT': return t('add_new_patient');
       case 'PATIENT_DETAIL': return t('details');
@@ -146,7 +146,7 @@ const Layout: React.FC<LayoutProps> = ({
           {role === 'admin' && (
             <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">
               <p className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Management</p>
-              <NavItem page="ADMIN_DASHBOARD" icon={Shield} label="Admin Panel" />
+              <NavItem page="ADMIN_DASHBOARD" icon={Shield} label={t('admin_panel')} />
             </div>
           )}
         </nav>
@@ -200,7 +200,7 @@ const Layout: React.FC<LayoutProps> = ({
                 <div className="w-8 h-8 bg-transparent rounded-lg flex items-center justify-center">
                   <img src={logoImg} alt="Promed Logo" className="w-full h-full object-contain" />
                 </div>
-                <span className="text-xl font-bold tracking-tight text-slate-900">PROMED</span>
+
               </div>
 
               {/* Desktop Title */}
