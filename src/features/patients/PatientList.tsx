@@ -815,12 +815,12 @@ export const PatientDetail: React.FC<{
                   <div key={inj.id} className="relative flex gap-6 group">
                     {/* Vertical Line */}
                     {index !== patient.injections.length - 1 && (
-                      <div className={`absolute left-[11px] top-10 bottom-[-24px] w-0.5 ${isNextHero ? 'bg-emerald-100' : 'bg-slate-200'} group-hover:bg-slate-300 transition-colors`}></div>
+                      <div className={`absolute left-[11px] top-13 bottom-[-24px] w-0.5 ${isNextHero ? 'bg-emerald-100' : 'bg-slate-200'} group-hover:bg-slate-300 transition-colors`}></div>
                     )}
 
                     {/* Indicator Dot / Mascot Avatar */}
                     {isNextHero ? (
-                      <div className="relative group/mascot z-10 transition-transform hover:scale-110 duration-300">
+                      <div className="relative group/mascot z-10 transition-transform hover:scale-110 duration-300 mt-3">
                         <div className="w-10 h-10 rounded-full border-4 border-slate-100 overflow-hidden bg-white -ml-2 ring-1 ring-slate-200">
                           <img src={injectionMascot} alt="Scheduled" className="w-full h-full object-cover scale-[1.2] object-top translate-y-1" />
                         </div>

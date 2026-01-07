@@ -1,111 +1,125 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import happyMascot from '../mascot/happy_mascot.png';
+import sadMascot from '../mascot/upseet_mascot.png';
+import injectionMascot from '../mascot/injection_mascot.png';
+import thinkingMascot from '../mascot/thinking_mascot.png';
 
 interface SyncToastProps {
     isVisible: boolean;
     title: string;
     message: string;
-    type?: 'success' | 'error' | 'info';
+    type?: 'success' | 'error' | 'info' | 'warning' | 'injection';
     mascot?: string;
     onClose: () => void;
 }
 
 const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type = 'success', mascot, onClose }) => {
-    const [progress, setProgress] = useState(100);
+    const [show, setShow] = useState(false);
 
     useEffect(() => {
-        if (!isVisible) {
-            setProgress(100);
-            return;
+        if (isVisible) {
+            requestAnimationFrame(() => setShow(true));
+        } else {
+            setShow(false);
         }
+    }, [isVisible]);
 
-        const duration = 4000;
-        const interval = 10;
-        const step = (interval / duration) * 100;
-
-        const timer = setInterval(() => {
-            setProgress((prev) => {
-                if (prev <= 0) {
-                    clearInterval(timer);
-                    return 0;
-                }
-                return prev - step;
-            });
-        }, interval);
-
-        const closeTimer = setTimeout(() => {
-            onClose();
-        }, duration);
-
-        return () => {
-            clearInterval(timer);
-            clearTimeout(closeTimer);
-        };
+    useEffect(() => {
+        if (!isVisible) return;
+        const duration = 5000;
+        const closeTimer = setTimeout(() => onClose(), duration);
+        return () => clearTimeout(closeTimer);
     }, [isVisible, onClose]);
 
-    const getTheme = () => {
+    // Configuration for "Josh W. Comeau" Style
+    const getToastConfig = () => {
+        const isInjection = title.toLowerCase().includes('injection') || message.toLowerCase().includes('injection') || type === 'injection';
+
+        if (isInjection) {
+            return {
+                mascotImg: injectionMascot,
+                mascotSide: 'left', // Doctor leans on the left
+                titleColor: 'text-blue-600',
+                tailColor: 'bg-white'
+            };
+        }
+
         switch (type) {
             case 'error':
                 return {
-                    border: 'border-rose-500',
-                    progress: 'bg-rose-500'
+                    mascotImg: sadMascot,
+                    mascotSide: 'right', // Sad koala looking back
+                    titleColor: 'text-rose-600',
+                    tailColor: 'bg-white'
+                };
+            case 'success':
+                return {
+                    mascotImg: happyMascot,
+                    mascotSide: 'right', // Happy koala looking at bubble
+                    titleColor: 'text-emerald-600',
+                    tailColor: 'bg-white'
                 };
             default:
                 return {
-                    border: 'border-emerald-500',
-                    progress: 'bg-emerald-500'
+                    mascotImg: thinkingMascot,
+                    mascotSide: 'right',
+                    titleColor: 'text-amber-500',
+                    tailColor: 'bg-white'
                 };
         }
     };
 
-    const theme = getTheme();
+    const config = getToastConfig();
+    const activeMascot = mascot || config.mascotImg;
+    const isRight = config.mascotSide === 'right';
 
     return (
         <AnimatePresence>
-            {isVisible && (
-                <motion.div
-                    initial={{ y: 100, opacity: 0, scale: 0.9 }}
-                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                    exit={{ y: 20, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className={`fixed bottom-8 right-8 z-[1000] w-96 p-6 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl border-l-4 ${theme.border} flex items-center gap-4 overflow-visible pointer-events-auto`}
-                >
+            {(isVisible || show) && (
+                <div className={`fixed bottom-10 z-[1000] pointer-events-none flex items-end ${isRight ? 'right-28' : 'right-10'}`}>
 
-                    {/* Content */}
-                    <div className="flex flex-col gap-0.5 pr-2">
-                        <h4 className="text-[17px] font-black text-slate-800 leading-tight">
-                            {title}
-                        </h4>
-                        <p className="text-sm text-slate-500 font-semibold leading-relaxed">
-                            {message}
-                        </p>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-50 rounded-b-2xl overflow-hidden">
-                        <motion.div
-                            className={`h-full ${theme.progress}`}
-                            initial={{ width: "100%" }}
-                            animate={{ width: `${progress}%` }}
-                            transition={{ ease: "linear" }}
-                        />
-                    </div>
-                    {/* Mascot Character - Only render if mascot is provided */}
-                    {mascot && (
-                        <div className="relative flex-shrink-0">
-                            <motion.img
-                                initial={{ scale: 0.5, rotate: -20 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                src={mascot}
-                                alt="Mascot"
-                                className="w-20 h-20 object-contain -mt-6 drop-g"
-                            />
+                    {/* Floating Container with Drop Shadow */}
+                    <motion.div
+                        initial={{ y: 50, opacity: 0, scale: 0.9 }}
+                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        exit={{ y: 20, opacity: 0, scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                        className="relative filter drop-shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
+                    >
+                        {/* THE SPEECH BUBBLE */}
+                        <div className="bg-white rounded-3xl p-6 w-80 relative z-10 pointer-events-auto">
+                            <h3 className={`font-extrabold text-lg leading-tight mb-1 ${config.titleColor}`}>
+                                {title}
+                            </h3>
+                            <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                                {message}
+                            </p>
                         </div>
-                    )}
 
-                    {/* Glow Effect */}
-                    <div className={`absolute -inset-1 ${theme.progress} opacity-[0.03] blur-xl -z-10 rounded-3xl`} />
-                </motion.div>
+                        {/* THE TAIL (Rotated Square) */}
+                        <div
+                            className={`absolute w-6 h-6 bg-white rotate-45 z-10 top-1/2 -mt-3
+                                ${isRight ? '-right-2' : '-left-2'}
+                            `}
+                        />
+
+                        {/* MASCOT (Positioned Absolutely Outside) */}
+                        {activeMascot && (
+                            <motion.img
+                                initial={{ opacity: 0, x: isRight ? -20 : 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.1, type: "spring" }}
+                                src={activeMascot}
+                                alt="Mascot"
+                                className={`
+                                    absolute w-28 h-28 object-contain z-20 pointer-events-none bottom-[-10px]
+                                    ${isRight ? '-right-[6.5rem]' : '-left-[6.5rem]'}
+                                `}
+                            />
+                        )}
+                    </motion.div>
+                </div>
             )}
         </AnimatePresence>
     );

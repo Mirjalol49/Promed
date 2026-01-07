@@ -525,7 +525,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <div
-      className="p-5 md:p-6 rounded-[24px] text-white relative overflow-hidden transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] group shadow-premium"
+      className="p-4 md:p-6 rounded-[24px] text-white relative overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:shadow-2xl active:scale-[0.98] group shadow-premium"
       style={{ background: gradient }}
     >
       {/* Glossy Top Highlight */}
@@ -543,10 +543,10 @@ export const StatCard: React.FC<StatCardProps> = ({
                 </AnimateIcon>
               )}
             </div>
-            <span className="text-[11px] font-black uppercase tracking-[0.25em] text-white/90 drop-shadow-sm">{label}</span>
+            <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.25em] text-white/90 drop-shadow-sm">{label}</span>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-4xl md:text-5xl font-black tracking-tighter text-white drop-shadow-md">{value}</span>
+            <span className="text-3xl md:text-5xl font-black tracking-tighter text-white drop-shadow-md">{value}</span>
             {change && (
               <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/10 flex items-center gap-1">
                 <Activity size={10} className="text-white/80" />
@@ -557,9 +557,9 @@ export const StatCard: React.FC<StatCardProps> = ({
         </div>
       </div>
 
-      {/* Mascot Image (Hover Effect) */}
+      {/* Mascot Image (Visible Always) */}
       {mascotImg && (
-        <div className="absolute -bottom-6 -right-4 w-36 h-36 z-0 pointer-events-none transition-all duration-700 ease-out translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:scale-110 group-hover:-rotate-6 drop-shadow-2xl">
+        <div className="absolute -bottom-4 -right-2 md:-bottom-6 md:-right-4 w-24 h-24 md:w-36 md:h-36 z-0 pointer-events-none origin-bottom transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:-translate-y-3 group-hover:scale-110 group-hover:rotate-3">
           <img
             src={mascotImg}
             alt="Mascot"

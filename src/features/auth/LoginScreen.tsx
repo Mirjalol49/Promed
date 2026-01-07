@@ -201,9 +201,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           <button
             type="submit"
             disabled={loading}
-            className="btn-auth-premium group"
+            className="btn-glossy-blue group"
           >
-            <span>
+            <span className="flex items-center justify-center gap-2">
               {loading ? (
                 <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (

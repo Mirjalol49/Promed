@@ -145,7 +145,7 @@ select:focus {
 
 /* GLOSSY BLUE BUTTON (Clean & Polished) */
 .btn-glossy-blue {
-    @apply relative w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-white text-lg font-bold transition-all duration-200;
+    @apply relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-white text-base font-bold transition-all duration-200;
 
     /* Clean, Vibrant Blue Gradient */
     background: linear-gradient(180deg,
@@ -435,5 +435,10 @@ select:focus {
     .gel-blue-style>*,
     .btn-gel-blue>* {
         @apply relative z-10 drop-shadow-md;
+    }
+
+    /* Josh W. Comeau Spring Physics */
+    .cubic-bezier-spring {
+        transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 }
