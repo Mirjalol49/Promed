@@ -66,7 +66,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             {/* Backdrop with blur */}
             <div
-                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"
+                className="absolute inset-0 bg-slate-900/40 animate-in fade-in duration-300"
                 onClick={onClose}
             />
 

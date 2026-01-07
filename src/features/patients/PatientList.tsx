@@ -48,6 +48,7 @@ import { patientSchema, safeValidate } from '../../lib/validation';
 import DeleteModal from '../../components/ui/DeleteModal';
 import { CustomSelect } from '../../components/ui/CustomSelect';
 import { ImageUploadingOverlay } from '../../components/ui/ImageUploadingOverlay';
+import { InjectionTimeline } from '../../components/ui/InjectionTimeline';
 
 // Re-importing to force build update
 import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
@@ -99,7 +100,7 @@ const InjectionModal: React.FC<{
 
   return (
     <Portal>
-      <div className="fixed inset-0 z-[9999] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="fixed inset-0 z-[9999] bg-slate-900/70 flex items-center justify-center p-4 animate-in fade-in duration-200">
         <div className="bg-white rounded-2xl w-full max-w-md p-8 transform scale-100 transition-all border border-slate-200 shadow-premium">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-2xl font-bold text-slate-800 tracking-tight">{initialData ? t('edit_injection') : t('add_injection')}</h3>
@@ -161,7 +162,7 @@ const PhotoLabelModal: React.FC<{
 
   return (
     <Portal>
-      <div className="fixed inset-0 z-[9999] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="fixed inset-0 z-[9999] bg-slate-900/70 flex items-center justify-center p-4 animate-in fade-in duration-200">
         <div className="bg-white rounded-2xl w-full max-w-md p-6 border border-slate-200 shadow-premium">
           <h3 className="text-xl font-bold mb-4 text-slate-800">{t('photo_label_title')}</h3>
           <div className="flex justify-center mb-6 bg-slate-50 rounded-xl p-2 border border-slate-200">
@@ -759,193 +760,30 @@ export const PatientDetail: React.FC<{
 
         {/* Right Col: Injection Timeline */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl p-4 md:p-8 border border-slate-200 h-full relative overflow-hidden shadow-premium">
-            {/* Decorative Background */}
-            <div className="absolute -top-20 -right-20 w-80 h-80 bg-promed-light/40 rounded-full blur-3xl pointer-events-none"></div>
-
-            <div className="flex justify-between items-center mb-8 relative z-10">
-              <h3 className="font-bold text-slate-800 flex items-center space-x-3 text-lg">
-                <div className="p-2 bg-promed-light rounded-lg text-promed-primary border border-promed-primary/20">
-                  <Syringe size={22} />
-                </div>
-                <span>{t('injection_schedule')}</span>
-              </h3>
-
-
-              <button
-                onClick={openAddInjection}
-                className="btn-premium-blue !px-4 !py-2 text-xs"
-              >
-                <Plus size={16} className="relative z-10" />
-                <span>{t('add_injection')}</span>
-              </button>
-            </div>
-
-            <div className={`space-y-6 ${patient.injections.length > 0 ? 'pl-4' : ''} relative z-10 pb-48`}>
-              {patient.injections.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-in fade-in zoom-in duration-700">
-                  <div className="relative mb-10">
-                    <div className="absolute inset-0 bg-promed-primary/5 blur-3xl rounded-full scale-150 animate-pulse"></div>
-                    <img
-                      src={thinkingMascot}
-                      alt="No injections"
-                      className="w-40 h-40 object-contain relative z-10 "
-                    />
-                  </div>
-                  <h4 className="text-xl font-bold text-slate-800 mb-3">
-                    {t('schedule_empty_title') || "Hali inyeksiyalar yo'q"}
-                  </h4>
-                  <p className="text-slate-500 font-medium max-w-[320px] mb-10 leading-relaxed">
-                    {t('schedule_empty_mascot')}
-                  </p>
-                  <button
-                    onClick={openAddInjection}
-                    className="btn-premium-blue !px-8 !py-4"
-                  >
-                    <PlusCircle size={22} className="relative z-10 group-hover:rotate-90 transition-transform duration-300" />
-                    <span>{t('add_first_injection')}</span>
-                  </button>
-                </div>
-              ) : patient.injections.map((inj, index) => {
-                const isPast = new Date(inj.date) < new Date();
-                const isToday = new Date(inj.date).toDateString() === new Date().toDateString();
-                const isNextHero = nextUpcomingInjection?.id === inj.id;
-
-                return (
-                  <div key={inj.id} className="relative flex gap-6 group">
-                    {/* Vertical Line */}
-                    {index !== patient.injections.length - 1 && (
-                      <div className={`absolute left-[11px] top-13 bottom-[-24px] w-0.5 ${isNextHero ? 'bg-emerald-100' : 'bg-slate-200'} group-hover:bg-slate-300 transition-colors`}></div>
-                    )}
-
-                    {/* Indicator Dot / Mascot Avatar */}
-                    {isNextHero ? (
-                      <div className="relative group/mascot z-10 transition-transform hover:scale-110 duration-300 mt-3">
-                        <div className="w-10 h-10 rounded-full border-4 border-slate-100 overflow-hidden bg-white -ml-2 ring-1 ring-slate-200">
-                          <img src={injectionMascot} alt="Scheduled" className="w-full h-full object-cover scale-[1.2] object-top translate-y-1" />
-                        </div>
-                        {/* Custom Tooltip */}
-                        <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-[10px] font-bold py-1 px-3 rounded-lg opacity-0 group-hover/mascot:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
-                          {t('next_injection_tooltip')}
-                          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-r-slate-900"></div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className={`
-                        flex-shrink-0 w-6 h-6 rounded-full border-[3px] z-10 mt-1  transition-all duration-300
-                        ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-500 border-white ring-2 ring-emerald-200' :
-                          inj.status === InjectionStatus.MISSED ? 'bg-red-500 border-white ring-2 ring-red-200' :
-                            isToday ? 'bg-amber-500 border-white ring-2 ring-amber-200 scale-110' : 'bg-white border-slate-300'
-                        }
-                      `} />
-                    )}
-
-                    {/* Content */}
-                    <div className={`flex-1 ${isNextHero ? 'bg-white ring-1 ring-slate-200 border-slate-100' : 'bg-slate-50/50'} rounded-2xl p-5 hover:bg-white hover:shadow-premium hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-slate-200`}>
-                      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3">
-                            <h4 className={`font-bold text-base ${isToday ? 'text-amber-700' : 'text-slate-800'}`}>
-                              {t('injection')} #{index + 1}
-                            </h4>
-                            {/* Actions Container */}
-                            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                              <button
-                                type="button"
-                                onClick={(e) => handleEditClick(e, inj)}
-                                className="p-1.5 text-slate-400 hover:text-promed-primary hover:bg-white rounded-lg transition-all"
-                                title={t('edit_injection')}
-                              >
-                                <Pencil className="w-4 h-4 opacity-70 hover:opacity-100 transition-opacity" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => handleDeleteClick(e, inj.id)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"
-                                title={t('delete')}
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </div>
-                          <p className="text-sm text-slate-600 flex items-center space-x-2 mt-2 font-medium">
-                            <img src={dateIcon} alt="Date" className="w-3.5 h-3.5 object-contain opacity-50" />
-                            <span>{new Date(inj.date).toLocaleDateString(localeString, { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                          </p>
-                          {inj.notes && (
-                            <div className="mt-3 flex items-start space-x-2">
-                              <div className="mt-1 w-1 h-full bg-promed-primary/30 rounded-full"></div>
-                              <p className="text-sm text-slate-600 italic leading-relaxed">"{inj.notes}"</p>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Status / Quick Actions */}
-                        <div className="flex flex-col items-end gap-2">
-                          {inj.status === InjectionStatus.SCHEDULED ? (
-                            <div className="flex items-center space-x-2">
-
-                              <button
-                                onClick={(e) => {
-                                  const rect = e.currentTarget.getBoundingClientRect();
-                                  const x = (rect.left + rect.width / 2) / window.innerWidth;
-                                  const y = (rect.top + rect.height / 2) / window.innerHeight;
-
-                                  playConfetti();
-                                  confetti({
-                                    particleCount: 150,
-                                    spread: 60,
-                                    origin: { x, y }
-                                  });
-                                  onUpdateInjection(patient.id, inj.id, InjectionStatus.COMPLETED);
-                                }}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-50 transition  whitespace-nowrap"
-                              >
-                                <Check size={14} /> <span>{t('mark_done')}</span>
-                              </button>
-                              <button
-                                onClick={() => onUpdateInjection(patient.id, inj.id, InjectionStatus.MISSED)}
-                                className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-red-200 text-red-700 rounded-lg text-xs font-bold hover:bg-red-50 transition  whitespace-nowrap"
-                              >
-                                <X size={14} /> <span>{t('mark_missed')}</span>
-                              </button>
-                            </div>
-                          ) : (
-                            <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider  border whitespace-nowrap ${inj.status === InjectionStatus.COMPLETED ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                              {translateStatus(inj.status)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* The Big Mascot */}
-            {patient.injections.length > 0 && (
-              <img
-                src={injectionMascot}
-                alt="Mascot"
-                className="absolute -bottom-10 -right-2 w-40 opacity-100 pointer-events-none transform rotate-[-5deg] z-0 "
-              />
-            )}
-          </div>
+          <InjectionTimeline
+            injections={patient.injections}
+            onAddInjection={openAddInjection}
+            onEditInjection={(inj) => openEditInjection(inj)}
+            onDeleteInjection={(id, e) => handleDeleteClick(e, id)}
+            onUpdateStatus={(id, status) => onUpdateInjection(patient.id, id, status)}
+          />
         </div>
       </div>
 
+
       {/* Image Full View Modal */}
-      {selectedImage && (
-        <Portal>
-          <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setSelectedImage(null)}>
-            <button className="absolute top-6 right-6 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition">
-              <X size={36} />
-            </button>
-            <img src={selectedImage} alt="Full view" className="max-w-full max-h-[90vh] rounded-xl scale-100 animate-in zoom-in-95 duration-300" />
-          </div>
-        </Portal>
-      )}
+      {
+        selectedImage && (
+          <Portal>
+            <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setSelectedImage(null)}>
+              <button className="absolute top-6 right-6 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition">
+                <X size={36} />
+              </button>
+              <img src={selectedImage} alt="Full view" className="max-w-full max-h-[90vh] rounded-xl scale-100 animate-in zoom-in-95 duration-300" />
+            </div>
+          </Portal>
+        )
+      }
 
       {/* Injection Add/Edit Modal */}
       <InjectionModal
@@ -974,7 +812,7 @@ export const PatientDetail: React.FC<{
         onClose={() => setInjToDeleteId(null)}
         onConfirm={confirmDeleteInjection}
       />
-    </div>
+    </div >
   );
 };
 

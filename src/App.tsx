@@ -48,7 +48,7 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import lockIcon from './assets/images/lock.png';
 // New High-Res Assets for Toasts
 import happyIcon from './components/mascot/happy_mascot.png';
-import upsetIcon from './components/mascot/upseet_mascot.png';
+import upsetIcon from './components/mascot/upset_mascot.png';
 import operationIcon from './components/mascot/operation_mascot.png';
 import injectionIcon from './components/mascot/injection_mascot.png';
 import thinkingIcon from './components/mascot/thinking_mascot.png';

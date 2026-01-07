@@ -18,6 +18,7 @@ import { NotificationBell } from './NotificationBell';
 import { useSystemAlert } from '../../contexts/SystemAlertContext';
 import lockIcon from '../../assets/images/lock.png';
 import logoImg from '../../assets/images/logo.png';
+import { MobileDock } from './MobileDock';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -114,19 +115,9 @@ const Layout: React.FC<LayoutProps> = ({
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900 font-sans">
-      {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="fixed top-16 bottom-0 left-0 right-0 bg-slate-900/80 z-30 md:hidden backdrop-blur-sm"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
 
-      {/* Sidebar */}
-      <aside className={`
-        fixed md:static top-16 bottom-0 md:top-0 right-0 md:left-0 z-40 w-[260px] bg-[#ffffff] flex flex-col transition-transform duration-300 ease-out shadow-premium border-l md:border-l-0 md:border-r border-[#E2E8F0]
-        ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
-      `}>
+      {/* Sidebar (Desktop Only) */}
+      <aside className="hidden md:flex flex-col w-[260px] bg-[#ffffff] h-full shadow-premium border-r border-[#E2E8F0] z-40 relative">
         {/* Logo */}
         <div className="p-4 md:p-6 flex items-center justify-end md:justify-between">
           <div className="hidden md:flex items-center space-x-3 text-slate-900">
@@ -184,7 +175,7 @@ const Layout: React.FC<LayoutProps> = ({
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-50/50">
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-50/50 pb-24 md:pb-0"> {/* Added pb-24 for Dock space */}
         {/* Header */}
         <header className="sticky top-0 z-20 h-16 md:h-20">
           <div className="absolute inset-0 bg-white/80 backdrop-blur-xl shadow-premium border-b border-promed-primary/5" />
@@ -197,7 +188,6 @@ const Layout: React.FC<LayoutProps> = ({
                 <div className="w-8 h-8 bg-transparent rounded-lg flex items-center justify-center">
                   <img src={logoImg} alt="Promed Logo" className="w-full h-full object-contain" />
                 </div>
-
               </div>
 
               {/* Desktop Title */}
@@ -209,32 +199,7 @@ const Layout: React.FC<LayoutProps> = ({
             {/* Right Section: Notification & Profile */}
             <div className="flex items-center space-x-2 md:space-x-4">
               <NotificationBell />
-
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors relative w-10 h-10 flex items-center justify-center"
-              >
-                <div className="w-6 h-5 relative flex flex-col justify-between">
-                  {/* Top Line */}
-                  <motion.span
-                    animate={isSidebarOpen ? { rotate: 45, y: 9.5 } : { rotate: 0, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-full h-0.5 bg-current rounded-full origin-center"
-                  />
-                  {/* Middle Line */}
-                  <motion.span
-                    animate={isSidebarOpen ? { opacity: 0 } : { opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-full h-0.5 bg-current rounded-full origin-center"
-                  />
-                  {/* Bottom Line */}
-                  <motion.span
-                    animate={isSidebarOpen ? { rotate: -45, y: -9.5 } : { rotate: 0, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-full h-0.5 bg-current rounded-full origin-center"
-                  />
-                </div>
-              </button>
+              {/* Hamburger Removed - Replaced by Mobile Dock */}
             </div>
           </div>
         </header>
@@ -248,6 +213,13 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         </main>
       </div>
+
+      {/* Mobile Bottom Dock */}
+      <MobileDock
+        currentPage={currentPage}
+        onNavigate={onNavigate}
+        onLock={onLock}
+      />
     </div>
   );
 };

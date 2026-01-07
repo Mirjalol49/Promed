@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useScrollLock } from '../../hooks/useScrollLock';
-import trashIcon from '../mascot/upseet_mascot.png';
+import trashIcon from '../mascot/upset_mascot.png';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface DeleteModalProps {
@@ -19,7 +19,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onConfirm })
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                     {/* Backdrop with blur */}
                     <motion.div
                         initial={{ opacity: 0 }}

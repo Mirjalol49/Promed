@@ -100,17 +100,23 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         return days;
     };
 
-    const formatDateDisplay = (dateStr: string) => {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString(localeString, { year: 'numeric', month: 'long', day: 'numeric' });
-    };
-
     const monthNames = [
         t('january'), t('february'), t('march'), t('april'),
         t('may'), t('june'), t('july'), t('august'),
         t('september'), t('october'), t('november'), t('december')
     ];
+
+    const formatDateDisplay = (dateStr: string) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        // Fix for timezone offset issues when creating date from YYYY-MM-DD
+        // We want the date part explicitly
+        const day = date.getDate();
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
+
+        return `${day} ${month} ${year}`;
+    };
 
     const dayHeaders = [
         t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import happyMascot from '../mascot/happy_mascot.png';
-import sadMascot from '../mascot/upseet_mascot.png';
+import sadMascot from '../mascot/upset_mascot.png';
 import injectionMascot from '../mascot/injection_mascot.png';
 import thinkingMascot from '../mascot/thinking_mascot.png';
 
@@ -41,6 +41,7 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                 mascotImg: injectionMascot,
                 mascotSide: 'left', // Doctor leans on the left
                 titleColor: 'text-blue-600',
+                progressColor: 'bg-blue-500',
                 tailColor: 'bg-white'
             };
         }
@@ -49,15 +50,17 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
             case 'error':
                 return {
                     mascotImg: sadMascot,
-                    mascotSide: 'right', // Sad koala looking back
+                    mascotSide: 'right',
                     titleColor: 'text-rose-600',
+                    progressColor: 'bg-rose-500',
                     tailColor: 'bg-white'
                 };
             case 'success':
                 return {
                     mascotImg: happyMascot,
-                    mascotSide: 'right', // Happy koala looking at bubble
+                    mascotSide: 'right',
                     titleColor: 'text-emerald-600',
+                    progressColor: 'bg-emerald-500',
                     tailColor: 'bg-white'
                 };
             default:
@@ -65,6 +68,7 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                     mascotImg: thinkingMascot,
                     mascotSide: 'right',
                     titleColor: 'text-amber-500',
+                    progressColor: 'bg-amber-500',
                     tailColor: 'bg-white'
                 };
         }
@@ -88,13 +92,23 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                         className="relative filter drop-shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
                     >
                         {/* THE SPEECH BUBBLE */}
-                        <div className="bg-white rounded-3xl p-6 w-80 relative z-10 pointer-events-auto">
-                            <h3 className={`font-extrabold text-lg leading-tight mb-1 ${config.titleColor}`}>
-                                {title}
-                            </h3>
-                            <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                                {message}
-                            </p>
+                        <div className="bg-white rounded-3xl w-80 relative z-10 pointer-events-auto overflow-hidden">
+                            <div className="p-6">
+                                <h3 className={`font-extrabold text-lg leading-tight mb-1 ${config.titleColor}`}>
+                                    {title}
+                                </h3>
+                                <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                                    {message}
+                                </p>
+                            </div>
+
+                            {/* PROGRESS BAR */}
+                            <motion.div
+                                initial={{ width: "100%" }}
+                                animate={{ width: "0%" }}
+                                transition={{ duration: 5, ease: "linear" }}
+                                className={`h-1.5 ${config.progressColor || 'bg-blue-500'}`}
+                            />
                         </div>
 
                         {/* THE TAIL (Rotated Square) */}
@@ -113,8 +127,8 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                                 src={activeMascot}
                                 alt="Mascot"
                                 className={`
-                                    absolute w-28 h-28 object-contain z-20 pointer-events-none bottom-[-10px]
-                                    ${isRight ? '-right-[6.5rem]' : '-left-[6.5rem]'}
+                                    absolute w-40 h-40 object-contain z-20 pointer-events-none bottom-[-16px]
+                                    ${isRight ? '-right-[8.5rem]' : '-left-[8.5rem]'}
                                 `}
                             />
                         )}
