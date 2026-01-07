@@ -81,7 +81,15 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
     return (
         <AnimatePresence>
             {(isVisible || show) && (
-                <div className={`fixed bottom-10 z-[1000] pointer-events-none flex items-end ${isRight ? 'right-28' : 'right-10'}`}>
+                // CONTAINER: Responsive Positioning
+                // - Mobile: bottom-32, Centered (left-1/2 -translate-x-1/2) with tighter mascot
+                // - Desktop: bottom-10, Right aligned
+                <div className={`fixed z-[1000] pointer-events-none flex items-end
+                    bottom-32 md:bottom-10
+                    left-1/2 -translate-x-1/2
+                    md:left-auto md:translate-x-0
+                    ${isRight ? 'md:right-36' : 'md:left-36'}
+                `}>
 
                     {/* Floating Container with Drop Shadow */}
                     <motion.div
@@ -89,17 +97,14 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                         animate={{ y: 0, opacity: 1, scale: 1 }}
                         exit={{ y: 20, opacity: 0, scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                        className="relative filter drop-shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
+                        className="relative filter drop-shadow-2xl"
                     >
                         {/* THE SPEECH BUBBLE */}
-                        <div className="bg-white rounded-3xl w-80 relative z-10 pointer-events-auto overflow-hidden">
-                            <div className="p-6">
-                                <h3 className={`font-extrabold text-lg leading-tight mb-1 ${config.titleColor}`}>
+                        <div className="bg-white rounded-[2rem] min-w-[200px] max-w-[80vw] md:max-w-xs relative z-10 pointer-events-auto overflow-hidden border border-slate-100/50">
+                            <div className="p-4 md:p-5 flex items-center justify-center min-h-[56px]">
+                                <h3 className={`font-extrabold text-lg md:text-xl leading-tight text-center ${config.titleColor}`}>
                                     {title}
                                 </h3>
-                                <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                                    {message}
-                                </p>
                             </div>
 
                             {/* PROGRESS BAR */}
@@ -111,10 +116,10 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                             />
                         </div>
 
-                        {/* THE TAIL (Rotated Square) */}
+                        {/* THE TAIL (Rotated Square) - Hidden on Mobile Center for cleaner look? Or kept? check visuals. Let's keep distinct tail. */}
                         <div
-                            className={`absolute w-6 h-6 bg-white rotate-45 z-10 top-1/2 -mt-3
-                                ${isRight ? '-right-2' : '-left-2'}
+                            className={`absolute w-5 h-5 bg-white rotate-45 z-10 top-1/2 -mt-2.5
+                                ${isRight ? '-right-2 md:-right-2' : '-left-2 md:-left-2'}
                             `}
                         />
 
@@ -127,8 +132,10 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                                 src={activeMascot}
                                 alt="Mascot"
                                 className={`
-                                    absolute w-40 h-40 object-contain z-20 pointer-events-none bottom-[-16px]
-                                    ${isRight ? '-right-[8.5rem]' : '-left-[8.5rem]'}
+                                    absolute object-contain z-20 pointer-events-none
+                                    w-20 h-20 md:w-32 md:h-32
+                                    bottom-[-6px] md:bottom-[-8px]
+                                    ${isRight ? '-right-[4.2rem] md:-right-[7.5rem]' : '-left-[4.2rem] md:-left-[7.5rem]'}
                                 `}
                             />
                         )}

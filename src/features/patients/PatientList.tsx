@@ -100,14 +100,14 @@ const InjectionModal: React.FC<{
 
   return (
     <Portal>
-      <div className="fixed inset-0 z-[9999] bg-slate-900/70 flex items-center justify-center p-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-2xl w-full max-w-md p-8 transform scale-100 transition-all border border-slate-200 shadow-premium">
+      <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="bg-white rounded-3xl w-full max-w-[90vw] md:max-w-md p-6 md:p-8 transform scale-100 transition-all border border-slate-200 shadow-2xl">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-2xl font-bold text-slate-800 tracking-tight">{initialData ? t('edit_injection') : t('add_injection')}</h3>
-            <button onClick={onClose} className="text-slate-500 hover:text-slate-800 transition p-2 hover:bg-slate-100 rounded-lg"><X size={24} /></button>
+            <h3 className="text-2xl font-black text-slate-800 tracking-tight">{initialData ? t('edit_injection') : t('add_injection')}</h3>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-800 transition p-2 hover:bg-slate-100 rounded-full bg-slate-50"><X size={20} /></button>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-6">
             <div>
               <DatePicker
                 label={t('date')}
@@ -116,19 +116,25 @@ const InjectionModal: React.FC<{
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">{t('notes')}</label>
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">{t('notes')}</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full p-3 bg-white border border-slate-300 rounded-xl h-32 resize-none transition-all text-slate-900 placeholder-slate-400"
+                className="w-full p-4 bg-slate-50 border-2 border-slate-100 focus:border-promed-primary/30 rounded-2xl h-32 resize-none transition-all text-slate-900 placeholder-slate-400 font-medium focus:bg-white outline-none"
                 placeholder={t('enter_notes')}
               />
             </div>
-            <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
-              <button onClick={onClose} className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition border border-transparent hover:border-slate-200">{t('cancel')}</button>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                onClick={onClose}
+                className="h-12 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-900 text-[15px] font-semibold rounded-xl transition-colors active:scale-95 duration-200 whitespace-nowrap"
+              >
+                {t('cancel')}
+              </button>
               <button
                 onClick={() => { onSave(date, notes); onClose(); }}
-                className="btn-premium-blue"
+                className="btn-premium-blue h-12 flex items-center justify-center rounded-xl active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
               >
                 <span>{t('save')}</span>
               </button>
@@ -197,12 +203,17 @@ const PhotoLabelModal: React.FC<{
                 />
               </div>
             </div>
-            <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100 mt-6">
-              <button onClick={onClose} className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition border border-transparent hover:border-slate-200">{t('cancel')}</button>
+            <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 mt-6">
+              <button
+                onClick={onClose}
+                className="h-12 flex items-center justify-center bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all active:scale-[0.98] shadow-sm whitespace-nowrap px-1"
+              >
+                {t('cancel')}
+              </button>
               <button
                 onClick={handleSave}
                 disabled={!value}
-                className="btn-premium-blue"
+                className="btn-premium-blue h-12 flex items-center justify-center rounded-xl active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
               >
                 <span>{t('save')}</span>
               </button>
@@ -609,7 +620,7 @@ export const PatientDetail: React.FC<{
               <div className="flex flex-wrap items-center gap-6 text-slate-600 mt-3">
                 <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
                   <Calendar className="w-4 h-4 text-slate-400" />
-                  <span className="font-semibold text-sm">{t('operation_date')}: {new Date(patient.operationDate).toLocaleDateString(localeString)}</span>
+                  <span className="font-semibold text-sm">{t('operation_date')}: {new Date(patient.operationDate).toISOString().split('T')[0].split('-').reverse().join('-')}</span>
                 </span>
                 <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
                   <Phone className="w-4 h-4 text-slate-400" />
