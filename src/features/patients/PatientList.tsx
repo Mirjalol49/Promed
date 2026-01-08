@@ -1299,22 +1299,26 @@ export const AddPatientForm: React.FC<{
                 <span>{validationError}</span>
               </div>
             )}
-            <div className="flex justify-end space-x-4">
-              <button type="button" onClick={onCancel} className="px-6 py-3 text-slate-500 font-bold hover:text-slate-800 transition rounded-xl hover:bg-slate-50 text-sm">
+            <div className="grid grid-cols-2 md:flex md:justify-end gap-3 md:gap-4">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="w-full md:w-auto px-6 py-3.5 text-slate-500 font-bold hover:text-slate-800 transition rounded-xl bg-slate-100 hover:bg-slate-200 text-sm active:scale-95 duration-200"
+              >
                 {t('cancel')}
               </button>
               <button
                 type="submit"
                 form="patient-form"
                 disabled={saving || isSubmitting}
-                className="btn-premium-blue !px-10 !py-3.5"
+                className="w-full md:w-auto btn-premium-blue !px-8 !py-3.5 flex items-center justify-center gap-2"
               >
                 {isSubmitting || saving ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <Save size={18} className="relative z-10" />
                 )}
-                <span>{isSubmitting || saving ? t('saving') : (initialData ? t('update_patient') : t('save'))}</span>
+                <span>{isSubmitting || saving ? t('saving') : t('save')}</span>
               </button>
             </div>
           </div>

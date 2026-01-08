@@ -87,20 +87,13 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                             variants={containerVariants}
                             initial="hidden"
                             animate="show"
-                            className="relative border-l-4 border-slate-100 ml-3 space-y-10"
+                            className="relative ml-5 space-y-10"
                         >
-                            {/* The "Living Line" that draws itself */}
-                            <motion.div
-                                initial={{ height: 0 }}
-                                animate={{ height: "100%" }}
-                                transition={{ duration: 1.5, ease: "easeInOut" }}
-                                className="absolute left-[-4px] w-1 bg-gradient-to-b from-emerald-400 via-blue-400 to-slate-200 rounded-full"
-                            />
-
                             {injections.map((inj, index) => {
                                 const isDone = inj.status === InjectionStatus.COMPLETED;
                                 const isMissed = inj.status === InjectionStatus.MISSED;
                                 const isScheduled = inj.status === InjectionStatus.SCHEDULED;
+                                const isLast = index === injections.length - 1;
 
                                 return (
                                     <motion.div
@@ -108,6 +101,14 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                         variants={cardVariants}
                                         className="relative pl-8 group"
                                     >
+                                        {/* SEGMENTED CONNECTION LINE */}
+                                        {!isLast && (
+                                            <div
+                                                className={`absolute w-1 left-[-4px] top-8 h-[calc(100%+4.5rem)] -z-10 rounded-full
+                                                    ${isDone ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-gradient-to-b from-indigo-200 to-slate-100 opacity-60'}
+                                                `}
+                                            />
+                                        )}
 
                                         {/* THE CONNECTOR NODE */}
                                         <div className={`
