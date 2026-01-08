@@ -41,6 +41,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import thinkingMascot from '../../components/mascot/thinking_mascot.png';
 import injectionMascot from '../../components/mascot/injection_mascot.png';
 import { DatePicker } from '../../components/ui/DatePicker';
+import { TimePicker } from '../../components/ui/TimePicker';
 import { Portal } from '../../components/ui/Portal';
 import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
 import { compressImage } from '../../lib/imageOptimizer';
@@ -85,16 +86,42 @@ const InjectionModal: React.FC<{
   initialData?: { date: string; notes?: string };
 }> = ({ isOpen, onClose, onSave, initialData }) => {
   const { t } = useLanguage();
-  const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
+
+  // Parse Initial Date & Time
+  // If ISO string (e.g. 2025-01-08T09:00), split it.
+  const initialDateObj = initialData?.date ? new Date(initialData.date) : new Date();
+
+  // Helpers for YYYY-MM-DD and HH:mm
+  const toDateStr = (d: Date) => d.toISOString().split('T')[0];
+  const toTimeStr = (d: Date) => d.toTimeString().slice(0, 5); // "09:00"
+
+  const [date, setDate] = useState(initialData?.date ? toDateStr(initialDateObj) : toDateStr(new Date()));
+  const [time, setTime] = useState(initialData?.date && initialData.date.includes('T') ? toTimeStr(initialDateObj) : '09:00');
   const [notes, setNotes] = useState(initialData?.notes || '');
 
   // Reset state when modal opens with new data
   useEffect(() => {
     if (isOpen) {
-      setDate(initialData?.date || new Date().toISOString().split('T')[0]);
+      if (initialData?.date) {
+        const d = new Date(initialData.date);
+        setDate(toDateStr(d));
+        // Only set time if likely intentional (e.g., has 'T' or we decide all have time)
+        // For standard Date only, default to 09:00
+        setTime(initialData.date.includes('T') ? toTimeStr(d) : '09:00');
+      } else {
+        setDate(toDateStr(new Date()));
+        setTime('09:00');
+      }
       setNotes(initialData?.notes || '');
     }
   }, [isOpen, initialData]);
+
+  const handleSave = () => {
+    // Combine Date + Time
+    const fullDateTime = `${date}T${time}:00`;
+    onSave(fullDateTime, notes);
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -108,13 +135,26 @@ const InjectionModal: React.FC<{
           </div>
 
           <div className="space-y-6">
-            <div>
-              <DatePicker
-                label={t('date')}
-                value={date}
-                onChange={setDate}
-              />
+            <div className="space-y-4">
+              {/* DATE PICKER */}
+              <div>
+                <DatePicker
+                  label={t('date')}
+                  value={date}
+                  onChange={setDate}
+                />
+              </div>
+
+              {/* TIME PICKER */}
+              <div>
+                <TimePicker
+                  label={t('time') || "Time"}
+                  value={time}
+                  onChange={setTime}
+                />
+              </div>
             </div>
+
             <div>
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">{t('notes')}</label>
               <textarea
@@ -133,7 +173,7 @@ const InjectionModal: React.FC<{
                 {t('cancel')}
               </button>
               <button
-                onClick={() => { onSave(date, notes); onClose(); }}
+                onClick={handleSave}
                 className="btn-premium-blue h-12 flex items-center justify-center rounded-xl active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
               >
                 <span>{t('save')}</span>

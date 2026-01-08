@@ -167,9 +167,20 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                 </div>
 
                                                 <div className="flex flex-col items-start gap-1 mt-1">
-                                                    <span className="text-slate-400 text-xs font-semibold bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
-                                                        {inj.date.split('-').reverse().join('.')}
-                                                    </span>
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="text-slate-400 text-xs font-semibold bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100 whitespace-nowrap">
+                                                            {(() => {
+                                                                const [datePart] = inj.date.split('T');
+                                                                return datePart.split('-').reverse().join('.');
+                                                            })()}
+                                                        </span>
+                                                        {inj.date.includes('T') && (
+                                                            <span className="text-slate-400 text-xs font-semibold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md border border-blue-100 flex items-center gap-1 whitespace-nowrap">
+                                                                <Clock size={10} />
+                                                                {inj.date.split('T')[1].substring(0, 5)}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     {inj.notes && (
                                                         <span className="text-slate-500 text-xs font-medium break-words mt-0.5">
                                                             {inj.notes}
