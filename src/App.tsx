@@ -541,7 +541,7 @@ const App: React.FC = () => {
     return patients.filter(p =>
       p.fullName.toLowerCase().includes(q) ||
       p.phone.includes(q) ||
-      p.email.toLowerCase().includes(q)
+      (p.email?.toLowerCase().includes(q) ?? false)
     );
   }, [patients, searchQuery]);
 
