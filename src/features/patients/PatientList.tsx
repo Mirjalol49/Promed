@@ -362,7 +362,7 @@ export const PatientList: React.FC<{
           </button>
         </div>
       </div>
-      <div className="w-full overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 min-h-[400px]">
+      <div className="w-full overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 min-h-[400px]">
         <table className="min-w-full text-left border-collapse">
           <thead className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
             <tr>
@@ -383,7 +383,7 @@ export const PatientList: React.FC<{
                     onClick={() => onSelect(patient.id)}
                   >
                     <td className="p-3 md:p-5 pl-4 md:pl-8 rounded-l-xl group-hover:rounded-l-xl transition-all relative">
-                      <div className="absolute left-0 top-3 bottom-3 w-1 bg-promed-primary rounded-r-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="absolute left-0 top-0 bottom-0 w-2 bg-promed-primary rounded-r-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       <div className="flex items-center space-x-4">
                         <div className="relative">
                           <ProfileAvatar
