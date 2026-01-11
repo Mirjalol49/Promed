@@ -295,6 +295,167 @@ select:focus {
         filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
     }
 
+    /* 3D Premium Orange Button (Contacted) */
+    .btn-premium-orange {
+        @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-bold font-sans tracking-wide transition-all duration-150 border overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
+        background: linear-gradient(180deg, hsl(24, 95%, 53%) 0%, hsl(24, 95%, 40%) 100%);
+        border-color: hsl(24, 95%, 35%);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.4),
+            inset 0 0 15px hsl(24, 95%, 60%, 0.5),
+            0 2px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-premium-orange::before {
+        content: '';
+        @apply absolute inset-x-0 top-0 h-1/2 pointer-events-none;
+        background: linear-gradient(180deg,
+                rgba(255, 255, 255, 0.35) 0%,
+                rgba(255, 255, 255, 0.1) 85%,
+                transparent 100%);
+        border-radius: inherit;
+    }
+
+    .btn-premium-orange:hover {
+        filter: brightness(1.1);
+        @apply -translate-y-0.5;
+    }
+
+    .btn-premium-orange:active {
+        @apply translate-y-0.5 scale-[0.98];
+        box-shadow: none;
+    }
+
+    .btn-premium-orange span {
+        @apply relative z-10;
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+    }
+
+    /* 3D Premium Emerald Button (Operation) */
+    .btn-premium-emerald {
+        @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-bold font-sans tracking-wide transition-all duration-150 border overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
+        background: linear-gradient(180deg, hsl(158, 90%, 32%) 0%, hsl(158, 90%, 22%) 100%);
+        border-color: hsl(158, 90%, 15%);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.4),
+            inset 0 0 15px hsl(158, 90%, 35%, 0.5),
+            0 2px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-premium-emerald::before {
+        content: '';
+        @apply absolute inset-x-0 top-0 h-1/2 pointer-events-none;
+        background: linear-gradient(180deg,
+                rgba(255, 255, 255, 0.35) 0%,
+                rgba(255, 255, 255, 0.1) 85%,
+                transparent 100%);
+        border-radius: inherit;
+    }
+
+    .btn-premium-emerald:hover {
+        filter: brightness(1.1);
+        @apply -translate-y-0.5;
+    }
+
+    .btn-premium-emerald:active {
+        @apply translate-y-0.5 scale-[0.98];
+        box-shadow: none;
+    }
+
+    .btn-premium-emerald span {
+        @apply relative z-10;
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+    }
+
+    .btn-premium-yellow::before {
+        content: '';
+        @apply absolute inset-x-0 top-0 h-1/2 pointer-events-none;
+        background: linear-gradient(180deg,
+                rgba(255, 255, 255, 0.35) 0%,
+                rgba(255, 255, 255, 0.1) 85%,
+                transparent 100%);
+        border-radius: inherit;
+    }
+
+    .btn-premium-yellow:hover {
+        filter: brightness(1.1);
+        @apply -translate-y-0.5;
+    }
+
+    .btn-premium-yellow:active {
+        @apply translate-y-0.5 scale-[0.98];
+        box-shadow: none;
+    }
+
+    .btn-premium-yellow span {
+        @apply relative z-10;
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+    }
+
+    /* 3D Premium Green Button */
+
+
+    .btn-premium-green::before {
+        content: '';
+        @apply absolute inset-x-0 top-0 h-1/2 pointer-events-none;
+        background: linear-gradient(180deg,
+                rgba(255, 255, 255, 0.35) 0%,
+                rgba(255, 255, 255, 0.1) 85%,
+                transparent 100%);
+        border-radius: inherit;
+    }
+
+    .btn-premium-green:hover {
+        filter: brightness(1.1);
+        @apply -translate-y-0.5;
+    }
+
+    .btn-premium-green:active {
+        @apply translate-y-0.5 scale-[0.98];
+        box-shadow: none;
+    }
+
+    .btn-premium-green span {
+        @apply relative z-10;
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+    }
+
+    /* 3D Premium Red Button */
+    .btn-premium-red {
+        @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-bold font-sans tracking-wide transition-all duration-150 border overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
+        background: linear-gradient(180deg, hsl(0, 84%, 60%) 0%, hsl(0, 84%, 40%) 100%);
+        border-color: hsl(0, 84%, 35%);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.4),
+            inset 0 0 15px hsl(0, 84%, 70%, 0.5),
+            0 2px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-premium-red::before {
+        content: '';
+        @apply absolute inset-x-0 top-0 h-1/2 pointer-events-none;
+        background: linear-gradient(180deg,
+                rgba(255, 255, 255, 0.35) 0%,
+                rgba(255, 255, 255, 0.1) 85%,
+                transparent 100%);
+        border-radius: inherit;
+    }
+
+    .btn-premium-red:hover {
+        filter: brightness(1.1);
+        @apply -translate-y-0.5;
+    }
+
+    .btn-premium-red:active {
+        @apply translate-y-0.5 scale-[0.98];
+        box-shadow: none;
+    }
+
+    .btn-premium-red span {
+        @apply relative z-10;
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+    }
+
     /* 3D Premium Blue Square (Icons / Pagination) */
     .btn-premium-blue-sq {
         @apply relative inline-flex items-center justify-center p-2.5 rounded-xl text-white text-sm font-bold font-sans transition-all duration-150 border overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
@@ -440,5 +601,26 @@ select:focus {
     /* Josh W. Comeau Spring Physics */
     .cubic-bezier-spring {
         transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Apple-style premium shadow */
+    .shadow-apple,
+    .shadow-premium {
+        box-shadow: rgba(0, 51, 102, 0.04) -6px 0.6px 1px -7px,
+            rgba(0, 51, 102, 0.055) -1.4px 1.4px 2.5px -7px,
+            rgba(0, 51, 102, 0.07) -2.6px 2.6px 4.6px -7px,
+            rgba(0, 51, 102, 0.082) -5px 4.7px 8.3px -7px,
+            rgba(0, 51, 102, 0.1) -8px 8.8px 15.5px -7px,
+            rgba(0, 51, 102, 0.14) -15px 21px 37px -7px;
+    }
+
+    .shadow-apple-hover:hover {
+        box-shadow:
+            0 10px 25px -5px rgba(0, 0, 0, 0.1),
+            0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+
+    .bg-premium-card {
+        background-color: hsl(204deg 67% 92%);
     }
 }

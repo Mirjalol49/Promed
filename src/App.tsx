@@ -7,6 +7,8 @@ const LoginScreen = React.lazy(() => import('./features/auth/LoginScreen').then(
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const PatientList = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientList })));
 const PatientDetail = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientDetail })));
+const LeadsPage = React.lazy(() => import('./pages/LeadsPage').then(m => ({ default: m.LeadsPage })));
+// const MessagesPage = React.lazy(() => import('./features/messages/MessagesPage').then(m => ({ default: m.MessagesPage }))); // User deleted this feature
 import { AddPatientForm } from './features/patients/PatientList';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
@@ -39,6 +41,7 @@ import DeleteModal from './components/ui/DeleteModal';
 import { Trash2 } from 'lucide-react';
 
 import { auth, db } from './lib/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 import { DbDebug } from './components/ui/DbDebug';
 import { SuperAdmin } from './pages/SuperAdmin';
 import { SettingsPage } from './pages/SettingsPage';
@@ -842,6 +845,38 @@ const App: React.FC = () => {
       console.log('Adding new injection:', { patientId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
       success(t('injection_added_title'), t('injection_added_msg'), injectionIcon);
+
+      // 🔥 NOTIFICATION LOGIC: Send Telegram Message for NEW Injection
+      if (patient.telegramChatId) {
+        console.log("📨 Sending NEW injection notification to", patient.fullName);
+        const lang = patient.botLanguage || 'uz';
+        const newDateObj = new Date(date);
+
+        // Format Date: DD.MM.YYYY
+        const dateDisplay = `${String(newDateObj.getDate()).padStart(2, '0')}.${String(newDateObj.getMonth() + 1).padStart(2, '0')}.${newDateObj.getFullYear()}`;
+        // Format Time: HH:mm
+        const timeDisplay = date.includes('T') ? date.split('T')[1].substring(0, 5) : "09:00";
+
+        let messageText = "";
+
+        if (lang === 'ru') {
+          messageText = `Здравствуйте, **${patient.fullName}**! 🔔\n\n✅ Вам назначена новая процедура.\n\n🗓 Дата: **${dateDisplay}**\n⏰ Время: **${timeDisplay}**\n\nЖдем вас в клинике! 😊`;
+        } else if (lang === 'en') {
+          messageText = `Hello, **${patient.fullName}**! 🔔\n\n✅ A new injection has been scheduled for you.\n\n🗓 Date: **${dateDisplay}**\n⏰ Time: **${timeDisplay}**\n\nWe look forward to seeing you! 😊`;
+        } else { // UZ default
+          messageText = `Assalomu alaykum, **${patient.fullName}**! 🔔\n\n✅ Sizga yangi inyeksiya belgilandi.\n\n🗓 Sana: **${dateDisplay}**\n⏰ Vaqt: **${timeDisplay}**\n\nSizni klinikada kutamiz! 😊`;
+        }
+
+        // Add to Outbound Queue
+        await addDoc(collection(db, 'outbound_messages'), {
+          telegramChatId: patient.telegramChatId,
+          text: messageText,
+          patientName: patient.fullName,
+          status: 'PENDING',
+          createdAt: new Date().toISOString(),
+          type: 'INJECTION_NEW'
+        });
+      }
     } catch (err: any) {
       console.error('Error adding injection:', err);
       showError(t('toast_error_title'), `${t('toast_save_failed') || 'Add failed'}: ${err.message || 'Unknown error'}`);
@@ -852,6 +887,7 @@ const App: React.FC = () => {
     const patient = patients.find(p => p.id === patientId);
     if (!patient) return;
 
+    const oldInjection = patient.injections.find(i => i.id === injectionId);
     const updatedInjections = patient.injections
       .map(inj => inj.id !== injectionId ? inj : { ...inj, date, notes })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -860,6 +896,39 @@ const App: React.FC = () => {
       console.log('Editing injection:', { patientId, injectionId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
       success(t('injection_updated_title'), t('injection_updated_msg'), injectionIcon);
+
+      // 🔥 NOTIFICATION LOGIC: Send Telegram Message if Date/Time Changed
+      if (patient.telegramChatId && oldInjection && oldInjection.date !== date) {
+        console.log("📨 Sending change notification to", patient.fullName);
+        const lang = patient.botLanguage || 'uz';
+        const newDateObj = new Date(date);
+
+        // Format Date: DD.MM.YYYY
+        const dateDisplay = `${String(newDateObj.getDate()).padStart(2, '0')}.${String(newDateObj.getMonth() + 1).padStart(2, '0')}.${newDateObj.getFullYear()}`;
+        // Format Time: HH:mm
+        const timeDisplay = date.includes('T') ? date.split('T')[1].substring(0, 5) : "09:00";
+
+        let messageText = "";
+
+        if (lang === 'ru') {
+          messageText = `Здравствуйте, **${patient.fullName}**! 🔔\n\n⚠️ Время вашей процедуры было изменено.\n\n🗓 Новая дата: **${dateDisplay}**\n⏰ Новое время: **${timeDisplay}**\n\nПриносим извинения за неудобства, это изменение поможет нам обслужить вас лучше! 🙏`;
+        } else if (lang === 'en') {
+          messageText = `Hello, **${patient.fullName}**! 🔔\n\n⚠️ Your injection time has been changed.\n\n🗓 New Date: **${dateDisplay}**\n⏰ New Time: **${timeDisplay}**\n\nSorry for the inconvenience, this change helps us serve you better! 🙏`;
+        } else { // UZ default
+          messageText = `Assalomu alaykum, **${patient.fullName}**! 🔔\n\n⚠️ Sizning inyeksiya vaqtingiz o'zgardi.\n\n🗓 Yangi sana: **${dateDisplay}**\n⏰ Yangi vaqt: **${timeDisplay}**\n\nNoqulaylik uchun uzr so'raymiz, bu o'zgarish sizga yaxshiroq xizmat ko'rsatishimizga yordam beradi! 🙏`;
+        }
+
+        // Add to Outbound Queue
+        await addDoc(collection(db, 'outbound_messages'), {
+          telegramChatId: patient.telegramChatId,
+          text: messageText,
+          patientName: patient.fullName,
+          status: 'PENDING',
+          createdAt: new Date().toISOString(),
+          type: 'INJECTION_CHANGE'
+        });
+      }
+
     } catch (err: any) {
       console.error('Error editing injection:', err);
       showError(t('toast_error_title'), `${t('toast_save_failed') || 'Update failed'}: ${err.message || 'Unknown error'}`);
@@ -1106,6 +1175,13 @@ const App: React.FC = () => {
         {
           view === 'SETTINGS' && (
             <SettingsPage userId={userId} />
+          )
+        }
+
+        {/* Leads Kanban View */}
+        {
+          view === 'LEADS' && (
+            <LeadsPage />
           )
         }
 

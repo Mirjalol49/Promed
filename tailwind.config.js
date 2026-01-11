@@ -82,7 +82,8 @@ export default {
 				'card-hover': '0 0 0 1px rgba(0,0,0,0.06), 0 8px 16px rgba(0,0,0,0.1), 0 16px 32px rgba(0,0,0,0.08)',
 				modal: '0 0 0 1px rgba(0,0,0,0.08), 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
 				glow: '0 0 15px hsla(244, 86%, 50%, 0.4)',
-				premium: '0 4px 12px rgba(0, 0, 0, 0.08)'
+				premium: '0 4px 12px rgba(0, 0, 0, 0.08)',
+				apple: '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 12px 24px -4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02)'
 			},
 			keyframes: {
 				float: {

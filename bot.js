@@ -2,7 +2,7 @@
 import { Telegraf, Markup } from 'telegraf';
 import cron from 'node-cron';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, updateDoc, doc, onSnapshot } from 'firebase/firestore';
 
 // --- CONFIGURATION ---
 const BOT_TOKEN = '8234286653:AAGAD8fDKz9AqirDAqOIaddZuPCq4keln-w';
@@ -24,6 +24,32 @@ const db = getFirestore(app);
 
 // Initialize Bot
 const bot = new Telegraf(BOT_TOKEN);
+
+// AUTHENTICATE BOT (Restored for Firestore Access)
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+const auth = getAuth(app);
+
+const BOT_EMAIL = "system_bot@graft.local";
+const BOT_PASS = "BotSecurePassword123!";
+
+async function authenticateBot() {
+    try {
+        await signInWithEmailAndPassword(auth, BOT_EMAIL, BOT_PASS);
+        console.log("🔐 Bot authenticated as:", BOT_EMAIL);
+    } catch (error) {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+            console.log("⚠️ Bot account not found, creating new...");
+            try {
+                await createUserWithEmailAndPassword(auth, BOT_EMAIL, BOT_PASS);
+                console.log("✅ Bot account created and authenticated.");
+            } catch (createErr) {
+                console.error("❌ Failed to create bot account:", createErr);
+            }
+        } else {
+            console.error("❌ Bot auth failed:", error);
+        }
+    }
+}
 
 // --- LOCALIZATION ---
 const TEXTS = {
@@ -74,7 +100,10 @@ const userSessions = {};
 
 // --- BOT LOGIC ---
 
-bot.start((ctx) => {
+bot.start(async (ctx) => {
+    // Clear any residual persistent keyboards from previous sessions
+    await ctx.reply('...', Markup.removeKeyboard()).then((m) => ctx.deleteMessage(m.message_id).catch(() => { }));
+
     ctx.reply(TEXTS.uz.welcome, Markup.inlineKeyboard([
         [Markup.button.callback('🇺🇿 O\'zbekcha', 'lang_uz')],
         [Markup.button.callback('🇷🇺 Русский', 'lang_ru')],
@@ -88,7 +117,12 @@ bot.start((ctx) => {
         const userId = ctx.from.id;
         userSessions[userId] = { lang }; // Store language preference
 
-        await ctx.answerCbQuery();
+        try {
+            await ctx.answerCbQuery();
+        } catch (e) {
+            console.warn("⚠️ Failed to answer callback query (likely old):", e.message);
+        }
+
         await ctx.reply(TEXTS[lang].ask_contact, Markup.keyboard([
             [Markup.button.contact(TEXTS[lang].share_contact_btn)]
         ]).resize().oneTime());
@@ -293,6 +327,44 @@ async function runReminderLogic(isManual = false, ctx = null) {
     }
 }
 
+// --- NOTIFICATION LISTENER (Real-time) ---
+async function startNotificationListener() {
+    console.log("🔔 Notification Listener Started...");
+    const q = query(collection(db, 'outbound_messages'), where('status', '==', 'PENDING'));
+
+    onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach(async (change) => {
+            if (change.type === 'added') {
+                const docId = change.doc.id;
+                const data = change.doc.data();
+                const { telegramChatId, text, patientName, botLanguage } = data;
+
+                if (!telegramChatId || !text) return;
+
+                console.log(`📨 Processing outbound message for ${patientName} (${telegramChatId})`);
+
+                try {
+                    await bot.telegram.sendMessage(telegramChatId, text, { parse_mode: 'Markdown' });
+
+                    // Mark as SENT
+                    await updateDoc(doc(db, 'outbound_messages', docId), {
+                        status: 'SENT',
+                        sentAt: new Date().toISOString()
+                    });
+                    console.log(`✅ Message sent to ${patientName}`);
+                } catch (error) {
+                    console.error(`❌ Failed to send message to ${patientName}:`, error.message);
+                    // Mark as FAILED
+                    await updateDoc(doc(db, 'outbound_messages', docId), {
+                        status: 'FAILED',
+                        error: error.message
+                    });
+                }
+            }
+        });
+    });
+}
+
 // --- REMINDER SCHEDULER (Daily) ---
 
 // Run every day at 9:00 AM
@@ -306,10 +378,15 @@ cron.schedule('0 9 * * *', async () => {
 });
 
 // --- BOOT ---
-bot.launch().then(() => {
-    console.log('🤖 Bot is running...');
-}).catch(err => {
-    console.error('❌ Bot launch failed:', err);
+authenticateBot().then(() => {
+    // Start Listeners
+    // startNotificationListener(); // DISABLED: Handled by Cloud Functions now
+
+    bot.launch({ dropPendingUpdates: true }).then(() => {
+        console.log('🤖 Bot is running...');
+    }).catch(err => {
+        console.error('❌ Bot launch failed:', err);
+    });
 });
 
 // Enable graceful stop

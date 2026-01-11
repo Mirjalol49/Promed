@@ -24,6 +24,7 @@ import { Injection, InjectionStatus, Patient } from '../../types';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { AnimateIcon } from '../../components/ui/AnimateIcon';
+import { CloudHeader } from '../../components/ui/CloudHeader';
 
 // --- Vitals Card (Compact) ---
 interface VitalsCardProps {
@@ -37,7 +38,7 @@ interface VitalsCardProps {
 export const VitalsCard: React.FC<VitalsCardProps> = ({ label, value, icon: Icon, color, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-premium p-4 flex items-center space-x-4 border border-slate-100 animate-pulse">
+      <div className="bg-white rounded-xl shadow-apple p-4 flex items-center space-x-4 border border-slate-100 animate-pulse">
         <div className="w-10 h-10 bg-slate-100 rounded-lg"></div>
         <div className="space-y-2 flex-1">
           <div className="h-3 bg-slate-100 rounded w-1/2"></div>
@@ -54,7 +55,7 @@ export const VitalsCard: React.FC<VitalsCardProps> = ({ label, value, icon: Icon
     if (baseColor.includes('emerald') || baseColor.includes('success')) return 'bg-[hsl(160,84%,39%)] border border-emerald-400/20';
     if (baseColor.includes('teal')) return 'border border-[hsl(176,79%,27%)]/20'; // No bg class, handled by style
     if (baseColor.includes('purple')) return 'bg-gradient-to-br from-purple-400 to-purple-600 border border-purple-400/20';
-    return 'bg-white border border-promed-primary/10'; // Fallback
+    return 'bg-white border border-slate-200'; // Fallback
   };
 
   const backgroundClass = getBackgroundClass(color);
@@ -67,7 +68,7 @@ export const VitalsCard: React.FC<VitalsCardProps> = ({ label, value, icon: Icon
 
   return (
     <div
-      className={`rounded-xl p-4 flex items-center space-x-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-premium ${backgroundClass} ${isColored ? 'text-white' : ' text-slate-900'}`}
+      className={`rounded-xl p-4 flex items-center space-x-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-apple ${backgroundClass} ${isColored ? 'text-white' : ' text-slate-900'}`}
       style={customStyle}
     >
       <div className={`p-2.5 rounded-xl backdrop-blur-md transition-colors ${isColored ? 'bg-white/20 text-white  border border-white/10' : `${color} bg-opacity-10 text-slate-600`}`}>
@@ -154,7 +155,7 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
   }, [patients, filter, today, t]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-premium border border-slate-200 overflow-hidden h-full flex flex-col">
+    <div className="bg-white rounded-2xl shadow-apple border border-slate-200 overflow-hidden h-full flex flex-col">
       <div className="p-6 border-b border-promed-primary/5 flex flex-col sm:flex-row justify-between items-center bg-promed-bg/50 gap-4">
         <h3 className="text-lg font-bold text-promed-text tracking-tight flex items-center gap-2">
           <div className="p-2 bg-promed-primary/10 rounded-xl border border-promed-primary/10 ">
@@ -212,7 +213,7 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
         {upcomingEvents.map((event) => (
           <div
             key={event.uniqueId}
-            className="h-[72px] bg-white rounded-2xl border border-promed-primary/5 px-4 hover: transition-all flex items-center justify-between group cursor-pointer hover:border-promed-primary/20 active:scale-[0.99]"
+            className="h-[72px] bg-premium-card rounded-2xl border border-promed-primary/5 px-4 hover: transition-all flex items-center justify-between group cursor-pointer hover:border-promed-primary/20 active:scale-[0.99]"
             onClick={() => onViewPatient(event.patientId)}
           >
             <div className="flex items-center space-x-4">
@@ -309,8 +310,8 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
   };
 
   return (
-    <div className="bg-white rounded-2xl  border border-slate-200 overflow-hidden flex flex-col h-full">
-      <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col h-full">
+      <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-transparent">
         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <Activity className="w-5 h-5 text-promed-primary" />
           {t('todays_operations')}
@@ -320,37 +321,37 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
         </span>
       </div>
 
-      <div className="overflow-x-auto flex-1">
+      <div className="overflow-x-auto flex-1 px-4">
         {operations.length > 0 ? (
-          <table className="w-full text-left">
+          <table className="w-full text-left border-separate border-spacing-y-2">
             <thead>
-              <tr className="border-b border-slate-100">
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('name')}</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('technique')}</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">{t('grafts')}</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('status')}</th>
+              <tr className="border-b border-slate-100/10">
+                <th className="px-4 py-2 text-xs font-bold text-slate-600 uppercase tracking-wider">{t('name')}</th>
+                <th className="px-4 py-2 text-xs font-bold text-slate-600 uppercase tracking-wider">{t('technique')}</th>
+                <th className="px-4 py-2 text-xs font-bold text-slate-600 uppercase tracking-wider text-center">{t('grafts')}</th>
+                <th className="px-4 py-2 text-xs font-bold text-slate-600 uppercase tracking-wider">{t('status')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y-0">
               {operations.map((op) => (
-                <tr key={op.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4">
+                <tr key={op.id} className="bg-premium-card hover:shadow-md transition-all shadow-sm rounded-xl">
+                  <td className="px-4 py-3 rounded-l-xl">
                     <div className="flex items-center space-x-3">
-                      <img src={op.img} alt={op.name} className="w-9 h-9 rounded-lg object-cover ring-2 ring-white " />
+                      <img src={op.img} alt={op.name} className="w-9 h-9 rounded-lg object-cover ring-2 ring-slate-50" />
                       <span className="font-bold text-slate-700 text-sm whitespace-nowrap">{op.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight border bg-slate-50 text-slate-700 border-slate-100">
                       {op.technique === 'Hair' ? t('transplant_hair') :
                         op.technique === 'Eyebrow' ? t('transplant_eyebrow') :
                           op.technique === 'Beard' ? t('transplant_beard') : (op.technique || 'N/A')}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-center">
+                  <td className="px-4 py-3 text-center">
                     <span className="text-slate-900 font-bold text-sm tracking-tight">{op.grafts}</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3 rounded-r-xl">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center mb-1">
                         <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${getStatusColor(op.status)} `}>
@@ -419,7 +420,7 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
 
   return (
     <div className="bg-white rounded-2xl  border border-slate-200 flex flex-col h-full overflow-hidden">
-      <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+      <div className="p-6 border-b border-slate-100 bg-transparent">
         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <Syringe size={20} className="text-promed-primary" />
           {t('plasma_followups')}
@@ -427,39 +428,36 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
         <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">{t('due_within_24h')}</p>
       </div>
 
-      {dueInjections.length > 0 ? dueInjections.map((item) => (
-        <div key={item.id} className="p-4 flex items-center justify-between group hover:bg-slate-50/80 transition-all">
-          <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${item.patientColor}  border border-black/5`}>
-              {item.notes?.toLowerCase().includes('wash') ? '🌊' : item.notes?.toLowerCase().includes('prp') ? '💉' : '📋'}
+      <div className="flex-1 overflow-y-auto custom-scrollbar pt-2">
+        {dueInjections.length > 0 ? dueInjections.map((item) => (
+          <div key={item.id} className="bg-premium-card mx-4 mb-2 p-4 rounded-xl flex items-center justify-between group hover:shadow-md transition-all border border-white/20 shadow-sm">
+            <div className="flex items-center space-x-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${item.patientColor}  border border-black/5`}>
+                {item.notes?.toLowerCase().includes('wash') ? '🌊' : item.notes?.toLowerCase().includes('prp') ? '💉' : '📋'}
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-800 text-sm group-hover:text-promed.primary transition whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">{item.patientName}</h4>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">{item.notes || t('routine_followup')}</p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-bold text-slate-800 text-sm group-hover:text-promed.primary transition whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">{item.patientName}</h4>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">{item.notes || t('routine_followup')}</p>
+            <div className="flex space-x-1 ml-2">
+              <button className="p-2 text-slate-400 hover:text-promed-primary hover:bg-promed-light rounded-lg transition-colors border border-transparent hover:border-promed-primary/10 flex items-center justify-center">
+                <Phone className="w-3.5 h-3.5 text-slate-400 opacity-60 hover:opacity-100 transition-opacity" />
+              </button>
+              <button
+                onClick={() => onCheck(item.patientId)}
+                className="p-2 text-promed-muted hover:text-promed-primary hover:bg-promed-bg rounded-lg transition-colors border border-transparent hover:border-promed-primary/10"
+              >
+                <Check size={14} />
+              </button>
             </div>
           </div>
-          <div className="flex space-x-1 ml-2">
-            <button className="p-2 text-slate-400 hover:text-promed-primary hover:bg-promed-light rounded-lg transition-colors border border-transparent hover:border-promed-primary/10 flex items-center justify-center">
-              <Phone className="w-3.5 h-3.5 text-slate-400 opacity-60 hover:opacity-100 transition-opacity" />
-            </button>
-            <button
-              onClick={() => onCheck(item.patientId)}
-              className="p-2 text-promed-muted hover:text-promed-primary hover:bg-promed-bg rounded-lg transition-colors border border-transparent hover:border-promed-primary/10"
-            >
-              <Check size={14} />
-            </button>
+        )) : (
+          <div className="flex flex-col items-center justify-center h-full py-10 opacity-30 grayscale">
+            <p className="text-[10px] font-black uppercase tracking-widest">{t('empty_state_peace')}</p>
           </div>
-        </div>
-      )) : (
-        <div className="flex flex-col items-center justify-center h-full py-10 opacity-30 grayscale">
-          <p className="text-[10px] font-black uppercase tracking-widest">{t('empty_state_peace')}</p>
-        </div>
-      )}
+        )}
 
-      <div className="p-4 border-t border-slate-100 bg-slate-50/30">
-        <button className="w-full py-2.5 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-200 transition-colors uppercase tracking-widest">
-          {t('view_master_schedule')}
-        </button>
       </div>
     </div>
   );
@@ -525,7 +523,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <div
-      className="p-4 md:p-6 rounded-[24px] text-white relative overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:shadow-2xl active:scale-[0.98] group shadow-premium"
+      className="p-4 md:p-6 rounded-[24px] text-white relative overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:shadow-2xl active:scale-[0.98] group shadow-apple"
       style={{ background: gradient }}
     >
       {/* Glossy Top Highlight */}
@@ -588,7 +586,7 @@ const chartData = [
 export const StatsChart: React.FC = () => {
   const { t } = useLanguage();
   return (
-    <div className="bg-white p-7 rounded-2xl transition-shadow duration-300 border border-slate-200 shadow-premium">
+    <div className="bg-white p-7 rounded-2xl transition-shadow duration-300 border border-slate-200 shadow-apple">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h3 className="text-lg font-bold text-promed-text tracking-tight">{t('patients_stats')}</h3>
@@ -662,7 +660,7 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
     .slice(0, 4);
 
   return (
-    <div className="bg-white p-7 rounded-2xl shadow-premium hover:-hover transition-shadow duration-300 border border-slate-200 flex flex-col">
+    <div className="bg-premium-card p-7 rounded-2xl shadow-apple hover:-hover transition-shadow duration-300 border border-slate-200 flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h3 className="text-lg font-bold text-promed-text tracking-tight">{t('todays_appointments')}</h3>
@@ -681,7 +679,7 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
           upcoming.map((inj) => (
             <div
               key={inj.id + inj.patientId}
-              className="flex items-center justify-between group cursor-pointer p-3 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-100"
+              className="bg-white flex items-center justify-between group cursor-pointer p-4 rounded-xl mb-2 transition-all border border-slate-200 shadow-sm hover:shadow-md"
               onClick={() => onViewPatient(inj.patientId)}
             >
               <div className="flex items-center space-x-4">

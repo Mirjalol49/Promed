@@ -167,7 +167,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={`w-full pl-12 pr-4 py-4 bg-white border rounded-2xl text-promed-text placeholder-promed-muted/30 focus:outline-none focus:ring-4 transition-all text-left font-bold
-                ${shake ? 'border-rose-500 shake focus:ring-rose-200' : 'border-promed-primary/10 focus:ring-promed-primary/10'}
+                ${shake ? 'border-rose-500 shake focus:ring-rose-200' : 'border-promed-primary/30 focus:ring-promed-primary/10'}
               `}
               placeholder={t('email_placeholder')}
               required
@@ -182,7 +182,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={`w-full pl-12 pr-4 py-4 bg-white border rounded-2xl text-promed-text placeholder-promed-muted/30 focus:outline-none focus:ring-4 transition-all text-left font-bold
-                 ${shake ? 'border-rose-500 shake focus:ring-rose-200' : 'border-promed-primary/10 focus:ring-promed-primary/10'}
+                 ${shake ? 'border-rose-500 shake focus:ring-rose-200' : 'border-promed-primary/30 focus:ring-promed-primary/10'}
               `}
               placeholder={t('enter_password')}
               required

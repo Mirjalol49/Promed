@@ -8,7 +8,8 @@ import {
   X,
   Lock,
   Settings,
-  Shield
+  Shield,
+  LayoutList
 } from 'lucide-react';
 import { PageView } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -108,6 +109,7 @@ const Layout: React.FC<LayoutProps> = ({
       case 'ADD_PATIENT': return t('add_new_patient');
       case 'PATIENT_DETAIL': return t('details');
       case 'SETTINGS': return t('settings');
+      case 'LEADS': return t('leads');
       default: return '';
     }
   };
@@ -117,7 +119,7 @@ const Layout: React.FC<LayoutProps> = ({
     <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900 font-sans">
 
       {/* Sidebar (Desktop Only) */}
-      <aside className="hidden md:flex flex-col w-[260px] bg-[#ffffff] h-full shadow-premium border-r border-[#E2E8F0] z-40 relative">
+      <aside className="hidden md:flex flex-col w-[260px] bg-premium-card h-full shadow-premium border-r border-[#E2E8F0] z-40 relative">
         {/* Logo */}
         <div className="p-4 md:p-6 flex items-center justify-end md:justify-between">
           <div className="hidden md:flex items-center space-x-3 text-slate-900">
@@ -130,6 +132,7 @@ const Layout: React.FC<LayoutProps> = ({
         <nav className="flex-1 mt-2 px-4 overflow-y-auto no-scrollbar space-y-2 text-slate-900">
           <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />
           <NavItem page="PATIENTS" icon={Users} label={t('patients')} id="add-patient-btn" />
+          <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />
 
           {role === 'admin' && (
             <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">
@@ -140,7 +143,7 @@ const Layout: React.FC<LayoutProps> = ({
         </nav>
 
         {/* Sidebar Footer with Profile & Lock */}
-        <div className="p-4 mt-auto border-t border-slate-100 bg-white space-y-2">
+        <div className="p-4 mt-auto border-t border-slate-100 bg-premium-card space-y-2">
 
           {isLockEnabled && (
             <button
@@ -175,7 +178,7 @@ const Layout: React.FC<LayoutProps> = ({
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-50/50 pb-24 md:pb-0"> {/* Added pb-24 for Dock space */}
+      <div className="flex-1 flex flex-col min-w-0 bg-premium-card pb-24 md:pb-0"> {/* Added pb-24 for Dock space */}
         {/* Header */}
         <header className="sticky top-0 z-20 h-16 md:h-20">
           <div className="absolute inset-0 bg-white/80 backdrop-blur-xl shadow-premium border-b border-promed-primary/5" />
@@ -199,7 +202,6 @@ const Layout: React.FC<LayoutProps> = ({
             {/* Right Section: Notification & Profile */}
             <div className="flex items-center space-x-2 md:space-x-4">
               <NotificationBell />
-              {/* Hamburger Removed - Replaced by Mobile Dock */}
             </div>
           </div>
         </header>

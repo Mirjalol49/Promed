@@ -33,7 +33,7 @@ import {
   Pencil,
   Phone,
   Camera,
-  Image as ImageIcon,
+  ImageIcon,
   Loader2
 } from 'lucide-react';
 import { Patient, InjectionStatus, Injection } from '../../types';
@@ -50,6 +50,8 @@ import DeleteModal from '../../components/ui/DeleteModal';
 import { CustomSelect } from '../../components/ui/CustomSelect';
 import { ImageUploadingOverlay } from '../../components/ui/ImageUploadingOverlay';
 import { InjectionTimeline } from '../../components/ui/InjectionTimeline';
+import { AnimateIcon } from '../../components/ui/AnimateIcon';
+
 
 // Re-importing to force build update
 import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
@@ -209,7 +211,7 @@ const PhotoLabelModal: React.FC<{
   return (
     <Portal>
       <div className="fixed inset-0 z-[9999] bg-slate-900/70 flex items-center justify-center p-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-2xl w-full max-w-md p-6 border border-slate-200 shadow-premium">
+        <div className="bg-white rounded-2xl w-full max-w-md p-6 border border-slate-200 shadow-apple">
           <h3 className="text-xl font-bold mb-4 text-slate-800">{t('photo_label_title')}</h3>
           <div className="flex justify-center mb-6 bg-slate-50 rounded-xl p-2 border border-slate-200">
             <div className="h-48 w-full max-w-[300px] mx-auto overflow-hidden rounded-lg  border border-slate-100">
@@ -334,37 +336,35 @@ export const PatientList: React.FC<{
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-premium">
-      <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
-        <div className="flex items-center space-x-3">
-          <h2 className="text-xl font-bold text-slate-800 tracking-tight">{t('patient_directory')}</h2>
-          <span className="text-xs font-bold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg border border-slate-200">{patients.length}</span>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <div className="relative w-full sm:w-64 group">
+    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-premium">
+      {/* List Header */}
+      <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-end gap-4 bg-white">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* Search */}
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
               type="text"
               placeholder={t('search')}
               value={searchQuery}
               onChange={(e) => onSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white transition-all "
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary/50 transition-all font-medium text-sm"
             />
-            <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-promed-primary transition" size={18} />
           </div>
+          {/* Add Button */}
           <button
-            id="add-patient-btn"
             onClick={onAddPatient}
-            className="btn-premium-blue"
+            className="btn-premium-blue flex items-center gap-2 px-5 py-2.5 whitespace-nowrap shadow-lg shadow-promed-primary/20"
           >
             <PlusCircle size={18} className="relative z-10" />
-            <span>{t('new_patient')}</span>
+            <span className="relative z-10 font-bold">{t('add_new_patient')}</span>
           </button>
         </div>
       </div>
-      <div className="w-full overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 min-h-[400px]">
+
+      <div className="w-full overflow-x-auto no-scrollbar min-h-[400px]">
         <table className="min-w-full text-left border-collapse">
-          <thead className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+          <thead className="bg-transparent text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
             <tr>
               <th className="p-3 md:p-5 pl-4 md:pl-8">{t('name')}</th>
               <th className="p-3 md:p-5">{t('operation_date')}</th>
@@ -372,14 +372,14 @@ export const PatientList: React.FC<{
               <th className="p-3 md:p-5">{t('technique')}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 relative">
+          <tbody className="divide-y-0 relative">
             {currentPatients.length > 0 ? (
               currentPatients.map((patient, idx) => {
                 const nextInj = patient.injections.find(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date());
                 return (
                   <tr
                     key={patient.id}
-                    className="hover:bg-blue-50/80 hover:scale-[1.01] hover:border-promed-primary/20 hover:z-10 relative transition-all duration-200 cursor-pointer group border-b border-transparent hover:rounded-xl"
+                    className="bg-white border-b border-slate-100 hover:scale-[1.01] hover:shadow-md hover:z-10 relative transition-all duration-200 cursor-pointer group"
                     onClick={() => onSelect(patient.id)}
                   >
                     <td className="p-3 md:p-5 pl-4 md:pl-8 rounded-l-xl group-hover:rounded-l-xl transition-all relative">
@@ -457,7 +457,7 @@ export const PatientList: React.FC<{
 
       {/* --- Pagination Footer --- */}
       {patients.length > 0 && (
-        <div className="flex items-center justify-center border-t border-slate-100 p-6 bg-slate-50/50">
+        <div className="flex items-center justify-center border-t border-slate-100 p-6 bg-white">
           <div className="flex items-center gap-3">
             <button
               onClick={handlePrevPage}
@@ -638,7 +638,7 @@ export const PatientDetail: React.FC<{
       </button>
 
       {/* Header Info */}
-      <div className="bg-white rounded-3xl p-4 md:p-8 border border-slate-200 flex flex-col md:flex-row gap-8 relative overflow-hidden shadow-premium">
+      <div className="bg-white rounded-3xl p-4 md:p-8 border border-slate-200 flex flex-col md:flex-row gap-8 relative overflow-hidden shadow-apple">
         {/* Background decorative blob */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-promed-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
@@ -695,19 +695,19 @@ export const PatientDetail: React.FC<{
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-premium hover:border-promed-primary/50 transition-colors">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-apple hover:border-promed-primary/50 transition-colors">
               <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('age')}</p>
               <p className="font-bold text-xl text-slate-800">{patient.age} <span className="text-sm text-slate-500 font-medium">{t('years')}</span></p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-premium hover:border-promed-primary/50 transition-colors">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-apple hover:border-promed-primary/50 transition-colors">
               <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('gender')}</p>
               <p className="font-bold text-xl text-slate-800">{patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}</p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-premium hover:border-promed-primary/50 transition-colors">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-apple hover:border-promed-primary/50 transition-colors">
               <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('grafts')}</p>
               <p className="font-bold text-xl text-slate-800">{patient.grafts ? patient.grafts.toLocaleString() : 'N/A'}</p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-premium hover:border-promed-primary/50 transition-colors">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-apple hover:border-promed-primary/50 transition-colors">
               <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('tech')}</p>
               <p className="font-bold text-xl text-slate-800">
                 {patient.technique === 'Hair' ? t('transplant_hair') :
@@ -723,7 +723,7 @@ export const PatientDetail: React.FC<{
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Col: Photos */}
         <div className="lg:col-span-1 space-y-8">
-          <div className="bg-white rounded-2xl p-6 shadow-premium border border-slate-200">
+          <div className="bg-white rounded-2xl p-6 shadow-apple border border-slate-200">
             <h3 className="font-bold text-slate-800 mb-5 flex items-center space-x-3">
               <div className="">
                 <Camera className="w-9 h-9 text-slate-700" />
@@ -742,7 +742,7 @@ export const PatientDetail: React.FC<{
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-premium border border-slate-200">
+          <div className="bg-white rounded-2xl p-6 shadow-apple border border-slate-200">
             <div className="flex justify-between items-center mb-5">
               <h3 className="font-bold text-slate-800 flex items-center space-x-3">
                 <div className="p-2 bg-promed-light rounded-lg text-promed-primary border border-promed-primary/20">
@@ -1134,7 +1134,7 @@ export const AddPatientForm: React.FC<{
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto bg-slate-50/50">
+          <div className="flex-1 overflow-y-auto bg-premium-card">
             <form id="patient-form" onSubmit={handleSubmit} className="p-4 md:p-8" onKeyDown={(e) => {
               if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
                 e.preventDefault();
@@ -1145,7 +1145,7 @@ export const AddPatientForm: React.FC<{
                 {/* Left Column: Photos & Visuals */}
                 <div className="w-full lg:w-1/3 flex flex-col gap-6">
                   {/* Profile Photo Card */}
-                  <div className="bg-white p-6 rounded-2xl  border border-slate-200 flex flex-col items-center text-center transition-all duration-300 group relative overflow-hidden">
+                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 flex flex-col items-center text-center transition-all duration-300 group relative overflow-hidden">
                     <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-promed-primary to-teal-400"></div>
                     <h4 className="font-bold text-slate-800 mb-4 self-start flex items-center gap-2 text-sm uppercase tracking-wide">
                       <User size={16} className="text-promed-primary" />
@@ -1183,7 +1183,7 @@ export const AddPatientForm: React.FC<{
                   </div>
 
                   {/* Before Photo Card */}
-                  <div className="bg-white p-6 rounded-2xl  border border-slate-200 transition-all duration-300 group flex-1">
+                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 transition-all duration-300 group flex-1">
                     <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wide">
                       <ImageIcon size={16} className="text-promed-primary" />
                       {t('before_photo')}
@@ -1219,7 +1219,7 @@ export const AddPatientForm: React.FC<{
                 {/* Right Column: Form Inputs */}
                 <div className="w-full lg:w-2/3 space-y-8">
                   {/* Personal Specs */}
-                  <div className="bg-white p-6 rounded-2xl  border border-slate-200">
+                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200">
                     <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 text-sm uppercase tracking-wide border-b border-slate-100 pb-2">
                       <User size={18} className="text-promed-primary" />
                       {t('personal_info')}
@@ -1231,7 +1231,7 @@ export const AddPatientForm: React.FC<{
                         <div className="relative group">
                           <User size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                           <input required type="text" value={fullName} onChange={e => setFullName(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                             placeholder="Mirjalol Shamsiddinov" />
                         </div>
                       </div>
@@ -1257,7 +1257,7 @@ export const AddPatientForm: React.FC<{
                                 // input.setSelectionRange(5, 5);
                               }
                             }}
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                             placeholder="+998 93 748 91 41"
                           />
                         </div>
@@ -1269,7 +1269,7 @@ export const AddPatientForm: React.FC<{
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('age')}</label>
                         <input required type="number" value={age} onChange={e => setAge(e.target.value)}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                           placeholder="32" />
                       </div>
                       <div className="space-y-1.5">
@@ -1287,7 +1287,7 @@ export const AddPatientForm: React.FC<{
                   </div>
 
                   {/* Medical Specs */}
-                  <div className="bg-white p-6 rounded-2xl  border border-slate-200">
+                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200">
                     <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 text-sm uppercase tracking-wide border-b border-slate-100 pb-2">
                       <Activity size={18} className="text-promed-primary" />
                       {t('medical_details')}
@@ -1319,7 +1319,7 @@ export const AddPatientForm: React.FC<{
                         <div className="relative group">
                           <Hash size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                           <input type="number" value={grafts} onChange={e => setGrafts(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                             placeholder="2500" />
                         </div>
                       </div>

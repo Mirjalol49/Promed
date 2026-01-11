@@ -6,7 +6,8 @@ import {
     Shield,
     Settings,
     Lock,
-    Plus
+    Plus,
+    LayoutList
 } from 'lucide-react';
 import { PageView } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -25,6 +26,7 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
     const dockItems = [
         { page: 'DASHBOARD' as PageView, icon: LayoutDashboard, label: t('dashboard') },
         { page: 'PATIENTS' as PageView, icon: Users, label: t('patients'), id: 'add-patient-btn-mobile' },
+        { page: 'LEADS' as PageView, icon: LayoutList, label: 'Murojaatlar' },
         ...(role === 'admin' ? [{ page: 'ADMIN_DASHBOARD' as PageView, icon: Shield, label: t('admin_panel') }] : []),
         { page: 'SETTINGS' as PageView, icon: Settings, label: t('settings') },
     ];

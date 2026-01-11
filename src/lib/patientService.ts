@@ -40,6 +40,8 @@ const mapPatient = (id: string, p: any): Patient => ({
   status: p.status,
   grafts: p.grafts,
   technique: p.technique,
+  telegramChatId: p.telegramChatId,
+  botLanguage: p.botLanguage,
 });
 
 export const subscribeToPatients = (

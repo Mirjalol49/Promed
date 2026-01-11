@@ -36,6 +36,8 @@ export interface Patient {
   status: 'Active' | 'Recovered' | 'Observation';
   grafts?: number;
   technique?: string;
+  telegramChatId?: string;
+  botLanguage?: 'uz' | 'ru' | 'en';
 }
 
 export interface StatData {
@@ -63,4 +65,27 @@ export interface Profile {
   lockPassword?: string;
 }
 
-export type PageView = 'DASHBOARD' | 'PATIENTS' | 'PATIENT_DETAIL' | 'SETTINGS' | 'ADD_PATIENT' | 'EDIT_PATIENT' | 'ADMIN_DASHBOARD' | 'SUPER_ADMIN';
+export type PageView = 'DASHBOARD' | 'PATIENTS' | 'PATIENT_DETAIL' | 'SETTINGS' | 'ADD_PATIENT' | 'EDIT_PATIENT' | 'ADMIN_DASHBOARD' | 'SUPER_ADMIN' | 'LEADS';
+
+export type LeadSource = 'Instagram' | 'Telegram' | 'Walk-in' | 'Referral';
+export type LeadStatus = 'NEW' | 'CONTACTED' | 'PHOTOS_SENT' | 'PRICE_GIVEN' | 'BOOKED' | 'LOST';
+
+export interface Lead {
+  id: string;
+  full_name: string;
+  phone_number: string;
+  source: LeadSource;
+  status: LeadStatus;
+  graft_estimate?: number;
+  price_quote?: number; // Store as number for calculation
+  currency: string; // 'USD' default
+  created_at: any; // Firestore Timestamp
+  updated_at: any;
+  last_contact_date?: any;
+  loss_reason?: string;
+}
+
+export interface LeadColumn {
+  id: LeadStatus;
+  title: string;
+}

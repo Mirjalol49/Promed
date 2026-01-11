@@ -53,11 +53,11 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
     };
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-premium flex flex-col relative">
+        <div className="bg-white rounded-3xl border-2 border-dashed border-promed-primary/60 shadow-apple flex flex-col relative overflow-hidden">
 
             <div className="relative">
                 {/* 1. Header Area (Static) */}
-                <div className="p-5 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100/50 rounded-t-2xl transition-all duration-300">
+                <div className="p-5 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 z-30 bg-white/95 backdrop-blur-md border-b border-dashed border-promed-primary/20 rounded-t-3xl transition-all duration-300">
                     <div>
                         <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
                             {t('injection_schedule')}

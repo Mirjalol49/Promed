@@ -273,3 +273,46 @@ exports.dailyReminder = onSchedule({
         console.error("Reminder Job Error:", error);
     }
 });
+// 3. Notification Sender (Real-time Firestore Trigger)
+// Listens for new documents in 'outbound_messages' and sends them via Telegram.
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+
+exports.notificationSender = onDocumentCreated("outbound_messages/{msgId}", async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+        console.log("No data associated with the event");
+        return;
+    }
+    const data = snapshot.data();
+    const docId = event.params.msgId;
+
+    // Only process PENDING messages
+    if (data.status !== 'PENDING') return;
+
+    const { telegramChatId, text, patientName } = data;
+
+    if (!telegramChatId || !text) {
+        console.error("Missing telegramChatId or text");
+        return;
+    }
+
+    console.log(`📨 Processing outbound message for ${patientName} (${telegramChatId})`);
+
+    try {
+        await bot.telegram.sendMessage(telegramChatId, text, { parse_mode: 'Markdown' });
+
+        // Mark as SENT
+        await snapshot.ref.update({
+            status: 'SENT',
+            sentAt: new Date().toISOString()
+        });
+        console.log(`✅ Message sent to ${patientName}`);
+    } catch (error) {
+        console.error(`❌ Failed to send message to ${patientName}:`, error.message);
+        // Mark as FAILED
+        await snapshot.ref.update({
+            status: 'FAILED',
+            error: error.message
+        });
+    }
+});

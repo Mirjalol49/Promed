@@ -4,7 +4,7 @@ import { useSystemAlert } from '../../contexts/SystemAlertContext';
 import { dismissNotification } from '../../lib/notificationService';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export const NotificationBell: React.FC = () => {
+export const NotificationBell: React.FC<{ className?: string }> = ({ className = 'text-slate-600 hover:bg-slate-100 hover:text-promed-primary' }) => {
     const { alerts, unreadCount, markAllAsRead } = useSystemAlert();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -68,7 +68,7 @@ export const NotificationBell: React.FC = () => {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={toggleDropdown}
-                className={`relative p-2.5 rounded-xl transition-all duration-300 ${isOpen ? 'bg-promed-light text-promed-primary shadow-inner' : 'text-slate-600 hover:bg-slate-100 hover:text-promed-primary'
+                className={`relative p-2.5 rounded-xl transition-all duration-300 ${isOpen ? 'bg-promed-light text-promed-primary shadow-inner' : className
                     }`}
             >
                 <style>
@@ -90,7 +90,7 @@ export const NotificationBell: React.FC = () => {
                 </style>
                 <div className="relative">
                     <div className={`${unreadCount > 0 ? 'bell-ringing' : ''}`}>
-                        <Bell size={24} className={`text-slate-600 ${isOpen ? 'text-promed-primary fill-current' : ''}`} />
+                        <Bell size={24} className={`transition-colors ${isOpen ? 'text-promed-primary fill-current' : 'text-current'}`} />
                     </div>
                     {unreadCount > 0 && (
                         <div className="absolute -top-1.5 -right-1.5">

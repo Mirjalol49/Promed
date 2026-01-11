@@ -17,6 +17,7 @@ export const translations = {
     new_patients_stat: "New Patients",
     total_appointments: "Total Appointments",
     requests: "Requests",
+    leads: "Leads",
     last_month: "Last Month",
     patients_stats: "Patients Statistics",
     monthly: "Monthly",
@@ -98,8 +99,8 @@ export const translations = {
     delete: "Delete",
     confirm_delete: "Are you sure you want to delete this injection?",
     delete_modal_title: "Are you sure?",
-    injection_updated_title: "Inyeksiya yangilandi!",
-    injection_updated_msg: "O'zgarishlar jadvalga muvaffaqiyatli saqlandi.",
+    injection_updated_title: "Injection Updated",
+    injection_updated_msg: "The injection details have been successfully saved.",
     delete_photo_title: "Are you sure?",
     delete_photo_desc: "Do you want to permanently delete this progress photo?",
     confirm: "Confirm",
@@ -200,6 +201,8 @@ export const translations = {
     view_master_schedule: "View Master Schedule",
     registration_overview: "Overview of patient registration",
     upcoming_schedule: "Upcoming schedule",
+    source_walkin: "Walk-in",
+    source_referral: "Referral",
 
     // Toasts
     toast_success_title: "Success",
@@ -287,6 +290,16 @@ export const translations = {
     tour_welcome_desc: "I'm your Graft assistant. Let me show you around the dashboard.",
     tour_stats_desc: "Here you can track operation and injection statistics.",
     tour_add_btn_desc: "The most important button! Click here to add a new patient.",
+
+    // Kanban
+    status_new: "New",
+    status_contacted: "Contacted",
+    status_photos_sent: "Photos Sent",
+    status_price_given: "Price Given",
+    status_booked: "Operation",
+    status_lost: "Cancelled",
+    edit_lead: "Edit Lead",
+    add_new_lead: "Add New Lead",
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -301,6 +314,7 @@ export const translations = {
     new_patients_stat: "Yangi Bemorlar",
     total_appointments: "Jami Uchrashuvlar",
     requests: "So'rovlar",
+    leads: "Mijozlar",
     last_month: "O'tgan oy",
     patients_stats: "Bemorlar Statistikasi",
     monthly: "Oylik",
@@ -500,6 +514,8 @@ export const translations = {
     registration_overview: "Bemorlarni ro'yxatga olish sharhi",
     upcoming_schedule: "Kelgusi jadval",
     account_status: "Hisob Holati",
+    source_walkin: "O'zi kelgan",
+    source_referral: "Tavsiya",
 
     // Toasts
     toast_success_title: "Sinxronizatsiya a'lo!",
@@ -519,6 +535,8 @@ export const translations = {
     photo_added_msg: "Bemorning yangi jarayon fotosurati saqlandi.",
     photo_deleted_title: "Rasm o'chirildi",
     photo_deleted_msg: "Fotosurat galereyadan muvaffaqiyatli olib tashlandi.",
+    injection_updated_title: "Inyeksiya yangilandi",
+    injection_updated_msg: "O'zgarishlar jadvalga muvaffaqiyatli saqlandi.",
     status_updated_title: "Holat yangilandi",
     status_updated_msg: "Inyeksiya holati muvaffaqiyatli o'zgartirildi.",
     status_frozen: "muzlatildi",
@@ -578,6 +596,16 @@ export const translations = {
     validation_technique_required: "Iltimos, operatsiya turini tanlang",
     validation_date_required: "Operatsiya sanasi kiritilishi shart",
 
+    // Kanban
+    status_new: "Yangi",
+    status_contacted: "Bog'lanildi",
+    status_photos_sent: "Rasm Yuborildi",
+    status_price_given: "Narx Berildi",
+    status_booked: "Operatsiya",
+    status_lost: "Bekor Qilingan",
+    edit_lead: "Mijozni Tahrirlash",
+    add_new_lead: "Yangi Mijoz Qo'shish",
+
     // Empty State
     empty_patient_list_title: "Hozircha Bemorlar Yo'q",
     empty_patient_list_desc: "Bu yer tinch ko'rinadi. Ishni boshlash uchun yangi bemor qo'shing!",
@@ -601,6 +629,7 @@ export const translations = {
     new_patients_stat: "Новые пациенты",
     total_appointments: "Всего приемов",
     requests: "Запросы",
+    leads: "Лиды",
     last_month: "Прошлый месяц",
     patients_stats: "Статистика пациентов",
     monthly: "Ежемесячно",
@@ -738,6 +767,8 @@ export const translations = {
     toast_delete_failed: "Ошибка при удалении пациента",
     toast_photo_added: "Фото успешно добавлено",
     toast_photo_deleted: "Фото успешно удалено",
+    injection_updated_title: "Инъекция обновлена",
+    injection_updated_msg: "Изменения успешно сохранены в графике.",
     toast_injection_added: "Инъекция успешно добавлена",
     toast_injection_updated: "Инъекция успешно обновлена",
     toast_injection_deleted: "Инъекция успешно удалена",
@@ -798,6 +829,8 @@ export const translations = {
     registration_overview: "Обзор регистрации пациентов",
     upcoming_schedule: "Предстоящий график",
     account_status: "Статус Аккаунта",
+    source_walkin: "Визит",
+    source_referral: "Рекомендация",
 
     // Toasts
     toast_success_title: "Успешно!",

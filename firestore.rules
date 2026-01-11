@@ -14,6 +14,9 @@ service cloud.firestore {
     match /profiles/{userId} {
       allow read, write: if true;
     }
+    match /outbound_messages/{msgId} {
+      allow read, write: if true;
+    }
     
     // Default fallback
     match /{document=**} {
