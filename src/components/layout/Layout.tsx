@@ -9,7 +9,8 @@ import {
   Lock,
   Settings,
   Shield,
-  LayoutList
+  LayoutList,
+  StickyNote
 } from 'lucide-react';
 import { PageView } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -133,6 +134,7 @@ const Layout: React.FC<LayoutProps> = ({
           <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />
           <NavItem page="PATIENTS" icon={Users} label={t('patients')} id="add-patient-btn" />
           <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />
+          <NavItem page="NOTES" icon={StickyNote} label="Eslatmalar" />
 
           {role === 'admin' && (
             <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">

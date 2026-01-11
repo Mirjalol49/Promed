@@ -31,11 +31,11 @@ interface LeadCardProps {
 
 const SourceIcon = ({ source }: { source: Lead['source'] }) => {
     switch (source) {
-        case 'Instagram': return <Instagram size={14} className="opacity-90" />;
-        case 'Telegram': return <Send size={14} className="opacity-90" />;
-        case 'Walk-in': return <User size={14} className="opacity-90" />;
-        case 'Referral': return <Users size={14} className="opacity-90" />;
-        default: return <User size={14} className="opacity-90" />;
+        case 'Instagram': return <Instagram size={14} className="" />;
+        case 'Telegram': return <Send size={14} className="" />;
+        case 'Walk-in': return <User size={14} className="" />;
+        case 'Referral': return <Users size={14} className="" />;
+        default: return <User size={14} className="" />;
     }
 };
 
@@ -104,7 +104,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
 
     return (
         <div className={`
-            ${getBackground(statusColor)} p-4 rounded-xl border shadow-premium
+            ${getBackground(statusColor)} p-5 rounded-3xl border-transparent shadow-custom
             ${isStale ? '!border-red-500 !ring-1 !ring-red-500' : ''}
             transition-all mb-3 relative group
         `}>
@@ -120,7 +120,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                             <span>{lead.source}</span>
                         </div>
                         <div className="flex items-center space-x-1 pl-1">
-                            <Phone size={12} className="opacity-80" />
+                            <Phone size={12} className="" />
                             <span>{lead.phone_number}</span>
                         </div>
                     </div>

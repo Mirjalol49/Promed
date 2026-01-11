@@ -65,7 +65,7 @@ export interface Profile {
   lockPassword?: string;
 }
 
-export type PageView = 'DASHBOARD' | 'PATIENTS' | 'PATIENT_DETAIL' | 'SETTINGS' | 'ADD_PATIENT' | 'EDIT_PATIENT' | 'ADMIN_DASHBOARD' | 'SUPER_ADMIN' | 'LEADS';
+export type PageView = 'DASHBOARD' | 'PATIENTS' | 'PATIENT_DETAIL' | 'SETTINGS' | 'ADD_PATIENT' | 'EDIT_PATIENT' | 'ADMIN_DASHBOARD' | 'SUPER_ADMIN' | 'LEADS' | 'NOTES';
 
 export type LeadSource = 'Instagram' | 'Telegram' | 'Walk-in' | 'Referral';
 export type LeadStatus = 'NEW' | 'CONTACTED' | 'PHOTOS_SENT' | 'PRICE_GIVEN' | 'BOOKED' | 'LOST';
@@ -88,4 +88,13 @@ export interface Lead {
 export interface LeadColumn {
   id: LeadStatus;
   title: string;
+}
+
+export interface Note {
+  id: string;
+  title: string; // Optional title
+  content: string;
+  color?: string; // For sticky note color effect
+  createdAt: any; // Firestore Timestamp
+  userId: string;
 }

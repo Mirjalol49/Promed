@@ -17,7 +17,9 @@ import {
     Banknote,
     Stethoscope,
     Archive,
-    Search
+    Search,
+    Pencil,
+    Trash
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -145,34 +147,56 @@ export const KanbanBoard: React.FC = () => {
         });
 
     return (
-        <div className="h-[calc(100vh-6rem)] flex flex-col bg-white rounded-2xl border border-slate-100 shadow-premium overflow-hidden">
+        <div className="h-full flex flex-col space-y-6 p-6 overflow-hidden">
             {/* Header / Tabs */}
-            <div className="p-6 border-b border-slate-100 bg-white flex flex-col gap-4">
-                {/* Actions (Search + Add) - Top Row */}
-                <div className="flex items-center justify-end gap-3">
-                    {/* Search */}
-                    <div className="relative w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder={t('search')}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary/50 transition-all font-medium text-sm"
-                        />
-                    </div>
+            <div className="p-3 bg-white rounded-3xl shadow-custom flex flex-col gap-4 flex-shrink-0">
+                {/* Actions (Search + View Toggle + Add) - Top Row */}
+                <div className="flex items-center justify-between gap-3">
+                    {/* View Toggle REMOVED */}
 
-                    {/* Add Button */}
-                    <button
-                        onClick={() => {
-                            setLeadToEdit(null);
-                            setAddModalOpen(true);
-                        }}
-                        className="btn-premium-blue shadow-lg shadow-promed-primary/20 flex items-center gap-2 px-5 py-2.5 flex-shrink-0 whitespace-nowrap"
-                    >
-                        <PlusCircle size={18} className="relative z-10" />
-                        <span>Qo'shish</span>
-                    </button>
+                    <div className="flex items-center gap-3 w-full justify-between">
+                        {/* Pipeline Tabs - Moved to be inline or adjust layout? The design implies they are below. */}
+                        {/* Actually, user layout had toggle on left, search/add on right? No, check original. */}
+                        {/* Original: <div className="flex items-center justify-between gap-3"> <ViewToggle> <RightGroup>... */}
+                        {/* To remove Toggle but keep alignment, we might need a spacer or just let it flow. */}
+                        {/* Let's keep the Search+Add group on the right, and maybe put Tabs on left? */}
+                        {/* Original Bottom Row was tabs. Top Row was Actions. */}
+                        {/* If we remove toggle (left side of Top Row), we just have Right Group (Search+Add). */}
+                        {/* Let's structure Top Row to justify-end then. */}
+
+                        <div className="flex space-x-2 overflow-x-auto no-scrollbar -mx-1 px-1 py-1 flex-1">
+                            {/* Moving Tabs to Top Row Left side? Or keeping them in separate row? */}
+                            {/* User image shows Toggle next to Tabs? No, image shows Toggle in a top bar. */}
+                            {/* Let's sticking to removing the toggle div. */}
+                            {/* To keep the search on the right, we can use justify-end for the top row container if toggle is gone. */}
+                        </div>
+
+                        <div className="flex items-center gap-3 ml-auto">
+                            {/* Search */}
+                            <div className="relative w-64">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <input
+                                    type="text"
+                                    placeholder={t('search')}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary/50 transition-all font-medium text-sm"
+                                />
+                            </div>
+
+                            {/* Add Button */}
+                            <button
+                                onClick={() => {
+                                    setLeadToEdit(null);
+                                    setAddModalOpen(true);
+                                }}
+                                className="btn-premium-blue shadow-lg shadow-promed-primary/20 flex items-center gap-2 px-5 py-2.5 flex-shrink-0 whitespace-nowrap"
+                            >
+                                <PlusCircle size={18} className="relative z-10" />
+                                <span>Qo'shish</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Pipeline Tabs - Bottom Row */}
@@ -205,25 +229,21 @@ export const KanbanBoard: React.FC = () => {
             </div>
 
             {/* List Area */}
-            <div className="flex-1 overflow-y-auto p-6 w-full">
+            <div className="flex-1 overflow-y-auto w-full pr-2">
                 {
                     isLoading ? (
                         <div className="flex items-center justify-center h-40" >
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
                         </div>
                     ) : activeLeads.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-64 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white/50">
+                        <div className="flex flex-col items-center justify-center h-64 text-center">
                             <div className={`p-4 rounded-full bg-${activeColor}-50 text-${activeColor}-500 mb-3`}>
                                 <LayoutTemplate size={32} />
                             </div>
                             <h3 className="text-lg font-medium text-slate-900">Murojaatlar yo'q</h3>
-                            <p className="text-sm text-slate-500 max-w-xs mx-auto mt-1">
-                                Ushbu bosqichda hozircha hech qanday bemor yo'q.
-                            </p>
-
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in duration-300">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-in fade-in duration-300 pb-20">
                             {activeLeads.map(lead => (
                                 <LeadCard
                                     key={lead.id}
@@ -234,7 +254,8 @@ export const KanbanBoard: React.FC = () => {
                                 />
                             ))}
                         </div>
-                    )}
+                    )
+                }
             </div >
 
             <AddLeadModal

@@ -623,4 +623,10 @@ select:focus {
     .bg-premium-card {
         background-color: hsl(204deg 67% 92%);
     }
+
+    .shadow-custom {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+            0 10px 15px -3px rgba(0, 0, 0, 0.05),
+            0 0 0 1px rgba(0, 0, 0, 0.02);
+    }
 }

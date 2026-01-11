@@ -8,6 +8,7 @@ const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard').then(m 
 const PatientList = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientList })));
 const PatientDetail = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientDetail })));
 const LeadsPage = React.lazy(() => import('./pages/LeadsPage').then(m => ({ default: m.LeadsPage })));
+const NotesPage = React.lazy(() => import('./features/notes/NotesPage').then(m => ({ default: m.NotesPage })));
 // const MessagesPage = React.lazy(() => import('./features/messages/MessagesPage').then(m => ({ default: m.MessagesPage }))); // User deleted this feature
 import { AddPatientForm } from './features/patients/PatientList';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
@@ -1182,6 +1183,13 @@ const App: React.FC = () => {
         {
           view === 'LEADS' && (
             <LeadsPage />
+          )
+        }
+
+        {/* Notes View */}
+        {
+          view === 'NOTES' && (
+            <NotesPage />
           )
         }
 

@@ -149,10 +149,10 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                                             type="button"
                                             onClick={() => setFormData({ ...formData, source: s.id })}
                                             className={`
-                                                flex items-center justify-center space-x-2 p-2 rounded-xl text-sm font-medium transition-all
+                                                flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold transition-all border
                                                 ${isSelected
-                                                    ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm'
-                                                    : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50'}
+                                                    ? 'bg-blue-50 text-blue-600 border-blue-500 ring-1 ring-blue-500 shadow-sm'
+                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}
                                             `}
                                         >
                                             <Icon size={16} />
