@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save } from 'lucide-react';
+import { X, Save, Mic, Square, Globe } from 'lucide-react';
 import { Portal } from '../../components/ui/Portal';
 import { Note } from '../../types';
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 interface AddNoteModalProps {
     isOpen: boolean;
@@ -24,8 +25,22 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
     const [selectedColor, setSelectedColor] = useState('blue');
     const [isLoading, setIsLoading] = useState(false);
 
+    const [selectedLanguage, setSelectedLanguage] = useState<'uz-UZ' | 'ru-RU' | 'en-US'>('uz-UZ');
+
+    // Lib hook
+    const {
+        transcript,
+        listening,
+        resetTranscript,
+        browserSupportsSpeechRecognition
+    } = useSpeechRecognition();
+
+    // Snapshot state to manage appending
+    const [contentSnapshot, setContentSnapshot] = useState('');
+
     useEffect(() => {
         if (isOpen) {
+            resetTranscript(); // Clear any previous session
             if (noteToEdit) {
                 setTitle(noteToEdit.title || '');
                 setContent(noteToEdit.content);
@@ -37,6 +52,25 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
             }
         }
     }, [isOpen, noteToEdit]);
+
+    // Update content with transcript while listening
+    useEffect(() => {
+        if (listening) {
+            // Smart spacing logic
+            const needsSpace = contentSnapshot && !/\s$/.test(contentSnapshot) && transcript && !/^\s/.test(transcript);
+            setContent(contentSnapshot + (needsSpace ? ' ' : '') + transcript);
+        }
+    }, [transcript, listening, contentSnapshot]);
+
+    const handleToggleRecording = () => {
+        if (listening) {
+            SpeechRecognition.stopListening();
+        } else {
+            setContentSnapshot(content);
+            resetTranscript();
+            SpeechRecognition.startListening({ continuous: true, language: selectedLanguage });
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -67,10 +101,50 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                     transition-colors duration-300 border-4 border-white
                 `}>
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-bold text-slate-800">
-                            {noteToEdit ? 'Eslatmani Tahrirlash' : 'Yangi Eslatma'}
-                        </h2>
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-xl font-bold text-slate-800">
+                                {noteToEdit ? 'Eslatmani Tahrirlash' : 'Yangi Eslatma'}
+                            </h2>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {browserSupportsSpeechRecognition && (
+                                <div className="flex items-center bg-slate-100 rounded-full p-1 mr-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const newLang = selectedLanguage === 'uz-UZ' ? 'ru-RU' : selectedLanguage === 'ru-RU' ? 'en-US' : 'uz-UZ';
+                                            setSelectedLanguage(newLang);
+                                            // If already listening, we should probably restart to apply new lang, but simpler to just set state for next time
+                                            // Or: if (listening) { stop; start(newLang); }
+                                            if (listening) {
+                                                SpeechRecognition.stopListening();
+                                                setTimeout(() => SpeechRecognition.startListening({ continuous: true, language: newLang }), 100);
+                                            }
+                                        }}
+                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold uppercase text-slate-600 hover:bg-white hover:text-promed-primary transition-all cursor-pointer"
+                                        title="Tilni o'zgartirish (UZ/RU/EN)"
+                                    >
+                                        <Globe size={14} />
+                                        <span>{selectedLanguage.split('-')[0]}</span>
+                                    </button>
+                                    <div className="w-px h-4 bg-slate-300 mx-1" />
+                                    <button
+                                        type="button"
+                                        onClick={handleToggleRecording}
+                                        className={`
+                                            p-2 rounded-full transition-all duration-300 relative
+                                            ${listening
+                                                ? 'bg-red-500 text-white shadow-lg ring-2 ring-red-500/20 animate-pulse'
+                                                : 'text-slate-500 hover:text-promed-primary hover:bg-white'}
+                                        `}
+                                        title={listening ? "To'xtatish" : "Ovozli yozish"}
+                                    >
+                                        {listening ? <Square size={16} fill="currentColor" /> : <Mic size={18} />}
+                                    </button>
+                                </div>
+                            )}
+
                             {/* Color Picker using grid */}
                             <div className="flex gap-1 mr-2 bg-slate-100 p-1 rounded-full">
                                 {colors.map(c => (

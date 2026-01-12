@@ -229,7 +229,7 @@ export const KanbanBoard: React.FC = () => {
             </div>
 
             {/* List Area */}
-            <div className="flex-1 overflow-y-auto w-full p-4">
+            <div className="flex-1 overflow-y-auto w-full">
                 {
                     isLoading ? (
                         <div className="flex items-center justify-center h-40" >

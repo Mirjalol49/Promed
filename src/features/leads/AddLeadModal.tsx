@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Save, Instagram, Send, User, Users } from 'lucide-react';
+import { X, Save, Instagram, Send, User, Users, Phone } from 'lucide-react';
 import { Portal } from '../../components/ui/Portal';
 import { Lead, LeadStatus, LeadSource } from '../../types';
 import { leadService } from '../../services/leadService';
@@ -18,7 +18,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState<Partial<Lead>>({
         full_name: '',
-        phone_number: '',
+        phone_number: '+998',
         source: 'Instagram',
     });
 
@@ -35,7 +35,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
         } else if (isOpen && !leadToEdit) {
             setFormData({
                 full_name: '',
-                phone_number: '',
+                phone_number: '+998',
                 source: 'Instagram',
             });
         }
@@ -47,6 +47,33 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
         { id: 'Walk-in', icon: User, label: t('source_walkin') },
         { id: 'Referral', icon: Users, label: t('source_referral') },
     ];
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const input = e.target.value;
+        let numbers = input.replace(/\D/g, '');
+
+        if (!numbers.startsWith('998')) {
+            // If user deletes part of 998, restore it
+            if ('998'.startsWith(numbers)) {
+                numbers = '998';
+            } else {
+                numbers = '998' + numbers;
+            }
+        }
+
+        // Limit to 12 digits (998 + 9 digits)
+        if (numbers.length > 12) numbers = numbers.slice(0, 12);
+
+        // Format: +998 99 888 99 99
+        const suffix = numbers.slice(3);
+        let formatted = '+998';
+        if (suffix.length > 0) formatted += ' ' + suffix.slice(0, 2);
+        if (suffix.length > 2) formatted += ' ' + suffix.slice(2, 5);
+        if (suffix.length > 5) formatted += ' ' + suffix.slice(5, 7);
+        if (suffix.length > 7) formatted += ' ' + suffix.slice(7, 9);
+
+        setFormData({ ...formData, phone_number: formatted });
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -82,7 +109,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
             if (!leadToEdit) {
                 setFormData({
                     full_name: '',
-                    phone_number: '',
+                    phone_number: '+998',
                     source: 'Instagram',
                 });
             }
@@ -125,15 +152,20 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
 
                         {/* Phone */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Telefon Raqam *</label>
-                            <input
-                                type="tel"
-                                required
-                                value={formData.phone_number}
-                                onChange={e => setFormData({ ...formData, phone_number: e.target.value })}
-                                className="w-full px-4 py-2 bg-slate-50 border border-slate-400 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
-                                placeholder="+998 90 123 45 67"
-                            />
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Telefon Raqami</label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Phone className="h-5 w-5 text-slate-400" />
+                                </div>
+                                <input
+                                    type="tel"
+                                    required
+                                    value={formData.phone_number}
+                                    onChange={handlePhoneChange}
+                                    className="w-full pl-10 pr-4 py-3 bg-white border border-slate-400/60 rounded-xl focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary outline-none transition-all font-medium text-slate-700 text-lg"
+                                    placeholder="+998 90 123 45 67"
+                                />
+                            </div>
                         </div>
 
                         {/* Source */}

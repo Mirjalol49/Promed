@@ -157,12 +157,12 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
             <div className="flex justify-between items-start mb-2">
                 <div>
                     <h4 className="font-bold text-base text-slate-900">{lead.full_name}</h4>
-                    <div className="flex items-center space-x-2 text-xs mt-1 text-slate-500">
-                        <div className="flex items-center space-x-1 bg-white/60 px-2 py-1 rounded-lg border border-white/40 shadow-sm">
+                    <div className="flex flex-wrap items-center gap-2 text-xs mt-1 text-slate-500">
+                        <div className="flex items-center space-x-1 bg-white/60 px-2 py-1.5 rounded-lg border border-white/40 shadow-sm whitespace-nowrap">
                             <SourceIcon source={lead.source} />
                             <span>{getSourceLabel(lead.source)}</span>
                         </div>
-                        <div className="flex items-center space-x-1 pl-1">
+                        <div className="flex items-center space-x-1 pl-1 whitespace-nowrap">
                             <Phone size={12} className="" />
                             <span>{lead.phone_number}</span>
                         </div>
