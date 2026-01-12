@@ -69,16 +69,77 @@ export const NotesPage: React.FC = () => {
 
     const handleConfirmDelete = async () => {
         if (noteToDelete) {
+            const originalNotes = [...notes];
+            const noteId = noteToDelete;
+
+            // Optimistic Update
+            setNotes(prev => prev.filter(n => n.id !== noteId));
+            setIsDeleteModalOpen(false);
+            setNoteToDelete(null);
+
             try {
-                await noteService.deleteNote(noteToDelete);
-                setNoteToDelete(null);
-                setIsDeleteModalOpen(false);
+                await noteService.deleteNote(noteId);
             } catch (error) {
                 console.error("Failed to delete note:", error);
+                // Revert
+                setNotes(originalNotes);
+                alert("Eslatmani o'chirishda xatolik yuz berdi");
             }
         }
     };
 
+    const handleSaveNote = async (data: { title: string; content: string; color: string }) => {
+        if (!userId) return;
+
+        const originalNotes = [...notes];
+
+        if (noteToEdit) {
+            // Edit Mode - Optimistic
+            const updatedNote: Note = {
+                ...noteToEdit,
+                ...data,
+                // keep existing createdAt ?
+            };
+
+            setNotes(prev => prev.map(n => n.id === noteToEdit.id ? updatedNote : n));
+            // Modal closes via AddNoteModal handling (or we can close it here if we want more control, but prop is onSave)
+            // Wait, AddNoteModal closes itself on success. 
+            // So we just promise to return void.
+
+            try {
+                await noteService.updateNote(noteToEdit.id, data);
+            } catch (error) {
+                console.error("Failed to update note:", error);
+                setNotes(originalNotes);
+                alert("Eslatmani yangilashda xatolik yuz berdi");
+            }
+        } else {
+            // Add Mode - Optimistic
+            const tempId = 'temp-' + Date.now();
+            const newNote: Note = {
+                id: tempId,
+                userId,
+                title: data.title,
+                content: data.content,
+                color: data.color,
+                createdAt: { toDate: () => new Date(), toMillis: () => Date.now(), seconds: Date.now() / 1000, nanoseconds: 0 } as any // Mock timestamp
+            };
+
+            setNotes(prev => [newNote, ...prev]);
+
+            try {
+                await noteService.addNote(data.content, userId, data.title, data.color);
+                // Note: The real subscription will update the list eventually with the real ID, 
+                // replacing the temp one. 
+                // However, subscription updates usually just setNotes(data). 
+                // If the real data comes in, it will overwrite our optimistic state, which is fine!
+            } catch (error) {
+                console.error("Failed to add note:", error);
+                setNotes(originalNotes);
+                alert("Eslatmani qo'shishda xatolik yuz berdi");
+            }
+        }
+    };
 
     const filteredNotes = notes
         .filter(n =>
@@ -87,7 +148,7 @@ export const NotesPage: React.FC = () => {
         );
 
     return (
-        <div className="h-full flex flex-col space-y-6 p-6 overflow-hidden">
+        <div className="h-full flex flex-col space-y-4 overflow-hidden">
             {/* Header / Actions */}
             <div className="p-3 bg-white rounded-3xl shadow-custom flex flex-col gap-4 flex-shrink-0">
                 <div className="flex items-center justify-between gap-4">
@@ -170,6 +231,7 @@ export const NotesPage: React.FC = () => {
                 isOpen={isModalOpen} // Changed from isAddModalOpen
                 onClose={handleCloseModal}
                 noteToEdit={noteToEdit}
+                onSave={handleSaveNote}
             />
 
             <DeleteModal

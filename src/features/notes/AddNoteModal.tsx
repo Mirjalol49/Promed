@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Palette } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 import { Portal } from '../../components/ui/Portal';
-import { noteService } from '../../services/noteService';
-import { useAccount } from '../../contexts/AccountContext';
 import { Note } from '../../types';
 
 interface AddNoteModalProps {
     isOpen: boolean;
     onClose: () => void;
     noteToEdit?: Note | null;
+    onSave: (data: { title: string; content: string; color: string }) => Promise<void>;
 }
 
 const colors = [
@@ -19,13 +18,11 @@ const colors = [
     { id: 'purple', bg: 'bg-purple-200', border: 'border-purple-300' },
 ];
 
-export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, noteToEdit }) => {
+export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, noteToEdit, onSave }) => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [selectedColor, setSelectedColor] = useState('blue');
     const [isLoading, setIsLoading] = useState(false);
-
-    const { userId } = useAccount();
 
     useEffect(() => {
         if (isOpen) {
@@ -43,19 +40,15 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!content.trim() || !userId) return;
+        if (!content.trim()) return;
 
         setIsLoading(true);
         try {
-            if (noteToEdit) {
-                await noteService.updateNote(noteToEdit.id, {
-                    title,
-                    content,
-                    color: selectedColor
-                });
-            } else {
-                await noteService.addNote(content, userId, title, selectedColor);
-            }
+            await onSave({
+                title,
+                content,
+                color: selectedColor
+            });
             onClose();
         } catch (error) {
             console.error(error);

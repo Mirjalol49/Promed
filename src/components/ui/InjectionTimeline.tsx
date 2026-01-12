@@ -53,11 +53,11 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
     };
 
     return (
-        <div className="bg-white rounded-3xl border-2 border-dashed border-promed-primary/60 shadow-apple flex flex-col relative overflow-hidden">
+        <div className="bg-white rounded-3xl border-2 border-solid border-promed-primary/60 shadow-apple flex flex-col relative overflow-hidden">
 
             <div className="relative">
                 {/* 1. Header Area (Static) */}
-                <div className="p-5 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 z-30 bg-white/95 backdrop-blur-md border-b border-dashed border-promed-primary/20 rounded-t-3xl transition-all duration-300">
+                <div className="p-5 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 z-30 bg-white/95 backdrop-blur-md border-b border-solid border-promed-primary/20 rounded-t-3xl transition-all duration-300">
                     <div>
                         <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
                             {t('injection_schedule')}
@@ -104,16 +104,16 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                         {/* SEGMENTED CONNECTION LINE */}
                                         {!isLast && (
                                             <div
-                                                className={`absolute w-1 left-[-4px] top-8 h-[calc(100%+4.5rem)] -z-10 rounded-full
-                                                    ${isDone ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-gradient-to-b from-indigo-200 to-slate-100 opacity-60'}
+                                                className={`absolute w-0.5 left-[7px] top-10 h-[calc(100%+4.5rem)] -z-10
+                                                    ${isDone ? 'bg-emerald-500' : 'bg-indigo-300'}
                                                 `}
                                             />
                                         )}
 
                                         {/* THE CONNECTOR NODE */}
                                         <div className={`
-                                          absolute -left-[1.15rem] top-6 
-                                          w-8 h-8 rounded-full border-[3px] border-white shadow-md z-10
+                                          absolute -left-[8px] top-6 
+                                          w-8 h-8 rounded-full border-[3px] border-white shadow-lg z-10
                                           transition-all duration-500 flex items-center justify-center
                                           ${isDone ? 'bg-emerald-500 scale-110 shadow-emerald-200' :
                                                 isMissed ? 'bg-red-500' :
@@ -127,8 +127,8 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                         </div>
 
                                         {/* THE CARD */}
-                                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 
-                                      hover:shadow-lg hover:border-blue-100/50 
+                                        <div className="bg-[hsl(204,66%,92%)] p-5 rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] border border-blue-100/50 
+                                      hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.2)] hover:border-blue-200 
                                       transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.01]
                                        flex flex-col md:flex-row justify-between items-start group/card relative overflow-hidden pr-5 gap-4 md:gap-0">
 

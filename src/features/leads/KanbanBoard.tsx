@@ -147,7 +147,7 @@ export const KanbanBoard: React.FC = () => {
         });
 
     return (
-        <div className="h-full flex flex-col space-y-6 p-6 overflow-hidden">
+        <div className="h-full flex flex-col space-y-4 overflow-hidden">
             {/* Header / Tabs */}
             <div className="p-3 bg-white rounded-3xl shadow-custom flex flex-col gap-4 flex-shrink-0">
                 {/* Actions (Search + View Toggle + Add) - Top Row */}

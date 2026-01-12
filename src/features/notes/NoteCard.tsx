@@ -31,8 +31,8 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit, onDelete }) =>
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             className={`
-                group relative flex flex-col min-h-[160px] p-5 rounded-3xl
-                ${bgClass} shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer
+                group relative flex flex-col min-h-[160px] p-5 rounded-3xl border border-transparent
+                ${bgClass} shadow-custom hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer
             `}
             onClick={() => onEdit(note)}
         >
