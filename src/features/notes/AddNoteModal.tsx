@@ -11,11 +11,11 @@ interface AddNoteModalProps {
 }
 
 const colors = [
-    { id: 'blue', bg: 'bg-blue-200', border: 'border-blue-300' },
-    { id: 'yellow', bg: 'bg-yellow-100', border: 'border-yellow-200' },
-    { id: 'green', bg: 'bg-green-200', border: 'border-green-300' },
-    { id: 'pink', bg: 'bg-pink-200', border: 'border-pink-300' },
-    { id: 'purple', bg: 'bg-purple-200', border: 'border-purple-300' },
+    { id: 'blue', bg: 'bg-blue-200', border: 'border-blue-400' },
+    { id: 'yellow', bg: 'bg-yellow-100', border: 'border-yellow-400' },
+    { id: 'green', bg: 'bg-green-200', border: 'border-green-400' },
+    { id: 'pink', bg: 'bg-pink-200', border: 'border-pink-400' },
+    { id: 'purple', bg: 'bg-purple-200', border: 'border-purple-400' },
 ];
 
 export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, noteToEdit, onSave }) => {

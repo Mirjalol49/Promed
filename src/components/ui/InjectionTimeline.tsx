@@ -127,9 +127,9 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                         </div>
 
                                         {/* THE CARD */}
-                                        <div className="bg-[hsl(204,66%,92%)] p-5 rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] border border-blue-100/50 
-                                      hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.2)] hover:border-blue-200 
-                                      transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.01]
+                                        <div className="bg-[hsl(204,66%,92%)] p-5 rounded-2xl shadow-custom border border-blue-100/50 
+                                      hover:scale-[1.02] hover:border-blue-200 
+                                      transition-all duration-300 transform active:scale-[0.98]
                                        flex flex-col md:flex-row justify-between items-start group/card relative overflow-hidden pr-5 gap-4 md:gap-0">
 
                                             {/* Hover Gloss Effect */}
@@ -210,7 +210,7 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                                 });
                                                                 onUpdateStatus(inj.id, InjectionStatus.COMPLETED);
                                                             }}
-                                                            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-6 py-2 bg-white border border-emerald-200 text-emerald-600 rounded-xl text-xs font-bold shadow-sm hover:shadow-md hover:bg-emerald-50 transition-all z-20 whitespace-nowrap"
+                                                            className="btn-premium-emerald flex-1 md:flex-none !px-6 !py-2 !text-xs shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 z-20 whitespace-nowrap"
                                                         >
                                                             <Check size={14} strokeWidth={3} />
                                                             <span>{t('status_completed')}</span>

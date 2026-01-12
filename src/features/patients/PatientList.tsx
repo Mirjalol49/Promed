@@ -227,7 +227,7 @@ const PhotoLabelModal: React.FC<{
                   type="number"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl outline-none transition-all text-slate-900 font-medium"
+                  className="w-full p-3 bg-white border border-slate-400 rounded-xl outline-none transition-all text-slate-900 font-medium"
                   placeholder="3"
                   autoFocus
                 />
@@ -348,7 +348,7 @@ export const PatientList: React.FC<{
               placeholder={t('search')}
               value={searchQuery}
               onChange={(e) => onSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary/50 transition-all font-medium text-sm"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-400 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary/50 transition-all font-medium text-sm"
             />
           </div>
           {/* Add Button */}
@@ -1231,7 +1231,7 @@ export const AddPatientForm: React.FC<{
                         <div className="relative group">
                           <User size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                           <input required type="text" value={fullName} onChange={e => setFullName(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-400 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                             placeholder="Mirjalol Shamsiddinov" />
                         </div>
                       </div>
@@ -1257,7 +1257,7 @@ export const AddPatientForm: React.FC<{
                                 // input.setSelectionRange(5, 5);
                               }
                             }}
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-400 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                             placeholder="+998 93 748 91 41"
                           />
                         </div>
@@ -1269,7 +1269,7 @@ export const AddPatientForm: React.FC<{
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('age')}</label>
                         <input required type="number" value={age} onChange={e => setAge(e.target.value)}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-400 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                           placeholder="32" />
                       </div>
                       <div className="space-y-1.5">
@@ -1319,7 +1319,7 @@ export const AddPatientForm: React.FC<{
                         <div className="relative group">
                           <Hash size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                           <input type="number" value={grafts} onChange={e => setGrafts(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-400 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                             placeholder="2500" />
                         </div>
                       </div>

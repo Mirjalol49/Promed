@@ -130,7 +130,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
             w-full p-3 bg-white border rounded-xl flex items-center justify-between cursor-pointer transition-all
-            ${isOpen ? 'ring-2 ring-promed-primary border-promed-primary' : 'border-slate-300 hover:border-slate-400'}
+            ${isOpen ? 'ring-2 ring-promed-primary border-promed-primary' : 'border-slate-400 hover:border-slate-500'}
         `}
             >
                 <div className="flex items-center space-x-3 text-slate-700">

@@ -69,7 +69,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                         ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
                         : isOpen
                             ? 'bg-white border-promed-primary ring-2 ring-promed-primary/20 shadow-lg'
-                            : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm hover:shadow'
+                            : 'bg-white border-slate-400 hover:border-slate-500 shadow-sm hover:shadow'
                     }
         `}
             >

@@ -147,9 +147,9 @@ export const KanbanBoard: React.FC = () => {
         });
 
     return (
-        <div className="h-full flex flex-col space-y-4 overflow-hidden">
+        <div className="h-full flex flex-col space-y-4 overflow-hidden p-1.5">
             {/* Header / Tabs */}
-            <div className="p-3 bg-white rounded-3xl shadow-custom flex flex-col gap-4 flex-shrink-0">
+            <div className="p-5 bg-white rounded-3xl shadow-custom flex flex-col gap-4 flex-shrink-0">
                 {/* Actions (Search + View Toggle + Add) - Top Row */}
                 <div className="flex items-center justify-between gap-3">
                     {/* View Toggle REMOVED */}
@@ -180,7 +180,7 @@ export const KanbanBoard: React.FC = () => {
                                     placeholder={t('search')}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary/50 transition-all font-medium text-sm"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-400 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary/50 transition-all font-medium text-sm"
                                 />
                             </div>
 
@@ -229,7 +229,7 @@ export const KanbanBoard: React.FC = () => {
             </div>
 
             {/* List Area */}
-            <div className="flex-1 overflow-y-auto w-full pr-2">
+            <div className="flex-1 overflow-y-auto w-full p-4">
                 {
                     isLoading ? (
                         <div className="flex items-center justify-center h-40" >

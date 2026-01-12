@@ -63,7 +63,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                     w-full p-3.5 bg-white border rounded-2xl flex items-center justify-between cursor-pointer transition-all duration-200
                     ${isOpen
                         ? 'border-blue-500 ring-4 ring-blue-500/10'
-                        : 'border-slate-200 hover:border-slate-300'
+                        : 'border-slate-400 hover:border-slate-500'
                     }
                 `}
             >

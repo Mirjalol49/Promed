@@ -148,9 +148,9 @@ export const NotesPage: React.FC = () => {
         );
 
     return (
-        <div className="h-full flex flex-col space-y-4 overflow-hidden">
+        <div className="h-full flex flex-col space-y-4 overflow-hidden p-1.5">
             {/* Header / Actions */}
-            <div className="p-3 bg-white rounded-3xl shadow-custom flex flex-col gap-4 flex-shrink-0">
+            <div className="p-5 bg-white rounded-3xl shadow-custom flex flex-col gap-4 flex-shrink-0">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
@@ -175,7 +175,7 @@ export const NotesPage: React.FC = () => {
                                 placeholder="Qidirish..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-400 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
                             />
                         </div>
                         <button
@@ -193,7 +193,7 @@ export const NotesPage: React.FC = () => {
             </div>
 
             {/* List Area */}
-            <div className="flex-1 overflow-y-auto w-full pr-2">
+            <div className="flex-1 overflow-y-auto w-full p-4">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-40">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>

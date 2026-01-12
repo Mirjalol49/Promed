@@ -118,7 +118,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                                 required
                                 value={formData.full_name}
                                 onChange={e => setFormData({ ...formData, full_name: e.target.value })}
-                                className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                                className="w-full px-4 py-2 bg-slate-50 border border-slate-400 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
                                 placeholder="Masalan: Mirjalol Shamsiddinov"
                             />
                         </div>
@@ -131,7 +131,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                                 required
                                 value={formData.phone_number}
                                 onChange={e => setFormData({ ...formData, phone_number: e.target.value })}
-                                className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                                className="w-full px-4 py-2 bg-slate-50 border border-slate-400 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
                                 placeholder="+998 90 123 45 67"
                             />
                         </div>
@@ -152,7 +152,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                                                 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold transition-all border
                                                 ${isSelected
                                                     ? 'bg-blue-50 text-blue-600 border-blue-500 ring-1 ring-blue-500 shadow-sm'
-                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}
+                                                    : 'bg-white text-slate-600 border-slate-300 hover:border-slate-400 hover:bg-slate-50'}
                                             `}
                                         >
                                             <Icon size={16} />

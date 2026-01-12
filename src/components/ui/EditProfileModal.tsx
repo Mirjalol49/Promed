@@ -308,7 +308,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                 type="text"
                                 value={nameInput}
                                 onChange={(e) => setNameInput(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:bg-white transition-all text-sm shadow-sm"
+                                className="w-full bg-slate-50 border border-slate-400 rounded-xl px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:bg-white transition-all text-sm shadow-sm"
                             />
                         </div>
 
@@ -320,7 +320,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                     type="email"
                                     value={userEmail}
                                     readOnly
-                                    className="w-full bg-slate-100 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-slate-500 cursor-not-allowed text-sm shadow-sm font-medium"
+                                    className="w-full bg-slate-100 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-slate-500 cursor-not-allowed text-sm shadow-sm font-medium"
                                 />
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/email:opacity-100 transition-opacity pointer-events-none">
                                     <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tight">Verified</span>
@@ -336,7 +336,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                         {[...Array(6)].map((_, idx) => (
                                             <div
                                                 key={idx}
-                                                className="w-12 h-14 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center text-xl font-bold text-promed-dark shadow-sm transition-all duration-200"
+                                                className="w-12 h-14 bg-slate-50 border border-slate-400 rounded-xl flex items-center justify-center text-xl font-bold text-promed-dark shadow-sm transition-all duration-200"
                                             >
                                                 {showCurrentPass ? (currentPassInput[idx] || '•') : '•'}
                                             </div>
@@ -363,7 +363,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                                 value={digit}
                                                 onChange={(e) => handlePinChange(idx, e.target.value)}
                                                 onKeyDown={(e) => handlePinKeyDown(idx, e)}
-                                                className="w-12 h-14 bg-white border border-slate-200 rounded-xl text-center text-xl font-bold text-promed-dark transition-all shadow-sm"
+                                                className="w-12 h-14 bg-white border border-slate-400 rounded-xl text-center text-xl font-bold text-promed-dark transition-all shadow-sm"
                                             />
                                         ))}
                                     </div>

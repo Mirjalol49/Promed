@@ -259,7 +259,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                             <div className="flex items-center gap-4">
                                 <div className={`p-3 rounded-2xl border transition-all duration-300 flex items-center justify-center ${soundEnabled
                                     ? 'gel-blue-style p-3 rounded-2xl border-[#6b9dff] text-white'
-                                    : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                                    : 'bg-slate-100 text-slate-400 border-slate-300'}`}>
                                     {soundEnabled ? <Volume2 size={22} /> : <VolumeX size={22} />}
                                 </div>
                                 <div>
@@ -380,7 +380,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                                         }}
                                         autoComplete="off"
                                         className={`w-10 h-10 sm:w-12 sm:h-12 bg-white border
-                                                ${digit ? 'border-promed-primary ring-2 ring-promed-primary/10 shadow-sm' : 'border-slate-200'}
+                                                ${digit ? 'border-promed-primary ring-2 ring-promed-primary/10 shadow-sm' : 'border-slate-400'}
                                                 rounded-xl text-center text-lg font-bold text-slate-900 transition-all duration-200
                                                 focus:outline-none focus:border-promed-primary focus:ring-4 focus:ring-promed-primary/10
                                                 placeholder:text-slate-300`}

@@ -209,7 +209,7 @@ const Layout: React.FC<LayoutProps> = ({
         </header>
 
         {/* Main Area */}
-        <main className="flex-1 overflow-y-auto no-scrollbar overflow-x-hidden p-4 md:p-4 scroll-smooth z-0">
+        <main className="flex-1 overflow-y-auto no-scrollbar overflow-x-hidden p-6 md:p-8 scroll-smooth z-0">
           <div className="max-w-[1600px] mx-auto text-white">
             <div className="text-slate-900">
               {children}

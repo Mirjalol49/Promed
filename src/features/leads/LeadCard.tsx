@@ -116,11 +116,11 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
 
     const getBackground = (color: string) => {
         switch (color) {
-            case 'blue': return 'bg-blue-100 border-blue-200 shadow-custom hover:scale-[1.02] active:scale-[0.98]';
-            case 'orange': return 'bg-orange-100 border-orange-200 shadow-custom hover:scale-[1.02] active:scale-[0.98]';
-            case 'purple': return 'bg-purple-100 border-purple-200 shadow-custom hover:scale-[1.02] active:scale-[0.98]';
-            case 'emerald': return 'bg-emerald-100 border-emerald-200 shadow-custom hover:scale-[1.02] active:scale-[0.98]';
-            case 'red': return 'bg-red-100 border-red-200 shadow-custom hover:scale-[1.02] active:scale-[0.98]';
+            case 'blue': return 'bg-blue-200 border-transparent shadow-custom hover:scale-[1.02] active:scale-[0.98]';
+            case 'orange': return 'bg-orange-200 border-transparent shadow-custom hover:scale-[1.02] active:scale-[0.98]';
+            case 'purple': return 'bg-purple-200 border-transparent shadow-custom hover:scale-[1.02] active:scale-[0.98]';
+            case 'emerald': return 'bg-emerald-200 border-transparent shadow-custom hover:scale-[1.02] active:scale-[0.98]';
+            case 'red': return 'bg-red-200 border-transparent shadow-custom hover:scale-[1.02] active:scale-[0.98]';
             default: return 'bg-white border-slate-100 shadow-sm text-slate-900';
         }
     };
