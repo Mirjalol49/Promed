@@ -3,6 +3,11 @@ const { onRequest } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 const { Telegraf, Markup } = require("telegraf");
+const OpenAI = require("openai");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -10,6 +15,12 @@ const db = admin.firestore();
 
 // --- CONFIGURATION ---
 const BOT_TOKEN = '8234286653:AAGAD8fDKz9AqirDAqOIaddZuPCq4keln-w';
+// IMPORTANT: Set this in your environment variables or config
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "YOUR_OPENAI_API_KEY";
+
+const openai = new OpenAI({
+    apiKey: OPENAI_API_KEY,
+});
 
 // Initialize Bot
 const bot = new Telegraf(BOT_TOKEN);
@@ -314,5 +325,53 @@ exports.notificationSender = onDocumentCreated("outbound_messages/{msgId}", asyn
             status: 'FAILED',
             error: error.message
         });
+    }
+});
+
+// 4. AI Audio Transcription (HTTPS Callable)
+exports.transcribeAudio = onCall({ region: "us-central1", memory: "1GiB" }, async (request) => {
+    // 1. Authenticate (Optional but recommended)
+    // if (!request.auth) throw new HttpsError('unauthenticated', 'User must be logged in.');
+
+    const { audioBase64, language } = request.data;
+
+    if (!audioBase64) {
+        throw new HttpsError('invalid-argument', 'Missing audio data.');
+    }
+
+    try {
+        console.log("Transcription request received. Language:", language);
+
+        // 2. Convert Base64 -> Temporary File
+        // OpenAI requires a file stream or proper object.
+        const buffer = Buffer.from(audioBase64, 'base64');
+        const tempFilePath = path.join(os.tmpdir(), `audio_${Date.now()}.webm`); // Assuming webm from frontend
+
+        fs.writeFileSync(tempFilePath, buffer);
+        console.log("Audio file written to temp:", tempFilePath);
+
+        // 3. Call OpenAI Whisper
+        // We use fs.createReadStream for the file
+        // Prompt for professional formatting and number handling
+        const prompt = "Transcribe this medical note. Support Uzbek, Russian, and English. Write numbers as digits (e.g., '123' instead of 'bir yuz yigirma uch').";
+
+        const transcription = await openai.audio.transcriptions.create({
+            file: fs.createReadStream(tempFilePath),
+            model: "whisper-1",
+            // language: language, // Commented out to allow auto-detection for multi-language support
+            prompt: prompt,
+            temperature: 0.2, // Lower temperature for more deterministic/accurate output
+        });
+
+        console.log("Transcription success:", transcription.text);
+
+        // 4. Cleanup
+        fs.unlinkSync(tempFilePath);
+
+        return { text: transcription.text };
+
+    } catch (error) {
+        console.error("Transcription Error:", error);
+        throw new HttpsError('internal', 'Failed to transcribe audio.', error.message);
     }
 });
