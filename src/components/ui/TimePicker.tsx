@@ -44,7 +44,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
     // Auto-scroll to selected time on open
     useEffect(() => {
         if (isOpen) {
-            // Small delay to ensure render
+            // Small delay to ensure render and animation completion
             setTimeout(() => {
                 const hourEl = document.getElementById('selected-hour');
                 const minuteEl = document.getElementById('selected-minute');
@@ -55,7 +55,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 if (minuteEl) {
                     minuteEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
                 }
-            }, 100);
+            }, 300);
         }
     }, [isOpen]);
 
@@ -132,7 +132,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                             ))}
                         </div>
 
-                        <div className="flex items-center justify-center text-slate-200 pb-4 text-xl font-light">:</div>
+                        <div className="flex items-center justify-center text-slate-200 text-xl font-light">:</div>
 
                         {/* Minutes */}
                         <div className="flex-1 overflow-y-auto no-scrollbar py-2 text-center space-y-1 scroll-smooth">
