@@ -68,7 +68,7 @@ export const SystemAlertProvider: React.FC<{ children: ReactNode }> = ({ childre
     const alerts = useMemo(() => {
         // Filter global alerts: Only show those created after the user joined
         const visibleGlobalAlerts = globalAlerts.filter(alert => {
-            if (!createdAt) return true; // Fallback if no creation date yet
+            if (!createdAt) return false; // Don't show global alerts until we know the user's creation time
             return new Date(alert.created_at) >= new Date(createdAt);
         });
 

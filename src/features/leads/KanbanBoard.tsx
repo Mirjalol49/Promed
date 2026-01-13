@@ -151,29 +151,16 @@ export const KanbanBoard: React.FC = () => {
             {/* Header / Tabs */}
             <div className="p-5 bg-white rounded-3xl shadow-custom flex flex-col gap-4 flex-shrink-0">
                 {/* Actions (Search + View Toggle + Add) - Top Row */}
-                <div className="flex items-center justify-between gap-3">
-                    {/* View Toggle REMOVED */}
-
-                    <div className="flex items-center gap-3 w-full justify-between">
-                        {/* Pipeline Tabs - Moved to be inline or adjust layout? The design implies they are below. */}
-                        {/* Actually, user layout had toggle on left, search/add on right? No, check original. */}
-                        {/* Original: <div className="flex items-center justify-between gap-3"> <ViewToggle> <RightGroup>... */}
-                        {/* To remove Toggle but keep alignment, we might need a spacer or just let it flow. */}
-                        {/* Let's keep the Search+Add group on the right, and maybe put Tabs on left? */}
-                        {/* Original Bottom Row was tabs. Top Row was Actions. */}
-                        {/* If we remove toggle (left side of Top Row), we just have Right Group (Search+Add). */}
-                        {/* Let's structure Top Row to justify-end then. */}
-
-                        <div className="flex space-x-2 overflow-x-auto no-scrollbar -mx-1 px-1 py-1 flex-1">
-                            {/* Moving Tabs to Top Row Left side? Or keeping them in separate row? */}
-                            {/* User image shows Toggle next to Tabs? No, image shows Toggle in a top bar. */}
-                            {/* Let's sticking to removing the toggle div. */}
-                            {/* To keep the search on the right, we can use justify-end for the top row container if toggle is gone. */}
+                <div className="flex flex-col gap-3">
+                    <h1 className="text-xl font-bold md:hidden text-slate-800">Leads</h1>
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                        <div className="flex space-x-2 overflow-x-auto no-scrollbar -mx-1 px-1 py-1 flex-1 hidden md:flex">
+                            {/* Desktop Spacer or Tabs if we moved them back */}
                         </div>
 
-                        <div className="flex items-center gap-3 ml-auto">
+                        <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto ml-auto">
                             {/* Search */}
-                            <div className="relative w-64">
+                            <div className="relative w-full md:w-64">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <input
                                     type="text"
@@ -190,17 +177,17 @@ export const KanbanBoard: React.FC = () => {
                                     setLeadToEdit(null);
                                     setAddModalOpen(true);
                                 }}
-                                className="btn-premium-blue shadow-lg shadow-promed-primary/20 flex items-center gap-2 px-5 py-2.5 flex-shrink-0 whitespace-nowrap"
+                                className="btn-premium-blue shadow-lg shadow-promed-primary/20 flex items-center justify-center gap-2 px-5 py-2.5 flex-shrink-0 whitespace-nowrap w-full md:w-auto"
                             >
                                 <PlusCircle size={18} className="relative z-10" />
-                                <span>Qo'shish</span>
+                                <span className="font-bold">Qo'shish</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
                 {/* Pipeline Tabs - Bottom Row */}
-                <div className="flex space-x-2 overflow-x-auto no-scrollbar -mx-1 px-1 py-1">
+                <div className="grid grid-cols-2 gap-2 md:flex md:space-x-2 md:overflow-x-auto md:no-scrollbar">
                     {TAB_CONFIG.map(tab => {
                         const count = leads.filter(l => l.status === tab.id).length;
                         const isActive = activeTab === tab.id;
@@ -210,14 +197,14 @@ export const KanbanBoard: React.FC = () => {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`
-                                    group flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 border whitespace-nowrap flex-shrink-0
+                                    group flex items-center justify-center gap-2 px-2 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 border whitespace-nowrap w-full md:w-auto
                                     ${getTabStyles(tab.id, isActive)}
                                 `}
                             >
-                                <tab.icon size={18} className={`relative z-10 transition-colors ${getIconClass(tab.id, isActive)}`} />
-                                <span className="relative z-10">{tab.label}</span>
+                                <tab.icon size={16} className={`relative z-10 transition-colors flex-shrink-0 ${getIconClass(tab.id, isActive)}`} />
+                                <span className="relative z-10 truncate max-w-[100px] md:max-w-none">{tab.label}</span>
                                 <span className={`
-                                    relative z-10 px-2 py-0.5 rounded-lg text-xs font-extrabold ml-1 transition-all
+                                    relative z-10 px-2 py-0.5 rounded-lg text-xs font-extrabold flex-shrink-0 transition-all
                                     ${getCountStyles(tab.id, isActive)}
                                 `}>
                                     {count}

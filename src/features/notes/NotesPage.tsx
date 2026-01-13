@@ -151,8 +151,8 @@ export const NotesPage: React.FC = () => {
         <div className="h-full flex flex-col space-y-4 overflow-hidden p-1.5">
             {/* Header / Actions */}
             <div className="p-5 bg-white rounded-3xl shadow-custom flex flex-col gap-4 flex-shrink-0">
-                <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                    <div className="flex items-center justify-between md:justify-start gap-4">
                         <div className="flex items-center gap-2">
                             <div className="p-2.5 bg-yellow-100 rounded-xl">
                                 <FileText className="text-yellow-600" size={24} />
@@ -162,13 +162,10 @@ export const NotesPage: React.FC = () => {
                                 {notes.length}
                             </span>
                         </div>
-
-                        {/* View Toggle */}
-
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <div className="relative w-72">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+                        <div className="relative w-full md:w-72">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                             <input
                                 type="text"
@@ -180,10 +177,10 @@ export const NotesPage: React.FC = () => {
                         </div>
                         <button
                             onClick={() => {
-                                setNoteToEdit(undefined);
+                                setNoteToEdit(null);
                                 setIsModalOpen(true);
                             }}
-                            className="btn-premium-blue shadow-lg shadow-blue-600/20 flex items-center gap-2 px-6 py-3 rounded-xl hover:-translate-y-1 transition-all duration-300"
+                            className="btn-premium-blue shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 px-6 py-3 rounded-xl hover:-translate-y-1 transition-all duration-300 whitespace-nowrap"
                         >
                             <Plus size={20} />
                             <span>Yangi Eslatma</span>
