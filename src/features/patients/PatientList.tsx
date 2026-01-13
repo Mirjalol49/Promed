@@ -362,7 +362,84 @@ export const PatientList: React.FC<{
         </div>
       </div>
 
-      <div className="w-full overflow-x-auto no-scrollbar min-h-[400px]">
+      {/* MOBILE CARD VIEW (Visible only on mobile) */}
+      <div className="block md:hidden">
+        {currentPatients.length > 0 ? (
+          <div className="divide-y divide-slate-100">
+            {currentPatients.map((patient) => {
+              const nextInj = patient.injections.find(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date());
+              return (
+                <div
+                  key={patient.id}
+                  className="p-4 active:bg-slate-50 transition-colors cursor-pointer"
+                  onClick={() => onSelect(patient.id)}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <ProfileAvatar
+                        src={patient.profileImage}
+                        alt={patient.fullName}
+                        size={48}
+                        className="rounded-xl ring-1 ring-slate-100"
+                        fallbackType="user"
+                      />
+                      <div>
+                        <div className="font-bold text-slate-800 text-base">{patient.fullName}</div>
+                        <div className="text-xs text-slate-500 font-medium">
+                          {patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y
+                        </div>
+                      </div>
+                    </div>
+                    {/* Technique Badge */}
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-wider ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                      patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                        'bg-slate-50 text-slate-700 border-slate-200'
+                      }`}>
+                      {patient.technique === 'Hair' ? t('transplant_hair') :
+                        patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
+                          patient.technique === 'Beard' ? t('transplant_beard') : (patient.technique || 'N/A')}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mt-3 pl-[60px]">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t('operation_date')}</p>
+                      <p className="text-sm font-bold text-slate-700">{new Date(patient.operationDate).toLocaleDateString(localeString)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t('next_injection')}</p>
+                      {nextInj ? (
+                        <p className="text-sm font-bold text-blue-600 bg-blue-50 inline-block px-1.5 rounded">
+                          {new Date(nextInj.date).toLocaleDateString(localeString)}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-slate-400 italic">{t('none_scheduled')}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center space-y-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-blue-100/50 blur-3xl rounded-full scale-150"></div>
+              <img
+                src={thinkingMascot}
+                alt="Thinking"
+                className="w-24 h-24 object-contain relative z-10 "
+              />
+            </div>
+            <div className="text-center relative z-10">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest opacity-80 mb-2">{t('empty_patient_list_title') || "No Patients Found"}</h3>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* DESKTOP TABLE VIEW (Visible only on desktop) */}
+      <div className="w-full overflow-x-auto no-scrollbar min-h-[400px] hidden md:block">
         <table className="min-w-full text-left border-collapse">
           <thead className="bg-transparent text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
             <tr>
