@@ -113,7 +113,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                     {/* COLUMNS */}
                     <div className="flex h-40 mb-4 relative">
                         {/* Hours */}
-                        <div className="flex-1 overflow-y-auto no-scrollbar py-2 text-center space-y-1 scroll-smooth">
+                        <div className="flex-1 overflow-y-auto no-scrollbar py-[60px] text-center space-y-1 scroll-smooth">
                             {hours.map(h => (
                                 <button
                                     key={h}
@@ -135,7 +135,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                         <div className="flex items-center justify-center text-slate-200 text-xl font-light">:</div>
 
                         {/* Minutes */}
-                        <div className="flex-1 overflow-y-auto no-scrollbar py-2 text-center space-y-1 scroll-smooth">
+                        <div className="flex-1 overflow-y-auto no-scrollbar py-[60px] text-center space-y-1 scroll-smooth">
                             {minutes.map(m => (
                                 <button
                                     key={m}
