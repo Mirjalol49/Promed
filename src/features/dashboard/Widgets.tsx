@@ -165,31 +165,31 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
         </h3>
 
         <div className="w-full sm:w-auto">
-          <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl relative">
-            {['Operation', 'Injection'].map((tab) => {
-              const isActive = filter === tab;
-              const label = tab === 'Operation' ? t('filter_operations') : t('filter_injections');
-
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setFilter(tab as any)}
-                  className={`relative px-2 py-2 text-xs transition-colors duration-200 z-10 ${isActive ? 'text-slate-900 font-bold' : 'text-slate-500 font-medium hover:text-slate-700'
-                    }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeFilter"
-                      className="absolute inset-0 bg-white rounded-lg shadow-sm ring-1 ring-black/5"
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                      style={{ zIndex: -1 }}
-                    />
-                  )}
-                  <span className="relative z-10">{label}</span>
-                </button>
-              );
-            })}
+          <div className="grid grid-cols-2 gap-1 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50 backdrop-blur-sm relative w-full">
+            <button
+              onClick={() => setFilter('Operation')}
+              className={`relative px-2 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 overflow-hidden w-full ${filter === 'Operation'
+                ? 'text-white shadow-[0_4px_14px_0_rgba(244,63,94,0.39)] bg-gradient-to-r from-rose-500 to-rose-600 border border-rose-400/50'
+                : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 bg-transparent'
+                }`}
+            >
+              {filter === 'Operation' && (
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-white/40 blur-[1px]" />
+              )}
+              {filter === 'Operation' && (
+                <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-80" />
+              )}
+              <span className="relative z-10 truncate block">{t('filter_operations')}</span>
+            </button>
+            <button
+              onClick={() => setFilter('Injection')}
+              className={`relative px-2 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 overflow-hidden w-full ${filter === 'Injection'
+                ? 'text-white shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] bg-gradient-to-r from-promed-primary to-indigo-600 border border-indigo-400/50'
+                : 'text-slate-400 hover:text-promed-primary hover:bg-promed-primary/5 bg-transparent'
+                }`}
+            >
+              <span className="relative z-10 truncate block">{t('filter_injections')}</span>
+            </button>
           </div>
         </div>
       </div>
