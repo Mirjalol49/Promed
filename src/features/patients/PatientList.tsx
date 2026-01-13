@@ -339,9 +339,9 @@ export const PatientList: React.FC<{
     <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-premium">
       {/* List Header */}
       <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-end gap-4 bg-white">
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
           {/* Search */}
-          <div className="relative flex-1 md:w-64">
+          <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
               type="text"
@@ -354,7 +354,7 @@ export const PatientList: React.FC<{
           {/* Add Button */}
           <button
             onClick={onAddPatient}
-            className="btn-premium-blue flex items-center gap-2 px-5 py-2.5 whitespace-nowrap shadow-lg shadow-promed-primary/20"
+            className="btn-premium-blue flex items-center justify-center w-full md:w-auto gap-2 px-5 py-2.5 whitespace-nowrap shadow-lg shadow-promed-primary/20"
           >
             <PlusCircle size={18} className="relative z-10" />
             <span className="relative z-10 font-bold">{t('add_new_patient')}</span>
