@@ -127,7 +127,7 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
         img: p.profileImage,
         type: 'Injection',
         title: 'Plasma Injection',
-        detail: inj.notes || inj.dose || 'Plasma Injection',
+        detail: inj.notes || inj.dose || '',
         dateObj: new Date(inj.date),
         status: inj.status
       })))
