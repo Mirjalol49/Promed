@@ -18,9 +18,10 @@ interface MobileDockProps {
     currentPage: PageView;
     onNavigate: (page: PageView) => void;
     onLock: () => void;
+    isLockEnabled: boolean;
 }
 
-export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate, onLock }) => {
+export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate, onLock, isLockEnabled }) => {
     const { t } = useLanguage();
     const { role } = useAccount();
 
@@ -72,15 +73,18 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                 })}
 
                 {/* Lock Button (Consistent Style) */}
-                <motion.button
-                    onClick={onLock}
-                    whileTap={{ scale: 0.9 }}
-                    className="relative w-12 h-12 flex items-center justify-center rounded-full outline-none group hover:bg-white/40 transition-colors"
-                >
-                    <span className="relative z-10 text-gray-500/80 group-hover:text-rose-500 transition-colors duration-200">
-                        <Lock size={24} strokeWidth={2} />
-                    </span>
-                </motion.button>
+                {/* Only show if Lock Screen is enabled in Settings */}
+                {isLockEnabled && (
+                    <motion.button
+                        onClick={onLock}
+                        whileTap={{ scale: 0.9 }}
+                        className="relative w-12 h-12 flex items-center justify-center rounded-full outline-none group hover:bg-white/40 transition-colors"
+                    >
+                        <span className="relative z-10 text-gray-500/80 group-hover:text-rose-500 transition-colors duration-200">
+                            <Lock size={24} strokeWidth={2} />
+                        </span>
+                    </motion.button>
+                )}
 
             </div>
         </div>

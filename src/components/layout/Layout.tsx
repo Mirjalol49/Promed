@@ -223,6 +223,7 @@ const Layout: React.FC<LayoutProps> = ({
         currentPage={currentPage}
         onNavigate={onNavigate}
         onLock={onLock}
+        isLockEnabled={isLockEnabled}
       />
     </div>
   );
