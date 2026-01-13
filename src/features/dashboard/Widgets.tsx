@@ -165,34 +165,33 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
         </h3>
 
         <div className="w-full sm:w-auto">
-          <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
-            <button
-              onClick={() => setFilter('all')}
-              className={`relative px-2 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${filter === 'all'
-                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-black/5'
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
-                }`}
-            >
-              {t('filter_all')}
-            </button>
-            <button
-              onClick={() => setFilter('Operation')}
-              className={`relative px-2 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${filter === 'Operation'
-                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-black/5'
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
-                }`}
-            >
-              {t('filter_operations')}
-            </button>
-            <button
-              onClick={() => setFilter('Injection')}
-              className={`relative px-2 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${filter === 'Injection'
-                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-black/5'
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
-                }`}
-            >
-              {t('filter_injections')}
-            </button>
+          <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl relative">
+            {['all', 'Operation', 'Injection'].map((tab) => {
+              const isActive = filter === tab;
+              const label = tab === 'all' ? t('filter_all') :
+                tab === 'Operation' ? t('filter_operations') :
+                  t('filter_injections');
+
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setFilter(tab as any)}
+                  className={`relative px-2 py-2 text-xs transition-colors duration-200 z-10 ${isActive ? 'text-slate-900 font-bold' : 'text-slate-500 font-medium hover:text-slate-700'
+                    }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeFilter"
+                      className="absolute inset-0 bg-white rounded-lg shadow-sm ring-1 ring-black/5"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      style={{ zIndex: -1 }}
+                    />
+                  )}
+                  <span className="relative z-10">{label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
