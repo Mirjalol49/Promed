@@ -62,7 +62,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <div className="p-2 bg-promed-primary/10 rounded-xl border border-promed-primary/10 ">
                             <Activity className="w-5 h-5 text-promed-primary" />
                         </div>
-                        {t('overview') || 'Global Overview'}
+                        {t('overview')}
                     </h3>
                     <div id="stats-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         <StatCard
