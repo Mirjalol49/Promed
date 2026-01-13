@@ -362,30 +362,7 @@ export const PatientList: React.FC<{
         </div>
       </div>
 
-      {/* FILTER TABS (All / Hair / Eyebrow) */}
-      <div className="px-5 pb-5 bg-white border-b border-slate-100">
-        <div className="flex p-1 bg-slate-100 rounded-xl overflow-hidden">
-          {['all', 'Hair', 'Eyebrow', 'Beard'].map((tab) => {
-            const label = tab === 'all' ? t('see_all') :
-              tab === 'Hair' ? t('transplant_hair') :
-                tab === 'Eyebrow' ? t('transplant_eyebrow') :
-                  t('transplant_beard');
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-2 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 ${isActive
-                  ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
-                  }`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+
 
       {/* MOBILE CARD VIEW (Visible only on mobile) */}
       <div className="block md:hidden">
