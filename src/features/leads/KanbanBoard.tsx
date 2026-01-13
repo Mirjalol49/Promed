@@ -152,7 +152,7 @@ export const KanbanBoard: React.FC = () => {
             <div className="p-5 bg-white rounded-3xl shadow-custom flex flex-col gap-4 flex-shrink-0">
                 {/* Actions (Search + View Toggle + Add) - Top Row */}
                 <div className="flex flex-col gap-3">
-                    <h1 className="text-xl font-bold md:hidden text-slate-800">Leads</h1>
+
                     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                         <div className="flex space-x-2 overflow-x-auto no-scrollbar -mx-1 px-1 py-1 flex-1 hidden md:flex">
                             {/* Desktop Spacer or Tabs if we moved them back */}
