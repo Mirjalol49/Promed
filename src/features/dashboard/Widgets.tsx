@@ -90,7 +90,7 @@ interface InjectionAppointmentProps {
 
 export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = ({ patients, onViewPatient }) => {
   const { language, t } = useLanguage();
-  const [filter, setFilter] = useState<'all' | 'Operation' | 'Injection'>('all');
+  const [filter, setFilter] = useState<'all' | 'Operation' | 'Injection'>('Operation');
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -165,12 +165,10 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
         </h3>
 
         <div className="w-full sm:w-auto">
-          <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl relative">
-            {['all', 'Operation', 'Injection'].map((tab) => {
+          <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl relative">
+            {['Operation', 'Injection'].map((tab) => {
               const isActive = filter === tab;
-              const label = tab === 'all' ? t('filter_all') :
-                tab === 'Operation' ? t('filter_operations') :
-                  t('filter_injections');
+              const label = tab === 'Operation' ? t('filter_operations') : t('filter_injections');
 
               return (
                 <button
