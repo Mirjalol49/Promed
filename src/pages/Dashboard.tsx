@@ -56,32 +56,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <TourGuide />
 
             <div className="space-y-10 p-2 sm:p-4">
-                {/* Vitals Strip - Strict 4px Spacing Rule */}
-                <div id="stats-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    <StatCard
-                        label={t('operation')}
-                        value={todaysOperationsCount}
-                        icon={Activity}
-                        mascotImg={operationIcon}
-                        colorClass="bg-rose-500"
-                        shadowColor=""
-                    />
-                    <StatCard
-                        label={t('injection')}
-                        value={stats.upcoming}
-                        icon={Syringe}
-                        mascotImg={injectionIcon}
-                        colorClass="bg-promed-primary"
-                        shadowColor=""
-                    />
-                    <StatCard
-                        label={t('patients')}
-                        value={stats.active}
-                        icon={Users}
-                        mascotImg={patientsIcon}
-                        colorClass="bg-[hsl(160,100%,30%)]"
-                        shadowColor=""
-                    />
+                {/* Vitals Strip */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-bold text-promed-text tracking-tight flex items-center gap-2 px-2">
+                        <div className="p-2 bg-promed-primary/10 rounded-xl border border-promed-primary/10 ">
+                            <Activity className="w-5 h-5 text-promed-primary" />
+                        </div>
+                        {t('overview') || 'Global Overview'}
+                    </h3>
+                    <div id="stats-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <StatCard
+                            label={t('operation')}
+                            value={todaysOperationsCount}
+                            icon={Activity}
+                            mascotImg={operationIcon}
+                            colorClass="bg-rose-500"
+                            shadowColor=""
+                        />
+                        <StatCard
+                            label={t('injection')}
+                            value={stats.upcoming}
+                            icon={Syringe}
+                            mascotImg={injectionIcon}
+                            colorClass="bg-promed-primary"
+                            shadowColor=""
+                        />
+                        <StatCard
+                            label={t('patients')}
+                            value={stats.active}
+                            icon={Users}
+                            mascotImg={patientsIcon}
+                            colorClass="bg-[hsl(160,100%,30%)]"
+                            shadowColor=""
+                        />
+                    </div>
                 </div>
 
                 {/* Dashboard Grid */}

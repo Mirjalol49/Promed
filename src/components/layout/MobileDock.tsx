@@ -51,7 +51,9 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                             id={item.id}
                             onClick={() => onNavigate(item.page)}
                             whileTap={{ scale: 0.9 }}
-                            className="relative w-12 h-12 flex items-center justify-center rounded-full outline-none"
+                            layout // Enable layout animation for width changes
+                            className={`relative h-12 flex items-center justify-center rounded-full outline-none transition-all duration-300 ${isActive ? 'w-auto px-5 gap-2' : 'w-12'
+                                }`}
                         >
 
                             {/* THE SLIDING "GLASSY PURPLE" LIGHT */}
@@ -64,9 +66,21 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                             )}
 
                             {/* THE ICON */}
-                            <span className={`relative z-10 transition-all duration-200 ${isActive ? 'text-indigo-600' : 'text-gray-500/80'}`}>
+                            <span className={`relative z-10 transition-all duration-200 flex items-center justify-center ${isActive ? 'text-indigo-600' : 'text-gray-500/80'}`}>
                                 <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
                             </span>
+
+                            {/* THE LABEL (Visible only when active) */}
+                            {isActive && (
+                                <motion.span
+                                    initial={{ opacity: 0, width: 0 }}
+                                    animate={{ opacity: 1, width: 'auto' }}
+                                    exit={{ opacity: 0, width: 0 }}
+                                    className="relative z-10 text-[11px] font-bold uppercase tracking-wider text-indigo-600 whitespace-nowrap overflow-hidden"
+                                >
+                                    {item.label}
+                                </motion.span>
+                            )}
 
                         </motion.button>
                     );
