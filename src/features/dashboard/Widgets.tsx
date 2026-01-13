@@ -541,7 +541,7 @@ export const StatCard: React.FC<StatCardProps> = ({
                 </AnimateIcon>
               )}
             </div>
-            <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.25em] text-white/90 drop-shadow-sm">{label}</span>
+            <span className="text-sm md:text-lg font-black uppercase tracking-[0.15em] text-white/90 drop-shadow-sm">{label}</span>
           </div>
           <div className="flex items-baseline space-x-2">
             <span className="text-3xl md:text-5xl font-black tracking-tighter text-white drop-shadow-md">{value}</span>

@@ -41,6 +41,24 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Auto-scroll to selected time on open
+    useEffect(() => {
+        if (isOpen) {
+            // Small delay to ensure render
+            setTimeout(() => {
+                const hourEl = document.getElementById('selected-hour');
+                const minuteEl = document.getElementById('selected-minute');
+
+                if (hourEl) {
+                    hourEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                }
+                if (minuteEl) {
+                    minuteEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                }
+            }, 100);
+        }
+    }, [isOpen]);
+
     const hours = Array.from({ length: 24 }, (_, i) => i);
     const minutes = Array.from({ length: 12 }, (_, i) => i * 5);
 
@@ -95,10 +113,11 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                     {/* COLUMNS */}
                     <div className="flex h-40 mb-4 relative">
                         {/* Hours */}
-                        <div className="flex-1 overflow-y-auto no-scrollbar py-2 text-center space-y-1">
+                        <div className="flex-1 overflow-y-auto no-scrollbar py-2 text-center space-y-1 scroll-smooth">
                             {hours.map(h => (
                                 <button
                                     key={h}
+                                    id={selectedHour === h ? 'selected-hour' : undefined}
                                     onClick={() => handleTimeChange(h, selectedMinute)}
                                     className={`
                                         w-12 h-10 rounded-xl text-lg font-bold transition-all flex items-center justify-center mx-auto
@@ -116,10 +135,11 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                         <div className="flex items-center justify-center text-slate-200 pb-4 text-xl font-light">:</div>
 
                         {/* Minutes */}
-                        <div className="flex-1 overflow-y-auto no-scrollbar py-2 text-center space-y-1">
+                        <div className="flex-1 overflow-y-auto no-scrollbar py-2 text-center space-y-1 scroll-smooth">
                             {minutes.map(m => (
                                 <button
                                     key={m}
+                                    id={selectedMinute === m ? 'selected-minute' : undefined}
                                     onClick={() => handleTimeChange(selectedHour, m)}
                                     className={`
                                         w-12 h-10 rounded-xl text-lg font-bold transition-all flex items-center justify-center mx-auto
