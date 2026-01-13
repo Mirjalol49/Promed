@@ -165,42 +165,33 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
         </h3>
 
         <div className="w-full sm:w-auto">
-          <div className="grid grid-cols-3 gap-1 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50 backdrop-blur-sm relative w-full">
+          <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
             <button
               onClick={() => setFilter('all')}
-              className={`relative px-2 sm:px-5 py-2 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all duration-300 overflow-hidden w-full ${filter === 'all'
-                ? 'text-white shadow-[0_4px_14px_0_rgba(59,130,246,0.39)] bg-gradient-to-r from-blue-500 to-blue-600 border border-blue-400/50'
-                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 bg-transparent'
+              className={`relative px-2 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${filter === 'all'
+                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-black/5'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
                 }`}
             >
-              {filter === 'all' && (
-                <div className="absolute inset-0 bg-white/20 opacity-50 skew-x-12 -ml-4" />
-              )}
-              <span className="relative z-10 truncate block">{t('filter_all')}</span>
+              {t('filter_all')}
             </button>
             <button
               onClick={() => setFilter('Operation')}
-              className={`relative px-2 sm:px-5 py-2 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all duration-300 overflow-hidden w-full ${filter === 'Operation'
-                ? 'text-white shadow-[0_4px_14px_0_rgba(244,63,94,0.39)] bg-gradient-to-r from-rose-500 to-rose-600 border border-rose-400/50'
-                : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 bg-transparent'
+              className={`relative px-2 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${filter === 'Operation'
+                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-black/5'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
                 }`}
             >
-              {filter === 'Operation' && (
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-white/40 blur-[1px]" />
-              )}
-              {filter === 'Operation' && (
-                <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-80" />
-              )}
-              <span className="relative z-10 truncate block">{t('filter_operations')}</span>
+              {t('filter_operations')}
             </button>
             <button
               onClick={() => setFilter('Injection')}
-              className={`relative px-2 sm:px-5 py-2 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all duration-300 overflow-hidden w-full ${filter === 'Injection'
-                ? 'text-white shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] bg-gradient-to-r from-promed-primary to-indigo-600 border border-indigo-400/50'
-                : 'text-slate-400 hover:text-promed-primary hover:bg-promed-primary/5 bg-transparent'
+              className={`relative px-2 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${filter === 'Injection'
+                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-black/5'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
                 }`}
             >
-              <span className="relative z-10 truncate block">{t('filter_injections')}</span>
+              {t('filter_injections')}
             </button>
           </div>
         </div>
