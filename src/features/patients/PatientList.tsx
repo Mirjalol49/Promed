@@ -282,31 +282,43 @@ export const PatientList: React.FC<{
 
   // --- Pagination State ---
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<string>('all');
   const ITEMS_PER_PAGE = 10;
 
-  // --- Reset Page on Search ---
+  // --- Reset Page on Search or Tab Change ---
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, patients.length]);
+  }, [searchQuery, activeTab, patients.length]);
 
   // --- Computation ---
-  const totalPages = Math.ceil(patients.length / ITEMS_PER_PAGE);
+  // 1. Filter by Search
+  const searchFiltered = patients.filter(p =>
+    p.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.phone.includes(searchQuery)
+  );
+
+  // 2. Filter by Tab
+  const tabFiltered = activeTab === 'all'
+    ? searchFiltered
+    : searchFiltered.filter(p => p.technique === activeTab);
+
+  const totalPages = Math.ceil(tabFiltered.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
 
   // Simple slice (removed useMemo to prevent stale closure issues)
-  const currentPatients = patients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const currentPatients = tabFiltered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   // --- SAFETY RESETS ---
   useEffect(() => {
     // If we have patients but current view is empty (e.g. deleted last item on page 2), reset to page 1
-    if (patients.length > 0 && currentPatients.length === 0) {
+    if (tabFiltered.length > 0 && currentPatients.length === 0) {
       console.warn("⚠️ PatientList: Page empty but data exists. Resetting to Page 1.");
       setCurrentPage(1);
     }
-  }, [patients.length, currentPatients.length]);
+  }, [tabFiltered.length, currentPatients.length]);
 
-  const startCount = patients.length > 0 ? startIndex + 1 : 0;
-  const endCount = Math.min(startIndex + ITEMS_PER_PAGE, patients.length);
+  const startCount = tabFiltered.length > 0 ? startIndex + 1 : 0;
+  const endCount = Math.min(startIndex + ITEMS_PER_PAGE, tabFiltered.length);
 
 
   const handlePrevPage = () => {
@@ -359,6 +371,31 @@ export const PatientList: React.FC<{
             <PlusCircle size={18} className="relative z-10" />
             <span className="relative z-10 font-bold">{t('add_new_patient')}</span>
           </button>
+        </div>
+      </div>
+
+      {/* FILTER TABS (All / Hair / Eyebrow) */}
+      <div className="px-5 pb-5 bg-white border-b border-slate-100">
+        <div className="flex p-1 bg-slate-100 rounded-xl overflow-hidden">
+          {['all', 'Hair', 'Eyebrow', 'Beard'].map((tab) => {
+            const label = tab === 'all' ? t('see_all') :
+              tab === 'Hair' ? t('transplant_hair') :
+                tab === 'Eyebrow' ? t('transplant_eyebrow') :
+                  t('transplant_beard');
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-2 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 ${isActive
+                    ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200'
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                  }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
