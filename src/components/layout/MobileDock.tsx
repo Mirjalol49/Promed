@@ -36,9 +36,9 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
     return (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden w-auto max-w-[95vw]">
             {/* THE CONTAINER: Floating Glass Dock */}
-            <div className="flex items-center gap-2 p-2 rounded-[2rem] bg-white/80 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] ring-1 ring-white/50">
+            <div className="flex items-center gap-2 p-2 rounded-[2rem] bg-white/80 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] ring-1 ring-white/50 max-w-full overflow-x-auto no-scrollbar">
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 min-w-max">
                     {dockItems.map((item) => {
                         const isActive = currentPage === item.page;
 
