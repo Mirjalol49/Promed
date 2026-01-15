@@ -940,6 +940,16 @@ export const translations = {
     tour_stats_desc: "Здесь вы можете отслеживать статистику операций и инъекций.",
     tour_add_btn_desc: "Самая важная кнопка! Нажмите здесь, чтобы добавить нового пациента.",
 
+    // Kanban
+    status_new: "Новый",
+    status_contacted: "Связались",
+    status_photos_sent: "Фото отправлены",
+    status_price_given: "Цена озвучена",
+    status_booked: "Операция",
+    status_lost: "Отменено",
+    edit_lead: "Редактировать",
+    add_new_lead: "Добавить лид",
+
     // Note Status
     urgency: "Срочно",
     todo: "Задача",
