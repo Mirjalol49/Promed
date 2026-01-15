@@ -134,7 +134,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         `}
             >
                 <div className="flex items-center space-x-3 text-slate-700">
-                    <img src={dateIcon} alt="Calendar" className="w-5 h-5 object-contain opacity-70" />
+                    <Calendar className="w-5 h-5 text-slate-500/70" />
                     <span className={value ? 'font-medium' : 'text-slate-400'}>
                         {value ? formatDateDisplay(value) : t('select_date')}
                     </span>

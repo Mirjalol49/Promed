@@ -58,7 +58,7 @@ import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
 
 import { useReliableUpload } from '../../hooks/useReliableUpload';
 import trashIcon from '../../assets/images/patients.png'; // Fallback for missing trash.png
-import dateIcon from '../../assets/images/patients.png'; // Fallback for missing date.png
+// Fallback for missing date.png removed as unused
 import editIcon from '../../assets/images/patients.png'; // Fallback for missing edit.png
 
 // Helper to translate status
