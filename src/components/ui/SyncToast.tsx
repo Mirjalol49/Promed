@@ -119,8 +119,8 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
                             <div className="bg-white/95 backdrop-blur-xl rounded-[24px] min-w-[260px] max-w-[80vw] md:max-w-md relative z-10 pointer-events-auto overflow-hidden border border-white/50 shadow-sm ring-1 ring-black/5">
 
                                 {/* Content */}
-                                <div className="px-6 py-5 flex items-center justify-center min-h-[64px] relative z-10">
-                                    <h3 className={`font-black text-lg md:text-2xl leading-tight text-center tracking-tight ${config.titleColor}`}>
+                                <div className="px-4 py-3 flex items-center justify-center min-h-[48px] relative z-10">
+                                    <h3 className={`font-bold text-sm md:text-xl leading-tight text-center tracking-tight ${config.titleColor}`}>
                                         {title}
                                     </h3>
                                 </div>
