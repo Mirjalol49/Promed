@@ -56,6 +56,7 @@ import upsetIcon from './components/mascot/upset_mascot.png';
 import operationIcon from './assets/images/operation.png';
 import injectionIcon from './assets/images/injection.png';
 import thinkingIcon from './components/mascot/thinking_mascot.png';
+import injectionMascot from './components/mascot/injection_mascot.png';
 
 // --- Lock Screen Component ---
 const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = ({ onUnlock, correctPassword }) => {
@@ -626,7 +627,7 @@ const App: React.FC = () => {
       // 4. Update Local State
       setAccount(accountId!, userId, data.name, userEmail, 'doctor', true, avatarUrl || userImage); // Updates name & image context
 
-      success(t('profile_updated_title'), t('profile_updated_msg'), happyIcon);
+      success(t('profile_updated_title'), t('profile_updated_msg'), injectionMascot);
 
     } catch (err: any) {
       console.error("Error updating profile:", err);
