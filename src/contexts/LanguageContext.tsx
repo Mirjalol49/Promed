@@ -306,6 +306,11 @@ export const translations = {
     urgency: "Urgency",
     todo: "Todo",
     note: "Note",
+    my_notes: "My Notes",
+    new_note: "New Note",
+    no_notes_found: "No notes found",
+    no_leads: "No leads",
+    add_btn: "Add",
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -627,6 +632,11 @@ export const translations = {
     urgency: "Shoshilinch",
     todo: "Vazifa",
     note: "Eslatma",
+    my_notes: "Eslatmalarim",
+    new_note: "Yangi Eslatma",
+    no_notes_found: "Eslatmalar topilmadi",
+    no_leads: "Murojaatlar yo'q",
+    add_btn: "Qo'shish",
   },
   ru: {
     dashboard: "Панель управления",
@@ -934,6 +944,11 @@ export const translations = {
     urgency: "Срочно",
     todo: "Задача",
     note: "Заметка",
+    my_notes: "Мои заметки",
+    new_note: "Новая заметка",
+    no_notes_found: "Заметки не найдены",
+    no_leads: "Лидов нет",
+    add_btn: "Добавить",
   }
 };
 

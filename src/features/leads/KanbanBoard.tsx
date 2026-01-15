@@ -180,7 +180,7 @@ export const KanbanBoard: React.FC = () => {
                                 className="btn-premium-blue shadow-lg shadow-promed-primary/20 flex items-center justify-center gap-2 px-5 py-2.5 flex-shrink-0 whitespace-nowrap w-full md:w-auto"
                             >
                                 <PlusCircle size={18} className="relative z-10" />
-                                <span className="font-bold">Qo'shish</span>
+                                <span className="font-bold">{t('add_btn')}</span>
                             </button>
                         </div>
                     </div>
@@ -227,7 +227,7 @@ export const KanbanBoard: React.FC = () => {
                             <div className={`p-4 rounded-full bg-${activeColor}-50 text-${activeColor}-500 mb-3`}>
                                 <LayoutTemplate size={32} />
                             </div>
-                            <h3 className="text-lg font-medium text-slate-900">Murojaatlar yo'q</h3>
+                            <h3 className="text-lg font-medium text-slate-900">{t('no_leads')}</h3>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-in fade-in duration-300 pb-20">

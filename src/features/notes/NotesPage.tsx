@@ -6,12 +6,14 @@ import {
 } from 'lucide-react';
 import { noteService } from '../../services/noteService';
 import { useAccount } from '../../contexts/AccountContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Note } from '../../types';
 import { NoteCard } from './NoteCard';
 import { AddNoteModal } from './AddNoteModal';
 import DeleteModal from '../../components/ui/DeleteModal';
 
 export const NotesPage: React.FC = () => {
+    const { t } = useLanguage();
     const { userId, isLoading: isAuthLoading } = useAccount();
     const [notes, setNotes] = useState<Note[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -157,7 +159,7 @@ export const NotesPage: React.FC = () => {
                             <div className="p-2.5 bg-yellow-100 rounded-xl">
                                 <FileText className="text-yellow-600" size={24} />
                             </div>
-                            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Eslatmalarim</h1>
+                            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{t('my_notes')}</h1>
                             <span className="bg-slate-100 px-2.5 py-0.5 rounded-lg text-sm font-bold text-slate-600">
                                 {notes.length}
                             </span>
@@ -169,7 +171,7 @@ export const NotesPage: React.FC = () => {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                             <input
                                 type="text"
-                                placeholder="Qidirish..."
+                                placeholder={t('search')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-400 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
@@ -183,7 +185,7 @@ export const NotesPage: React.FC = () => {
                             className="btn-premium-blue shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 px-6 py-3 rounded-xl hover:-translate-y-1 transition-all duration-300 whitespace-nowrap"
                         >
                             <Plus size={20} />
-                            <span>Yangi Eslatma</span>
+                            <span>{t('new_note')}</span>
                         </button>
                     </div>
                 </div>
@@ -200,7 +202,7 @@ export const NotesPage: React.FC = () => {
                         <div className="p-4 bg-slate-100 rounded-full mb-4">
                             <FileText size={40} className="text-slate-400" />
                         </div>
-                        <h3 className="text-lg font-bold text-slate-700">Eslatmalar topilmadi</h3>
+                        <h3 className="text-lg font-bold text-slate-700">{t('no_notes_found')}</h3>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-300 pb-20">
