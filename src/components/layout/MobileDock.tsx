@@ -34,9 +34,9 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
     ];
 
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden w-full px-4 max-w-[400px]">
-            {/* THE CONTAINER: Dark Floating Glass Dock */}
-            <div className="flex items-center justify-between px-2 py-3 rounded-[2.5rem] bg-black/80 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.25)] ring-1 ring-white/10 overflow-x-auto no-scrollbar">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden w-full px-4 max-w-[420px]">
+            {/* THE CONTAINER: Light Floating Dock */}
+            <div className="flex items-center justify-between px-2 py-3 rounded-[2rem] bg-white/90 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.12)] ring-1 ring-white/60 overflow-x-auto no-scrollbar">
 
                 {dockItems.map((item) => {
                     const isActive = currentPage === item.page;
@@ -46,18 +46,19 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                             key={item.page}
                             id={item.id}
                             onClick={() => onNavigate(item.page)}
-                            className="relative flex flex-col items-center justify-center min-w-[64px] gap-1 outline-none group"
+                            className="relative flex flex-col items-center justify-center min-w-[60px] gap-1 outline-none group"
                         >
                             {/* Icon Container with Active Squircle Background */}
                             <div className={`
-                                relative p-2 rounded-2xl transition-all duration-300
-                                ${isActive ? 'bg-blue-500/20' : 'bg-transparent'}
+                                relative p-2.5 rounded-2xl transition-all duration-300
+                                ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-transparent text-slate-500 group-hover:bg-slate-100'}
                             `}>
-                                {/* Active Indicator Glow (Background) */}
+                                {/* Active Indicator Animation */}
                                 {isActive && (
                                     <motion.div
-                                        layoutId="activeTab"
-                                        className="absolute inset-0 bg-blue-500 rounded-2xl shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                                        layoutId="activeTabMobile"
+                                        className="absolute inset-0 bg-blue-600 rounded-2xl z-0"
+                                        initial={false}
                                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                     />
                                 )}
@@ -65,32 +66,32 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                                 {/* Icon Itself */}
                                 <div className="relative z-10">
                                     <item.icon
-                                        size={24}
+                                        size={22}
                                         strokeWidth={isActive ? 2.5 : 2}
-                                        className={`transition-colors duration-300 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}
+                                        className={`transition-transform duration-200 ${isActive ? 'scale-105' : 'group-hover:scale-105'}`}
                                     />
                                 </div>
                             </div>
 
                             {/* Label */}
-                            <span className={`text-[10px] font-medium tracking-wide transition-colors duration-300 ${isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                            <span className={`text-[10px] font-bold tracking-tight transition-colors duration-300 ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
                                 {item.label}
                             </span>
                         </button>
                     );
                 })}
 
-                {/* Lock Button (Separated) */}
+                {/* Separator & Lock */}
                 {isLockEnabled && (
-                    <div className="flex items-center pl-2 ml-2 border-l border-white/10">
+                    <div className="flex items-center pl-2 ml-1 border-l border-slate-100">
                         <button
                             onClick={onLock}
-                            className="flex flex-col items-center justify-center min-w-[50px] gap-1 outline-none"
+                            className="flex flex-col items-center justify-center min-w-[48px] gap-1 outline-none group"
                         >
-                            <div className="p-2 rounded-2xl bg-white/5 border border-white/5 active:scale-95 transition-all">
-                                <Lock size={20} className="text-slate-400" />
+                            <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-100 group-active:scale-95 transition-all">
+                                <Lock size={20} className="text-slate-400 group-hover:text-slate-600" />
                             </div>
-                            <span className="text-[10px] font-medium text-slate-500">Lock</span>
+                            <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider group-hover:text-slate-400">Lock</span>
                         </button>
                     </div>
                 )}
