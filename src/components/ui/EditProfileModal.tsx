@@ -32,7 +32,6 @@ import { ImageUploadingOverlay } from './ImageUploadingOverlay';
 
 import lockIcon from '../../assets/images/lock.png';
 import cameraIcon from '../../assets/images/camera_icon.png';
-import injectionMascot from '../../components/mascot/injection_mascot.png';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -185,7 +184,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             });
 
             console.log("✓ Profile saved successfully!");
-            success(t('profile_updated_title'), t('profile_updated_msg'), injectionMascot);
+            success(t('profile_updated_title'), t('profile_updated_msg'));
 
             onClose();
 
