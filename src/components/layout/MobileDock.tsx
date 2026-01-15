@@ -49,17 +49,32 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                                 onClick={() => onNavigate(item.page)}
                                 layout
                                 initial={false}
-                                className={`relative flex items-center justify-center w-12 h-12 rounded-[1.5rem] outline-none transition-colors ${isActive ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'hover:bg-black/5'
+                                className={`relative flex items-center justify-center h-12 rounded-[1.5rem] outline-none transition-colors ${isActive ? 'bg-indigo-600 px-3 shadow-lg shadow-indigo-500/30' : 'w-12 hover:bg-black/5'
                                     }`}
                             >
                                 <motion.div
                                     layout
-                                    className="flex items-center justify-center"
+                                    className="flex items-center justify-center gap-1.5"
                                 >
                                     {/* ICON */}
                                     <span className={`${isActive ? 'text-white' : 'text-slate-500'}`}>
-                                        <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                                        <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
                                     </span>
+
+                                    {/* LABEL (Only visible when active) */}
+                                    <AnimatePresence initial={false}>
+                                        {isActive && (
+                                            <motion.span
+                                                initial={{ opacity: 0, width: 0 }}
+                                                animate={{ opacity: 1, width: 'auto' }}
+                                                exit={{ opacity: 0, width: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="text-xs font-bold text-white whitespace-nowrap overflow-hidden max-w-[70px] truncate"
+                                            >
+                                                {item.label}
+                                            </motion.span>
+                                        )}
+                                    </AnimatePresence>
                                 </motion.div>
                             </motion.button>
                         );
