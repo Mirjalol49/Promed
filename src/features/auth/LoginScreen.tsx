@@ -8,7 +8,7 @@ import { loginSchema, safeValidate } from '../../lib/validation';
 import { useAppSounds } from '../../hooks/useAppSounds';
 
 import lockIcon from '../../assets/images/lock.png';
-import keyIcon from '../../assets/images/key.png';
+// import keyIcon from '../../assets/images/key.png';
 
 
 interface LoginScreenProps {
@@ -176,7 +176,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
           {/* Password Input */}
           <div className="relative">
-            <img src={keyIcon} alt="Key" className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 object-contain opacity-40" />
+            <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-promed-muted/40" size={20} />
             <input
               type="password"
               value={password}
