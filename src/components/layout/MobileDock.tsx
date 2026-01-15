@@ -36,9 +36,9 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
     return (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden w-auto max-w-[95vw]">
             {/* THE CONTAINER: Floating Glass Dock */}
-            <div className="flex items-center gap-2 p-2 rounded-[2rem] bg-white/80 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] ring-1 ring-white/50 max-w-full overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1 p-2 rounded-[2rem] bg-white/80 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] ring-1 ring-white/50">
 
-                <div className="flex items-center gap-1 min-w-max">
+                <div className="flex items-center gap-1">
                     {dockItems.map((item) => {
                         const isActive = currentPage === item.page;
 
@@ -49,32 +49,17 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                                 onClick={() => onNavigate(item.page)}
                                 layout
                                 initial={false}
-                                className={`relative flex items-center justify-center h-12 rounded-[1.5rem] outline-none transition-colors ${isActive ? 'bg-indigo-600 px-4' : 'w-12 hover:bg-black/5'
+                                className={`relative flex items-center justify-center w-12 h-12 rounded-[1.5rem] outline-none transition-colors ${isActive ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'hover:bg-black/5'
                                     }`}
                             >
                                 <motion.div
                                     layout
-                                    className="flex items-center gap-2"
+                                    className="flex items-center justify-center"
                                 >
                                     {/* ICON */}
                                     <span className={`${isActive ? 'text-white' : 'text-slate-500'}`}>
-                                        <item.icon size={22} strokeWidth={2} />
+                                        <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
                                     </span>
-
-                                    {/* LABEL (Only visible when active) */}
-                                    <AnimatePresence initial={false}>
-                                        {isActive && (
-                                            <motion.span
-                                                initial={{ opacity: 0, width: 0 }}
-                                                animate={{ opacity: 1, width: 'auto' }}
-                                                exit={{ opacity: 0, width: 0 }}
-                                                transition={{ duration: 0.2 }}
-                                                className="text-[13px] font-semibold text-white whitespace-nowrap overflow-hidden"
-                                            >
-                                                {item.label}
-                                            </motion.span>
-                                        )}
-                                    </AnimatePresence>
                                 </motion.div>
                             </motion.button>
                         );
