@@ -1186,12 +1186,10 @@ const App: React.FC = () => {
           )
         }
 
-        {/* Notes View */}
-        {
-          view === 'NOTES' && (
-            <NotesPage />
-          )
-        }
+        {/* Notes View - Keep-Alive */}
+        <div style={{ display: view === 'NOTES' ? 'block' : 'none' }}>
+          <NotesPage />
+        </div>
 
       </div >
     );
