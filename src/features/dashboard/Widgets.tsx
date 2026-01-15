@@ -24,7 +24,7 @@ import { Injection, InjectionStatus, Patient } from '../../types';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { AnimateIcon } from '../../components/ui/AnimateIcon';
-import { CloudHeader } from '../../components/ui/CloudHeader';
+
 
 // --- Vitals Card (Compact) ---
 interface VitalsCardProps {
@@ -459,6 +459,7 @@ interface StatCardProps {
   colorClass: string;
   shadowColor: string;
   isLoading?: boolean;
+  imgClassName?: string;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -470,7 +471,8 @@ export const StatCard: React.FC<StatCardProps> = ({
   mascotImg,
   colorClass,
   shadowColor,
-  isLoading
+  isLoading,
+  imgClassName
 }) => {
   const { t } = useLanguage();
 
@@ -526,7 +528,7 @@ export const StatCard: React.FC<StatCardProps> = ({
                 </AnimateIcon>
               )}
             </div>
-            <span className="text-sm md:text-lg font-black uppercase tracking-[0.15em] text-white/90 drop-shadow-sm">{label}</span>
+            <span className="text-xl md:text-sm font-black uppercase tracking-[0.15em] text-white/90 drop-shadow-sm">{label}</span>
           </div>
           <div className="flex items-baseline space-x-2">
             <span className="text-3xl md:text-5xl font-black tracking-tighter text-white drop-shadow-md">{value}</span>
@@ -542,7 +544,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
       {/* Mascot Image (Visible Always) */}
       {mascotImg && (
-        <div className="absolute -bottom-4 -right-2 md:-bottom-6 md:-right-4 w-24 h-24 md:w-36 md:h-36 z-0 pointer-events-none origin-bottom transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:-translate-y-3 group-hover:scale-110 group-hover:rotate-3">
+        <div className={`absolute bottom-0 right-2 md:-bottom-2 md:right-4 w-20 h-20 md:w-24 md:h-24 z-0 pointer-events-none origin-bottom transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:-translate-y-3 group-hover:scale-110 group-hover:rotate-3 ${imgClassName || ''}`}>
           <img
             src={mascotImg}
             alt="Mascot"

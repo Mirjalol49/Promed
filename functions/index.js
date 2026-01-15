@@ -14,7 +14,7 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // --- CONFIGURATION ---
-const BOT_TOKEN = '8234286653:AAGAD8fDKz9AqirDAqOIaddZuPCq4keln-w';
+const BOT_TOKEN = '8591992335:AAHzpuGzTHGvEHZgiQuH1-SgEZsf3l9w_GQ';
 // IMPORTANT: Set this in your environment variables or config
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "YOUR_OPENAI_API_KEY";
 
@@ -70,6 +70,75 @@ const TEXTS = {
 
 // In Cloud Functions, memory is ephemeral, but okay for session flow in short term.
 const userSessions = {};
+
+// --- SECURITY CONFIGURATION (FORTRESS) ---
+// 1. WHITELIST: Only these User IDs can interact with the bot.
+const ALLOWED_USER_IDS = [
+    1907166652, // Authorized: User provided ID
+    123456789, // Placeholder
+];
+
+// 2. BLACKLIST: Instant delete patterns for known scams
+const SCAM_REGEX = /(tonplay|free\s*spin|bonus\s*\d+|crypto\s*giveaway)/i;
+
+// --- SECURITY MIDDLEWARE ---
+
+// Layer 1: Global Firewall (Access Control)
+bot.use(async (ctx, next) => {
+    const user = ctx.from;
+    if (!user) return next();
+
+    // LOGGING (Cloud Logs)
+    console.log(`🛡️ Access Check: User ${user.first_name || 'Unknown'} (${user.id})`);
+
+    if (ALLOWED_USER_IDS.includes(123456789) && ALLOWED_USER_IDS.length === 1) {
+        console.warn("⚠️ WARNING: Whitelist is using placeholder.");
+    }
+
+    if (!ALLOWED_USER_IDS.includes(user.id)) {
+        console.warn(`⛔ BLOCKED UNAUTHORIZED ACCESS: User ${user.id}`);
+        return; // Silent drop
+    }
+
+    await next();
+});
+
+// Layer 2: Anti-Spam Scanner (Content Filter)
+bot.use(async (ctx, next) => {
+    const message = ctx.message || ctx.editedMessage;
+    if (!message) return next();
+
+    const content = (message.text || "") + (message.caption || "");
+
+    if (SCAM_REGEX.test(content)) {
+        console.error(`🚩 SCAM DETECTED from allowed user ${message.from.id}!`);
+        try {
+            await ctx.deleteMessage();
+            if (ctx.chat.type !== 'private') {
+                await ctx.banChatMember(message.from.id);
+            }
+        } catch (e) {
+            console.error(`Failed to ban/delete: ${e.message}`);
+        }
+        return;
+    }
+
+    await next();
+});
+
+// Layer 3: Group Bouncer (Join Requests)
+bot.on('chat_join_request', async (ctx) => {
+    const user = ctx.chatJoinRequest.from;
+    console.log(`🛡️ Join Request: ${user.first_name} (${user.id})`);
+
+    if (ALLOWED_USER_IDS.includes(user.id)) {
+        console.log(`✅ Auto-approving known user: ${user.first_name}`);
+        await ctx.approveChatJoinRequest(user.id);
+    } else {
+        console.log(`🛡️ Auto-declining join request from stranger: ${user.first_name}`);
+        await ctx.declineChatJoinRequest(user.id);
+    }
+});
 
 // --- BOT LOGIC ---
 

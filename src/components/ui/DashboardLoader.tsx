@@ -1,7 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import happyMascot from '../mascot/happy_mascot.png';
+import happyMascot from '../../assets/images/patients.png';
 
 export const DashboardLoader: React.FC = () => {
     // SSR Check

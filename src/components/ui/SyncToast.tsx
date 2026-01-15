@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import happyMascot from '../mascot/happy_mascot.png';
-import sadMascot from '../mascot/upset_mascot.png';
-import injectionMascot from '../mascot/injection_mascot.png';
-import thinkingMascot from '../mascot/thinking_mascot.png';
+import happyMascot from '../../components/mascot/happy_mascot.png';
+import sadMascot from '../../components/mascot/upset_mascot.png';
+import injectionMascot from '../../components/mascot/injection_mascot.png';
+import thinkingMascot from '../../components/mascot/thinking_mascot.png';
 
 interface SyncToastProps {
     isVisible: boolean;

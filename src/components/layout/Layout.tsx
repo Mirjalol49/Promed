@@ -19,7 +19,7 @@ import { useAccount } from '../../contexts/AccountContext';
 import { NotificationBell } from './NotificationBell';
 import { useSystemAlert } from '../../contexts/SystemAlertContext';
 import lockIcon from '../../assets/images/lock.png';
-import logoImg from '../../assets/images/logo.png';
+const logoImg = "/images/logo_graft.png";
 import { MobileDock } from './MobileDock';
 
 interface LayoutProps {
@@ -125,7 +125,7 @@ const Layout: React.FC<LayoutProps> = ({
         <div className="p-4 md:p-6 flex items-center justify-end md:justify-between">
           <div className="hidden md:flex items-center space-x-3 text-slate-900">
             {/* Logo Image Only - No Background */}
-            <img src={logoImg} alt="Promed Logo" className="w-40 h-auto object-contain" />
+            <img src={logoImg} alt="Promed Logo" className="w-32 md:w-36 h-auto object-contain" />
           </div>
         </div>
 
@@ -188,10 +188,11 @@ const Layout: React.FC<LayoutProps> = ({
 
             {/* Left Section: Logo (Mobile) or Title (Desktop) */}
             <div className="flex items-center">
+
               {/* Mobile Logo */}
               <div className="flex items-center md:hidden gap-2">
-                <div className="w-8 h-8 bg-transparent rounded-lg flex items-center justify-center">
-                  <img src={logoImg} alt="Promed Logo" className="w-full h-full object-contain" />
+                <div className="h-8 bg-transparent flex items-center justify-center">
+                  <img src={logoImg} alt="Promed Logo" className="h-full w-auto object-contain" />
                 </div>
               </div>
 

@@ -38,8 +38,8 @@ import {
 } from 'lucide-react';
 import { Patient, InjectionStatus, Injection } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
-import thinkingMascot from '../../components/mascot/thinking_mascot.png';
-import injectionMascot from '../../components/mascot/injection_mascot.png';
+import thinkingMascot from '../../assets/images/patients.png'; // Fallback
+import injectionMascot from '../../assets/images/injection.png';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { TimePicker } from '../../components/ui/TimePicker';
 import { Portal } from '../../components/ui/Portal';
@@ -57,9 +57,9 @@ import { AnimateIcon } from '../../components/ui/AnimateIcon';
 import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
 
 import { useReliableUpload } from '../../hooks/useReliableUpload';
-import trashIcon from '../../assets/images/trash.png';
-import dateIcon from '../../assets/images/date.png';
-import editIcon from '../../assets/images/edit.png';
+import trashIcon from '../../assets/images/patients.png'; // Fallback for missing trash.png
+import dateIcon from '../../assets/images/patients.png'; // Fallback for missing date.png
+import editIcon from '../../assets/images/patients.png'; // Fallback for missing edit.png
 
 // Helper to translate status
 const useStatusTranslation = () => {

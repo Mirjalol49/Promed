@@ -5,7 +5,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, query, where, getDocs, updateDoc, doc, onSnapshot } from 'firebase/firestore';
 
 // --- CONFIGURATION ---
-const BOT_TOKEN = '8234286653:AAGAD8fDKz9AqirDAqOIaddZuPCq4keln-w';
+const BOT_TOKEN = '8591992335:AAHzpuGzTHGvEHZgiQuH1-SgEZsf3l9w_GQ';
 
 // Firebase Config (Copied from src/lib/firebase.ts to verify directly in Node)
 const firebaseConfig = {
@@ -97,6 +97,80 @@ const TEXTS = {
 // State to track user language selection temporarily (in-memory)
 // In production, consider a database or session store
 const userSessions = {};
+
+// --- SECURITY CONFIGURATION (FORTRESS) ---
+// 1. WHITELIST: Only these User IDs can interact with the bot.
+// REQ: Add your ID here! (You will see it in the terminal logs when you try to interact)
+const ALLOWED_USER_IDS = [
+    1907166652, // Authorized: User provided ID
+    123456789, // Placeholder (can retain or remove, kept for safety during transition)
+];
+
+// 2. BLACKLIST: Instant delete patterns for known scams
+const SCAM_REGEX = /(tonplay|free\s*spin|bonus\s*\d+|crypto\s*giveaway)/i;
+
+// --- SECURITY MIDDLEWARE ---
+
+// Layer 1: Global Firewall (Access Control)
+bot.use(async (ctx, next) => {
+    const user = ctx.from;
+    if (!user) return next(); // System updates usually don't have 'from'
+
+    // LOGGING: Always log the User ID to help you find yours
+    console.log(`🛡️ Access Check: User ${user.first_name} (${user.id})`);
+
+    // BYPASS: If list is empty (initial setup), warn but allow (or blocking will lock everyone out immediately)
+    // For strict security, remove this check once you add your ID.
+    if (ALLOWED_USER_IDS.includes(123456789) && ALLOWED_USER_IDS.length === 1) {
+        console.warn("⚠️ WARNING: Whitelist is using placeholder. Please add your real ID to allowed_user_ids.");
+    }
+
+    if (!ALLOWED_USER_IDS.includes(user.id)) {
+        console.warn(`⛔ BLOCKED UNAUTHORIZED ACCESS: User ${user.id} (${user.first_name})`);
+        // Silent drop - do not call next()
+        return;
+    }
+
+    await next();
+});
+
+// Layer 2: Anti-Spam Scanner (Content Filter)
+bot.use(async (ctx, next) => {
+    const message = ctx.message || ctx.editedMessage;
+    if (!message) return next();
+
+    const content = (message.text || "") + (message.caption || "");
+
+    if (SCAM_REGEX.test(content)) {
+        console.error(`🚩 SCAM DETECTED from allowed user ${message.from.id}! Content: ${content.substring(0, 20)}...`);
+        try {
+            await ctx.deleteMessage();
+            if (ctx.chat.type !== 'private') {
+                await ctx.banChatMember(message.from.id);
+                console.log("⚡ Message deleted and user banned.");
+            }
+        } catch (e) {
+            console.error(`Failed to ban/delete: ${e.message}`);
+        }
+        return; // Stop processing
+    }
+
+    await next();
+});
+
+// Layer 3: Group Bouncer (Join Requests)
+bot.on('chat_join_request', async (ctx) => {
+    const user = ctx.chatJoinRequest.from;
+    console.log(`🛡️ Join Request Processing for: ${user.first_name} (${user.id})`);
+
+    if (ALLOWED_USER_IDS.includes(user.id)) {
+        console.log(`✅ Auto-approving known user: ${user.first_name}`);
+        await ctx.approveChatJoinRequest(user.id);
+    } else {
+        console.log(`🛡️ Auto-declining join request from stranger: ${user.first_name}`);
+        await ctx.declineChatJoinRequest(user.id);
+    }
+});
 
 // --- BOT LOGIC ---
 

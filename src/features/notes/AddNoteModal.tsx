@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { Portal } from '../../components/ui/Portal';
 import { Note } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface AddNoteModalProps {
     isOpen: boolean;
@@ -11,17 +12,16 @@ interface AddNoteModalProps {
 }
 
 const colors = [
-    { id: 'blue', bg: 'bg-blue-200', border: 'border-blue-400' },
-    { id: 'yellow', bg: 'bg-yellow-100', border: 'border-yellow-400' },
-    { id: 'green', bg: 'bg-green-200', border: 'border-green-400' },
-    { id: 'pink', bg: 'bg-pink-200', border: 'border-pink-400' },
-    { id: 'purple', bg: 'bg-purple-200', border: 'border-purple-400' },
+    { id: 'pink', bg: 'bg-pink-200', border: 'border-pink-400', labelKey: 'urgency' },
+    { id: 'green', bg: 'bg-green-200', border: 'border-green-400', labelKey: 'todo' },
+    { id: 'yellow', bg: 'bg-yellow-100', border: 'border-yellow-400', labelKey: 'note' },
 ];
 
 export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, noteToEdit, onSave }) => {
+    const { t } = useLanguage();
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
-    const [selectedColor, setSelectedColor] = useState('blue');
+    const [selectedColor, setSelectedColor] = useState('yellow');
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -29,11 +29,11 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
             if (noteToEdit) {
                 setTitle(noteToEdit.title || '');
                 setContent(noteToEdit.content);
-                setSelectedColor(noteToEdit.color || 'blue');
+                setSelectedColor(noteToEdit.color || 'yellow');
             } else {
                 setTitle('');
                 setContent('');
-                setSelectedColor('blue');
+                setSelectedColor('yellow');
             }
         }
     }, [isOpen, noteToEdit]);
@@ -96,15 +96,23 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                     {/* Footer */}
                     <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2">
-                            {/* Color Picker */}
-                            <div className="flex items-center gap-1 bg-white p-1 rounded-full border border-slate-200 shadow-sm">
+                            {/* Color/Status Picker */}
+                            <div className="flex items-center gap-2">
                                 {colors.map((c) => (
                                     <button
                                         key={c.id}
                                         type="button"
                                         onClick={() => setSelectedColor(c.id)}
-                                        className={`w-6 h-6 rounded-full transition-all border-2 ${selectedColor === c.id ? c.border + ' scale-110' : 'border-transparent hover:scale-105'} ${c.bg}`}
-                                    />
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border ${selectedColor === c.id
+                                            ? c.bg + ' ' + c.border + ' shadow-sm scale-105'
+                                            : 'bg-white border-slate-200 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        <div className={`w-3 h-3 rounded-full ${c.bg} border ${c.border}`} />
+                                        <span className={`text-[11px] font-bold uppercase tracking-wider ${selectedColor === c.id ? 'text-slate-800' : 'text-slate-500'}`}>
+                                            {t(c.labelKey)}
+                                        </span>
+                                    </button>
                                 ))}
                             </div>
                         </div>

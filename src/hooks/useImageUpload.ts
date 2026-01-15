@@ -5,7 +5,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { compressImage } from '../lib/imageOptimizer';
 import { useToast } from '../contexts/ToastContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import upsetIcon from '../components/mascot/upset_mascot.png';
+import upsetIcon from '../assets/images/patients.png'; // Fallback
 
 interface UseImageUploadOptions {
     bucketName?: string; // Kept for compatibility but implicitly used via ref paths

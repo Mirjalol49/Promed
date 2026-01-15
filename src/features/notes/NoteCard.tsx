@@ -4,6 +4,7 @@ import { Trash2 } from 'lucide-react';
 import { Note } from '../../types';
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface NoteCardProps {
     note: Note;
@@ -14,15 +15,25 @@ interface NoteCardProps {
 // Solid pastel colors based on the reference image
 const colorMap: Record<string, string> = {
     blue: 'bg-blue-200',
-    yellow: 'bg-yellow-100', // Yellow needs to be lighter to not look muddy or too dark
+    yellow: 'bg-yellow-100',
     green: 'bg-green-200',
     pink: 'bg-pink-200',
     purple: 'bg-purple-200',
 };
 
+const statusMap: Record<string, string> = {
+    pink: 'urgency',
+    green: 'todo',
+    yellow: 'note',
+    blue: 'note', // Fallback
+    purple: 'note' // Fallback
+};
+
 export const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit, onDelete }) => {
+    const { t } = useLanguage();
     // Default to blue if color is missing
     const bgClass = colorMap[note.color || 'blue'] || colorMap.blue;
+    const statusLabel = t(statusMap[note.color || 'yellow'] || 'note');
 
     return (
         <motion.div
@@ -38,9 +49,11 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit, onDelete }) =>
         >
             {/* Header: Checkbox - Title - Menu */}
             <div className="flex items-start justify-between mb-3 gap-3">
-                <div className="flex items-start gap-3 flex-1 overflow-hidden">
-
-                    <h3 className="font-bold text-slate-900 text-lg leading-snug line-clamp-2 pt-0.5">
+                <div className="flex flex-col gap-1 flex-1 overflow-hidden">
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">
+                        {statusLabel}
+                    </span>
+                    <h3 className="font-bold text-slate-900 text-lg leading-snug line-clamp-2">
                         {note.title || 'Sarlavhasiz'}
                     </h3>
                 </div>

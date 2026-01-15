@@ -13,9 +13,9 @@ import {
     Trash,
     Lock
 } from 'lucide-react';
-import happyIcon from '../components/mascot/happy_mascot.png';
-import operationIcon from '../components/mascot/operation_mascot.png';
-import thinkingIcon from '../components/mascot/thinking_mascot.png';
+import happyIcon from '../assets/images/patients.png';
+import operationIcon from '../assets/images/operation.png';
+import thinkingIcon from '../assets/images/patients.png'; // Fallback
 import { subscribeToAllProfiles, updateUserProfile } from '../lib/userService';
 import { broadcastAlert, sendTargetedNotifications, clearAlerts } from '../lib/notificationService';
 import { Profile } from '../types';

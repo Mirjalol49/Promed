@@ -8,7 +8,7 @@ import { useAccount } from '../contexts/AccountContext';
 import { ProfileAvatar } from '../components/layout/ProfileAvatar';
 import { useImageUpload } from '../hooks/useImageUpload'; // Correct import
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, getAuth } from 'firebase/auth';
-import happyIcon from '../components/mascot/happy_mascot.png';
+import happyIcon from '../assets/images/patients.png';
 import { LogoutModal } from '../components/ui/LogoutModal';
 
 interface SettingsPageProps {

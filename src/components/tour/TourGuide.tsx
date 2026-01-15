@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
 import { useLanguage } from '../../contexts/LanguageContext';
-import happyMascot from '../mascot/happy_mascot.png';
-import injectionMascot from '../mascot/injection_mascot.png';
-import operationMascot from '../mascot/operation_mascot.png';
+import happyMascot from '../../assets/images/patients.png';
+import injectionMascot from '../../assets/images/injection.png';
+import operationMascot from '../../assets/images/operation.png';
 
 const TourGuide: React.FC = () => {
     const { t } = useLanguage();

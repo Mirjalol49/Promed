@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
-import thinkingMascot from '../mascot/thinking_mascot.png';
+import thinkingMascot from "../../components/mascot/thinking_mascot.png";
 
 interface EmptyStateJourneyProps {
     onAdd: () => void;

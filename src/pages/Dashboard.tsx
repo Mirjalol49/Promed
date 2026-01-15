@@ -14,9 +14,9 @@ import { Patient } from '../types';
 import { DashboardLoader } from '../components/ui/DashboardLoader';
 import LockedOverlay from '../components/ui/LockedOverlay';
 import TourGuide from '../components/tour/TourGuide';
-import operationIcon from '../components/mascot/operation_mascot.png';
-import patientsIcon from '../components/mascot/happy_mascot.png';
-import injectionIcon from '../components/mascot/injection_mascot.png';
+import operationIcon from '../assets/images/operation.png';
+import patientsIcon from '../assets/images/patients.png';
+import injectionIcon from '../assets/images/injection.png';
 
 interface DashboardProps {
     stats: {
@@ -80,6 +80,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             mascotImg={injectionIcon}
                             colorClass="bg-promed-primary"
                             shadowColor=""
+                            imgClassName="translate-x-2 md:translate-x-4"
                         />
                         <StatCard
                             label={t('patients')}

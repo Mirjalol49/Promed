@@ -87,77 +87,94 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                             variants={containerVariants}
                             initial="hidden"
                             animate="show"
-                            className="relative ml-5 space-y-10"
+                            className="relative ml-5 space-y-0" // Removed space-y-10, handling spacing manually or via padding
                         >
                             {injections.map((inj, index) => {
+                                const activeIndex = injections.findIndex(i => i.status === InjectionStatus.SCHEDULED);
+                                // If all completed, activeIndex is -1.
+
                                 const isDone = inj.status === InjectionStatus.COMPLETED;
                                 const isMissed = inj.status === InjectionStatus.MISSED;
                                 const isScheduled = inj.status === InjectionStatus.SCHEDULED;
+
+                                // "Active" is the NEXT scheduled item
+                                const isActive = activeIndex !== -1 ? index === activeIndex : false;
+                                // "Future" is any scheduled item AFTER the active one
+                                const isFuture = activeIndex !== -1 && index > activeIndex;
+
                                 const isLast = index === injections.length - 1;
 
                                 return (
                                     <motion.div
                                         key={inj.id}
                                         variants={cardVariants}
-                                        className="relative pl-8 group"
+                                        className={`relative pl-8 pb-12 group ${isLast ? 'pb-0' : ''}`}
                                     >
-                                        {/* SEGMENTED CONNECTION LINE */}
+                                        {/* SEGMENTED CONNECTION LINE (The Spine) */}
                                         {!isLast && (
                                             <div
-                                                className={`absolute w-0.5 left-[7px] top-10 h-[calc(100%+4.5rem)] -z-10
-                                                    ${isDone ? 'bg-emerald-500' : 'bg-indigo-300'}
+                                                className={`absolute left-[8px] top-8 h-[calc(100%+3rem)] z-0 w-[2px]
+                                                    ${isDone && injections[index + 1]?.status === InjectionStatus.COMPLETED
+                                                        ? 'bg-emerald-500' // History (Done -> Done)
+                                                        : isDone && injections[index + 1]?.status === InjectionStatus.SCHEDULED
+                                                            ? 'bg-blue-500' // Done -> Active (Connects last completed to current)
+                                                            : 'border-l-2 border-dashed border-slate-300 left-[8px] bg-transparent' // Future (Dashed)
+                                                    }
                                                 `}
                                             />
                                         )}
 
                                         {/* THE CONNECTOR NODE */}
                                         <div className={`
-                                          absolute -left-[8px] top-6 
-                                          w-8 h-8 rounded-full border-[3px] border-white shadow-lg z-10
+                                          absolute -left-[9px] top-6 
+                                          w-9 h-9 rounded-full border-[3px] z-20
                                           transition-all duration-500 flex items-center justify-center
-                                          ${isDone ? 'bg-emerald-500 scale-110 shadow-emerald-200' :
-                                                isMissed ? 'bg-red-500' :
-                                                    'bg-white border-blue-500 ring-4 ring-blue-50'}
+                                          ${isDone ? 'bg-emerald-500 border-emerald-100 shadow-lg shadow-emerald-200 ring-4 ring-emerald-50' :
+                                                isActive ? 'bg-white border-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.2)] animate-[pulse_2s_ease-in-out_infinite]' :
+                                                    'bg-slate-50 border-slate-300' // Future
+                                            }
                                         `}>
-                                            {isScheduled && (
-                                                <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" />
-                                            )}
                                             {isDone && <Check size={16} className="text-white font-bold" strokeWidth={3} />}
+                                            {isActive && <div className="w-3 h-3 bg-blue-500 rounded-full" />}
+                                            {isFuture && <div className="w-2.5 h-2.5 rounded-full border-2 border-slate-300" />}
                                             {isMissed && <X size={16} className="text-white" strokeWidth={3} />}
                                         </div>
 
                                         {/* THE CARD */}
-                                        <div className="bg-[hsl(204,66%,92%)] p-5 rounded-2xl shadow-custom border border-blue-100/50 
-                                      hover:scale-[1.02] hover:border-blue-200 
-                                      transition-all duration-300 transform active:scale-[0.98]
-                                       flex flex-col md:flex-row justify-between items-start group/card relative overflow-hidden pr-5 gap-4 md:gap-0">
+                                        <div className={`
+                                            p-5 rounded-2xl border transition-all duration-300 
+                                            flex flex-col md:flex-row justify-between items-start group/card relative overflow-hidden pr-5 gap-4 md:gap-0
+                                            ${isActive
+                                                ? 'bg-white border-blue-100/50 shadow-apple opacity-100 scale-100'
+                                                : isFuture
+                                                    ? 'bg-slate-50 border-slate-100 shadow-none opacity-60 hover:opacity-100'
+                                                    : 'bg-[hsl(204,66%,92%)] border-blue-100/50 shadow-sm opacity-100' // Completed/Done style
+                                            }
+                                        `}>
 
-                                            {/* Hover Gloss Effect */}
-                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-150%] group-hover/card:animate-shimmer pointer-events-none" />
+                                            {/* Rest of Card Content (Keep largely same but adapted styles if needed) */}
+                                            {/* Hover Gloss Effect (Only for Active/Done) */}
+                                            {!isFuture && (
+                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-150%] group-hover/card:animate-shimmer pointer-events-none" />
+                                            )}
 
                                             <div className="flex-1 min-w-0 pr-4">
                                                 <div className="flex items-center gap-3">
-                                                    <h4 className={`font-bold text-base ${isDone ? 'text-emerald-700' : 'text-slate-800'}`}>
+                                                    <h4 className={`font-bold text-base ${isDone ? 'text-emerald-700' : isActive ? 'text-blue-700' : 'text-slate-500'}`}>
                                                         {t('injection')} #{index + 1}
                                                     </h4>
 
-                                                    {/* ACTIONS (Edit & Delete) - Inline with Title, Reveal on Hover */}
+                                                    {/* ACTIONS (Edit & Delete) */}
                                                     <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
                                                         <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onEditInjection(inj);
-                                                            }}
+                                                            onClick={(e) => { e.stopPropagation(); onEditInjection(inj); }}
                                                             className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 rounded-lg transition-colors"
                                                             title={t('edit')}
                                                         >
                                                             <Edit2 size={14} />
                                                         </button>
                                                         <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onDeleteInjection(inj.id, e);
-                                                            }}
+                                                            onClick={(e) => { e.stopPropagation(); onDeleteInjection(inj.id, e); }}
                                                             className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-slate-100 rounded-lg transition-colors"
                                                             title={t('delete')}
                                                         >
@@ -175,7 +192,9 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                             })()}
                                                         </span>
                                                         {inj.date.includes('T') && (
-                                                            <span className="text-slate-400 text-xs font-semibold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md border border-blue-100 flex items-center gap-1 whitespace-nowrap">
+                                                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-md border flex items-center gap-1 whitespace-nowrap
+                                                                ${isActive ? 'bg-blue-50 text-blue-600 border-blue-100' : 'text-slate-400 bg-slate-50 border-slate-100'}
+                                                            `}>
                                                                 <Clock size={10} />
                                                                 {inj.date.split('T')[1].substring(0, 5)}
                                                             </span>
@@ -192,29 +211,30 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                             <div className="w-full md:w-auto flex md:flex-col items-end md:items-end justify-between md:justify-center gap-2">
                                                 {isScheduled ? (
                                                     <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-                                                        <motion.button
-                                                            whileHover={{ scale: 1.05 }}
-                                                            whileTap={{ scale: 0.95 }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                playConfetti();
-                                                                const rect = e.currentTarget.getBoundingClientRect();
-                                                                const x = (rect.left + rect.width / 2) / window.innerWidth;
-                                                                const y = (rect.top + rect.height / 2) / window.innerHeight;
-
-                                                                confetti({
-                                                                    particleCount: 150,
-                                                                    spread: 60,
-                                                                    origin: { x, y },
-                                                                    zIndex: 9999
-                                                                });
-                                                                onUpdateStatus(inj.id, InjectionStatus.COMPLETED);
-                                                            }}
-                                                            className="btn-premium-emerald flex-1 md:flex-none !px-6 !py-2 !text-xs shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 z-20 whitespace-nowrap"
-                                                        >
-                                                            <Check size={14} strokeWidth={3} />
-                                                            <span>{t('status_completed')}</span>
-                                                        </motion.button>
+                                                        {isActive ? (
+                                                            <motion.button
+                                                                whileHover={{ scale: 1.05 }}
+                                                                whileTap={{ scale: 0.95 }}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    playConfetti();
+                                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                                    const x = (rect.left + rect.width / 2) / window.innerWidth;
+                                                                    const y = (rect.top + rect.height / 2) / window.innerHeight;
+                                                                    onUpdateStatus(inj.id, InjectionStatus.COMPLETED);
+                                                                    confetti({ particleCount: 150, spread: 60, origin: { x, y }, zIndex: 9999 });
+                                                                }}
+                                                                className="btn-premium-emerald flex-1 md:flex-none !px-6 !py-2 !text-xs shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 z-20 whitespace-nowrap"
+                                                            >
+                                                                <Check size={14} strokeWidth={3} />
+                                                                <span>{t('status_completed')}</span>
+                                                            </motion.button>
+                                                        ) : (
+                                                            /* Future State Button/Label */
+                                                            <span className="text-xs font-bold text-slate-400 px-3 py-1 rounded-full border border-slate-200 bg-white">
+                                                                {t('status_scheduled')}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 ) : (
                                                     <motion.span
@@ -222,14 +242,12 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                         whileTap={{ scale: 0.95 }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            // Allow resetting status by clicking the badge
                                                             onUpdateStatus(inj.id, InjectionStatus.SCHEDULED);
                                                         }}
                                                         className={`
                                                         w-full md:w-auto text-center px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide border cursor-pointer hover:opacity-80 transition-opacity
                                                         ${isDone ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                                                isMissed ? 'bg-red-50 text-red-600 border-red-100' :
-                                                                    'bg-blue-50 text-blue-600 border-blue-100'}
+                                                                isMissed ? 'bg-red-50 text-red-600 border-red-100' : ''}
                                                     `}>
                                                         {isDone ? t('status_completed') : isMissed ? t('status_missed') : t('status_scheduled')}
                                                     </motion.span>
@@ -263,12 +281,12 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                         src={injectionMascot}
                         alt="Dr Koala"
                         whileHover={{
-                            scale: 1.1,
-                            rotate: -5,
-                            y: -10,
+                            scale: 1.05,
+                            rotate: -2,
+                            y: -5,
                             transition: { type: "spring", stiffness: 400, damping: 10 }
                         }}
-                        className="w-52 h-52 object-contain relative z-20 pointer-events-auto cursor-pointer"
+                        className="w-full h-full object-contain relative z-20 pointer-events-auto cursor-pointer"
                         style={{ filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.15))" }}
                     />
                 </motion.div>

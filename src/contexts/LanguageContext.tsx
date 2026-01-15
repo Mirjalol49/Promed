@@ -301,6 +301,11 @@ export const translations = {
     status_lost: "Cancelled",
     edit_lead: "Edit Lead",
     add_new_lead: "Add New Lead",
+
+    // Note Status
+    urgency: "Urgency",
+    todo: "Todo",
+    note: "Note",
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -617,6 +622,11 @@ export const translations = {
     tour_welcome_desc: "Men Graft yordamchisiman. Keling, sizga ish stolini ko'rsataman.",
     tour_stats_desc: "Bu yerda operatsiya va inyeksiyalar statistikasini kuzatib borasiz.",
     tour_add_btn_desc: "Eng muhim tugma! Yangi bemor qo'shish uchun shu yerni bosing.",
+
+    // Note Status
+    urgency: "Shoshilinch",
+    todo: "Vazifa",
+    note: "Eslatma",
   },
   ru: {
     dashboard: "Панель управления",
@@ -919,6 +929,11 @@ export const translations = {
     tour_welcome_desc: "Я ваш помощник Graft. Давайте я покажу вам рабочий стол.",
     tour_stats_desc: "Здесь вы можете отслеживать статистику операций и инъекций.",
     tour_add_btn_desc: "Самая важная кнопка! Нажмите здесь, чтобы добавить нового пациента.",
+
+    // Note Status
+    urgency: "Срочно",
+    todo: "Задача",
+    note: "Заметка",
   }
 };
 
@@ -931,7 +946,36 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('uz');
+  // Initialize from localStorage or default to 'uz'
+  const [language, setLanguageState] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem('graft_language');
+      return (saved === 'en' || saved === 'uz' || saved === 'ru') ? saved : 'uz';
+    } catch (e) {
+      return 'uz';
+    }
+  });
+
+  // Wrapper to save to localStorage
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem('graft_language', lang);
+  };
+
+  // Listen for storage events (multi-tab sync)
+  React.useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'graft_language' && e.newValue) {
+        const newLang = e.newValue;
+        if (newLang === 'en' || newLang === 'uz' || newLang === 'ru') {
+          setLanguageState(newLang);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const t = (key: string): string => {
     // @ts-ignore

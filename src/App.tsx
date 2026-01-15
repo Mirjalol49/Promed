@@ -53,8 +53,8 @@ import lockIcon from './assets/images/lock.png';
 // New High-Res Assets for Toasts
 import happyIcon from './components/mascot/happy_mascot.png';
 import upsetIcon from './components/mascot/upset_mascot.png';
-import operationIcon from './components/mascot/operation_mascot.png';
-import injectionIcon from './components/mascot/injection_mascot.png';
+import operationIcon from './assets/images/operation.png';
+import injectionIcon from './assets/images/injection.png';
 import thinkingIcon from './components/mascot/thinking_mascot.png';
 
 // --- Lock Screen Component ---
@@ -701,7 +701,7 @@ const App: React.FC = () => {
         const activeAccountId = accountId || (userEmail ? `account_${userEmail}` : userId);
         const realId = await addPatient(patientWithoutId, userId, activeAccountId);
 
-        success(t('patient_added_title'), t('patient_added_msg'), operationIcon);
+        success(t('patient_added_title'), t('patient_added_msg'), happyIcon);
 
         // 🔥 HANDOVER: Link the local blob to the new real ID
         const profileBlob = getOptimisticImage(`${tempId}_profile`);
@@ -845,7 +845,7 @@ const App: React.FC = () => {
     try {
       console.log('Adding new injection:', { patientId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('injection_added_title'), t('injection_added_msg'), injectionIcon);
+      success(t('injection_added_title'), t('injection_added_msg'), happyIcon);
 
       // 🔥 NOTIFICATION LOGIC: Send Telegram Message for NEW Injection
       if (patient.telegramChatId) {
@@ -896,7 +896,7 @@ const App: React.FC = () => {
     try {
       console.log('Editing injection:', { patientId, injectionId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('injection_updated_title'), t('injection_updated_msg'), injectionIcon);
+      success(t('injection_updated_title'), t('injection_updated_msg'), happyIcon);
 
       // 🔥 NOTIFICATION LOGIC: Send Telegram Message if Date/Time Changed
       if (patient.telegramChatId && oldInjection && oldInjection.date !== date) {
