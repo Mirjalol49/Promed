@@ -4,6 +4,7 @@ console.log("🛡️ PROMED SYSTEM BOOT: Version 1.25.0 - LockFix Loaded");
 
 const Dashboard = React.lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const LoginScreen = React.lazy(() => import('./features/auth/LoginScreen').then(m => ({ default: m.LoginScreen })));
+const ResetPasswordScreen = React.lazy(() => import('./features/auth/ResetPasswordScreen').then(m => ({ default: m.ResetPasswordScreen })));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const PatientList = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientList })));
 const PatientDetail = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientDetail })));
@@ -12,6 +13,7 @@ const NotesPage = React.lazy(() => import('./features/notes/NotesPage').then(m =
 // const MessagesPage = React.lazy(() => import('./features/messages/MessagesPage').then(m => ({ default: m.MessagesPage }))); // User deleted this feature
 import { AddPatientForm } from './features/patients/PatientList';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { EmergencySetup } from './pages/EmergencySetup'; // Added EmergencySetup
 
 import Layout from './components/layout/Layout';
 import { AdminRoute } from './components/layout/AdminRoute';
@@ -40,6 +42,7 @@ import { useImagePreloader } from './lib/useImagePreloader';
 import ToastContainer from './components/ui/ToastContainer';
 import DeleteModal from './components/ui/DeleteModal';
 import { Trash2 } from 'lucide-react';
+import { PinInput } from './components/ui/PinInput';
 
 import { auth, db } from './lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
@@ -67,7 +70,7 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
 
 
   // Use a single ref for the array to ensure stability across re-renders
-  const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  // const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]); // Handled by PinInput now
 
   const [lockState, setLockState] = useState<'idle' | 'error' | 'success'>('idle');
   const [pinError, setPinError] = useState(false);
@@ -81,22 +84,22 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
   const [showPassword, setShowPassword] = useState(false);
   const isPinType = /^\d{6}$/.test(correctPassword);
 
-  const handlePinChange = (index: number, value: string) => {
-    if (value.length > 1) value = value.slice(-1);
-    if (!/^\d*$/.test(value)) return;
+  const handlePinComplete = (code: string) => {
+    if (code === correctPassword) {
+      setLockState('success');
+      playUnlock();
+      setTimeout(onUnlock, 500);
+    } else {
+      setLockState('error');
+      setPinError(true);
+      playError();
 
-    const newPin = [...pin];
-    newPin[index] = value;
-    setPin(newPin);
-
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !pin[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+      // Reset back to idle after 1s
+      setTimeout(() => {
+        setPin(['', '', '', '', '', '']);
+        setLockState('idle');
+        setPinError(false);
+      }, 1000);
     }
   };
 
@@ -142,7 +145,7 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
         setPin(['', '', '', '', '', '']);
         setLockState('idle');
         setPinError(false);
-        inputRefs.current[0]?.focus();
+        // Focus handling is internal to PinInput on re-render empty, or we can just leave it
       }, 1000);
     }
   };
@@ -182,27 +185,13 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
 
         <form onSubmit={handleUnlock} className="w-full flex flex-col items-center space-y-8 md:space-y-10">
           {isPinType ? (
-            <div className="flex gap-3 sm:gap-6 justify-center">
-              {pin.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={el => { inputRefs.current[idx] = el; }}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="\d*"
-                  value={digit}
-                  onChange={(e) => handlePinChange(idx, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(idx, e)}
-                  className={`w-11 h-14 sm:w-16 sm:h-20 bg-white border-2 
-                    ${pinError ? 'border-rose-500 shake ' : 'border-white/20'}
-                    rounded-2xl text-center text-3xl font-black text-promed-primary transition-all duration-200
-                    focus:outline-none focus:border-white focus:ring-4 focus:ring-white/20
-                    placeholder-slate-300 `}
-                  maxLength={1}
-                  autoFocus={idx === 0}
-                />
-              ))}
-            </div>
+            <PinInput
+              value={pin}
+              onChange={setPin}
+              onComplete={handlePinComplete}
+              error={pinError}
+              autoFocus={true}
+            />
           ) : (
             <div className="w-full max-w-sm relative group/pass">
               <input
@@ -318,7 +307,11 @@ const App: React.FC = () => {
   const { playLock } = useAppSounds();
 
 
-  const [view, setView] = useState<PageView>('DASHBOARD');
+  const [view, setView] = useState<PageView>(() => {
+    if (window.location.pathname.includes('/admin')) return 'SUPER_ADMIN';
+    if (window.location.pathname.includes('/patients')) return 'PATIENTS';
+    return 'DASHBOARD';
+  });
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
@@ -336,8 +329,23 @@ const App: React.FC = () => {
   // userImage now comes from AccountContext for persistence
   const [saving, setSaving] = useState(false);
 
+  // Password Reset State
+  const [resetCode, setResetCode] = useState<string | null>(null);
+
   const { t } = useLanguage();
   const { success, error: showError } = useToast();
+
+  useEffect(() => {
+    // Check for Firebase Action URL (Password Reset)
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const oobCode = params.get('oobCode');
+
+    if (mode === 'resetPassword' && oobCode) {
+      console.log("🔑 App: Detected Password Reset Mode");
+      setResetCode(oobCode);
+    }
+  }, []);
 
   // Handle Supabase Auth Events (especially password recovery)
   // MOVED TO AuthContext - skipping specific listener here for now or assuming AuthContext handles it.
@@ -877,6 +885,8 @@ const App: React.FC = () => {
           createdAt: new Date().toISOString(),
           type: 'INJECTION_NEW'
         });
+
+        success("Notification Queued", `Message sent to ${patient.fullName}`, happyIcon);
       }
     } catch (err: any) {
       console.error('Error adding injection:', err);
@@ -928,6 +938,10 @@ const App: React.FC = () => {
           createdAt: new Date().toISOString(),
           type: 'INJECTION_CHANGE'
         });
+
+        success("Update Notified", `Change sent to ${patient.fullName}`, happyIcon);
+
+
       }
 
     } catch (err: any) {
@@ -1195,14 +1209,41 @@ const App: React.FC = () => {
     );
   };
 
-  // If authentication or initial data is loading, show the mascot loader
-  if (authLoading) {
-    return <DashboardLoader />;
+  // If authentication or initial data is loading, show the mascot loader // 🔥 ROUTING: Simple Check
+  if (window.location.pathname.includes('/admin')) {
+    return <EmergencySetup />;
+  }
+
+  // --- RENDERING ---
+  if (authLoading) return <DashboardLoader />;
+
+  // Render Password Reset Screen if active
+  if (resetCode) {
+    return (
+      <Suspense fallback={<DashboardLoader />}>
+        <ResetPasswordScreen
+          oobCode={resetCode}
+          onSuccess={() => {
+            setResetCode(null);
+            // Clear URL params
+            window.history.replaceState({}, '', '/');
+          }}
+          onCancel={() => {
+            setResetCode(null);
+            window.history.replaceState({}, '', '/');
+          }}
+        />
+      </Suspense>
+    );
   }
 
   // Show login screen if not logged in
   if (!authUser) {
-    return <LoginScreen onLogin={handleLogin} />;
+    return (
+      <Suspense fallback={<DashboardLoader />}>
+        <LoginScreen onLogin={handleLogin} />
+      </Suspense>
+    );
   }
 
 

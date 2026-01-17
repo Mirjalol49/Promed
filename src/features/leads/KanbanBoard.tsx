@@ -22,6 +22,7 @@ import {
     Trash
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAccount } from '../../contexts/AccountContext';
 
 
 
@@ -38,14 +39,33 @@ export const KanbanBoard: React.FC = () => {
     const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
+    const { userId, isLoading: isAuthLoading } = useAccount();
+
     // Initial Fetch (Real-time Subscription)
     useEffect(() => {
-        const unsubscribe = leadService.subscribeToLeads((data) => {
-            setLeads(data);
+        // 1. Wait for Auth to initialize
+        if (isAuthLoading) return;
+
+        // 2. If Auth done but no User (should be handled by ProtectedRoute, but safe-guard here)
+        if (!userId) {
             setIsLoading(false);
-        });
+            return;
+        }
+
+        // 3. User present -> Subscribe
+        const unsubscribe = leadService.subscribeToLeads(
+            userId,
+            (data) => {
+                setLeads(data);
+                setIsLoading(false);
+            },
+            (error) => {
+                console.error("Critical: Failed to load leads", error);
+                setIsLoading(false); // Stop loop even on error
+            }
+        );
         return () => unsubscribe();
-    }, []);
+    }, [userId, isAuthLoading]);
 
     const handleStatusChange = async (id: string, newStatus: LeadStatus) => {
         // Optimistic Update

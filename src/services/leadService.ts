@@ -10,7 +10,8 @@ import {
     serverTimestamp,
     deleteDoc,
     onSnapshot,
-    Unsubscribe
+    Unsubscribe,
+    where
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Lead, LeadStatus } from '../types';
@@ -19,21 +20,44 @@ const LEADS_COLLECTION = 'leads';
 
 export const leadService = {
     // Subscribe to leads (Real-time)
-    subscribeToLeads(callback: (leads: Lead[]) => void): Unsubscribe {
-        const q = query(collection(db, LEADS_COLLECTION), orderBy('created_at', 'desc'));
+    subscribeToLeads(userId: string, callback: (leads: Lead[]) => void, onError?: (error: any) => void): Unsubscribe {
+        if (!userId) return () => { };
+
+        // REMOVED orderBy to prevent "Missing Index" hang for new accounts
+        const q = query(
+            collection(db, LEADS_COLLECTION),
+            where('userId', '==', userId)
+        );
+
         return onSnapshot(q, (snapshot) => {
             const leads = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             } as Lead));
+
+            // Client-side Sort
+            leads.sort((a, b) => {
+                const timeA = a.created_at?.seconds || 0;
+                const timeB = b.created_at?.seconds || 0;
+                return timeB - timeA;
+            });
+
             callback(leads);
+        }, (error) => {
+            // Forward error to component
+            if (onError) onError(error);
+            else console.error("Lead subscription error:", error);
         });
     },
 
     // Fetch all leads (One-time)
-    async getAllLeads(): Promise<Lead[]> {
+    async getAllLeads(userId: string): Promise<Lead[]> {
+        if (!userId) return [];
         try {
-            const q = query(collection(db, LEADS_COLLECTION), orderBy('created_at', 'desc'));
+            const q = query(
+                collection(db, LEADS_COLLECTION),
+                where('userId', '==', userId)
+            );
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => ({
                 id: doc.id,
@@ -46,10 +70,12 @@ export const leadService = {
     },
 
     // Create a new lead
-    async createLead(leadData: Partial<Lead>): Promise<string> {
+    async createLead(leadData: Partial<Lead>, userId: string): Promise<string> {
+        if (!userId) throw new Error("User ID is required");
         try {
             const newLead = {
                 ...leadData,
+                userId: userId, // Bind to user
                 status: 'NEW' as LeadStatus, // Default status
                 currency: 'USD',
                 created_at: serverTimestamp(),

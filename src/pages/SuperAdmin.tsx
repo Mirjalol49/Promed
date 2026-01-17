@@ -29,6 +29,7 @@ export const SuperAdmin: React.FC = () => {
 
     // Form State
     const [email, setEmail] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
     const [role, setRole] = useState<'admin' | 'doctor' | 'staff'>('staff');
@@ -62,6 +63,7 @@ export const SuperAdmin: React.FC = () => {
         try {
             await createSystemUser({
                 email,
+                phoneNumber: phoneNumber.replace(/\s+/g, ''), // Clean phone
                 password,
                 fullName: name,
                 role
@@ -135,6 +137,7 @@ export const SuperAdmin: React.FC = () => {
 
     const resetForm = () => {
         setEmail('');
+        setPhoneNumber('');
         setPassword('');
         setName('');
         setRole('staff');
@@ -186,12 +189,21 @@ export const SuperAdmin: React.FC = () => {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-500">Email Address</label>
+                            <label className="text-sm font-medium text-slate-500">Email Address (Optional)</label>
                             <input
                                 value={email} onChange={e => setEmail(e.target.value)}
                                 type="email"
                                 className="w-full p-3 bg-slate-50 rounded-xl outline-none"
-                                placeholder="doctor@clinic.com" required
+                                placeholder="doctor@clinic.com"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-500">Phone Number (For Login)</label>
+                            <input
+                                value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)}
+                                type="tel"
+                                className="w-full p-3 bg-slate-50 rounded-xl outline-none"
+                                placeholder="+998901234567" required
                             />
                         </div>
                         <div className="space-y-2">

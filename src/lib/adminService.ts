@@ -9,6 +9,7 @@ import { firebaseConfig, db as mainDb } from './firebase';
 
 export const createSystemUser = async (data: {
     email: string;
+    phoneNumber?: string; // Optional for now to keep back-compat
     fullName: string;
     role: 'admin' | 'doctor' | 'staff' | 'user';
     password: string;
@@ -46,12 +47,15 @@ export const createSystemUser = async (data: {
             displayName: data.fullName
         });
 
-        // 4. Store user details in Firestore 'profiles' collection
+        // 4. Store user details in Firestore 'profiles' collection (and 'users' collection for lookup)
         // We use the MAIN db for this, so the main app can read it easily.
         console.log("Saving profile to Firestore...");
+
+        // Save to 'profiles' (Visual Profile)
         await setDoc(doc(mainDb, 'profiles', user.uid), {
             id: user.uid,
             email: data.email,
+            phoneNumber: data.phoneNumber || '',
             full_name: data.fullName, // Correctly mapped
             fullName: data.fullName,   // Add both casing styles to be safe
             role: data.role,
@@ -62,6 +66,21 @@ export const createSystemUser = async (data: {
             lock_password: data.password,
             lock_enabled: true
         });
+
+        // Create clean phone number by removing spaces
+        const cleanPhone = data.phoneNumber ? data.phoneNumber.replace(/\s+/g, '') : '';
+
+        // Save to 'users' (System Lookup for Login)
+        // We duplicates some data here because 'requestOtp' queries 'users' collection
+        await setDoc(doc(mainDb, 'users', user.uid), {
+            uid: user.uid,
+            phoneNumber: cleanPhone,
+            email: data.email,
+            role: data.role,
+            telegramChatId: null // Pending link
+        });
+
+        // 5. Sign out the secondary auth so it doesn't linger
 
         // 5. Sign out the secondary auth so it doesn't linger
         await signOut(secondaryAuth);

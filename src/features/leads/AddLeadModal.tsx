@@ -5,6 +5,7 @@ import { Portal } from '../../components/ui/Portal';
 import { Lead, LeadStatus, LeadSource } from '../../types';
 import { leadService } from '../../services/leadService';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAccount } from '../../contexts/AccountContext';
 
 interface AddLeadModalProps {
     isOpen: boolean;
@@ -15,6 +16,7 @@ interface AddLeadModalProps {
 
 export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onSuccess, leadToEdit }) => {
     const { t } = useLanguage();
+    const { userId } = useAccount();
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState<Partial<Lead>>({
         full_name: '',
@@ -100,7 +102,11 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                 id = leadToEdit.id;
             } else {
                 console.log("Creating new lead");
-                id = await leadService.createLead(cleanData as Omit<Lead, 'id' | 'status' | 'created_at' | 'updated_at'>);
+                if (!userId) {
+                    alert("Xatolik: Foydalanuvchi ID topilmadi. Iltimos qayta kiring.");
+                    return;
+                }
+                id = await leadService.createLead(cleanData as Omit<Lead, 'id' | 'status' | 'created_at' | 'updated_at'>, userId);
             }
             console.log("Operation successful, ID:", id);
             onSuccess(id);

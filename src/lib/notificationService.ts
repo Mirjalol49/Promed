@@ -66,11 +66,12 @@ export const subscribeToSystemAlerts = (
 /**
  * Admin: Broadcast a new message
  */
-export const broadcastAlert = async (alert: {
+export const createSystemAlert = async (alert: {
     title: string;
     content: string;
     type: 'info' | 'warning' | 'danger' | 'success';
     category?: 'billing' | 'congratulations' | 'message';
+    expires_at?: string;
 }): Promise<void> => {
     console.log("📣 broadcastAlert: current user:", auth.currentUser?.uid);
     // First, deactivate all previous alerts

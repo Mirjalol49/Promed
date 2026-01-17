@@ -58,7 +58,7 @@ const TEXTS = {
         ask_contact: "📲 Iltimos, telefon raqamingizni yuborish uchun pastdagi tugmani bosing:",
         share_contact_btn: "📱 Telefon raqamni yuborish",
         searching: "🔍 Tekshirilmoqda...",
-        not_found: "❌ Kechirasiz, ushbu raqam bazada topilmadi. Iltimos, to'g'ri raqamdan foydalanayotganingizga ishonch hosil qiling yoki administratorga murojaat qiling.",
+        not_found: "❌ Kechirasiz, ushbu raqam bazada topilmadi. Iltimos, to'g'ri raqamdan foydalanayotganingizga ishonch hosil qiling yoki administratorga murojaat qiling.\n\n📞 Admin: +998 93 748 91 41",
         success: (name) => `✅ Xush kelibsiz, **Hurmatli ${name}**! Siz tizimga muvaffaqiyatli ulandingiz.`,
         reminder_title: "Eslatma! 🎗",
         injection_msg: (name, date, time) => `Assalomu alaykum, **Hurmatli ${name}**! Sizga inyeksiya belgilanganini eslatib o'tmoqchimiz.\n\n🗓 Sana: **${date}**\n⏰ Vaqt: **${time}**\n\nIltimos, o'z vaqtida keling. O'zingizni ehtiyot qiling! 😊`,
@@ -71,7 +71,7 @@ const TEXTS = {
         ask_contact: "📲 Пожалуйста, нажмите кнопку ниже, чтобы отправить свой номер телефона:",
         share_contact_btn: "📱 Отправить номер",
         searching: "🔍 Проверка...",
-        not_found: "❌ К сожалению, этот номер не найден в базе. Пожалуйста, убедитесь, что вы используете правильный номер, или обратитесь к администратору.",
+        not_found: "❌ К сожалению, этот номер не найден в базе. Пожалуйста, убедитесь, что вы используете правильный номер, или обратитесь к администратору.\n\n📞 Админ: +998 93 748 91 41",
         success: (name) => `✅ Добро пожаловать, **Уважаемый(ая) ${name}**! Вы успешно подключились к системе.`,
         reminder_title: "Напоминание! 🎗",
         injection_msg: (name, date, time) => `Здравствуйте, **Уважаемый(ая) ${name}**! Напоминаем вам о запланированной инъекции.\n\n🗓 Дата: **${date}**\n⏰ Время: **${time}**\n\nПожалуйста, приходите вовремя. Берегите себя! 😊`,
@@ -84,7 +84,7 @@ const TEXTS = {
         ask_contact: "📲 Please press the button below to share your phone number:",
         share_contact_btn: "📱 Share Phone Number",
         searching: "🔍 Checking...",
-        not_found: "❌ Sorry, this number was not found in our database. Please make sure you are using the correct number or contact an administrator.",
+        not_found: "❌ Sorry, this number was not found in our database. Please make sure you are using the correct number or contact an administrator.\n\n📞 Admin: +998 93 748 91 41",
         success: (name) => `✅ Welcome, **Dear ${name}**! You have successfully connected to the system.`,
         reminder_title: "Reminder! 🎗",
         injection_msg: (name, date, time) => `Hello **Dear ${name}**! Just a reminder about your scheduled injection.\n\n🗓 Date: **${date}**\n⏰ Time: **${time}**\n\nPlease come on time. Take care! 😊`,
@@ -125,11 +125,12 @@ bot.use(async (ctx, next) => {
         console.warn("⚠️ WARNING: Whitelist is using placeholder. Please add your real ID to allowed_user_ids.");
     }
 
-    if (!ALLOWED_USER_IDS.includes(user.id)) {
-        console.warn(`⛔ BLOCKED UNAUTHORIZED ACCESS: User ${user.id} (${user.first_name})`);
-        // Silent drop - do not call next()
-        return;
-    }
+    // WHITELIST DISABLED FOR PUBLIC ACCESS
+    // if (!ALLOWED_USER_IDS.includes(user.id)) {
+    //    console.warn(`⛔ BLOCKED UNAUTHORIZED ACCESS: User ${user.id} (${user.first_name})`);
+    //    return;
+    // }
+    console.log(`🌍 Public Access: User ${user.first_name} (${user.id})`);
 
     await next();
 });
@@ -163,12 +164,11 @@ bot.on('chat_join_request', async (ctx) => {
     const user = ctx.chatJoinRequest.from;
     console.log(`🛡️ Join Request Processing for: ${user.first_name} (${user.id})`);
 
-    if (ALLOWED_USER_IDS.includes(user.id)) {
-        console.log(`✅ Auto-approving known user: ${user.first_name}`);
+    console.log(`✅ Auto-approving user (Public Mode): ${user.first_name}`);
+    try {
         await ctx.approveChatJoinRequest(user.id);
-    } else {
-        console.log(`🛡️ Auto-declining join request from stranger: ${user.first_name}`);
-        await ctx.declineChatJoinRequest(user.id);
+    } catch (e) {
+        console.error(`Failed to approve join request: ${e.message}`);
     }
 });
 

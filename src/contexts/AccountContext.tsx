@@ -96,8 +96,12 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (data.created_at) setCreatedAt(data.created_at);
 
         // Update Identity
-        if (data.full_name || data.avatar_url || data.profile_image) {
+        if (data.full_name || data.avatar_url || data.profile_image || data.role) {
           if (data.full_name) setAccountName(data.full_name);
+
+          if (data.role) {
+            setRole(data.role);
+          }
 
           const newImage = data.avatar_url || data.profile_image;
           if (newImage) setUserImage(newImage);
@@ -108,10 +112,14 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
             const parsed = JSON.parse(stored);
             if (data.full_name) parsed.name = data.full_name;
             if (newImage) parsed.image = newImage;
+            if (data.role) parsed.role = data.role;
             if (data.created_at) parsed.createdAt = data.created_at;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
           }
         }
+      } else {
+        console.warn('⚠️ AccountContext: Profile not found in Firestore. Forcing logout to clear stale state.');
+        logout();
       }
     } catch (e) {
       console.error('Error refreshing profile:', e);

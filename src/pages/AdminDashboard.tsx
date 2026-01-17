@@ -17,7 +17,7 @@ import happyIcon from '../assets/images/patients.png';
 import operationIcon from '../assets/images/operation.png';
 import thinkingIcon from '../assets/images/patients.png'; // Fallback
 import { subscribeToAllProfiles, updateUserProfile } from '../lib/userService';
-import { broadcastAlert, sendTargetedNotifications, clearAlerts } from '../lib/notificationService';
+import { createSystemAlert, sendTargetedNotifications, clearAlerts } from '../lib/notificationService';
 import { Profile } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -32,6 +32,7 @@ export const AdminDashboard: React.FC = () => {
     const [inviteForm, setInviteForm] = useState({
         name: '',
         email: '',
+        phoneNumber: '', // Added phoneNumber
         password: '',
         role: 'user' as 'admin' | 'doctor' | 'staff' | 'user'
     });
@@ -84,6 +85,7 @@ export const AdminDashboard: React.FC = () => {
         return profiles.filter(p =>
             p.fullName?.toLowerCase().includes(q) ||
             p.email?.toLowerCase().includes(q) ||
+            p.phoneNumber?.toLowerCase().includes(q) || // Filter by phone too
             p.accountId?.toLowerCase().includes(q)
         );
     }, [profiles, searchQuery]);
@@ -119,7 +121,7 @@ export const AdminDashboard: React.FC = () => {
                     category: notificationCategory
                 });
             } else {
-                await broadcastAlert({
+                await createSystemAlert({
                     ...broadcastData,
                     category: notificationCategory
                 });
@@ -139,15 +141,24 @@ export const AdminDashboard: React.FC = () => {
 
 
     const handleCreateAccount = async () => {
-        if (!inviteForm.email || !inviteForm.password || !inviteForm.name) {
-            error(t('toast_error_title'), "Iltimos, barcha maydonlarni to'ldiring.");
+        // Validation: Name + (Phone OR Email) + Password
+        if (!inviteForm.name || !inviteForm.password || (!inviteForm.phoneNumber && !inviteForm.email)) {
+            error(t('toast_error_title'), "Please enter Name, Phone Number, and Password.");
             return;
         }
 
         setIsCreating(true);
         try {
+            // Auto-generate email if missing, using phone number
+            let finalEmail = inviteForm.email;
+            if (!finalEmail && inviteForm.phoneNumber) {
+                const cleanPhone = inviteForm.phoneNumber.replace(/\+/g, '').replace(/\s/g, '');
+                finalEmail = `${cleanPhone}@promed.sys`;
+            }
+
             await createSystemUser({
-                email: inviteForm.email,
+                email: finalEmail,
+                phoneNumber: inviteForm.phoneNumber,
                 password: inviteForm.password,
                 fullName: inviteForm.name,
                 role: inviteForm.role
@@ -155,7 +166,7 @@ export const AdminDashboard: React.FC = () => {
 
             success(t('toast_info_title'), t('account_created'));
             setShowInviteModal(false);
-            setInviteForm({ name: '', email: '', password: '', role: 'user' });
+            setInviteForm({ name: '', email: '', phoneNumber: '', password: '', role: 'user' });
         } catch (err: any) {
             console.error("Create account error:", err);
             error(t('toast_error_title'), err.message || "Xatolik yuz berdi.");
@@ -284,10 +295,21 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-muted ml-2">Secure Link Identifier (Email)</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-muted ml-2">Phone Number (Login ID)</label>
+                                    <input
+                                        type="tel"
+                                        placeholder="+998 90 123 45 67"
+                                        value={inviteForm.phoneNumber}
+                                        onChange={(e) => setInviteForm({ ...inviteForm, phoneNumber: e.target.value })}
+                                        className="w-full px-7 py-4.5 bg-white border border-promed-primary/10 rounded-[24px] focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all font-bold text-promed-text placeholder:text-promed-muted/30"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-promed-muted ml-2">Email (Optional)</label>
                                     <input
                                         type="email"
-                                        placeholder="admin@clinic.com"
+                                        placeholder="Optional..."
                                         value={inviteForm.email}
                                         onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
                                         className="w-full px-7 py-4.5 bg-white border border-promed-primary/10 rounded-[24px] focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all font-bold text-promed-text placeholder:text-promed-muted/30"

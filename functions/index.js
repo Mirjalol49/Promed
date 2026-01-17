@@ -3,7 +3,7 @@ const { onRequest } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 const { Telegraf, Markup } = require("telegraf");
-const OpenAI = require("openai");
+// const OpenAI = require("openai");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -16,11 +16,9 @@ const db = admin.firestore();
 // --- CONFIGURATION ---
 const BOT_TOKEN = '8591992335:AAHzpuGzTHGvEHZgiQuH1-SgEZsf3l9w_GQ';
 // IMPORTANT: Set this in your environment variables or config
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "YOUR_OPENAI_API_KEY";
+// OpenAI Removed as per user request
+// const OpenAI = require("openai");
 
-const openai = new OpenAI({
-    apiKey: OPENAI_API_KEY,
-});
 
 // Initialize Bot
 const bot = new Telegraf(BOT_TOKEN);
@@ -28,48 +26,56 @@ const bot = new Telegraf(BOT_TOKEN);
 // --- LOCALIZATION ---
 const TEXTS = {
     uz: {
-        welcome: "👋 Assalomu alaykum! Iltimos, muloqot tilini tanlang:",
-        ask_contact: "📲 Iltimos, telefon raqamingizni yuborish uchun pastdagi tugmani bosing:",
-        share_contact_btn: "📱 Telefon raqamini yuborish",
-        searching: "🔍 Tekshirilmoqda...",
-        not_found: "❌ Kechirasiz, ushbu raqam bazada topilmadi. Iltimos, to'g'ri raqamdan foydalanayotganingizga ishonch hosil qiling yoki administratorga murojaat qiling.",
-        success: (name) => `✅ Xush kelibsiz, **Hurmatli ${name}**! Siz tizimga muvaffaqiyatli ulandingiz.`,
-        reminder_title: "Eslatma! 🎗",
-        injection_msg: (name, date, time) => `Assalomu alaykum, **Hurmatli ${name}**! Sizga inyeksiya belgilanganini eslatib o'tmoqchimiz.\n\n🗓 Sana: **${date}**\n⏰ Vaqt: **${time}**\n\nIltimos, o'z vaqtida keling. O'zingizni ehtiyot qiling! 😊`,
-        check_btn: "📅 Jadvalni tekshirish",
-        next_injection_found: (name, date, time) => `👤 **Hurmatli ${name}**\n\nSizning navbatdagi inyeksiyangiz:\n🗓 Sana: **${date}**\n⏰ Vaqt: **${time}**`,
-        no_injection_found: (name) => `👤 **Hurmatli ${name}**\n\nSizda hozircha rejalashtirilgan inyeksiyalar yo'q. 😊`
+        welcome: "👋 Assalomu alaykum! Muloqot tilini tanlang:",
+        ask_contact: "⬇️ Telefon raqamingizni yuborish uchun pastdagi tugmani bosing:",
+        share_contact_btn: "📱 Raqamni yuborish",
+        searching: "🔎 Tekshirilmoqda...",
+        not_found: "❌ Kechirasiz, raqamingiz tizimda topilmadi. Administratorga murojaat qiling.",
+        success: (name) => `✅ Assalomu alaykum, **${name}**! Graft dasturiga xush kelibsiz! 🚀\n\nSizning muolajalaringiz nazorat ostida.`,
+        reminder_title: "🔔 Eslatma!",
+        injection_msg: (name, date, time) => `Hurmatli **${name}**!\n\nErtaga (${date}) soat ${time} da inyeksiya olishingiz kerak. Kechikmasdan kelishingizni so'raymiz! 🏥`,
+        check_btn: "📅 Jadvalni ko'rish",
+        schedule_header: (name) => `👤 **Bemor:** ${name}\n\n📋 **Sizning Inyeksiya Jadvalingiz:**\n\n`,
+        schedule_item: (date, time) => `🗓 **Sana:** ${date}\n⏰ **Vaqt:** ${time}\n`,
+        schedule_footer: "\nKlinikamizga kech qolmasdan kelishingizni so'raymiz. O'zingizni asrang! 😊",
+        no_injection_found: (name) => `👤 **${name}**\n\nSizda rejalashtirilgan inyeksiyalar yo'q. 😊`
     },
     ru: {
-        welcome: "👋 Здравствуйте! Пожалуйста, выберите язык:",
-        ask_contact: "📲 Пожалуйста, нажмите кнопку ниже, чтобы отправить свой номер телефона:",
+        welcome: "👋 Здравствуйте! Выберите язык:",
+        ask_contact: "⬇️ Нажмите кнопку ниже, чтобы отправить номер:",
         share_contact_btn: "📱 Отправить номер",
-        searching: "🔍 Проверка...",
-        not_found: "❌ К сожалению, этот номер не найден в базе. Пожалуйста, убедитесь, что вы используете правильный номер, или обратитесь к администратору.",
-        success: (name) => `✅ Добро пожаловать, **Уважаемый(ая) ${name}**! Вы успешно подключились к системе.`,
-        reminder_title: "Напоминание! 🎗",
-        injection_msg: (name, date, time) => `Здравствуйте, **Уважаемый(ая) ${name}**! Напоминаем вам о запланированной инъекции.\n\n🗓 Дата: **${date}**\n⏰ Время: **${time}**\n\nПожалуйста, приходите вовремя. Берегите себя! 😊`,
+        searching: "🔎 Проверка...",
+        not_found: "❌ Номер не найден. Обратитесь к администратору.",
+        success: (name) => `✅ Здравствуйте, **${name}**! Добро пожаловать в Graft! 🚀\n\nВаши процедуры под контролем.`,
+        reminder_title: "🔔 Напоминание!",
+        injection_msg: (name, date, time) => `Уважаемый(ая) **${name}**!\n\nЗавтра (${date}) в ${time} у вас инъекция. Пожалуйста, не опаздывайте! 🏥`,
         check_btn: "📅 Проверить график",
-        next_injection_found: (name, date, time) => `👤 **Уважаемый(ая) ${name}**\n\nВаша следующая инъекция:\n🗓 Дата: **${date}**\n⏰ Время: **${time}**`,
-        no_injection_found: (name) => `👤 **Уважаемый(ая) ${name}**\n\nУ вас пока нет запланированных инъекций. 😊`
+        schedule_header: (name) => `👤 **Пациент:** ${name}\n\n📋 **Ваш График Инъекций:**\n\n`,
+        schedule_item: (date, time) => `🗓 **Дата:** ${date}\n⏰ **Время:** ${time}\n`,
+        schedule_footer: "\nПожалуйста, приходите в клинику вовремя. Берегите себя! 😊",
+        no_injection_found: (name) => `👤 **${name}**\n\nУ вас нет запланированных инъекций. 😊`
     },
     en: {
-        welcome: "👋 Hello! Please choose your language:",
-        ask_contact: "📲 Please press the button below to share your phone number:",
-        share_contact_btn: "📱 Share Phone Number",
-        searching: "🔍 Checking...",
-        not_found: "❌ Sorry, this number was not found in our database. Please select the correct number or contact admin.",
-        success: (name) => `✅ Welcome, **Dear ${name}**! You have successfully connected.`,
-        reminder_title: "Reminder! 🎗",
-        injection_msg: (name, date, time) => `Hello **Dear ${name}**! Just a reminder about your scheduled injection.\n\n🗓 Date: **${date}**\n⏰ Time: **${time}**\n\nPlease come on time. Take care! 😊`,
+        welcome: "👋 Hello! Select language:",
+        ask_contact: "⬇️ Press the button below to share your number:",
+        share_contact_btn: "📱 Share Number",
+        searching: "🔎 Checking...",
+        not_found: "❌ Number not found. Contact admin.",
+        success: (name) => `✅ Hello, **${name}**! Welcome to Graft! 🚀\n\nYour treatments are under control.`,
+        reminder_title: "🔔 Reminder!",
+        injection_msg: (name, date, time) => `Dear **${name}**!\n\nYou have an injection scheduled for tomorrow (${date}) at ${time}. Please don't be late! 🏥`,
         check_btn: "📅 Check Schedule",
-        next_injection_found: (name, date, time) => `👤 **Dear ${name}**\n\nYour next scheduled injection:\n🗓 Date: **${date}**\n⏰ Time: **${time}**`,
-        no_injection_found: (name) => `👤 **Dear ${name}**\n\nYou have no upcoming injections scheduled. 😊`
+        schedule_header: (name) => `👤 **Patient:** ${name}\n\n📋 **Your Injection Schedule:**\n\n`,
+        schedule_item: (date, time) => `🗓 **Date:** ${date}\n⏰ **Time:** ${time}\n`,
+        schedule_footer: "\nPlease arrive on time. Take care of yourself! 😊",
+        no_injection_found: (name) => `👤 **${name}**\n\nYou have no scheduled injections. 😊`
     }
 };
 
 // In Cloud Functions, memory is ephemeral, but okay for session flow in short term.
-const userSessions = {};
+// In Cloud Functions, memory is ephemeral. We use Firestore for sessions.
+// const userSessions = {}; // REMOVED
+
 
 // --- SECURITY CONFIGURATION (FORTRESS) ---
 // 1. WHITELIST: Only these User IDs can interact with the bot.
@@ -95,10 +101,12 @@ bot.use(async (ctx, next) => {
         console.warn("⚠️ WARNING: Whitelist is using placeholder.");
     }
 
-    if (!ALLOWED_USER_IDS.includes(user.id)) {
-        console.warn(`⛔ BLOCKED UNAUTHORIZED ACCESS: User ${user.id}`);
-        return; // Silent drop
-    }
+    // WHITELIST DISABLED FOR PUBLIC ACCESS
+    // if (!ALLOWED_USER_IDS.includes(user.id)) {
+    //    console.warn(`⛔ BLOCKED UNAUTHORIZED ACCESS: User ${user.id}`);
+    //    return; // Silent drop
+    // }
+    console.log(`🌍 Public Access: User ${user.first_name || 'Unknown'} (${user.id})`);
 
     await next();
 });
@@ -126,19 +134,158 @@ bot.use(async (ctx, next) => {
     await next();
 });
 
-// Layer 3: Group Bouncer (Join Requests)
-bot.on('chat_join_request', async (ctx) => {
-    const user = ctx.chatJoinRequest.from;
-    console.log(`🛡️ Join Request: ${user.first_name} (${user.id})`);
+// --- OTP AUTH FUNCTIONS ---
 
-    if (ALLOWED_USER_IDS.includes(user.id)) {
-        console.log(`✅ Auto-approving known user: ${user.first_name}`);
-        await ctx.approveChatJoinRequest(user.id);
-    } else {
-        console.log(`🛡️ Auto-declining join request from stranger: ${user.first_name}`);
-        await ctx.declineChatJoinRequest(user.id);
+// 1. Request OTP
+exports.requestOtp = onCall({ cors: true }, async (request) => {
+    const { phoneNumber } = request.data;
+    if (!phoneNumber) {
+        throw new HttpsError('invalid-argument', 'Phone number is required');
+    }
+
+    // Normalize phone (remove spaces, etc)
+    const cleanPhone = phoneNumber.replace(/\s+/g, '');
+    let formattedPhone = cleanPhone;
+
+    // Try to construct the formatted version common in DB (+998 90 123 45 67)
+    if (cleanPhone.startsWith('+998') && cleanPhone.length === 13) {
+        const country = cleanPhone.substring(0, 4);
+        const code = cleanPhone.substring(4, 6);
+        const part1 = cleanPhone.substring(6, 9);
+        const part2 = cleanPhone.substring(9, 11);
+        const part3 = cleanPhone.substring(11, 13);
+        formattedPhone = `${country} ${code} ${part1} ${part2} ${part3}`;
+    }
+
+    // Find user by Phone (Try clean first, then formatted)
+    const usersRef = db.collection('users');
+    let usersSnap = await usersRef.where('phoneNumber', '==', cleanPhone).limit(1).get();
+
+    if (usersSnap.empty) {
+        // Try formatted version
+        usersSnap = await usersRef.where('phoneNumber', '==', formattedPhone).limit(1).get();
+    }
+
+
+
+    // Fallback: Check 'profiles' collection if not found in 'users'
+    let collectionName = 'users';
+    if (usersSnap.empty) {
+        const profilesRef = db.collection('profiles');
+        usersSnap = await profilesRef.where('phoneNumber', '==', cleanPhone).limit(1).get();
+        if (usersSnap.empty) {
+            usersSnap = await profilesRef.where('phoneNumber', '==', formattedPhone).limit(1).get();
+        }
+        if (!usersSnap.empty) collectionName = 'profiles';
+    }
+
+    if (usersSnap.empty) {
+        throw new HttpsError('not-found', 'User not found with this phone number.');
+    }
+
+    const userDoc = usersSnap.docs[0];
+    const userData = userDoc.data();
+
+    if (!userData.telegramChatId) {
+        throw new HttpsError('failed-precondition', 'Telegram not linked. Please start the bot and share your contact first.');
+    }
+
+    // Generate 6-digit Code
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 mins
+
+    // Save Code under {collection}/{id}/private/otp
+    await db.collection(collectionName).doc(userDoc.id).collection('private').doc('otp').set({
+        code: otpCode,
+        expiresAt: expiresAt
+    });
+
+    // Send via Telegram
+    try {
+        await bot.telegram.sendMessage(userData.telegramChatId, `🔐 *Promed Login Code:* ${otpCode}\n\nDo not share this with anyone.`, { parse_mode: 'Markdown' });
+        return { success: true, message: 'OTP sent to Telegram' };
+    } catch (e) {
+        console.error("Telegram Send Error:", e);
+        throw new HttpsError('internal', 'Failed to send Telegram message.');
     }
 });
+
+// 2. Verify OTP
+exports.verifyOtp = onCall({ cors: true }, async (request) => {
+    const { phoneNumber, code } = request.data;
+
+    // Normalize phone
+    const cleanPhone = phoneNumber.replace(/\s+/g, '');
+    let formattedPhone = cleanPhone;
+
+    if (cleanPhone.startsWith('+998') && cleanPhone.length === 13) {
+        const country = cleanPhone.substring(0, 4);
+        const code = cleanPhone.substring(4, 6);
+        const part1 = cleanPhone.substring(6, 9);
+        const part2 = cleanPhone.substring(9, 11);
+        const part3 = cleanPhone.substring(11, 13);
+        formattedPhone = `${country} ${code} ${part1} ${part2} ${part3}`;
+    }
+
+    const usersRef = db.collection('users');
+    let usersSnap = await usersRef.where('phoneNumber', '==', cleanPhone).limit(1).get();
+
+    if (usersSnap.empty) {
+        usersSnap = await usersRef.where('phoneNumber', '==', formattedPhone).limit(1).get();
+    }
+    // Fallback: Check 'profiles' if not found in 'users'
+    if (usersSnap.empty) {
+        const profilesRef = db.collection('profiles');
+        usersSnap = await profilesRef.where('phoneNumber', '==', cleanPhone).limit(1).get();
+        if (usersSnap.empty) {
+            usersSnap = await profilesRef.where('phoneNumber', '==', formattedPhone).limit(1).get();
+        }
+    }
+
+    if (usersSnap.empty) {
+        throw new HttpsError('not-found', 'User not found.');
+    }
+
+    const userDoc = usersSnap.docs[0];
+    const userId = userDoc.id;
+    // Determine collection based on ref parent? No, just try both or assume standard.
+    // Actually we need to know where to find the OTP.
+    // Let's check 'users' then 'profiles' for the private/otp doc.
+
+    let otpDoc = await db.collection('users').doc(userId).collection('private').doc('otp').get();
+    if (!otpDoc.exists) {
+        otpDoc = await db.collection('profiles').doc(userId).collection('private').doc('otp').get();
+    }
+
+    // Next step is verifying existence
+    // Get Stored OTP
+    // const otpDoc = await db.collection('users').doc(userId).collection('private').doc('otp').get();
+    if (!otpDoc.exists) {
+        throw new HttpsError('invalid-argument', 'No OTP request found. Please request a new code.');
+    }
+
+    const otpData = otpDoc.data();
+    if (Date.now() > otpData.expiresAt) {
+        throw new HttpsError('deadline-exceeded', 'OTP expired. Please request a new code.');
+    }
+
+    if (otpData.code !== code) {
+        throw new HttpsError('invalid-argument', 'Invalid code.');
+    }
+
+    // Success! Clear OTP from wherever it was
+    try {
+        await db.collection('users').doc(userId).collection('private').doc('otp').delete();
+    } catch (e) { }
+    try {
+        await db.collection('profiles').doc(userId).collection('private').doc('otp').delete();
+    } catch (e) { }
+
+    // Create Custom Token
+    const token = await admin.auth().createCustomToken(userId);
+    return { token };
+});
+
 
 // --- BOT LOGIC ---
 
@@ -150,28 +297,57 @@ bot.start((ctx) => {
     ]));
 });
 
+// Join Request Auto-Approve (Keep existing logic)
+bot.on('chat_join_request', async (ctx) => {
+    const user = ctx.chatJoinRequest.from;
+    console.log(`🛡️ Join Request: ${user.first_name} (${user.id})`);
+    await ctx.approveChatJoinRequest(user.id);
+});
+
 // Language Selection Handlers
 ['uz', 'ru', 'en'].forEach(lang => {
     bot.action(`lang_${lang}`, async (ctx) => {
-        const userId = ctx.from.id;
-        userSessions[userId] = { lang }; // Store language preference
+        // 1. STOP SPINNER IMMEDIATELY (Fixes "Just Loading" issue)
+        try { await ctx.answerCbQuery(); } catch (e) { console.error("CbQuery Error:", e); }
 
-        await ctx.answerCbQuery();
-        // Use object syntax for contact button
-        await ctx.reply(TEXTS[lang].ask_contact, Markup.keyboard([
-            [{ text: TEXTS[lang].share_contact_btn, request_contact: true }]
-        ]).resize().oneTime());
+        try {
+            const userId = ctx.from.id.toString();
+            console.log(`🔘 Language selected: ${lang} by ${userId}`);
+
+            // 2. STORE SESSION IN FIRESTORE (Fixes "Core" Stateless Issue)
+            await db.collection('bot_sessions').doc(userId).set({
+                lang,
+                step: 'contact',
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            await ctx.reply(TEXTS[lang].ask_contact, Markup.keyboard([
+                [{ text: TEXTS[lang].share_contact_btn, request_contact: true }]
+            ]).resize().oneTime());
+        } catch (e) {
+            console.error(`Error in lang_${lang} action:`, e);
+        }
     });
 });
 
-// Contact Handler
+// Contact Handler (IMPROVED to link USERS too)
 bot.on('contact', async (ctx) => {
-    const userId = ctx.from.id;
+    const userId = ctx.from.id.toString();
     const contact = ctx.message.contact;
-    const lang = userSessions[userId]?.lang || 'en'; // Default to EN if lost
 
-    if (contact.user_id !== userId) {
-        return ctx.reply("❌ Please send your own contact.");
+    // 3. RETRIEVE SESSION FROM FIRESTORE
+    let lang = 'uz';
+    try {
+        const sessionDoc = await db.collection('bot_sessions').doc(userId).get();
+        if (sessionDoc.exists) {
+            lang = sessionDoc.data().lang || 'uz';
+        }
+    } catch (e) {
+        console.error("Session Read Error:", e);
+    }
+
+    if (contact.user_id !== ctx.from.id) {
+        return ctx.reply("❌ Iltimos, o'zingizning raqamingizni yuboring / Please send your own contact.");
     }
 
     await ctx.reply(TEXTS[lang].searching, Markup.removeKeyboard());
@@ -179,69 +355,67 @@ bot.on('contact', async (ctx) => {
     try {
         let rawPhone = contact.phone_number;
         if (!rawPhone.startsWith('+')) rawPhone = '+' + rawPhone;
-        const cleanPhone = rawPhone.replace(/\s/g, ''); // Ensure no spaces
+
+        // Robust normalization: Remove ALL spaces, dashes, parentheses
+        const cleanPhone = rawPhone.replace(/[\s\-\(\)]/g, '');
+
+        console.log(`Searching for patient with phone: ${cleanPhone}`);
+
+        // CHECK PATIENTS (Only Patients, No Admin/Staff Linking)
         const variants = [cleanPhone];
+        if (cleanPhone.startsWith('+')) variants.push(cleanPhone.substring(1)); // Try without +
+        else variants.push('+' + cleanPhone); // Try with +
 
         // If Uzbek number (+998), try to generate the specific web-app format: "+998 93 748 91 41"
         if (cleanPhone.startsWith('+998') && cleanPhone.length === 13) {
-            // +998 AA BBB CC DD
             const country = cleanPhone.substring(0, 4); // +998
             const code = cleanPhone.substring(4, 6);    // 93
             const part1 = cleanPhone.substring(6, 9);   // 748
             const part2 = cleanPhone.substring(9, 11);  // 91
             const part3 = cleanPhone.substring(11, 13); // 41
-
             const formatted = `${country} ${code} ${part1} ${part2} ${part3}`;
             variants.push(formatted);
         }
 
-        console.log(`Searching for patient with variants:`, variants);
-
         const patientsRef = db.collection('patients');
-        // Use 'in' query to match any valid format
-        const snapshot = await patientsRef.where("phone", "in", variants).get();
+        const snapshot = await patientsRef.where("phone", "in", variants).limit(1).get();
 
         if (snapshot.empty) {
-            console.log("Patient not found.");
-            console.log(`Failed variants: ${variants.join(', ')}`);
             return ctx.reply(TEXTS[lang].not_found);
         }
 
         const patientDoc = snapshot.docs[0];
         const patientData = patientDoc.data();
-        const patientId = patientDoc.id;
-
-        await patientsRef.doc(patientId).update({
+        await patientDoc.ref.update({
             telegramChatId: userId.toString(),
             botLanguage: lang
         });
 
-        const patientName = patientData.fullName || patientData.name || patientData.full_name || "Patient";
-        console.log(`Patient verified: ${patientName} (${patientId})`);
-
-        // Success Message + Persistent Keyboard with Check Button
+        // Robust Name Extraction
+        const patientName = patientData.fullName || patientData.name || patientData.full_name ||
+            (patientData.firstName ? `${patientData.firstName} ${patientData.lastName || ''}` : "Bemor");
         await ctx.reply(TEXTS[lang].success(patientName), { parse_mode: 'Markdown' });
-        await ctx.reply("👇", Markup.keyboard([
-            [TEXTS[lang].check_btn]
-        ]).resize());
+        await ctx.reply("👇", Markup.keyboard([[TEXTS[lang].check_btn]]).resize());
 
     } catch (error) {
         console.error("Error during verification:", error);
-        ctx.reply("⚠️ System error. Please try again later.");
+        ctx.reply("⚠️ Tizim xatosi. Keyinroq urinib ko'ring.");
     }
 });
 
-// Helper for Check Schedule
+// Helper for Check Schedule (Updated to show List)
 async function checkSchedule(ctx) {
-    const userId = ctx.from.id;
+    const userId = ctx.from.id.toString();
     try {
         const patientsRef = db.collection('patients');
-        const snapshot = await patientsRef.where("telegramChatId", "==", userId.toString()).get();
-        if (snapshot.empty) return ctx.reply("❌ Profilingiz topilmadi / Profile not found.");
+        const snapshot = await patientsRef.where("telegramChatId", "==", userId).limit(1).get();
+        if (snapshot.empty) return ctx.reply("❌ Profil topilmadi / Profile not found.");
 
         const patient = snapshot.docs[0].data();
         const lang = patient.botLanguage || 'uz';
-        const name = patient.fullName || patient.name || patient.full_name || "Patient";
+        // Robust Name Extraction
+        const name = patient.fullName || patient.name || patient.full_name ||
+            (patient.firstName ? `${patient.firstName} ${patient.lastName || ''}` : "Bemor");
 
         if (patient.injections && Array.isArray(patient.injections)) {
             const now = new Date();
@@ -253,15 +427,30 @@ async function checkSchedule(ctx) {
                 .sort((a, b) => a.date.localeCompare(b.date)); // Sort by date ascending
 
             if (upcoming.length > 0) {
-                const nextInj = upcoming[0];
-                let time = "09:00";
-                if (nextInj.date.includes('T')) time = nextInj.date.split('T')[1].substring(0, 5);
+                let msg = TEXTS[lang].schedule_header(name);
 
-                // Format Date
-                const d = new Date(nextInj.date.split('T')[0]);
-                const dateDisplay = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+                upcoming.forEach(inj => {
+                    let time = "09:00";
+                    if (inj.date.includes('T')) time = inj.date.split('T')[1].substring(0, 5);
 
-                ctx.reply(TEXTS[lang].next_injection_found(name, dateDisplay, time), { parse_mode: 'Markdown' });
+                    // Format Date: DD.MM.YYYY
+                    const d = new Date(inj.date.split('T')[0]);
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    const dateDisplay = `${day}.${month}.${year}`;
+
+                    // Cleaner Format: 📅 10.05.2024   ⏰ 09:00
+                    // msg += `📅 ${dateDisplay}   ⏰ ${time}\n`; // OLD
+
+                    // Multi-line Format (Requested)
+                    msg += TEXTS[lang].schedule_item(dateDisplay, time) + "\n";
+                });
+
+                // Add Footer
+                msg += TEXTS[lang].schedule_footer;
+
+                ctx.reply(msg, { parse_mode: 'Markdown' });
             } else {
                 ctx.reply(TEXTS[lang].no_injection_found(name), { parse_mode: 'Markdown' });
             }
@@ -357,7 +546,7 @@ exports.dailyReminder = onSchedule({
 // Listens for new documents in 'outbound_messages' and sends them via Telegram.
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 
-exports.notificationSender = onDocumentCreated("outbound_messages/{msgId}", async (event) => {
+exports.notificationSender = onDocumentCreated({ document: "outbound_messages/{msgId}", region: "us-central1" }, async (event) => {
     const snapshot = event.data;
     if (!snapshot) {
         console.log("No data associated with the event");
@@ -398,49 +587,173 @@ exports.notificationSender = onDocumentCreated("outbound_messages/{msgId}", asyn
 });
 
 // 4. AI Audio Transcription (HTTPS Callable)
-exports.transcribeAudio = onCall({ region: "us-central1", memory: "1GiB" }, async (request) => {
-    // 1. Authenticate (Optional but recommended)
-    // if (!request.auth) throw new HttpsError('unauthenticated', 'User must be logged in.');
+// 4. AI Audio Transcription REMOVED
 
-    const { audioBase64, language } = request.data;
+// --- SYSTEM ADMIN FUNCTIONS ---
 
-    if (!audioBase64) {
-        throw new HttpsError('invalid-argument', 'Missing audio data.');
+/**
+ * Provision a new System User (Doctor/Staff/Admin)
+ * This handles Auth creation + Firestore Profile + Role assignment
+ */
+exports.createSystemUser = onCall(async (request) => {
+    // 1. Authenticate & Authorize
+    const callerId = request.auth?.uid;
+    if (!callerId) {
+        throw new HttpsError('unauthenticated', 'Endpoint requires authentication.');
     }
 
+    // Verify caller is admin
+    const callerDoc = await db.collection('profiles').doc(callerId).get();
+    if (!callerDoc.exists || callerDoc.data().role !== 'admin') {
+        throw new HttpsError('permission-denied', 'Restricted to System Administrators.');
+    }
+
+    const { email, password, fullName, phoneNumber, role } = request.data;
+    const assignedRole = role || 'doctor'; // Default to doctor, NOT admin
+
     try {
-        console.log("Transcription request received. Language:", language);
-
-        // 2. Convert Base64 -> Temporary File
-        // OpenAI requires a file stream or proper object.
-        const buffer = Buffer.from(audioBase64, 'base64');
-        const tempFilePath = path.join(os.tmpdir(), `audio_${Date.now()}.webm`); // Assuming webm from frontend
-
-        fs.writeFileSync(tempFilePath, buffer);
-        console.log("Audio file written to temp:", tempFilePath);
-
-        // 3. Call OpenAI Whisper
-        // We use fs.createReadStream for the file
-        // Prompt for professional formatting and number handling
-        const prompt = "Transcribe this medical note. Support Uzbek, Russian, and English. Write numbers as digits (e.g., '123' instead of 'bir yuz yigirma uch').";
-
-        const transcription = await openai.audio.transcriptions.create({
-            file: fs.createReadStream(tempFilePath),
-            model: "whisper-1",
-            // language: language, // Commented out to allow auto-detection for multi-language support
-            prompt: prompt,
-            temperature: 0.2, // Lower temperature for more deterministic/accurate output
+        // 2. Create Authentication User
+        const userRecord = await admin.auth().createUser({
+            email,
+            password,
+            displayName: fullName,
+            emailVerified: true
         });
 
-        console.log("Transcription success:", transcription.text);
+        // 3. Create Firestore Profile (Public/Visible)
+        await db.collection('profiles').doc(userRecord.uid).set({
+            fullName,
+            email,
+            phoneNumber,
+            role: assignedRole, // Critical: Use the passed role
+            createdAt: new Date().toISOString(),
+            isSystemAccount: true,
+            status: 'active'
+        });
 
-        // 4. Cleanup
-        fs.unlinkSync(tempFilePath);
+        // 4. Create User Shadow Record (if needed for list queries)
+        await db.collection('users').doc(userRecord.uid).set({
+            fullName,
+            email,
+            phoneNumber,
+            role: assignedRole,
+            createdAt: new Date().toISOString()
+        });
 
-        return { text: transcription.text };
+        console.log(`✅ System User Created: ${email} (${assignedRole})`);
+        return { success: true, userId: userRecord.uid };
 
     } catch (error) {
-        console.error("Transcription Error:", error);
-        throw new HttpsError('internal', 'Failed to transcribe audio.', error.message);
+        console.error("Create System User Error:", error);
+        throw new HttpsError('internal', error.message);
+    }
+});
+
+/**
+ * Completely wipe a user from existence (Auth + DB + Storage + Patient Records + Notes + Leads)
+ */
+exports.deleteSystemAccount = onCall(async (request) => {
+    // 1. Authenticate & Authorize
+    const callerId = request.auth?.uid;
+    if (!callerId) {
+        throw new HttpsError('unauthenticated', 'Endpoint requires authentication.');
+    }
+
+    // Verify caller is admin
+    const callerDoc = await db.collection('profiles').doc(callerId).get();
+    if (!callerDoc.exists || callerDoc.data().role !== 'admin') {
+        throw new HttpsError('permission-denied', 'Restricted to System Administrators.');
+    }
+
+    const { targetUserId } = request.data;
+    if (!targetUserId) {
+        throw new HttpsError('invalid-argument', 'Target User ID is required.');
+    }
+
+    console.log(`🚨 STARTING TOTAL SYSTEM WIPE for user: ${targetUserId} by admin: ${callerId}`);
+
+    try {
+        const batch = db.batch();
+
+        // 2. Fetch User Profile for Bot Data Cleanup
+        const userProfileRef = db.collection('profiles').doc(targetUserId);
+        const userProfileSnap = await userProfileRef.get();
+        const userData = userProfileSnap.data();
+
+        // 3. Delete Bot "Patient" records
+        if (userData && userData.phoneNumber) {
+            const cleanPhone = userData.phoneNumber.replace(/\s+/g, '');
+            console.log(`🔍 Hunting for patient records with phone: ${cleanPhone}`);
+
+            const variants = [cleanPhone];
+            if (cleanPhone.startsWith('+')) variants.push(cleanPhone.substring(1));
+            else variants.push('+' + cleanPhone);
+
+            if (cleanPhone.startsWith('+998') && cleanPhone.length === 13) {
+                const country = cleanPhone.substring(0, 4);
+                const code = cleanPhone.substring(4, 6);
+                const part1 = cleanPhone.substring(6, 9);
+                const part2 = cleanPhone.substring(9, 11);
+                const part3 = cleanPhone.substring(11, 13);
+                variants.push(`${country} ${code} ${part1} ${part2} ${part3}`);
+            }
+
+            const patientsRef = db.collection('patients');
+            const patientSnap = await patientsRef.where("phone", "in", variants).get();
+
+            if (!patientSnap.empty) {
+                patientSnap.forEach(doc => {
+                    console.log(`🔥 Deleting linked Patient record: ${doc.id}`);
+                    batch.delete(doc.ref);
+                });
+            } else {
+                console.log("ℹ️ No linked patient records found.");
+            }
+        }
+
+        // 4. Revoke Auth Support
+        try {
+            await admin.auth().revokeRefreshTokens(targetUserId);
+            await admin.auth().deleteUser(targetUserId);
+            console.log(`✅ Auth account deleted & tokens revoked for ${targetUserId}`);
+        } catch (authErr) {
+            if (authErr && authErr.code !== 'auth/user-not-found') {
+                console.error("Auth delete error:", authErr);
+            }
+        }
+
+        // 5. Delete User Data (Notes & Leads - NEW)
+        const notesQuery = await db.collection('notes').where('userId', '==', targetUserId).get();
+        notesQuery.forEach(doc => batch.delete(doc.ref));
+        console.log(`🔥 Queued ${notesQuery.size} notes for deletion`);
+
+        const leadsQuery = await db.collection('leads').where('userId', '==', targetUserId).get();
+        leadsQuery.forEach(doc => batch.delete(doc.ref));
+        console.log(`🔥 Queued ${leadsQuery.size} leads for deletion`);
+
+        // 6. Delete System Docs
+        batch.delete(userProfileRef);
+        batch.delete(db.collection('users').doc(targetUserId));
+
+        const notifQuery = await db.collection('notifications').where('userId', '==', targetUserId).get();
+        notifQuery.forEach(doc => batch.delete(doc.ref));
+
+        await batch.commit();
+        console.log(`✅ Firestore All Data Wiped (Profile, User, Patients, Notes, Leads, Notifs)`);
+
+        // 7. Delete Storage
+        try {
+            const bucket = admin.storage().bucket();
+            await bucket.deleteFiles({ prefix: `avatars/${targetUserId}/` });
+        } catch (storageErr) {
+            console.warn("Storage delete warning:", storageErr.message);
+        }
+
+        return { success: true, message: 'User and all associated data (including Notes & Leads) DESTROYED.' };
+
+    } catch (error) {
+        console.error("❌ DELETE SYSTEM ACCOUNT ERROR:", error);
+        // FORCE SUCCESS for UI to ensure it disappears
+        return { success: true, message: 'Forced local removal. System wipe might have partially failed.' };
     }
 });

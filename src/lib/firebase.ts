@@ -31,3 +31,7 @@ console.log("📦 Firestore Init: Database =", dbName);
 export const storage = getStorage(app);
 // Analytics disabled to prevent content blocker issues
 // export const analytics = getAnalytics(app);
+
+// Initialize Cloud Functions
+import { getFunctions } from 'firebase/functions';
+export const functions = getFunctions(app);

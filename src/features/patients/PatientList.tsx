@@ -58,6 +58,8 @@ import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
 
 import { useReliableUpload } from '../../hooks/useReliableUpload';
 import trashIcon from '../../assets/images/patients.png'; // Fallback for missing trash.png
+import happyIcon from '../../components/mascot/happy_mascot.png';
+
 // Fallback for missing date.png removed as unused
 import editIcon from '../../assets/images/patients.png'; // Fallback for missing edit.png
 
@@ -1180,32 +1182,13 @@ export const AddPatientForm: React.FC<{
           <div className="px-4 md:px-8 py-4 md:py-6 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-20">
             <div>
               <h3 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
-                {initialData ? (
-                  <>
-                    <div className="p-2 bg-amber-50 rounded-xl text-amber-600"><Edit2 size={20} /></div>
-                    {t('edit_patient_title')}
-                  </>
-                ) : (
-                  <>
-                    <div className="p-2 bg-promed-primary/10 rounded-xl text-promed-primary"><PlusCircle size={20} /></div>
-                    {t('new_patient_reg')}
-                  </>
-                )}
+                {initialData ? t('edit_patient_title') : t('new_patient_reg')}
               </h3>
-              <p className="text-slate-500 text-sm mt-1 font-medium">{t('enter_patient_details')}</p>
+
             </div>
             <div className="flex items-center gap-2">
               {/* ✨ Magic Auto-Fill Button (Dev Tool) */}
-              {!initialData && (
-                <button
-                  type="button"
-                  onClick={handleAutoFill}
-                  className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-2.5 rounded-full transition duration-200"
-                  title="Auto Fill"
-                >
-                  <Wand2 size={24} />
-                </button>
-              )}
+
               <button onClick={onCancel} className="text-slate-400 hover:text-slate-800 hover:bg-slate-100 p-2.5 rounded-full transition duration-200">
                 <X size={24} />
               </button>
@@ -1252,9 +1235,7 @@ export const AddPatientForm: React.FC<{
                       </div>
 
                       {/* UPLOAD OVERLAY */}
-                      <AnimatePresence>
-                        {isProfileUploading && <ImageUploadingOverlay language={language as any} />}
-                      </AnimatePresence>
+
 
                       <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setProfileImage, setProfileImageFile, setIsProfileUploading)} />
                     </label>
@@ -1287,9 +1268,7 @@ export const AddPatientForm: React.FC<{
                         </div>
                       )}
                       {/* UPLOAD OVERLAY */}
-                      <AnimatePresence>
-                        {isBeforeUploading && <ImageUploadingOverlay language={language as any} />}
-                      </AnimatePresence>
+
                       <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setBeforeImage, setBeforeImageFile, setIsBeforeUploading)} />
                     </label>
                   </div>
@@ -1441,6 +1420,28 @@ export const AddPatientForm: React.FC<{
               </button>
             </div>
           </div>
+
+          {/* Custom Mascot Loader Overlay for Modal */}
+          {(saving || isSubmitting || isProfileUploading || isBeforeUploading) && (
+            <div className="absolute inset-0 z-[10000] bg-white/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300 rounded-3xl">
+              <div className="relative mb-6">
+                <div className="absolute inset-0 bg-blue-400/20 blur-2xl rounded-full animate-pulse" />
+                <img
+                  src={happyIcon}
+                  alt="Saving"
+                  className="relative w-32 h-32 object-contain animate-bounce-gentle drop-shadow-2xl"
+                />
+              </div>
+              <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-2">
+                {(isProfileUploading || isBeforeUploading) ? (t('uploading') || "Yuklanmoqda...") : (t('saving') || "Saqlanmoqda...")}
+              </h2>
+              <p className="text-slate-500 font-medium text-sm animate-pulse">
+                {(isProfileUploading || isBeforeUploading)
+                  ? (t('uploading_large_image') || "Uploading large image...")
+                  : (t('saving_patient_data') || "Saving patient data...")}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </Portal>

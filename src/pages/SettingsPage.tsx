@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Lock, Mail, User, LogOut, Shield, Eye, EyeOff, Volume2, VolumeX } from 'lucide-react';
+import { Camera, Lock, Mail, User, LogOut, Shield, Eye, EyeOff, Volume2, VolumeX, Phone } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { useToast } from '../contexts/ToastContext';
@@ -161,13 +161,21 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
             // 3. Finalize
             if (newPin) {
                 success(t('toast_success_title'), "Parol va PIN muvaffaqiyatli sinxronlandi! (Universal)", happyIcon);
-                setPinDigits(['', '', '', '', '', '']);
-                setCurrentPinDigits(['', '', '', '', '', '']);
+                setPinDigits(['', '', '', '', '', '']); // Clear New PIN field
 
-                // Optional: Logout or refresh
-                setTimeout(() => {
-                    logout(); // User requested to "sync it with log in password", suggesting a full update
-                }, 2000);
+                // Update Current PIN field instantly with the NEW PIN
+                if (newPin.length === 6 && /^\d+$/.test(newPin)) {
+                    setCurrentPinDigits(newPin.split(''));
+                    setUseLongPassword(false);
+                } else {
+                    setLongPasswordInput(newPin);
+                    setUseLongPassword(true);
+                }
+
+                // Optional: Logout removed per user request
+                // setTimeout(() => {
+                //     logout(); 
+                // }, 2000);
             } else {
                 success(t('toast_success_title'), t('profile_updated_msg'), happyIcon);
             }
@@ -229,7 +237,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                         onChange={handleImageSelect}
                         onClick={(e) => (e.currentTarget.value = '')}
                     />
-                    {imageUploading && <p className="text-xs text-promed-primary mt-2 animate-pulse font-bold uppercase tracking-tighter">Protocol: Uploading...</p>}
+
                 </div>
 
                 <div className="space-y-6">
@@ -295,16 +303,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                         </div>
                     </div>
 
-                    {/* Email Display (Read-Only) */}
+                    {/* Contact Info (Phone or Email) */}
                     <div>
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('email') || "Email Adres"}</label>
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">{userEmail?.endsWith('@promed.sys') ? t('phone_number') : (t('email') || "Email Adres")}</label>
                         <div className="relative">
                             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                <Mail size={18} />
+                                {userEmail?.endsWith('@promed.sys') ? <Phone size={18} /> : <Mail size={18} />}
                             </div>
                             <input
                                 type="text"
-                                value={userEmail || ''}
+                                value={userEmail?.endsWith('@promed.sys') ? '+' + userEmail.replace('@promed.sys', '') : (userEmail || '')}
                                 readOnly
                                 disabled
                                 className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-200 rounded-xl font-medium text-gray-500 cursor-not-allowed select-none"
@@ -471,11 +479,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                 </div>
             </div>
 
+
+
+
+
             <LogoutModal
                 isOpen={showLogoutModal}
                 onClose={() => setShowLogoutModal(false)}
                 onConfirm={logout}
             />
-        </div>
+        </div >
     );
 };
