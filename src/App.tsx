@@ -14,7 +14,7 @@ const NotesPage = React.lazy(() => import('./features/notes/NotesPage').then(m =
 import { AddPatientForm } from './features/patients/PatientList';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { EmergencySetup } from './pages/EmergencySetup'; // Added EmergencySetup
-
+import { BannedScreen } from './features/auth/BannedScreen';
 import Layout from './components/layout/Layout';
 import { AdminRoute } from './components/layout/AdminRoute';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -321,6 +321,7 @@ const App: React.FC = () => {
     const savedLockState = localStorage.getItem('appLockState');
     return savedLockState === 'true';
   });
+  const [isBanned, setIsBanned] = useState(false);
   const [isLockEnabled, setIsLockEnabled] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<string | null>(null);
@@ -450,13 +451,21 @@ const App: React.FC = () => {
 
 
           // 🔥 SECURITY ALERT: If account is restricted (frozen or banned), log out immediately
+          // 🔥 SECURITY ALERT: If account is restricted (frozen or banned), log out immediately
           if (profile.status === 'frozen' || profile.status === 'banned') {
             console.warn(`🛡️ Account RESTRICTED (${profile.status}) detected for user:`, userId);
-            const message = profile.status === 'banned'
-              ? 'Your account has been banned due to a policy violation. Please contact the administrator.'
-              : 'Your account has been suspended. Please contact support.';
-            alert(message);
-            handleLogout(); // Force immediate session termination
+
+            if (profile.status === 'banned') {
+              setIsBanned(true);
+              // Don't logout immediately, let them see the screen
+            } else {
+              const message = 'Your account has been suspended. Please contact support.';
+              alert(message);
+              handleLogout(); // Force immediate session termination
+            }
+          } else {
+            // ✅ AUTO-RECOVER: If status is not banned, ensure we clear the state
+            setIsBanned(false);
           }
 
         }
@@ -1246,6 +1255,16 @@ const App: React.FC = () => {
     );
   }
 
+
+  // Render Banned Screen
+  if (isBanned) {
+    return (
+      <BannedScreen onLogout={() => {
+        setIsBanned(false);
+        handleLogout();
+      }} />
+    );
+  }
 
   // Render Lock Screen if locked
   if (isLocked) {
