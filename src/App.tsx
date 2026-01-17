@@ -74,58 +74,10 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
 
   const [lockState, setLockState] = useState<'idle' | 'error' | 'success'>('idle');
   const [pinError, setPinError] = useState(false);
-  const [showForgotModal, setShowForgotModal] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetError, setResetError] = useState('');
-  const [resetMessage, setResetMessage] = useState('');
-  const [resetLoading, setResetLoading] = useState(false);
-  const [showEmergencyBypass, setShowEmergencyBypass] = useState(false);
-  const [emergencyPassword, setEmergencyPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const isPinType = /^\d{6}$/.test(correctPassword);
 
-  const handlePinComplete = (code: string) => {
-    if (code === correctPassword) {
-      setLockState('success');
-      playUnlock();
-      setTimeout(onUnlock, 500);
-    } else {
-      setLockState('error');
-      setPinError(true);
-      playError();
 
-      // Reset back to idle after 1s
-      setTimeout(() => {
-        setPin(['', '', '', '', '', '']);
-        setLockState('idle');
-        setPinError(false);
-      }, 1000);
-    }
-  };
-
-  const handleEmergencyUnlock = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setResetLoading(true);
-    setResetError('');
-
-    try {
-      const { signInWithEmailAndPassword } = await import('firebase/auth');
-      // Use the email of the currently signed-in user (from AuthContext or auth.currentUser)
-      const userEmail = auth.currentUser?.email;
-      if (!userEmail) throw new Error("No active session found");
-
-      await signInWithEmailAndPassword(auth, userEmail, emergencyPassword);
-
-      // If we reach here, password is correct
-      setLockState('success');
-      setTimeout(onUnlock, 500);
-    } catch (err: any) {
-      playError(); // Play error sound on emergency failure
-      setResetError(t('login_error_invalid_password') || 'Invalid account password');
-    } finally {
-      setResetLoading(false);
-    }
-  };
 
   const handleUnlock = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -185,19 +137,33 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
 
         <form onSubmit={handleUnlock} className="w-full flex flex-col items-center space-y-8 md:space-y-10">
           {isPinType ? (
-            <PinInput
-              value={pin}
-              onChange={setPin}
-              onComplete={handlePinComplete}
-              error={pinError}
-              autoFocus={true}
-            />
+            <div className="space-y-4 w-full flex flex-col items-center">
+              <PinInput
+                value={pin}
+                onChange={(val) => {
+                  setPin(val);
+                  if (pinError) setPinError(false); // Clear error on typing
+                }}
+                /* Auto-submit disabled: removed onComplete */
+                error={pinError}
+                autoFocus={true}
+              />
+              {/* Error Message */}
+              {pinError && (
+                <p className="text-rose-500 font-bold text-sm animate-pulse">
+                  {t('wrong_password') || "Password was incorrect"}
+                </p>
+              )}
+            </div>
           ) : (
             <div className="w-full max-w-sm relative group/pass">
               <input
                 type={showPassword ? "text" : "password"}
-                value={pin.join('')} // Reuse pin state or create new one? pin.join('') might be messy but let's use a single string if not pin
-                onChange={(e) => setPin(e.target.value.split(''))}
+                value={pin.join('')}
+                onChange={(e) => {
+                  setPin(e.target.value.split(''));
+                  if (pinError) setPinError(false);
+                }}
                 className={`w-full py-5 px-6 bg-white border-2 
                   ${pinError ? 'border-rose-500 shake ' : 'border-white/20'}
                   rounded-[24px] text-center text-2xl font-black text-promed-primary focus:outline-none focus:border-white `}
@@ -211,6 +177,14 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
+              {/* Error Message for Text Input */}
+              {pinError && (
+                <div className="absolute -bottom-8 left-0 right-0 text-center">
+                  <p className="text-rose-400 font-bold text-sm animate-pulse">
+                    {t('wrong_password') || "Password was incorrect"}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -220,78 +194,16 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
               className="btn-glossy-blue group flex items-center justify-center !text-base"
             >
               <span className="flex items-center gap-2 relative z-10">
-                {t('unlock')} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                {t('unlock') || 'Ochish'} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
             </button>
-
-            {/* Emergency Bypass Link - Only show for PIN type */}
-            {isPinType && (
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowEmergencyBypass(true)}
-                  className="text-white/30 hover:text-white text-[11px] font-black transition-colors uppercase tracking-[0.2em] block w-full"
-                >
-                  {t('forgot_password_link') || "Forgot PIN? Unlock with Account Password"}
-                </button>
-              </div>
-            )}
+            {/* Forgot Password Link REMOVED */}
           </div>
         </form>
       </div>
 
       {/* Emergency Bypass Modal */}
-      {showEmergencyBypass && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-promed-bg border border-promed-primary/10 rounded-2xl p-8 w-full max-w-sm ">
-            <h3 className="text-xl font-bold text-promed-text mb-2 text-center">Emergency Unlock</h3>
-            <p className="text-promed-muted text-[10px] font-bold uppercase tracking-widest mb-6 text-center">
-              Verify your account password to bypass PIN
-            </p>
 
-            <form onSubmit={handleEmergencyUnlock} className="space-y-4">
-              <input
-                type="password"
-                value={emergencyPassword}
-                onChange={(e) => setEmergencyPassword(e.target.value)}
-                className="w-full px-4 py-4 bg-white border border-promed-primary/10 rounded-2xl text-promed-text placeholder-promed-muted/40 focus:outline-none focus:ring-4 focus:ring-promed-primary/10 transition-all text-center font-bold"
-                placeholder="Account Password"
-                required
-                autoFocus
-              />
-
-              {resetError && (
-                <div className="text-rose-400 text-xs font-bold text-center animate-pulse">{resetError}</div>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEmergencyBypass(false);
-                    setResetError('');
-                    setEmergencyPassword('');
-                  }}
-                  className="flex-1 py-4 px-4 bg-slate-100 hover:bg-slate-200 text-promed-muted font-bold text-[10px] uppercase tracking-widest rounded-2xl transition-all"
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={resetLoading}
-                  className="flex-[2] btn-premium-blue"
-                >
-                  {resetLoading ? (
-                    <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-800 rounded-full animate-spin mx-auto" />
-                  ) : (
-                    <span>Verify & Unlock</span>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

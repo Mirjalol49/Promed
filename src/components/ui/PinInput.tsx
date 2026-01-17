@@ -86,7 +86,7 @@ export const PinInput: React.FC<PinInputProps> = ({
                             bg-white 
                             border-[2px] 
                             ${error
-                                ? 'border-rose-500 focus:border-rose-600 ring-rose-300'
+                                ? 'border-rose-500 focus:border-rose-600 ring-rose-300 shake'
                                 : 'border-slate-200 focus:border-[#f71590] focus:ring-4 focus:ring-[#f71590]'
                             }
                             ${digit ? 'border-slate-300' : ''}
