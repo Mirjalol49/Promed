@@ -329,6 +329,13 @@ export const translations = {
     phone_label: "+998",
     otp_code_sent: "Enter the 6-digit code sent to your Telegram",
     change_phone: "Change Phone Number",
+    note_title_placeholder: "Title (optional)",
+    note_content_placeholder: "Note content...",
+    back: "Back",
+    close: "Close",
+    finish: "Finish",
+    next: "Next",
+    skip: "Skip",
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -672,6 +679,13 @@ export const translations = {
     phone_label: "+998",
     otp_code_sent: "6 xonali kod Telegram orqali yuborildi",
     change_phone: "Raqamni o'zgartirish",
+    note_title_placeholder: "Sarlavha (ixtiyoriy)",
+    note_content_placeholder: "Eslatma matni...",
+    back: "Orqaga",
+    close: "Yopish",
+    finish: "Tugatish",
+    next: "Keyingisi",
+    skip: "O'tkazib yuborish",
   },
   ru: {
     dashboard: "Панель управления",
@@ -798,6 +812,8 @@ export const translations = {
     unlock: "Разблокировать",
     enable_lock: "Включить блокировку",
     lock_hint: "Добавляет кнопку блокировки в меню для быстрой защиты.",
+    note_title_placeholder: "Заголовок (необязательно)",
+    note_content_placeholder: "Текст заметки...",
     security_settings: "Настройки безопасности",
     edit_patient: "Редактировать",
     delete_patient: "Удалить",
@@ -1012,6 +1028,11 @@ export const translations = {
     phone_label: "+998",
     otp_code_sent: "Введите 6-значный код, отправленный в Telegram",
     change_phone: "Изменить номер",
+    back: "Назад",
+    close: "Закрыть",
+    finish: "Завершить",
+    next: "Далее",
+    skip: "Пропустить",
   }
 };
 

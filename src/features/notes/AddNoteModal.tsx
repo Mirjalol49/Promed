@@ -67,7 +67,7 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                     <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white z-10">
                         <input
                             type="text"
-                            placeholder="Sarlavha (ixtiyoriy)"
+                            placeholder={t('note_title_placeholder')}
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             className="text-xl font-bold bg-transparent border-none outline-none placeholder:text-slate-300 text-slate-800 w-full"
@@ -85,7 +85,7 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                     {/* Content Area */}
                     <div className="flex-1 overflow-y-auto p-6 relative">
                         <textarea
-                            placeholder="Eslatma matni..."
+                            placeholder={t('note_content_placeholder')}
                             value={content}
                             onChange={handleTextChange}
                             className="w-full h-[300px] resize-none border-none outline-none text-lg text-slate-600 leading-relaxed placeholder:text-slate-300 bg-transparent"
@@ -123,7 +123,7 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                             className="bg-promed-primary hover:bg-promed-primary/90 text-white px-6 py-2.5 rounded-xl font-medium shadow-lg shadow-promed-primary/30 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
                         >
                             <Save size={18} />
-                            <span>Saqlash</span>
+                            <span>{t('save')}</span>
                         </button>
                     </div>
                 </div>

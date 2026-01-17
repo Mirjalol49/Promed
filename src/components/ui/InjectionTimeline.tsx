@@ -65,7 +65,7 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                 {injections.length}
                             </span>
                         </h3>
-                        <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-wider pl-1">{t('journey_of_recovery')}</p>
+
                     </div>
 
                     <button
