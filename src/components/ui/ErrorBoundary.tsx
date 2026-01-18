@@ -25,6 +25,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         console.error("Uncaught error:", error, errorInfo);
+
+        // 🔥 AUTO-FIX: specific handling for "Failed to fetch dynamically imported module"
+        // This happens when a new version is deployed and the user's browser tries to fetch old chunks.
+        if (error.message.includes("Failed to fetch dynamically imported module") ||
+            error.message.includes("Importing a module script failed")) {
+            console.warn("💎 Version mismatch detected. Auto-reloading...");
+            window.location.reload();
+            return;
+        }
+
         this.setState({ error, errorInfo });
     }
 
