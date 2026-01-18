@@ -71,7 +71,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
     };
 
     return (
-        <div className={`relative ${className}`} ref={containerRef}>
+        <div className={`relative ${className} mb-6 sm:mb-0`} ref={containerRef}>
             {label && <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 ml-1">{label}</label>}
 
             {/* INPUT TRIGGER */}

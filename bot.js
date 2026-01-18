@@ -333,9 +333,9 @@ bot.command('testreminder', (ctx) => {
     const formattedDate = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
 
     const msgs = {
-        uz: `Assalomu alaykum, **Hurmatli ${name}**! Sizga inyeksiya belgilanganini eslatib o'tmoqchimiz.\n\n🗓 Sana: **${formattedDate}**\n⏰ Vaqt: **${time}**\n\nIltimos, o'z vaqtida keling. O'zingizni ehtiyot qiling! 😊`,
-        ru: `Здравствуйте, **Уважаемый(ая) ${name}**! Напоминаем вам о запланированной инъекции.\n\n🗓 Дата: **${formattedDate}**\n⏰ Время: **${time}**\n\nПожалуйста, приходите вовремя. Берегите себя! 😊`,
-        en: `Hello **Dear ${name}**! Just a reminder about your scheduled injection.\n\n🗓 Date: **${formattedDate}**\n⏰ Time: **${time}**\n\nPlease come on time. Take care! 😊`
+        uz: `Hurmatli **${name}**!\n\nErtaga inyeksiya olishingiz kerak:\n🗓 Sana: **${formattedDate}**\n⏰ Vaqt: **${time}**\n\nKechikmasdan kelishingizni so'raymiz! 🏥`,
+        ru: `Уважаемый(ая) **${name}**!\n\nЗавтра у вас инъекция:\n🗓 Дата: **${formattedDate}**\n⏰ Время: **${time}**\n\nПожалуйста, не опаздывайте! 🏥`,
+        en: `Dear **${name}**!\n\nYou have an injection scheduled for tomorrow:\n🗓 Date: **${formattedDate}**\n⏰ Time: **${time}**\n\nPlease don't be late! 🏥`
     };
 
     ctx.reply("🇺🇿 UZ:\n" + msgs.uz + "\n\n🇷🇺 RU:\n" + msgs.ru + "\n\n🇬🇧 EN:\n" + msgs.en);

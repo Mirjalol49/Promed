@@ -1197,7 +1197,7 @@ export const AddPatientForm: React.FC<{
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto bg-premium-card">
-            <form id="patient-form" onSubmit={handleSubmit} className="p-4 md:p-8" onKeyDown={(e) => {
+            <form id="patient-form" onSubmit={handleSubmit} className="p-4 pb-10 md:p-8" onKeyDown={(e) => {
               if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
                 e.preventDefault();
               }

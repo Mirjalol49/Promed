@@ -55,7 +55,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     };
 
     return (
-        <div ref={containerRef} className={`relative ${className}`}>
+        <div ref={containerRef} className={`relative ${className} mb-6 sm:mb-0`}>
             {/* Trigger Button */}
             <button
                 type="button"

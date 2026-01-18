@@ -33,7 +33,7 @@ const TEXTS = {
         not_found: "❌ Kechirasiz, raqamingiz tizimda topilmadi. Administratorga murojaat qiling.",
         success: (name) => `✅ Assalomu alaykum, **${name}**! Graft dasturiga xush kelibsiz! 🚀\n\nSizning muolajalaringiz nazorat ostida.`,
         reminder_title: "🔔 Eslatma!",
-        injection_msg: (name, date, time) => `Hurmatli **${name}**!\n\nErtaga (${date}) soat ${time} da inyeksiya olishingiz kerak. Kechikmasdan kelishingizni so'raymiz! 🏥`,
+        injection_msg: (name, date, time) => `Hurmatli **${name}**!\n\nErtaga inyeksiya olishingiz kerak:\n🗓 Sana: **${date}**\n⏰ Vaqt: **${time}**\n\nKechikmasdan kelishingizni so'raymiz! 🏥`,
         check_btn: "📅 Jadvalni ko'rish",
         schedule_header: (name) => `👤 **Bemor:** ${name}\n\n📋 **Sizning Inyeksiya Jadvalingiz:**\n\n`,
         schedule_item: (date, time) => `🗓 **Sana:** ${date}\n⏰ **Vaqt:** ${time}\n`,
@@ -48,7 +48,7 @@ const TEXTS = {
         not_found: "❌ Номер не найден. Обратитесь к администратору.",
         success: (name) => `✅ Здравствуйте, **${name}**! Добро пожаловать в Graft! 🚀\n\nВаши процедуры под контролем.`,
         reminder_title: "🔔 Напоминание!",
-        injection_msg: (name, date, time) => `Уважаемый(ая) **${name}**!\n\nЗавтра (${date}) в ${time} у вас инъекция. Пожалуйста, не опаздывайте! 🏥`,
+        injection_msg: (name, date, time) => `Уважаемый(ая) **${name}**!\n\nЗавтра у вас инъекция:\n🗓 Дата: **${date}**\n⏰ Время: **${time}**\n\nПожалуйста, не опаздывайте! 🏥`,
         check_btn: "📅 Проверить график",
         schedule_header: (name) => `👤 **Пациент:** ${name}\n\n📋 **Ваш График Инъекций:**\n\n`,
         schedule_item: (date, time) => `🗓 **Дата:** ${date}\n⏰ **Время:** ${time}\n`,
@@ -63,7 +63,7 @@ const TEXTS = {
         not_found: "❌ Number not found. Contact admin.",
         success: (name) => `✅ Hello, **${name}**! Welcome to Graft! 🚀\n\nYour treatments are under control.`,
         reminder_title: "🔔 Reminder!",
-        injection_msg: (name, date, time) => `Dear **${name}**!\n\nYou have an injection scheduled for tomorrow (${date}) at ${time}. Please don't be late! 🏥`,
+        injection_msg: (name, date, time) => `Dear **${name}**!\n\nYou have an injection scheduled for tomorrow:\n🗓 Date: **${date}**\n⏰ Time: **${time}**\n\nPlease don't be late! 🏥`,
         check_btn: "📅 Check Schedule",
         schedule_header: (name) => `👤 **Patient:** ${name}\n\n📋 **Your Injection Schedule:**\n\n`,
         schedule_item: (date, time) => `🗓 **Date:** ${date}\n⏰ **Time:** ${time}\n`,
@@ -526,8 +526,12 @@ exports.dailyReminder = onSchedule({
 
                     console.log(`Sending reminder to ${name} (${chatId})`);
 
+                    // Format Date for display DD.MM.YYYY
+                    const d = new Date(tomorrowStr);
+                    const dateDisplay = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+
                     const p = bot.telegram.sendMessage(chatId,
-                        `${TEXTS[lang].reminder_title}\n\n${TEXTS[lang].injection_msg(name, tomorrowStr, time)}`
+                        `${TEXTS[lang].reminder_title}\n\n${TEXTS[lang].injection_msg(name, dateDisplay, time)}`
                     ).catch(e => console.error(`Failed to send to ${chatId}:`, e.message));
 
                     promises.push(p);
