@@ -62,7 +62,6 @@ import thinkingIcon from './components/mascot/thinking_mascot.png';
 
 // --- Lock Screen Component ---
 const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = ({ onUnlock, correctPassword }) => {
-  console.log("🔒 LockScreen: Starting render...");
   const { t } = useLanguage();
   const { playUnlock, playError } = useAppSounds();
   const [pin, setPin] = useState(['', '', '', '', '', '']);
@@ -103,11 +102,8 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
   };
 
   if (!t) {
-    console.error("❌ LockScreen: t function is missing!");
     return <div className="fixed inset-0 bg-slate-900 flex items-center justify-center text-white">Loading Security...</div>;
   }
-
-  console.log("✅ LockScreen: Reached JSX return phase");
 
   return (
     <div className="fixed inset-0 z-[100] bg-promed-deep flex flex-col items-center justify-center text-white animate-in fade-in duration-500">
@@ -806,8 +802,6 @@ const App: React.FC = () => {
           createdAt: new Date().toISOString(),
           type: 'INJECTION_NEW'
         });
-
-        success("Notification Queued", `Message sent to ${patient.fullName}`, happyIcon);
       }
     } catch (err: any) {
       console.error('Error adding injection:', err);
@@ -859,10 +853,6 @@ const App: React.FC = () => {
           createdAt: new Date().toISOString(),
           type: 'INJECTION_CHANGE'
         });
-
-        success("Update Notified", `Change sent to ${patient.fullName}`, happyIcon);
-
-
       }
 
     } catch (err: any) {

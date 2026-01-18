@@ -7,6 +7,8 @@ import {
 import { noteService } from '../../services/noteService';
 import { useAccount } from '../../contexts/AccountContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useToast } from '../../contexts/ToastContext';
+import upsetIcon from '../../components/mascot/upset_mascot.png';
 import { Note } from '../../types';
 import { NoteCard } from './NoteCard';
 import { AddNoteModal } from './AddNoteModal';
@@ -14,6 +16,7 @@ import DeleteModal from '../../components/ui/DeleteModal';
 
 export const NotesPage: React.FC = () => {
     const { t } = useLanguage();
+    const { error: showError } = useToast();
     const { userId, isLoading: isAuthLoading } = useAccount();
     const [notes, setNotes] = useState<Note[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -85,7 +88,8 @@ export const NotesPage: React.FC = () => {
                 console.error("Failed to delete note:", error);
                 // Revert
                 setNotes(originalNotes);
-                alert("Eslatmani o'chirishda xatolik yuz berdi");
+                setNotes(originalNotes);
+                showError("Xatolik", "Eslatmani o'chirishda xatolik yuz berdi", upsetIcon);
             }
         }
     };
@@ -113,7 +117,8 @@ export const NotesPage: React.FC = () => {
             } catch (error) {
                 console.error("Failed to update note:", error);
                 setNotes(originalNotes);
-                alert("Eslatmani yangilashda xatolik yuz berdi");
+                setNotes(originalNotes);
+                showError("Xatolik", "Eslatmani yangilashda xatolik yuz berdi", upsetIcon);
             }
         } else {
             // Add Mode - Optimistic
@@ -138,7 +143,8 @@ export const NotesPage: React.FC = () => {
             } catch (error) {
                 console.error("Failed to add note:", error);
                 setNotes(originalNotes);
-                alert("Eslatmani qo'shishda xatolik yuz berdi");
+                setNotes(originalNotes);
+                showError("Xatolik", "Eslatmani qo'shishda xatolik yuz berdi", upsetIcon);
             }
         }
     };
