@@ -8,6 +8,7 @@ import {
     Syringe,
 } from 'lucide-react';
 import { StatCard, InjectionAppointmentWidget } from '../features/dashboard/Widgets';
+import { DashboardScheduler } from '../features/dashboard/DashboardScheduler';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAccount } from '../contexts/AccountContext';
 import { Patient } from '../types';
@@ -97,12 +98,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div className="grid grid-cols-1 gap-8">
                     {/* Main: Upcoming Schedule */}
                     <div className="relative min-h-[500px]">
-                        <div className="h-full">
-                            <InjectionAppointmentWidget
-                                patients={patients}
-                                onViewPatient={onPatientSelect}
-                            />
-                        </div>
+                        <DashboardScheduler
+                            patients={patients}
+                            onViewPatient={onPatientSelect}
+                        />
 
                         {/* Locked Content Overlay */}
                         {subscriptionStatus === 'frozen' && (

@@ -215,6 +215,10 @@ export const translations = {
     upcoming_schedule: "Upcoming schedule",
     source_walkin: "Walk-in",
     source_referral: "Referral",
+    schedule_for: "Schedule for",
+    no_events_day: "No appointments scheduled",
+    check_other_dates: "Check other dates on the calendar",
+    patients_scheduled: "Patients Scheduled",
 
     // Toasts
     toast_success_title: "Success",
@@ -560,6 +564,10 @@ export const translations = {
     account_status: "Hisob Holati",
     source_walkin: "O'zi kelgan",
     source_referral: "Tavsiya",
+    schedule_for: "Jadval:",
+    no_events_day: "Bugun uchun qabul rejalashtirilmagan",
+    check_other_dates: "Taqvimning boshqa kunlarini tekshiring",
+    patients_scheduled: "nafar bemor rejalashtirilgan",
 
     // Toasts
     toast_success_title: "Sinxronizatsiya a'lo!",
@@ -798,6 +806,10 @@ export const translations = {
     edit_profile: "Редактировать профиль",
     current_password: "Текущий пароль",
     new_password: "Новый пароль",
+    schedule_for: "Расписание на",
+    no_events_day: "На этот день приемов не запланировано",
+    check_other_dates: "Проверьте другие даты в календаре",
+    patients_scheduled: "запланировано пациентов",
     password_hint: "Создайте 6-значный PIN-код",
     optional_change: "(необязательно - только для изменения)",
     profile_photo: "Фото профиля",
