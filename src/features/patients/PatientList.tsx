@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import confetti from "canvas-confetti";
 import { useAppSounds } from '../../hooks/useAppSounds';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ProBadge } from '../../components/ui/ProBadge';
 import {
   Calendar,
   MapPin,
@@ -28,6 +29,7 @@ import {
   Hash,
   Zap,
   Search,
+  Crown,
   ArrowRight,
   Eye,
   Pencil,
@@ -388,7 +390,10 @@ export const PatientList: React.FC<{
                         fallbackType="user"
                       />
                       <div>
-                        <div className="font-bold text-slate-800 text-base">{patient.fullName}</div>
+                        <div className="flex items-center gap-1.5">
+                          {patient.tier === 'pro' && <ProBadge size={22} />}
+                          <div className="font-bold text-slate-800 text-base">{patient.fullName}</div>
+                        </div>
                         <div className="text-xs text-slate-500 font-medium">
                           {patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y
                         </div>
@@ -408,13 +413,13 @@ export const PatientList: React.FC<{
                   <div className="grid grid-cols-2 gap-4 mt-3 pl-[60px]">
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t('operation_date')}</p>
-                      <p className="text-sm font-bold text-slate-700">{new Date(patient.operationDate).toLocaleDateString(localeString)}</p>
+                      <p className="text-sm font-bold text-slate-700">{new Date(patient.operationDate).toISOString().split('T')[0].split('-').reverse().join('.')}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t('next_injection')}</p>
                       {nextInj ? (
                         <p className="text-sm font-bold text-blue-600 bg-blue-50 inline-block px-1.5 rounded">
-                          {new Date(nextInj.date).toLocaleDateString(localeString)}
+                          {new Date(nextInj.date).toISOString().split('T')[0].split('-').reverse().join('.')}
                         </p>
                       ) : (
                         <p className="text-sm text-slate-400 italic">{t('none_scheduled')}</p>
@@ -476,19 +481,22 @@ export const PatientList: React.FC<{
                           />
                         </div>
                         <div>
-                          <div className="font-bold text-slate-800 text-sm group-hover:text-promed-primary transition-colors">{patient.fullName}</div>
+                          <div className="flex items-center gap-1.5">
+                            {patient.tier === 'pro' && <ProBadge size={18} />}
+                            <div className="font-bold text-slate-800 text-sm group-hover:text-promed-primary transition-colors">{patient.fullName}</div>
+                          </div>
                           <div className="text-xs text-slate-500 mt-0.5 font-medium">{patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y</div>
                         </div>
                       </div>
                     </td>
                     <td className="p-3 md:p-5 text-sm font-medium text-slate-700">
-                      {new Date(patient.operationDate).toLocaleDateString(localeString)}
+                      {new Date(patient.operationDate).toISOString().split('T')[0].split('-').reverse().join('.')}
                     </td>
                     <td className="p-3 md:p-5">
                       {nextInj ? (
                         <div className="flex items-center space-x-2">
                           <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
-                            {new Date(nextInj.date).toLocaleDateString(localeString)}
+                            {new Date(nextInj.date).toISOString().split('T')[0].split('-').reverse().join('.')}
                           </span>
                         </div>
                       ) : (
@@ -737,7 +745,10 @@ export const PatientDetail: React.FC<{
         <div className="flex-1 space-y-6 z-10">
           <div className="flex flex-col md:flex-row justify-between items-start gap-4">
             <div>
-              <h2 className="text-4xl font-bold text-slate-900 tracking-tight">{patient.fullName}</h2>
+              <div className="flex items-center gap-2">
+                {patient.tier === 'pro' && <ProBadge size={32} />}
+                <h2 className="text-4xl font-bold text-slate-900 tracking-tight">{patient.fullName}</h2>
+              </div>
               <div className="flex flex-wrap items-center gap-6 text-slate-600 mt-3">
                 <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
                   <Calendar className="w-4 h-4 text-slate-400" />
@@ -1000,6 +1011,7 @@ export const AddPatientForm: React.FC<{
   const [operationDate, setOperationDate] = useState(initialData?.operationDate || new Date().toISOString().split('T')[0]);
   const [grafts, setGrafts] = useState(initialData?.grafts?.toString() || '');
   const [technique, setTechnique] = useState(initialData?.technique || '');
+  const [tier, setTier] = useState<Patient['tier']>(initialData?.tier || 'regular');
   const [profileImage, setProfileImage] = useState(initialData?.profileImage || '');
   const [beforeImage, setBeforeImage] = useState(initialData?.beforeImage || '');
 
@@ -1155,11 +1167,12 @@ export const AddPatientForm: React.FC<{
       beforeImage: finalBeforeUrl,
       afterImages: initialData?.afterImages || [],
       injections: initialData?.injections || [],
-      status: initialData?.status || 'Active'
+      status: initialData?.status || 'Active',
+      tier
     };
 
     // Pass EMPTY files object so parent doesn't re-upload
-    // Pass EMPTY files object so parent doesn't re-upload
+
     try {
       await onSave(newPatient, {});
     } catch (e) {
@@ -1341,6 +1354,40 @@ export const AddPatientForm: React.FC<{
                           ]}
                         />
                       </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('tier') || 'Status'}</label>
+                        <div
+                          onClick={() => setTier(tier === 'regular' ? 'pro' : 'regular')}
+                          className={`w-full flex items-center justify-between p-3 rounded-xl border-2 cursor-pointer transition-all duration-300 relative overflow-hidden group ${tier === 'pro'
+                            ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-yellow-400 shadow-apple'
+                            : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                            }`}
+                        >
+                          <div className="flex items-center gap-3 relative z-10">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden ${tier === 'pro' ? 'bg-yellow-100 text-yellow-900 shadow-sm scale-110' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
+                              }`}>
+                              {tier === 'pro' ? (
+                                <ProBadge size={50} />
+                              ) : (
+                                <Crown size={20} className="text-slate-400" />
+                              )}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className={`font-bold text-sm transition-colors ${tier === 'pro' ? 'text-yellow-900' : 'text-slate-600'}`}>
+                                {t('tier_pro') || 'Pro Patient (Bonus)'}
+                              </span>
+                              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                                {tier === 'pro' ? (t('status_active') || 'Active') : (t('status_not_paid') || 'Inactive')}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Custom Toggle Switch */}
+                          <div className={`w-12 h-7 rounded-full transition-colors duration-300 relative z-10 ${tier === 'pro' ? 'bg-yellow-400' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
+                            <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300 ${tier === 'pro' ? 'translate-x-[22px]' : 'translate-x-1'}`} />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -1385,6 +1432,7 @@ export const AddPatientForm: React.FC<{
                   </div>
                 </div>
               </div>
+
             </form>
           </div>
 
@@ -1443,7 +1491,7 @@ export const AddPatientForm: React.FC<{
             </div>
           )}
         </div>
-      </div>
-    </Portal>
+      </div >
+    </Portal >
   );
 };

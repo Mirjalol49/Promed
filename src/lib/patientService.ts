@@ -42,7 +42,9 @@ const mapPatient = (id: string, p: any): Patient => ({
   technique: p.technique,
   telegramChatId: p.telegramChatId,
   botLanguage: p.botLanguage,
+  tier: p.tier,
 });
+// console.log("🔄 [mapPatient] Mapped:", p.full_name, "Tier:", p.tier);
 
 export const subscribeToPatients = (
   accountId: string,
@@ -126,6 +128,7 @@ export const addPatient = async (
     status: patient.status || 'Active',
     grafts: patient.grafts ?? null,
     technique: patient.technique ?? null,
+    tier: patient.tier || 'regular',
     created_at: new Date().toISOString()
   };
 
@@ -161,14 +164,25 @@ export const updatePatient = async (
   if (updates.beforeImage) dbUpdates.before_image = updates.beforeImage;
   if (updates.afterImages) dbUpdates.after_images = updates.afterImages;
   if (updates.injections) dbUpdates.injections = updates.injections;
-  if (updates.status) dbUpdates.status = updates.status;
-  if (updates.grafts) dbUpdates.grafts = updates.grafts;
   if (updates.technique) dbUpdates.technique = updates.technique;
+
+  // Explicit check for undefined to allow saving empty/falsy values if needed, though tier is enum
+  if (updates.tier !== undefined) {
+    dbUpdates.tier = updates.tier;
+  }
+
+  console.log("🔥 [updatePatient] Preparing DB update for:", patientId, "Tier:", updates.tier, "Payload:", dbUpdates);
 
   dbUpdates.updated_at = new Date().toISOString();
 
   const docRef = doc(db, "patients", patientId);
-  await updateDoc(docRef, dbUpdates);
+  try {
+    await updateDoc(docRef, dbUpdates);
+    console.log("✅ [updatePatient] DB Write Success for", patientId);
+  } catch (e) {
+    console.error("❌ [updatePatient] DB Write Failed:", e);
+    throw e;
+  }
 };
 
 export const deletePatient = async (patientId: string): Promise<void> => {

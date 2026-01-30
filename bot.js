@@ -309,15 +309,26 @@ async function checkSchedule(ctx) {
 bot.hears([TEXTS.uz.check_btn, TEXTS.ru.check_btn, TEXTS.en.check_btn], (ctx) => checkSchedule(ctx));
 
 // --- FORCE REMINDERS COMMAND (For Manual Testing) ---
-bot.command('forcereminders', async (ctx) => {
-    ctx.reply("⏳ Checking database for reminders due tomorrow...");
-    console.log("Forcing reminder check...");
-
+const forceTomorrowHandler = async (ctx) => {
+    ctx.reply("⏳ Checking database for Next-Day reminders (Tomorrow)...");
     try {
-        await runReminderLogic(true, ctx);
+        await runReminderLogic(1, ctx); // Check tomorrow
     } catch (error) {
         console.error("Force Reminder Error:", error);
         ctx.reply("❌ Error encountered while checking reminders.");
+    }
+};
+
+bot.command('forcereminders', forceTomorrowHandler);
+bot.command('forcetomorrow', forceTomorrowHandler);
+
+bot.command('forcetoday', async (ctx) => {
+    ctx.reply("⏳ Checking database for Same-Day reminders (Today)...");
+    try {
+        await runReminderLogic(0, ctx); // Check today
+    } catch (error) {
+        console.error("Force Today Error:", error);
+        ctx.reply("❌ Error encountered while checking today's reminders.");
     }
 });
 
@@ -342,13 +353,14 @@ bot.command('testreminder', (ctx) => {
 });
 
 // --- SHARED REMINDER LOGIC ---
-async function runReminderLogic(isManual = false, ctx = null) {
-    // 1. Get Tomorrow's Date (YYYY-MM-DD string)
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0]; // "2025-01-09"
+async function runReminderLogic(daysOffset = 1, ctx = null) {
+    // 1. Calculate Target Date based on offset
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + daysOffset);
+    const targetDateStr = targetDate.toISOString().split('T')[0];
 
-    console.log(`Checking reminders for date: ${tomorrowStr}`);
+    const mode = daysOffset === 0 ? "TODAY (Same Day)" : "TOMORROW (Next Day)";
+    console.log(`🤖 Reminder Check [${mode}] for date: ${targetDateStr}`);
 
     // 2. Get all patients with a telegramChatId
     const patientsRef = collection(db, 'patients');
@@ -362,11 +374,11 @@ async function runReminderLogic(isManual = false, ctx = null) {
         // Only proceed if registered in bot
         if (patient.telegramChatId && patient.injections && Array.isArray(patient.injections)) {
 
-            // 3. Find injections for tomorrow
+            // 3. Find injections for target date
             const injectionDue = patient.injections.find(inj =>
                 inj.status === 'Scheduled' &&
                 inj.date &&
-                inj.date.startsWith(tomorrowStr)
+                inj.date.startsWith(targetDateStr)
             );
 
             if (injectionDue) {
@@ -396,8 +408,8 @@ async function runReminderLogic(isManual = false, ctx = null) {
     });
 
     console.log(`Process Complete. Sent ${count} reminders.`);
-    if (isManual && ctx) {
-        ctx.reply(`✅ Check complete. Sent ${count} reminders for date ${tomorrowStr}.`);
+    if (ctx) {
+        ctx.reply(`✅ Check complete. Sent ${count} reminders for [${mode}] ${targetDateStr}.`);
     }
 }
 
@@ -439,15 +451,25 @@ async function startNotificationListener() {
     });
 }
 
-// --- REMINDER SCHEDULER (Daily) ---
+// --- REMINDER SCHEDULER ---
 
-// Run every day at 9:00 AM
-cron.schedule('0 9 * * *', async () => {
-    console.log("Running Daily Reminder Job...");
+// 1. Same Day Reminder (Today) - Runs at 6:00 AM
+cron.schedule('0 6 * * *', async () => {
+    console.log("🌅 Running Same-Day Reminder Job (6:00 AM)...");
     try {
-        await runReminderLogic();
+        await runReminderLogic(0); // Offset 0 = Today
     } catch (error) {
-        console.error("Reminder Job Error:", error);
+        console.error("Same-Day Reminder Job Error:", error);
+    }
+});
+
+// 2. Next Day Reminder (Tomorrow) - Runs at 9:00 AM
+cron.schedule('0 9 * * *', async () => {
+    console.log("📅 Running Next-Day Reminder Job (9:00 AM)...");
+    try {
+        await runReminderLogic(1); // Offset 1 = Tomorrow
+    } catch (error) {
+        console.error("Next-Day Reminder Job Error:", error);
     }
 });
 

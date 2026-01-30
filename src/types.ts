@@ -38,6 +38,7 @@ export interface Patient {
   technique?: string;
   telegramChatId?: string;
   botLanguage?: 'uz' | 'ru' | 'en';
+  tier?: 'regular' | 'pro';
 }
 
 export interface StatData {

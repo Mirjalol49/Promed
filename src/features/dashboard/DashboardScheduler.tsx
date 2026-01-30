@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CalendarWidget, CalendarEvent } from './CalendarWidget';
+import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
+import { ProBadge } from '../../components/ui/ProBadge';
 import { Patient, InjectionStatus } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import {
@@ -54,30 +56,36 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                     subtitle: patient.technique === 'Hair' ? t('transplant_hair') :
                         patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
                             patient.technique === 'Beard' ? t('transplant_beard') : (patient.technique || 'N/A'),
-                    image: patient.profileImage,
+                    patientImage: patient.profileImage,
                     name: patient.fullName,
-                    status: patient.status
+                    status: patient.status,
+                    tier: patient.tier // Add tier here
                 });
             }
 
             // Injections
-            if (patient.injections) {
-                patient.injections.forEach(inj => {
-                    if (inj.status === InjectionStatus.SCHEDULED) {
-                        events.push({
-                            id: `inj-${patient.id}-${inj.id}`,
-                            date: new Date(inj.date),
-                            type: 'Injection',
-                            patientId: patient.id,
-                            title: t('plasma_injection') || 'Plasma Injection',
-                            subtitle: inj.notes || inj.dose || t('routine_followup'),
-                            image: patient.profileImage,
-                            name: patient.fullName,
-                            status: inj.status
-                        });
-                    }
-                });
-            }
+            // Map patients to calendar events
+            const injectionEvents = (patient.injections || [])
+                .filter(inj => inj.status !== InjectionStatus.CANCELLED) // Hide cancelled
+                .map(inj => {
+                    const date = new Date(inj.date);
+                    if (isNaN(date.getTime())) return null;
+
+                    return {
+                        id: `inj-${patient.id}-${inj.id}`,
+                        patientId: patient.id,
+                        name: patient.fullName,
+                        date: date,
+                        type: 'Injection',
+                        status: inj.status,
+                        title: t('plasma_injection') || 'Plasma Injection',
+                        subtitle: inj.notes || inj.dose || t('routine_followup'),
+                        patientImage: patient.profileImage,
+                        tier: patient.tier // Pass tier down
+                    };
+                }).filter(Boolean); // Filter out nulls from invalid dates
+
+            events.push(...injectionEvents);
         });
 
         // Filter out past events
@@ -128,17 +136,7 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left: Calendar */}
-            <div className="lg:col-span-5 xl:col-span-4">
-                <CalendarWidget
-                    events={calendarEvents}
-                    selectedDate={selectedDate}
-                    onDateSelect={handleDateSelect}
-                    className="shadow-apple border border-slate-100 h-full min-h-[420px]"
-                />
-            </div>
-
-            {/* Right: Schedule List */}
+            {/* Left: Schedule List */}
             <div className="lg:col-span-7 xl:col-span-8 h-full">
                 <div className="bg-white rounded-3xl p-6 shadow-apple border border-slate-100 h-full min-h-[420px] max-h-[600px] flex flex-col">
 
@@ -177,8 +175,9 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                         return (
                                             <React.Fragment key={event.id}>
                                                 {showHeader && (
-                                                    <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-2 px-1 mb-2 border-b border-slate-100">
-                                                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest capitalize">
+                                                    <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm pt-4 pb-2 pl-2 mb-4 border-b-2 border-slate-100 flex items-center gap-3">
+                                                        <div className="h-1.5 w-1.5 rounded-full bg-promed-primary ring-4 ring-promed-primary/10"></div>
+                                                        <h4 className="text-sm font-black text-slate-600 uppercase tracking-widest">
                                                             {isToday(event.date) ? t('today') : format(event.date, 'EEEE, d MMMM', { locale: currentLocale })}
                                                         </h4>
                                                     </div>
@@ -190,73 +189,57 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                                     exit={{ opacity: 0, y: -10 }}
                                                     transition={{ delay: index * 0.05 }}
                                                     onClick={() => onViewPatient(event.patientId)}
-                                                    className="group relative flex items-center p-5 rounded-2xl bg-white border border-slate-100/80 hover:border-promed-primary/30 hover:shadow-[0_8px_20px_-6px_rgba(99,102,241,0.1)] transition-all duration-300 cursor-pointer overflow-hidden"
+                                                    className="group relative flex items-stretch rounded-2xl bg-white border border-slate-100/80 hover:border-promed-primary/30 hover:shadow-[0_8px_20px_-6px_rgba(99,102,241,0.1)] transition-all duration-300 cursor-pointer overflow-hidden"
                                                 >
-                                                    {/* Left Accent Bar Gradient */}
-                                                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 transition-colors ${event.type === 'Operation'
-                                                        ? 'bg-gradient-to-b from-rose-400 to-rose-600'
-                                                        : 'bg-gradient-to-b from-blue-500 to-indigo-600'
-                                                        }`} />
+                                                    {/* Left Time Panel - Gradient Background */}
+                                                    <div className={`w-[90px] flex items-center justify-center flex-shrink-0 transition-colors gel-blue-style`}>
+                                                        <span className="text-xl font-black text-white tracking-tight tabular-nums drop-shadow-sm">
+                                                            {format(event.date, 'HH:mm')}
+                                                        </span>
+                                                    </div>
 
-                                                    {/* Content Container */}
-                                                    <div className="flex items-center w-full pl-3">
+                                                    {/* Right Content Container */}
+                                                    <div className="flex-1 flex items-center p-4 min-w-0">
 
-                                                        {/* Timeline Time Component */}
-                                                        <div className="flex flex-col items-center justify-center mr-5 min-w-[45px]">
-                                                            <span className="text-lg font-black text-slate-700 tracking-tight tabular-nums">
-                                                                {format(event.date, 'HH:mm')}
-                                                            </span>
-                                                        </div>
+                                                        {/* Patient Info */}
+                                                        <div className="flex-1 min-w-0 pr-4">
+                                                            <div className="flex items-center space-x-4 mb-0.5">
+                                                                <div className="relative">
+                                                                    <ProfileAvatar
+                                                                        src={event.patientImage}
+                                                                        alt={event.name}
+                                                                        size={48}
+                                                                        className="rounded-2xl ring-2 ring-white shadow-sm"
+                                                                        fallbackType="user"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="flex items-center gap-1">
+                                                                        <div>
+                                                                            <div className="flex items-center gap-1">
+                                                                                {event.tier === 'pro' && (
+                                                                                    <div className="-ml-1">
+                                                                                        <ProBadge size={35} />
+                                                                                    </div>
+                                                                                )}
+                                                                                <span className="font-bold text-slate-900 line-clamp-1">
+                                                                                    {event.name}
+                                                                                </span>
+                                                                            </div>
+                                                                            <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
+                                                                                {event.subtitle}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
 
-                                                        {/* Visual Icon Box or Profile Image */}
-                                                        <div className={`
-                                                        w-12 h-12 rounded-2xl flex items-center justify-center mr-4 shadow-sm transition-all duration-300 group-hover:scale-105 overflow-hidden flex-shrink-0
-                                                        ${event.image ? 'bg-slate-100' : (
-                                                                event.type === 'Operation'
-                                                                    ? 'bg-rose-50 text-rose-500 group-hover:bg-rose-500 group-hover:text-white group-hover:shadow-rose-200'
-                                                                    : 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white group-hover:shadow-indigo-200'
-                                                            )}
-                                                    `}>
-                                                            {event.image ? (
-                                                                <img
-                                                                    src={event.image}
-                                                                    alt={event.name}
-                                                                    className="w-full h-full object-cover"
-                                                                    onError={(e) => {
-                                                                        // Fallback if image fails to load
-                                                                        (e.target as HTMLImageElement).style.display = 'none';
-                                                                        (e.target as HTMLImageElement).parentElement?.classList.add(
-                                                                            event.type === 'Operation' ? 'bg-rose-50' : 'bg-indigo-50',
-                                                                            event.type === 'Operation' ? 'text-rose-500' : 'text-indigo-600'
-                                                                        );
-                                                                    }}
-                                                                />
-                                                            ) : (
-                                                                event.type === 'Operation'
-                                                                    ? <Heart size={20} fill="currentColor" className="opacity-90" />
-                                                                    : <Syringe size={20} className="stroke-[2.5]" />
-                                                            )}
-                                                        </div>
-
-                                                        {/* Main Info */}
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center justify-between mb-1">
-                                                                <h4 className="text-base font-bold text-slate-800 group-hover:text-promed-primary transition-colors truncate pr-2">
-                                                                    {event.name}
-                                                                </h4>
-                                                            </div>
-
-                                                            {/* Subtitle / Details */}
-                                                            <div className="flex items-center gap-2 text-xs font-bold text-slate-500 group-hover:text-slate-600 transition-colors">
-                                                                <span className="truncate max-w-[180px]">{event.subtitle}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
-
-                                                        {/* Right Side Actions / Badge */}
-                                                        <div className="flex items-center gap-3 pl-2">
-                                                            {/* Pill Tag - Soft Background for Accessibility */}
+                                                        {/* Right Side Actions */}
+                                                        <div className="flex items-center gap-3 pl-3">
+                                                            {/* Pill Tag */}
                                                             <span className={`
-                                                                hidden sm:flex px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider
+                                                                hidden xl:flex px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider scale-95 origin-right
                                                                 ${event.type === 'Operation'
                                                                     ? 'bg-rose-50 text-rose-700'
                                                                     : 'bg-indigo-50 text-indigo-700'
@@ -265,9 +248,9 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                                                 {t(event.type.toLowerCase()) || event.type}
                                                             </span>
 
-                                                            {/* Right Chevron Action */}
-                                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-white group-hover:shadow-sm group-hover:text-promed-primary transition-all duration-300">
-                                                                <ChevronRight size={16} strokeWidth={2.5} />
+                                                            {/* Chevron */}
+                                                            <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-promed-primary/10 group-hover:text-promed-primary transition-all duration-300">
+                                                                <ChevronRight size={18} strokeWidth={2.5} />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -289,6 +272,16 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                         </div>
                     </div>
                 </div>
+            </div >
+
+            {/* Right: Calendar */}
+            <div className="lg:col-span-5 xl:col-span-4">
+                <CalendarWidget
+                    events={calendarEvents}
+                    selectedDate={selectedDate}
+                    onDateSelect={handleDateSelect}
+                    className="shadow-apple border border-slate-100 h-full min-h-[420px]"
+                />
             </div>
         </div>
     );

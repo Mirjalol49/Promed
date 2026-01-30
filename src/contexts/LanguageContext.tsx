@@ -340,6 +340,9 @@ export const translations = {
     finish: "Finish",
     next: "Next",
     skip: "Skip",
+    tier: "Tier",
+    tier_regular: "Regular Patient",
+    tier_pro: "Pro Patient (Bonus)",
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -694,6 +697,9 @@ export const translations = {
     finish: "Tugatish",
     next: "Keyingisi",
     skip: "O'tkazib yuborish",
+    tier: "Daraja",
+    tier_regular: "Oddiy Bemor",
+    tier_pro: "Pro Bemor (Bonus)",
   },
   ru: {
     dashboard: "Панель управления",
@@ -1045,6 +1051,9 @@ export const translations = {
     finish: "Завершить",
     next: "Далее",
     skip: "Пропустить",
+    tier: "Уровень",
+    tier_regular: "Обычный пациент",
+    tier_pro: "Pro пациент (Бонус)",
   }
 };
 
