@@ -43,6 +43,9 @@ const mapPatient = (id: string, p: any): Patient => ({
   telegramChatId: p.telegramChatId,
   botLanguage: p.botLanguage,
   tier: p.tier,
+  unreadCount: p.unreadCount,
+  lastMessage: p.lastMessage,
+  lastMessageTime: p.lastMessageTime,
 });
 // console.log("🔄 [mapPatient] Mapped:", p.full_name, "Tier:", p.tier);
 

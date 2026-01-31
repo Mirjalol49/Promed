@@ -130,7 +130,7 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                           w-9 h-9 rounded-full border-[3px] z-20
                                           transition-all duration-500 flex items-center justify-center
                                           ${isDone ? 'bg-emerald-500 border-emerald-100 shadow-lg shadow-emerald-200 ring-4 ring-emerald-50' :
-                                                isActive ? 'bg-white border-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.2)] animate-[pulse_2s_ease-in-out_infinite]' :
+                                                isActive ? 'bg-white border-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.2)] animate-[pulse_8s_ease-in-out_infinite]' :
                                                     'bg-slate-50 border-slate-300' // Future
                                             }
                                         `}>

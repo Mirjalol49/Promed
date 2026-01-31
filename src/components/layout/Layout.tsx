@@ -10,9 +10,10 @@ import {
   Settings,
   Shield,
   LayoutList,
-  StickyNote
+  StickyNote,
+  MessageSquare
 } from 'lucide-react';
-import { PageView } from '../../types';
+import { Patient, PageView } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ProfileAvatar } from './ProfileAvatar';
 import { useAccount } from '../../contexts/AccountContext';
@@ -36,6 +37,7 @@ interface LayoutProps {
   onUpdateProfile: (data: { name: string; image?: File | string; password?: string }) => Promise<void>;
   userName: string;
   onLogout: () => void;
+  patients?: Patient[];
 }
 
 const Layout: React.FC<LayoutProps> = ({
@@ -51,13 +53,16 @@ const Layout: React.FC<LayoutProps> = ({
   onLogout,
   onToggleLock,
   userPassword,
-  onUpdateProfile
+  onUpdateProfile,
+  patients = []
 }) => {
   const { role } = useAccount();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { t } = useLanguage();
 
-  const NavItem = ({ page, icon: Icon, label, id, iconImg }: { page: PageView; icon: any; label: string; id?: string; iconImg?: string }) => {
+  const totalUnread = patients.reduce((acc, p) => acc + (p.unreadCount || 0), 0);
+
+  const NavItem = ({ page, icon: Icon, label, id, iconImg, badge }: { page: PageView; icon: any; label: string; id?: string; iconImg?: string; badge?: number }) => {
     const isActive = currentPage === page;
     return (
       <motion.button
@@ -97,7 +102,12 @@ const Layout: React.FC<LayoutProps> = ({
             <Icon size={20} className={`transition-colors ${isActive ? 'text-promed-primary' : 'text-slate-900'}`} />
           </AnimateIcon>
         )}
-        <span className={`text-base font-sans transition-all duration-200 ${isActive ? 'font-semibold' : 'font-medium group-hover:font-semibold'}`}>{label}</span>
+        <span className={`text-base font-sans transition-all duration-200 flex-1 text-left ${isActive ? 'font-semibold' : 'font-medium group-hover:font-semibold'}`}>{label}</span>
+        {badge && badge > 0 ? (
+          <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-promed-primary text-white text-[10px] font-bold rounded-full shadow-sm ml-auto">
+            {badge}
+          </span>
+        ) : null}
       </motion.button >
     );
   };
@@ -134,6 +144,7 @@ const Layout: React.FC<LayoutProps> = ({
           <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />
           <NavItem page="PATIENTS" icon={Users} label={t('patients')} id="add-patient-btn" />
           <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />
+          <NavItem page="MESSAGES" icon={MessageSquare} label={t('messages')} badge={totalUnread} />
           <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />
 
           {role === 'admin' && (

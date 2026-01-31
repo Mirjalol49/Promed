@@ -219,6 +219,7 @@ export const translations = {
     no_events_day: "No appointments scheduled",
     check_other_dates: "Check other dates on the calendar",
     patients_scheduled: "Patients Scheduled",
+    view_all_schedule: "View Full Schedule",
 
     // Toasts
     toast_success_title: "Success",
@@ -340,9 +341,16 @@ export const translations = {
     finish: "Finish",
     next: "Next",
     skip: "Skip",
+    view_patient_details: "View Patient Details",
     tier: "Tier",
     tier_regular: "Regular Patient",
     tier_pro: "Pro Patient (Bonus)",
+    messages: "Messages",
+    placeholder_type_message: "Type a message...",
+    status_online: "Online",
+    status_offline: "Offline",
+    label_today: "Today",
+    no_messages_yet: "No messages yet",
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -571,6 +579,7 @@ export const translations = {
     no_events_day: "Bugun uchun qabul rejalashtirilmagan",
     check_other_dates: "Taqvimning boshqa kunlarini tekshiring",
     patients_scheduled: "nafar bemor rejalashtirilgan",
+    view_all_schedule: "Barcha jadvalni ko'rish",
 
     // Toasts
     toast_success_title: "Sinxronizatsiya a'lo!",
@@ -697,9 +706,16 @@ export const translations = {
     finish: "Tugatish",
     next: "Keyingisi",
     skip: "O'tkazib yuborish",
+    view_patient_details: "Bemor Tafsilotlarini Ko'rish",
     tier: "Daraja",
     tier_regular: "Oddiy Bemor",
     tier_pro: "Pro Bemor (Bonus)",
+    messages: "Xabarlar",
+    placeholder_type_message: "Xabar yozing...",
+    status_online: "Online",
+    status_offline: "Offline",
+    label_today: "Bugun",
+    no_messages_yet: "Hozircha xabarlar yo'q",
   },
   ru: {
     dashboard: "Панель управления",
@@ -794,6 +810,7 @@ export const translations = {
     weeks: "Недель",
     months: "Месяцев",
     enter_notes: "Введите заметки...",
+    messages: "Сообщения",
     delete: "Удалить",
     confirm_delete: "Вы уверены, что хотите удалить эту инъекцию?",
     delete_modal_title: "Вы уверены?",
@@ -1032,6 +1049,11 @@ export const translations = {
     edit_lead: "Редактировать",
     add_new_lead: "Добавить лид",
 
+    placeholder_type_message: "Введите сообщение...",
+    status_online: "В сети",
+    status_offline: "Не в сети",
+    label_today: "Сегодня",
+    no_messages_yet: "Сообщений пока нет",
     // Note Status
     urgency: "Срочно",
     todo: "Задача",

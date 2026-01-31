@@ -10,7 +10,7 @@ const PatientList = React.lazy(() => import('./features/patients/PatientList').t
 const PatientDetail = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientDetail })));
 const LeadsPage = React.lazy(() => import('./pages/LeadsPage').then(m => ({ default: m.LeadsPage })));
 const NotesPage = React.lazy(() => import('./features/notes/NotesPage').then(m => ({ default: m.NotesPage })));
-// const MessagesPage = React.lazy(() => import('./features/messages/MessagesPage').then(m => ({ default: m.MessagesPage }))); // User deleted this feature
+const MessagesPage = React.lazy(() => import('./features/messages/MessagesPage').then(m => ({ default: m.MessagesPage })));
 import { AddPatientForm } from './features/patients/PatientList';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { EmergencySetup } from './pages/EmergencySetup'; // Added EmergencySetup
@@ -793,11 +793,13 @@ const App: React.FC = () => {
           messageText = `Assalomu alaykum, **${patient.fullName}**! 🔔\n\n✅ Sizga yangi inyeksiya belgilandi.\n\n🗓 Sana: **${dateDisplay}**\n⏰ Vaqt: **${timeDisplay}**\n\nSizni klinikada kutamiz! 😊`;
         }
 
-        // Add to Outbound Queue
-        await addDoc(collection(db, 'outbound_messages'), {
+        // Add to Outbound Queue (Hardened Polling)
+        await addDoc(collection(db, 'outbound_tasks'), {
           telegramChatId: patient.telegramChatId,
           text: messageText,
           patientName: patient.fullName,
+          botLanguage: patient.botLanguage || 'uz',
+          action: 'SEND',
           status: 'PENDING',
           createdAt: new Date().toISOString(),
           type: 'INJECTION_NEW'
@@ -844,11 +846,13 @@ const App: React.FC = () => {
           messageText = `Assalomu alaykum, **${patient.fullName}**! 🔔\n\n⚠️ Sizning inyeksiya vaqtingiz o'zgardi.\n\n🗓 Yangi sana: **${dateDisplay}**\n⏰ Yangi vaqt: **${timeDisplay}**\n\nNoqulaylik uchun uzr so'raymiz, bu o'zgarish sizga yaxshiroq xizmat ko'rsatishimizga yordam beradi! 🙏`;
         }
 
-        // Add to Outbound Queue
-        await addDoc(collection(db, 'outbound_messages'), {
+        // Add to Outbound Queue (Hardened Polling)
+        await addDoc(collection(db, 'outbound_tasks'), {
           telegramChatId: patient.telegramChatId,
           text: messageText,
           patientName: patient.fullName,
+          botLanguage: patient.botLanguage || 'uz',
+          action: 'SEND',
           status: 'PENDING',
           createdAt: new Date().toISOString(),
           type: 'INJECTION_CHANGE'
@@ -1019,7 +1023,7 @@ const App: React.FC = () => {
             stats={{
               total: stats.total,
               active: patients.length,
-              upcoming: (patients || []).flatMap(p => p.injections || []).filter(i => i.status === InjectionStatus.SCHEDULED).length,
+              upcoming: (patients || []).flatMap(p => p.injections || []).filter(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date(new Date().setHours(0, 0, 0, 0))).length,
               newThisMonth: stats.newThisMonth
             }}
             onNewPatient={() => setView('ADD_PATIENT')}
@@ -1116,6 +1120,11 @@ const App: React.FC = () => {
           <NotesPage />
         </div>
 
+        {/* Messages View */}
+        <div style={{ display: view === 'MESSAGES' ? 'block' : 'none' }}>
+          <MessagesPage patients={patients} />
+        </div>
+
       </div >
     );
   };
@@ -1180,8 +1189,8 @@ const App: React.FC = () => {
 
   return (
     <Layout
-      userId={userId || ''}
-      currentPage={view}
+      userId={userId}
+      currentPage={view as PageView}
       onNavigate={handleNavigate}
       isLockEnabled={isLockEnabled}
       onToggleLock={async (enabled) => {
@@ -1207,6 +1216,7 @@ const App: React.FC = () => {
       onUpdateProfile={handleUpdateProfile}
       userName={accountName}
       onLogout={handleLogout}
+      patients={patients}
     >
       <ErrorBoundary>
         <React.Suspense fallback={<DashboardLoader />}>

@@ -121,26 +121,30 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
                                 onClick={() => onDateSelect(day)}
                                 className={`
                   w-10 h-10 rounded-xl flex flex-col items-center justify-center text-sm font-bold relative transition-all duration-300
-                  ${!isCurrentMonth ? 'text-slate-300' : 'text-slate-600'}
-                  ${isSelected ? 'bg-promed-primary text-white shadow-lg shadow-indigo-500/30 scale-105 z-10' : 'hover:bg-slate-50 hover:text-promed-primary'}
-                  ${isTodayDate && !isSelected ? 'text-promed-primary ring-[1.5px] ring-promed-primary bg-promed-primary/5 font-black shadow-sm' : ''}
+                  ${!isCurrentMonth ? 'text-slate-300' : ''}
+                  ${isSelected
+                                        ? (hasOperation ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30 scale-105 z-10' : 'bg-promed-primary text-white shadow-lg shadow-indigo-500/30 scale-105 z-10')
+                                        : (hasOperation && isCurrentMonth
+                                            ? 'bg-rose-50 text-rose-600 font-extrabold shadow-sm ring-1 ring-rose-100 hover:bg-rose-100'
+                                            : 'text-slate-600 hover:bg-slate-50 hover:text-promed-primary')
+                                    }
+                  ${isTodayDate && !isSelected && !hasOperation ? 'text-promed-primary ring-[1.5px] ring-promed-primary bg-promed-primary/5 font-black shadow-sm' : ''}
+                  ${isCurrentMonth && !isSelected && parseInt(format(day, 'd')) > 28 ? 'opacity-80' : ''}
                 `}
                             >
                                 <span className={isSelected || isTodayDate ? "z-10 relative" : ""}>{format(day, 'd')}</span>
 
-                                {/* Event Indicators - Improved */}
+                                {/* Event Indicators - Dots for Injections Only */}
                                 {!isSelected && dayEvents.length > 0 && (
                                     <div className="absolute bottom-1.5 flex gap-1 z-0">
-                                        {hasOperation && (
-                                            <div className="w-1.5 h-1.5 rounded-full bg-rose-500 ring-2 ring-white" />
-                                        )}
+                                        {/* Operation implies full card styling, so we don't need a dot for it anymore */}
                                         {hasInjection && (
-                                            <div className="w-1.5 h-1.5 rounded-full bg-promed-primary ring-2 ring-white" />
+                                            <div className={`w-1.5 h-1.5 rounded-full ring-1 ring-white ${hasOperation ? 'bg-rose-200' : 'bg-promed-primary'}`} />
                                         )}
                                     </div>
                                 )}
                                 {/* Selected State Events (White dots) */}
-                                {isSelected && dayEvents.length > 0 && (
+                                {isSelected && dayEvents.length > 0 && hasInjection && (
                                     <div className="absolute bottom-1.5 flex gap-1 z-0">
                                         <div className="w-1.5 h-1.5 rounded-full bg-white/90" />
                                     </div>
@@ -151,15 +155,15 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
                 })}
             </div>
 
-            {/* Legend / Status */}
-            <div className="mt-6 flex items-center justify-center gap-6 text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 border-t border-slate-50 pt-4">
-                <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-rose-500 shadow-sm shadow-rose-200" />
-                    <span>{t('operation') || 'Operation'}</span>
+            {/* Legend / Status - Solid High Contrast */}
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-4 border-t border-slate-100 pt-5">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500 shadow-md shadow-rose-200 ring-1 ring-rose-500">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                    <span className="text-[10px] md:text-[11px] font-bold text-white uppercase tracking-wide">{t('operation') || 'Operation'}</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-promed-primary shadow-sm shadow-indigo-200" />
-                    <span>{t('injection') || 'Injection'}</span>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-promed-primary shadow-md shadow-indigo-200 ring-1 ring-promed-primary">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                    <span className="text-[10px] md:text-[11px] font-bold text-white uppercase tracking-wide">{t('injection') || 'Injection'}</span>
                 </div>
             </div>
         </div>

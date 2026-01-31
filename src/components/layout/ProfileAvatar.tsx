@@ -9,6 +9,7 @@ interface ProfileAvatarProps {
     className?: string; // extra classes
     fallbackType?: 'user' | 'clinic';
     optimisticId?: string;
+    rounded?: string;
 }
 
 export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
@@ -17,7 +18,8 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     size = 40,
     className = "",
     fallbackType = 'user',
-    optimisticId
+    optimisticId,
+    rounded = "rounded-full"
 }) => {
     const [imgSrc, setImgSrc] = useState<string | null>(src || null);
     const [hasError, setHasError] = useState(false);
@@ -76,7 +78,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     if (isShowingFallback) {
         return (
             <div
-                className={`relative overflow-hidden rounded-full bg-slate-200 flex items-center justify-center ${className}`}
+                className={`relative overflow-hidden ${rounded} bg-slate-200 flex items-center justify-center ${className}`}
                 style={{ width: size, height: size }}
             >
                 <img
@@ -96,7 +98,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
 
     return (
         <div
-            className={`relative overflow-hidden rounded-full border border-white/10  ${className}`}
+            className={`relative overflow-hidden ${rounded} border border-white/10  ${className}`}
             style={{ width: size, height: size }}
         >
             {/* Optimistic Overlay (Local Blob) */}

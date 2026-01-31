@@ -391,8 +391,8 @@ export const PatientList: React.FC<{
                       />
                       <div>
                         <div className="flex items-center gap-1.5">
-                          {patient.tier === 'pro' && <ProBadge size={22} />}
                           <div className="font-bold text-slate-800 text-base">{patient.fullName}</div>
+                          {patient.tier === 'pro' && <ProBadge size={22} />}
                         </div>
                         <div className="text-xs text-slate-500 font-medium">
                           {patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y
@@ -482,8 +482,8 @@ export const PatientList: React.FC<{
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            {patient.tier === 'pro' && <ProBadge size={18} />}
                             <div className="font-bold text-slate-800 text-sm group-hover:text-promed-primary transition-colors">{patient.fullName}</div>
+                            {patient.tier === 'pro' && <ProBadge size={18} />}
                           </div>
                           <div className="text-xs text-slate-500 mt-0.5 font-medium">{patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y</div>
                         </div>
@@ -745,10 +745,10 @@ export const PatientDetail: React.FC<{
         <div className="flex-1 space-y-6 z-10">
           <div className="flex flex-col md:flex-row justify-between items-start gap-4">
             <div>
-              <div className="flex items-center gap-2">
-                {patient.tier === 'pro' && <ProBadge size={32} />}
-                <h2 className="text-4xl font-bold text-slate-900 tracking-tight">{patient.fullName}</h2>
-              </div>
+              <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center flex-nowrap gap-3 whitespace-nowrap overflow-hidden">
+                <span className="truncate">{patient.fullName}</span>
+                {patient.tier === 'pro' && <div className="flex-shrink-0 ml-1"><ProBadge size={32} /></div>}
+              </h2>
               <div className="flex flex-wrap items-center gap-6 text-slate-600 mt-3">
                 <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
                   <Calendar className="w-4 h-4 text-slate-400" />
