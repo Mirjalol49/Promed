@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-// Force Rebuild 2
+// Force Rebuild 3
 import {
   UserPlus,
   Calendar,
@@ -24,6 +24,7 @@ import { Injection, InjectionStatus, Patient } from '../../types';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { AnimateIcon } from '../../components/ui/AnimateIcon';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 
 // --- Vitals Card (Compact) ---
@@ -38,11 +39,11 @@ interface VitalsCardProps {
 export const VitalsCard: React.FC<VitalsCardProps> = ({ label, value, icon: Icon, color, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-apple p-4 flex items-center space-x-4 border border-slate-100 animate-pulse">
-        <div className="w-10 h-10 bg-slate-100 rounded-lg"></div>
+      <div className="bg-white rounded-xl shadow-apple p-4 flex items-center space-x-4 border border-slate-100">
+        <Skeleton className="w-10 h-10 rounded-lg" />
         <div className="space-y-2 flex-1">
-          <div className="h-3 bg-slate-100 rounded w-1/2"></div>
-          <div className="h-5 bg-slate-100 rounded w-1/4"></div>
+          <Skeleton className="h-3 w-1/2" />
+          <Skeleton className="h-5 w-1/4" />
         </div>
       </div>
     );
@@ -478,84 +479,104 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   if (isLoading) {
     return (
-      <div className="p-6 rounded-[32px] relative overflow-hidden h-[180px] bg-slate-200 animate-pulse">
-        <div className="flex space-x-3 mb-5">
-          <div className="w-10 h-10 bg-slate-300 rounded-lg"></div>
-          <div className="h-4 bg-slate-300 rounded w-24 self-center"></div>
+      <div className="bg-white rounded-[24px] shadow-sm p-6 h-[200px] flex flex-col justify-between border border-slate-100">
+        <div className="flex space-x-3">
+          <Skeleton className="w-12 h-12 rounded-2xl" />
+          <Skeleton className="h-5 w-24 self-center" />
         </div>
-        <div className="h-10 bg-slate-300 rounded w-16 mb-2"></div>
-        <div className="h-3 bg-slate-300 rounded w-32"></div>
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-20" />
+          <Skeleton className="h-4 w-32" />
+        </div>
       </div>
     );
   }
 
   const getGradient = (baseClass: string) => {
-    // Red / Operations - Deep Crimson/Rose
+    // Red / Operations - Rose to Dark Rose
     if (baseClass.includes('rose') || baseClass.includes('red')) {
-      return 'linear-gradient(135deg, #f43f5e 0%, #9f1239 100%)';
+      return 'linear-gradient(135deg, #f43f5e 0%, #be123c 100%)';
     }
-    // Blue / Injections - Refined Gradient with requested color
+    // Blue / Injections - Indigo to Dark Navy
     if (baseClass.includes('blue') || baseClass.includes('primary')) {
-      return 'linear-gradient(135deg, hsl(243, 71%, 44%) 0%, hsl(243, 71%, 32%) 100%)';
+      return 'linear-gradient(135deg, #4f46e5 0%, #312e81 100%)';
     }
-    // Green / Patients - Professional Emerald
+    // Green / Patients - Emerald to Dark Emerald
     if (baseClass.includes('emerald') || baseClass.includes('green') || baseClass.includes('hsl(160')) {
       return 'linear-gradient(135deg, #10b981 0%, #064e3b 100%)';
     }
-    // Default / Promed Primary
+    // Default
     return 'linear-gradient(135deg, hsl(243, 71%, 32%) 0%, hsl(243, 71%, 22%) 100%)';
   };
 
   const gradient = getGradient(colorClass);
 
   return (
-    <div
-      className="p-4 md:p-6 rounded-[24px] text-white relative overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:shadow-2xl active:scale-[0.98] group shadow-apple"
-      style={{ background: gradient }}
-    >
-      {/* Glossy Top Highlight */}
-      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/20 to-transparent opacity-50 h-1/2" />
+    <div className="group h-[200px] w-full cursor-pointer font-sans perspective-1000">
 
-      <div className="relative z-10 h-full flex flex-col justify-between">
-        <div className="space-y-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md border border-white/20 shadow-inner">
-              {iconImg ? (
-                <Activity className="w-5 h-5 text-white" />
-              ) : (
-                <AnimateIcon>
-                  <Icon size={22} className="text-white drop-shadow-sm" />
-                </AnimateIcon>
-              )}
-            </div>
-            <span className="text-xl md:text-sm font-black uppercase tracking-[0.15em] text-white/90 drop-shadow-sm">{label}</span>
-          </div>
-          <div className="flex items-baseline space-x-2">
-            <span className="text-3xl md:text-5xl font-black tracking-tighter text-white drop-shadow-md">{value}</span>
-            {change && (
-              <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/10 flex items-center gap-1">
-                <Activity size={10} className="text-white/80" />
-                <span className="text-[10px] font-bold text-white uppercase tracking-wider">{change}</span>
+      {/* Container - Relative wrapper for absolute positioning */}
+      <div className="relative w-full h-full rounded-[24px] shadow-apple hover:shadow-2xl transition-all duration-300 active:scale-[0.98]">
+
+        {/* HEADER (The Slide Part) */}
+        {/* We place it at the top, full width. Height is controlled here. */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[55%] rounded-t-[24px] z-0 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-y-2 overflow-hidden"
+          style={{ background: gradient }}
+        >
+          {/* Decorative Elements */}
+          <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/20 rounded-full blur-2xl pointer-events-none mix-blend-overlay" />
+
+          {/* Mascot / Icon Area */}
+          {/* Positioned to be clearly visible in the top 80px */}
+          <div className="absolute right-2 top-2 h-full flex items-start justify-end pr-2 pt-1">
+            {mascotImg ? (
+              <img
+                src={mascotImg}
+                alt="Mascot"
+                className={`h-[90%] w-auto object-contain drop-shadow-md transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 ${imgClassName || ''}`}
+              />
+            ) : (
+              <div className="text-white/30 p-2">
+                <Icon size={56} />
               </div>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Mascot Image (Visible Always) */}
-      {mascotImg && (
-        <div className={`absolute bottom-0 right-2 md:-bottom-2 md:right-4 w-20 h-20 md:w-24 md:h-24 z-0 pointer-events-none origin-bottom transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:-translate-y-3 group-hover:scale-110 group-hover:rotate-3 ${imgClassName || ''}`}>
-          <img
-            src={mascotImg}
-            alt="Mascot"
-            className="w-full h-full object-contain"
-          />
+        {/* BODY (The Content Part) */}
+        {/* Starts at 85px to reveal enough header */}
+        <div className="absolute top-[90px] left-0 right-0 bottom-0 bg-white rounded-[24px] z-10 p-5 flex flex-col justify-between shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] border-x border-b border-slate-100 transition-all duration-300 group-hover:-translate-y-1">
+
+          {/* Top Row: Label + Menu */}
+          <div className="flex items-start justify-between">
+            <span className="text-[11px] font-black text-black uppercase tracking-widest leading-none mt-1">{label}</span>
+            <div className="flex gap-1 p-2 -mr-2 -mt-2 hover:bg-slate-50 rounded-full transition-colors cursor-pointer opacity-50 hover:opacity-100">
+              <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+              <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+              <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+            </div>
+          </div>
+
+          {/* Middle: Value */}
+          <div className="mt-1">
+            <span className="text-[3.5rem] leading-none font-black text-slate-800 tracking-tighter">{value}</span>
+          </div>
+
+          {/* Bottom: Subtext */}
+          <div className="text-xs font-bold text-slate-400">
+            {change ? (
+              <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50/80 w-fit px-2 py-1 rounded-lg border border-emerald-100">
+                <Activity size={10} strokeWidth={3} />
+                +{change}
+                <span className="text-emerald-600/60 font-semibold text-[10px] uppercase tracking-wide">/ week</span>
+              </span>
+            ) : (
+              <span className="opacity-0">.</span>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Modern Decorative Orbs */}
-      <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-[60px] pointer-events-none z-0" />
-      <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-black/5 rounded-full blur-[60px] pointer-events-none z-0" />
+      </div>
     </div>
   );
 };

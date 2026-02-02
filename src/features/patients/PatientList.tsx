@@ -745,9 +745,9 @@ export const PatientDetail: React.FC<{
         <div className="flex-1 space-y-6 z-10">
           <div className="flex flex-col md:flex-row justify-between items-start gap-4">
             <div>
-              <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center flex-nowrap gap-3 whitespace-nowrap overflow-hidden">
+              <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center flex-nowrap gap-1 whitespace-nowrap overflow-hidden">
                 <span className="truncate">{patient.fullName}</span>
-                {patient.tier === 'pro' && <div className="flex-shrink-0 ml-1"><ProBadge size={32} /></div>}
+                {patient.tier === 'pro' && <div className="flex-shrink-0"><ProBadge size={32} /></div>}
               </h2>
               <div className="flex flex-wrap items-center gap-6 text-slate-600 mt-3">
                 <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
@@ -1127,25 +1127,47 @@ export const AddPatientForm: React.FC<{
 
     // Perform Reliable Uploads
     try {
-      if (profileImageFile) {
-        setIsProfileUploading(true);
-        finalProfileUrl = await reliableUpload({
-          bucket: 'promed-images',
-          path: `patients/${tempId}/profile`,
-          file: profileImageFile
-        });
-        setIsProfileUploading(false);
-      }
+      const uploadPromises: Promise<string | undefined>[] = [];
 
-      if (beforeImageFile) {
-        setIsBeforeUploading(true);
-        finalBeforeUrl = await reliableUpload({
-          bucket: 'promed-images',
-          path: `patients/${tempId}/before`,
-          file: beforeImageFile
-        });
-        setIsBeforeUploading(false);
-      }
+      // Profile Image Upload Promise
+      const profileUploadPromise = async () => {
+        if (profileImageFile) {
+          setIsProfileUploading(true);
+          const url = await reliableUpload({
+            bucket: 'promed-images',
+            path: `patients/${tempId}/profile`,
+            file: profileImageFile
+          });
+          setIsProfileUploading(false);
+          return url;
+        }
+        return profileImage; // Return existing/default if no file
+      };
+
+      // Before Image Upload Promise
+      const beforeUploadPromise = async () => {
+        if (beforeImageFile) {
+          setIsBeforeUploading(true);
+          const url = await reliableUpload({
+            bucket: 'promed-images',
+            path: `patients/${tempId}/before`,
+            file: beforeImageFile
+          });
+          setIsBeforeUploading(false);
+          return url;
+        }
+        return beforeImage; // Return existing/default if no file
+      };
+
+      // Execute in parallel
+      const [newProfileUrl, newBeforeUrl] = await Promise.all([
+        profileUploadPromise(),
+        beforeUploadPromise()
+      ]);
+
+      finalProfileUrl = newProfileUrl || profileImage;
+      finalBeforeUrl = newBeforeUrl || beforeImage;
+
     } catch (err: any) {
       setIsProfileUploading(false);
       setIsBeforeUploading(false);

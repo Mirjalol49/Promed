@@ -29,7 +29,7 @@ const statusMap: Record<string, string> = {
     purple: 'note' // Fallback
 };
 
-export const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit, onDelete }) => {
+export const NoteCard = React.forwardRef<HTMLDivElement, NoteCardProps>(({ note, onEdit, onDelete }, ref) => {
     const { t } = useLanguage();
     // Default to blue if color is missing
     const bgClass = colorMap[note.color || 'blue'] || colorMap.blue;
@@ -37,6 +37,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit, onDelete }) =>
 
     return (
         <motion.div
+            ref={ref}
             layout
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -86,4 +87,6 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit, onDelete }) =>
             </div>
         </motion.div>
     );
-};
+});
+
+NoteCard.displayName = "NoteCard";

@@ -73,6 +73,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             mascotImg={operationIcon}
                             colorClass="bg-rose-500"
                             shadowColor=""
+                            isLoading={isLoading}
                         />
                         <StatCard
                             label={t('injection')}
@@ -82,6 +83,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             colorClass="bg-promed-primary"
                             shadowColor=""
                             imgClassName="translate-x-2 md:translate-x-4"
+                            isLoading={isLoading}
                         />
                         <StatCard
                             label={t('patients')}
@@ -90,6 +92,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             mascotImg={patientsIcon}
                             colorClass="bg-[hsl(160,100%,30%)]"
                             shadowColor=""
+                            isLoading={isLoading}
                         />
                     </div>
                 </div>

@@ -42,6 +42,7 @@ export interface Patient {
   unreadCount?: number;
   lastMessage?: string;
   lastMessageTime?: string;
+  lastMessageTimestamp?: string; // ISO string for sorting/formatting
   botLanguage?: string;
 }
 

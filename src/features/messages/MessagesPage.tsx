@@ -1,18 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import EmojiPicker, { EmojiStyle, Theme } from 'emoji-picker-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Patient } from '../../types';
-import { Search, Send, User, Smile, Trash2, Edit2, X, Check, Paperclip, Mic } from 'lucide-react';
+import { Search, Send, User, Smile, Trash2, Edit2, X, Check, CheckCheck, ChevronDown, Copy, Reply, Pin, PinOff, CalendarClock, Clock, BellOff } from 'lucide-react';
 import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
-import { useImageUpload } from '../../hooks/useImageUpload';
+import { format } from 'date-fns';
+import { uz, ru, enGB } from 'date-fns/locale';
+
 import { useToast } from '../../contexts/ToastContext';
 import DeleteModal from '../../components/ui/DeleteModal';
+import { ScheduleModal } from '../../components/ui/ScheduleModal'; // NEW
 import { ProBadge } from '../../components/ui/ProBadge';
 import { db, storage } from '../../lib/firebase';
-import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, limitToLast, startAfter, endBefore, limit, getDocs, where, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
-import { Play, Pause, Square, Loader2 } from 'lucide-react';
+import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, limitToLast, startAfter, endBefore, limit, getDocs, where, writeBatch, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+
+import { Play, Pause, Loader2 } from 'lucide-react';
 
 interface MessagesPageProps {
     patients?: Patient[];
@@ -27,18 +30,42 @@ interface Message {
     image?: string;
     voice?: string;
     telegramMessageId?: number;
-    status?: 'sent' | 'delivered' | 'seen';
+    status?: 'sent' | 'delivered' | 'seen' | 'scheduled'; // Updated status
+    scheduledFor?: string; // New field
+    seen?: boolean;
+    isPinned?: boolean;
+    replyTo?: {
+        id: string;
+        text: string;
+        sender: string;
+        displayName: string;
+    };
+    preview?: {
+        title: string;
+        description: string;
+        image: string;
+        url: string;
+    };
 }
 
 export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
     const [messageInput, setMessageInput] = useState('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [searchText, setSearchText] = useState('');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [isScheduledView, setIsScheduledView] = useState(false);
+
+    // Schedule Modal State
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [sendButtonContextMenu, setSendButtonContextMenu] = useState<{ x: number, y: number } | null>(null);
+    const sendButtonRef = useRef<HTMLButtonElement>(null);
+    const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-    const [editContent, setEditContent] = useState('');
+    const [replyingToMessage, setReplyingToMessage] = useState<Message | null>(null);
+    const [showScrollButton, setShowScrollButton] = useState(false);
 
     // Delete Modal State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -52,38 +79,71 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    // messagesEndRef handled in scrolling logic
     const { error: showToastError, success: showToastSuccess } = useToast();
-    const { isRecording, recordingTime, audioBlob, startRecording, stopRecording, resetRecorder } = useVoiceRecorder();
+
 
     const selectedPatient = patients.find(p => p.id === selectedPatientId);
 
-    // Image Upload hook
-    const {
-        previewUrl,
-        uploading: isImageUploading,
-        progress,
-        handleImageSelect,
-        uploadedUrl,
-        reset: resetImage
-    } = useImageUpload({
-        pathPrefix: 'chat_attachments'
-    });
+    // Get Pinned Messages (Multiple support)
+    const pinnedMessages = messages.filter(m => m.isPinned).reverse(); // Oldest first? Or Newest? Telegram usually cycles. Let's do Standard order (Newest at bottom of list, so maybe reverse to cycle up? or down?)
+    // Actually, typical cycle is: You are at bottom. You click pin. It jumps to the *latest* pinned message (nearest to bottom). Click again -> jumps to *previous* pinned message (further up).
+    // So let's sort them by time descending (Newest first).
+    // messages is likely newest first or oldest first? 
+    // In the code: `setMessages(msgs)` where `msgs` are reversed from snapshot (snapshot is desc). So `messages` state is Oldest -> Newest (Standard chat log).
+    // So pinnedMessages should be filtered from `messages` (Oldest -> Newest).
+    // We want to jump to the one *closest* to current view? Or simply cycle?
+    // Cycle: Latest -> Older -> Older -> Back to Latest.
+    // So let's reverse `messages.filter(...)` so we get Newest -> Oldest.
+
+    const allPinned = useMemo(() => messages.filter(m => m.isPinned).reverse(), [messages]);
+    const [activePinIndex, setActivePinIndex] = useState(0);
+
+    // Reset index if pins change count (or just clamp it)
+    useEffect(() => {
+        if (activePinIndex >= allPinned.length) setActivePinIndex(0);
+    }, [allPinned.length]);
+
+    const currentPinned = allPinned[activePinIndex];
+
 
     // Filter patients
     const filteredPatients = patients.filter(p =>
         p.fullName.toLowerCase().includes(searchText.toLowerCase())
     );
 
-    // Auto-scroll
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
+    // Auto-scroll Intelligence
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContentRef = useRef<HTMLDivElement>(null);
+    const lastMessageIdRef = useRef<string | null>(null);
+    const isPatientSwitchRef = useRef(false);
 
+    // Reset switch flag when patient changes
     useEffect(() => {
-        scrollToBottom();
-    }, [messages, selectedPatientId]);
+        isPatientSwitchRef.current = true;
+        setMessages([]); // Clear messages to prevent flash of old content
+        setReplyingToMessage(null); // Clear reply on switch
+    }, [selectedPatientId]);
+
+    // Intelligent Scroll Effect
+    useEffect(() => {
+        if (messages.length === 0) return;
+
+        const lastMsg = messages[messages.length - 1];
+        const isLastMessageNew = lastMsg.id !== lastMessageIdRef.current;
+
+        if (isPatientSwitchRef.current) {
+            // Case 1: Switched Patient -> Instant Jump to Bottom (Telegram style)
+            messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+            isPatientSwitchRef.current = false;
+        } else if (isLastMessageNew) {
+            // Case 2: New Message Received/Sent -> Smooth Scroll
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+        // Case 3: Loaded older messages (Load More) -> Do NOT scroll to bottom
+
+        lastMessageIdRef.current = lastMsg.id;
+    }, [messages]);
 
     // Fetch Messages (with Pagination & Local Cache)
     useEffect(() => {
@@ -93,7 +153,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
         }
 
         // 1. Try Local Cache
-        const cached = localStorage.getItem(`msgs_${selectedPatientId}`);
+        const cached = localStorage.getItem(`msgs_${selectedPatientId} `);
         if (cached) {
             try {
                 setMessages(JSON.parse(cached));
@@ -102,7 +162,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
 
         // 2. Initial Realtime Listener (Limit to 30)
         const q = query(
-            collection(db, 'promed_passengers', selectedPatientId, 'messages'),
+            collection(db, 'patients', selectedPatientId, 'messages'),
             orderBy('createdAt', 'desc'),
             limit(30)
         );
@@ -114,7 +174,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
             })).reverse() as Message[];
 
             setMessages(msgs);
-            localStorage.setItem(`msgs_${selectedPatientId}`, JSON.stringify(msgs));
+            localStorage.setItem(`msgs_${selectedPatientId} `, JSON.stringify(msgs));
 
             if (snapshot.docs.length > 0) {
                 setOldestDoc(snapshot.docs[snapshot.docs.length - 1]);
@@ -135,13 +195,21 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
         };
     }, [selectedPatientId]);
 
+    // Safety clear for typing status (backend might get stuck)
+    useEffect(() => {
+        if (patientIsTyping) {
+            const timer = setTimeout(() => setPatientIsTyping(false), 8000);
+            return () => clearTimeout(timer);
+        }
+    }, [patientIsTyping]);
+
     const loadMoreMessages = async () => {
         if (!selectedPatientId || !oldestDoc || !hasMore || loadingMore) return;
 
         setLoadingMore(true);
         try {
             const q = query(
-                collection(db, 'promed_passengers', selectedPatientId, 'messages'),
+                collection(db, 'patients', selectedPatientId, 'messages'),
                 orderBy('createdAt', 'desc'),
                 startAfter(oldestDoc),
                 limit(30)
@@ -191,93 +259,159 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
         }
     }, [selectedPatient, selectedPatient?.unreadCount]);
 
+    // NEW: Mark messages as SEEN in Firestore (Batched)
+    useEffect(() => {
+        if (!selectedPatientId || messages.length === 0) return;
+
+        const unseenMessages = messages.filter(m => m.sender === 'user' && m.seen === false);
+
+        if (unseenMessages.length > 0) {
+            const batch = writeBatch(db);
+            unseenMessages.forEach(msg => {
+                const msgRef = doc(db, 'patients', selectedPatientId, 'messages', msg.id);
+                batch.update(msgRef, { seen: true });
+            });
+
+            batch.commit().catch(e => console.error("Error marking seen", e));
+        }
+    }, [messages, selectedPatientId]);
+
+    // NEW: Self-heal inconsistent sidebar times (Backfill lastMessageTimestamp)
+    useEffect(() => {
+        if (!selectedPatientId || messages.length === 0 || !selectedPatient) return;
+
+        const latestMsg = messages[messages.length - 1]; // Messages are filtered/sorted? 
+        // messages state is set as reverse() from snapshot (snapshot is desc). So messages[0] is Oldest? 
+        // Let's re-verify line 172: setMessages(msgs); where msgs = snapshot.docs...reverse().
+        // Snapshot is orderBy('createdAt', 'desc'). So docs[0] is Newest.
+        // reverse() makes msgs[0] Oldest. 
+        // So latest message is messages[messages.length - 1].
+
+        const latestTimestamp = latestMsg.createdAt;
+
+        // If patient is missing timestamp OR the stored formatted time doesn't match our preferred 24h format
+        // actually, just checking if timestamp is missing is safest/cheapest.
+        // Or if we really want to force update the string to 24h too.
+        if (!selectedPatient.lastMessageTimestamp) {
+            console.log("🩹 Self-healing patient timestamp...");
+            updateDoc(doc(db, 'patients', selectedPatientId), {
+                lastMessageTimestamp: latestTimestamp,
+                lastMessageTime: new Date(latestTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+            }).catch(e => console.error("Heal failed", e));
+        }
+    }, [messages, selectedPatient, selectedPatientId]);
+
     const adjustTextareaHeight = () => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 192)}px`;
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight} px`;
         }
     };
 
     useEffect(() => {
-        if (!messageInput && textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-        }
+        adjustTextareaHeight();
     }, [messageInput]);
 
 
     const [isSending, setIsSending] = useState(false);
 
-    const handleSendMessage = async () => {
-        console.log("🖱️ handleSendMessage clicked!", {
-            messageInput,
-            uploadedUrl,
-            patientId: selectedPatient?.id,
-            isSending,
-            isImageUploading
-        });
+    const handleSendMessage = async (scheduledDateArg?: Date) => {
+        if (!messageInput.trim() || !selectedPatient || isSending) {
+            return;
+        }
 
-        if ((!messageInput.trim() && !uploadedUrl) || !selectedPatient || isSending || isImageUploading) {
-            console.log("🛑 Guard triggered: skipping send", {
-                noInput: (!messageInput.trim() && !uploadedUrl),
-                noPatient: !selectedPatient,
-                isSending,
-                isImageUploading
-            });
+        if (editingMessageId) {
+            await handleUpdateMessage(editingMessageId);
             return;
         }
 
         setIsSending(true);
         try {
             const now = new Date();
-            const messageData = {
+            const messageData: any = {
                 text: messageInput.trim(),
-                image: uploadedUrl || null,
                 sender: 'doctor',
                 createdAt: now.toISOString(),
-                time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
             };
 
+            // Handle Scheduling (Local Display)
+            if (scheduledDateArg) {
+                console.log("🚀 [FRONTEND] Sending Scheduled Message:", scheduledDateArg.toISOString());
+                messageData.status = 'scheduled';
+                messageData.scheduledFor = scheduledDateArg.toISOString();
+            }
+
+            // Add Reply Data
+            if (replyingToMessage) {
+                messageData.replyTo = {
+                    id: replyingToMessage.id,
+                    text: replyingToMessage.text,
+                    sender: replyingToMessage.sender,
+                    displayName: replyingToMessage.sender === 'doctor' ? 'Doctor' : selectedPatient.fullName
+                };
+            }
+
             // 1. Add to Patient's subcollection (Persistence)
-            const docRef = await addDoc(collection(db, 'promed_passengers', selectedPatient.id, 'messages'), messageData);
+            const docRef = await addDoc(collection(db, 'patients', selectedPatient.id, 'messages'), messageData);
 
             // 2. Update 'lastActive', 'unreadCount', and 'lastMessage'
-            await updateDoc(doc(db, 'patients', selectedPatient.id), {
-                lastMessage: messageInput.trim() || (uploadedUrl ? "🖼 Photo" : ""),
-                lastMessageTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            });
+            // Only update lastMessage if NOT scheduled (or maybe denote it?)
+            if (!scheduledDateArg) {
+                await updateDoc(doc(db, 'patients', selectedPatient.id), {
+                    lastMessage: messageInput.trim(),
+                    lastMessageTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+                    lastMessageTimestamp: now.toISOString()
+                });
+            }
 
             // 3. Add to Outbound Queue (for Bot)
             if (!selectedPatient.telegramChatId) {
                 console.warn("⚠️ Cannot send to Telegram: Missing Chat ID");
                 showToastError(t('toast_error_title'), "Missing Telegram connection for this patient. Please ask them to start the bot.");
-                // We still save to firestore local messages, but don't queue for bot
             } else {
-                console.log("📤 Queueing task for Bot:", {
-                    chatId: selectedPatient.telegramChatId,
-                    text: messageInput.trim(),
-                    image: uploadedUrl
-                });
-
-                await addDoc(collection(db, 'outbound_tasks'), {
+                const payload: any = {
                     telegramChatId: selectedPatient.telegramChatId || null,
                     text: messageInput.trim() || null,
-                    imageUrl: uploadedUrl || null,
-                    status: 'PENDING',
+                    status: scheduledDateArg ? 'QUEUED' : 'PENDING', // Direct QUEUED for scheduled
                     patientId: selectedPatient.id,
                     originalMessageId: docRef.id,
                     patientName: selectedPatient.fullName,
                     botLanguage: selectedPatient.botLanguage || 'uz',
                     action: 'SEND',
                     createdAt: now.toISOString()
-                });
-                console.log("✅ Task added to outbound_tasks");
+                };
+
+                // Handle Scheduling (Bot Payload)
+                if (scheduledDateArg) {
+                    console.log("🕒 Adding scheduledFor to payload:", scheduledDateArg.toISOString());
+                    payload.scheduledFor = scheduledDateArg.toISOString();
+                } else {
+                    console.log("⚠️ No scheduledDateArg provided. Message will send immediately.");
+                }
+
+                // Forward reply info to bot if it has a telegram ID to reply to
+                if (replyingToMessage && replyingToMessage.telegramMessageId) {
+                    payload.replyToMessageId = replyingToMessage.telegramMessageId;
+                }
+
+                console.log("📤 Queueing task for Bot:", payload);
+
+                await addDoc(collection(db, 'outbound_messages'), payload);
+                console.log("✅ Task added to outbound_messages");
             }
 
             setMessageInput('');
-            resetImage();
+            setReplyingToMessage(null); // Clear reply
             if (textareaRef.current) {
                 textareaRef.current.style.height = 'auto'; // Reset height
             }
+
+            // If scheduled, show success toast? (REMOVED per request)
+            // if (scheduledDateArg) {
+            //    showToastSuccess(t('success'), `Message scheduled for ${scheduledDateArg.toLocaleString()}`);
+            // }
+
         } catch (error) {
             console.error("Failed to send message:", error);
             showToastError(t('toast_error_title'), "Failed to send message.");
@@ -286,93 +420,49 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
         }
     };
 
-    const handleVoiceSend = async () => {
-        if (!audioBlob || !selectedPatient) return;
 
-        setIsSending(true);
+    const handleTogglePin = async (msg: Message) => {
+        if (!selectedPatientId) return;
         try {
-            const voiceId = `voice_${Date.now()}`;
-            const storagePath = `chat_voices/${selectedPatient.id}/${voiceId}.webm`;
-            const voiceRef = ref(storage, storagePath);
+            const newPinnedState = !msg.isPinned;
 
-            // 1. Upload to Storage
-            await uploadBytes(voiceRef, audioBlob, { contentType: 'audio/webm' });
-            const voiceUrl = await getDownloadURL(voiceRef);
-
-            const now = new Date();
-
-            // 2. Local Firestore (Dashboard)
-            const docRef = await addDoc(collection(db, 'promed_passengers', selectedPatient.id, 'messages'), {
-                text: null,
-                sender: 'doctor',
-                voice: voiceUrl,
-                createdAt: now.toISOString(),
-                time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            // If pinning this one, unpin others? Telegram allows multiple pins, but simpler to show one in header for now. 
+            // Let's toggle just this one. The header will pick the latest pinned.
+            await updateDoc(doc(db, 'patients', selectedPatientId, 'messages', msg.id), {
+                isPinned: newPinnedState
             });
 
-            // 3. Update Patient Master Doc
-            await updateDoc(doc(db, 'patients', selectedPatient.id), {
-                lastMessage: "🎤 Voice Message",
-                lastMessageTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            });
+            // Verify with Toast (REMOVED per user request)
+            // if(newPinnedState) showToastSuccess("Pinned", "Message pinned to top");
+            // else showToastSuccess("Unpinned", "Message unpinned");
 
-            // 4. Queue for Bot
-            if (!selectedPatient.telegramChatId) {
-                showToastError(t('toast_error_title'), "Missing Telegram connection for this patient.");
-            } else {
-                await addDoc(collection(db, 'outbound_tasks'), {
-                    telegramChatId: selectedPatient.telegramChatId,
-                    text: null,
-                    voiceUrl: voiceUrl,
-                    status: 'PENDING',
-                    patientId: selectedPatient.id,
-                    originalMessageId: docRef.id,
-                    patientName: selectedPatient.fullName,
-                    botLanguage: selectedPatient.botLanguage || 'uz',
-                    action: 'SEND',
-                    createdAt: now.toISOString()
-                });
-            }
-
-            resetRecorder();
-            showToastSuccess(t('toast_success_title'), "Voice message sent successfully.");
-        } catch (error) {
-            console.error("Failed to send voice message:", error);
-            showToastError(t('toast_error_title'), "Failed to send voice message.");
-        } finally {
-            setIsSending(false);
+        } catch (e) {
+            console.error("Pin error:", e);
         }
     };
 
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
 
     const handleUpdateMessage = async (messageId: string) => {
-        if (!selectedPatientId || !editContent.trim()) return;
+        if (!selectedPatientId || !messageInput.trim()) return;
 
         const messageToUpdate = messages.find(m => m.id === messageId);
         if (!messageToUpdate) return;
 
         try {
             // 1. Update Firestore
-            await updateDoc(doc(db, 'promed_passengers', selectedPatientId, 'messages', messageId), {
-                text: editContent
+            await updateDoc(doc(db, 'patients', selectedPatientId, 'messages', messageId), {
+                text: messageInput.trim()
             });
 
             console.log("🛠 Debug Edit: Msg ID:", messageId);
-            console.log("🛠 Debug Edit: Msg Object:", messageToUpdate);
-            console.log("🛠 Debug Edit: Patient Chat ID:", selectedPatient?.telegramChatId);
 
             // 2. Sync with Telegram Bot
             if (messageToUpdate.telegramMessageId && selectedPatient?.telegramChatId) {
                 console.log("✅ Condition Met! Sending EDIT action to bot...");
-                await addDoc(collection(db, 'outbound_tasks'), {
+                await addDoc(collection(db, 'outbound_messages'), {
                     telegramChatId: selectedPatient.telegramChatId,
                     telegramMessageId: messageToUpdate.telegramMessageId,
-                    text: editContent,
+                    text: messageInput.trim(),
                     action: 'EDIT',
                     status: 'PENDING',
                     patientName: selectedPatient.fullName,
@@ -381,7 +471,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
             }
 
             setEditingMessageId(null);
-            setEditContent('');
+            setMessageInput('');
+            if (textareaRef.current) textareaRef.current.style.height = 'auto';
         } catch (error) {
             console.error('Error updating message:', error);
         }
@@ -391,12 +482,35 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
         if (!selectedPatientId || !messageToDelete) return;
 
         try {
-            // 1. Delete from Firestore
-            await deleteDoc(doc(db, 'promed_passengers', selectedPatientId, 'messages', messageToDelete.id));
+            // 1. Delete from Firestore messages subcollection
+            await deleteDoc(doc(db, 'patients', selectedPatientId, 'messages', messageToDelete.id));
 
-            // 2. If it has a Telegram ID, trigger bot deletion
+            // 2. If it's a scheduled message, also delete from outbound_messages queue
+            if (messageToDelete.status === 'scheduled' && messageToDelete.scheduledFor && selectedPatient?.telegramChatId) {
+                // Query for matching queued message in outbound_messages
+                const outboundQuery = query(
+                    collection(db, 'outbound_messages'),
+                    where('telegramChatId', '==', selectedPatient.telegramChatId),
+                    where('status', '==', 'QUEUED'),
+                    where('scheduledFor', '==', messageToDelete.scheduledFor),
+                    where('text', '==', messageToDelete.text)
+                );
+
+                const outboundSnapshot = await getDocs(outboundQuery);
+
+                // Delete all matching queued messages
+                const deleteBatch = writeBatch(db);
+                outboundSnapshot.docs.forEach(doc => {
+                    deleteBatch.delete(doc.ref);
+                });
+                await deleteBatch.commit();
+
+                console.log(`🗑️ Deleted ${outboundSnapshot.size} queued message(s) from outbound_messages`);
+            }
+
+            // 3. If it has a Telegram ID (already sent), trigger bot deletion
             if (messageToDelete.telegramMessageId && selectedPatient?.telegramChatId) {
-                await addDoc(collection(db, 'outbound_tasks'), {
+                await addDoc(collection(db, 'outbound_messages'), {
                     telegramChatId: selectedPatient.telegramChatId,
                     telegramMessageId: messageToDelete.telegramMessageId,
                     action: 'DELETE',
@@ -415,11 +529,50 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
         }
     };
 
+    // Filter Scheduled vs Normal Messages
+    const displayedMessages = useMemo(() => {
+        if (isScheduledView) {
+            return messages
+                .filter(m => m.status === 'scheduled')
+                .sort((a, b) => {
+                    const dateA = a.scheduledFor ? new Date(a.scheduledFor).getTime() : 0;
+                    const dateB = b.scheduledFor ? new Date(b.scheduledFor).getTime() : 0;
+                    return dateA - dateB;
+                });
+        }
+        return messages.filter(m => m.status !== 'scheduled');
+    }, [messages, isScheduledView]);
+
+    const formatDateHeader = (dateStr: string, includeTime: boolean = false) => {
+        const date = new Date(dateStr);
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        let datePart = "";
+        const localeObj = language === 'uz' ? uz : language === 'ru' ? ru : enGB;
+
+        if (date.toDateString() === today.toDateString()) {
+            datePart = t('label_today') || t('today');
+        } else if (date.toDateString() === tomorrow.toDateString()) {
+            datePart = t('tomorrow');
+        } else {
+            // Fix: Use date-fns for consistent cross-browser formatting
+            datePart = format(date, 'd MMMM', { locale: localeObj });
+        }
+
+        if (includeTime) {
+            const timePart = format(date, 'HH:mm', { locale: localeObj });
+            return `${datePart}, ${timePart}`;
+        }
+        return datePart;
+    };
+
     return (
-        <div className="flex h-[calc(100vh-120px)] bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden font-sans">
+        <div className="flex h-[calc(100vh-96px)] md:h-[calc(100vh-120px)] bg-white rounded-3xl shadow-2xl border border-slate-300 overflow-hidden font-sans">
             {/* Sidebar */}
-            <div className="w-full md:w-96 border-r border-slate-100 flex flex-col bg-white">
-                <div className="p-5 border-b border-slate-100">
+            <div className="w-full md:w-96 border-r border-slate-300 flex flex-col bg-white">
+                <div className="p-5 border-b border-slate-300">
                     <h2 className="font-bold text-2xl text-slate-800 mb-4 tracking-tight">{t('messages')}</h2>
                     <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -428,7 +581,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                             value={searchText}
                             onChange={e => setSearchText(e.target.value)}
                             placeholder={t('search')}
-                            className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary transition-all placeholder:text-slate-400"
+                            className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-promed-primary/40 focus:border-promed-primary transition-all placeholder:text-slate-400 font-medium text-slate-700 shadow-sm"
                         />
                     </div>
                 </div>
@@ -449,8 +602,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                                 }
                             }}
                             className={`p-3 rounded-2xl cursor-pointer flex items-center gap-4 transition-all duration-200 ${selectedPatientId === patient.id
-                                ? 'bg-blue-50/80 border border-blue-100 shadow-sm'
-                                : 'hover:bg-slate-50 border border-transparent'
+                                ? 'bg-blue-500 shadow-md transform scale-[1.01]'
+                                : 'hover:bg-slate-100'
                                 }`}
                         >
                             <div className="relative flex-shrink-0">
@@ -459,19 +612,23 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                             <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-baseline mb-0.5">
                                     <div className="flex items-center gap-1.5 overflow-hidden min-w-0">
-                                        <h4 className={`font-bold text-sm truncate ${selectedPatientId === patient.id ? 'text-blue-900' : 'text-slate-800'} flex items-center gap-1.5`}>
+                                        <h4 className={`font-bold text-sm truncate ${selectedPatientId === patient.id ? 'text-white' : 'text-slate-900'} flex items-center gap-1.5`}>
                                             <span className="truncate">{patient.fullName}</span>
-                                            {patient.tier === 'pro' && <span className="flex-shrink-0"><ProBadge size={16} /></span>}
+                                            {patient.tier === 'pro' && <span className="flex-shrink-0"><ProBadge size={16} className={selectedPatientId === patient.id ? 'text-white' : ''} /></span>}
                                         </h4>
                                     </div>
-                                    <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap ml-2">{patient.lastMessageTime || ''}</span>
+                                    <span className={`text-[10px] font-medium whitespace-nowrap ml-2 ${selectedPatientId === patient.id ? 'text-blue-100' : 'text-slate-400'}`}>
+                                        {patient.lastMessageTimestamp
+                                            ? new Date(patient.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+                                            : patient.lastMessageTime || ''}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <p className={`text-xs truncate max-w-[180px] ${selectedPatientId === patient.id ? 'text-blue-600/70' : 'text-slate-500'}`}>
+                                    <p className={`text-xs truncate max-w-[180px] ${selectedPatientId === patient.id ? 'text-blue-100' : 'text-slate-500'}`}>
                                         {patient.lastMessage || t('no_messages_yet')}
                                     </p>
                                     {patient.unreadCount && patient.unreadCount > 0 ? (
-                                        <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-promed-primary text-white text-[10px] font-bold rounded-full shadow-sm ml-2">
+                                        <span className={`flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full shadow-sm ml-2 ${selectedPatientId === patient.id ? 'bg-white text-blue-500' : 'bg-blue-500 text-white'}`}>
                                             {patient.unreadCount}
                                         </span>
                                     ) : null}
@@ -492,7 +649,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                 {selectedPatient ? (
                     <>
                         {/* Header */}
-                        <div className="px-6 py-4 bg-white border-b border-slate-100 flex items-center justify-between shadow-sm z-10">
+                        <div className="px-6 py-4 bg-white border-b border-slate-300 flex items-center justify-between shadow-md z-20 sticky top-0">
                             <div className="flex items-center gap-4">
                                 <ProfileAvatar src={selectedPatient.profileImage} alt={selectedPatient.fullName} size={44} className="rounded-full shadow-sm" />
                                 <div>
@@ -500,7 +657,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                                         {selectedPatient.fullName}
                                         {selectedPatient.tier === 'pro' && <ProBadge size={22} />}
                                     </h3>
-                                    {patientIsTyping && (
+                                    {patientIsTyping && !isScheduledView && (
                                         <div className="flex items-center gap-1.5 text-blue-500 text-xs font-medium animate-pulse">
                                             <span className="relative flex h-1.5 w-1.5">
                                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
@@ -511,199 +668,465 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                                     )}
                                 </div>
                             </div>
+
+                            {/* View Toggle */}
+                            <div className="flex bg-slate-200 p-1 rounded-lg border border-slate-300">
+                                <button
+                                    onClick={() => setIsScheduledView(false)}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${!isScheduledView ? 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
+                                >
+                                    Chat
+                                </button>
+                                <button
+                                    onClick={() => setIsScheduledView(true)}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${isScheduledView ? 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
+                                >
+                                    <CalendarClock size={14} />
+                                    Scheduled
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Messages List */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                            {hasMore && (
-                                <div className="flex justify-center pb-4">
+                        {/* Pinned Message Header */}
+                        {currentPinned && (
+                            <div
+                                onClick={() => {
+                                    // 1. Scroll to current
+                                    const el = document.getElementById(`msg-${currentPinned.id}`);
+                                    if (el) {
+                                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                                        // Highlight effect
+                                        el.classList.add('bg-blue-100/50');
+                                        setTimeout(() => el.classList.remove('bg-blue-100/50'), 1000);
+                                    } else {
+                                        // If not loaded (pagination), maybe show toast? Or just load?
+                                        // For now, assume loaded.
+                                        showToastSuccess(t('info'), "Message is further up in history.");
+                                    }
+
+                                    // 2. Cycle to next
+                                    if (allPinned.length > 1) {
+                                        let nextIndex = activePinIndex + 1;
+                                        if (nextIndex >= allPinned.length) nextIndex = 0;
+                                        setActivePinIndex(nextIndex);
+                                    }
+                                }}
+                                className="px-4 py-2 bg-white/95 backdrop-blur-sm border-b border-blue-100 flex items-center justify-between cursor-pointer hover:bg-blue-50 transition-colors z-10 animate-fade-in"
+                            >
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    {/* Sidebar Indicator (Telegram Style: Stacked lines if multiple) */}
+                                    <div className="flex flex-col gap-[2px]">
+                                        <div className="h-8 w-1 bg-blue-500 rounded-full flex-shrink-0"></div>
+                                        {/* Optional: Add visual hint for multiple pins? */}
+                                    </div>
+
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-blue-500 text-xs font-bold uppercase tracking-wide flex items-center gap-1">
+                                            <Pin size={12} className="fill-blue-500" />
+                                            {t('pinned_message')}  {allPinned.length > 1 && <span className="text-[10px] opacity-70 ml-1">{activePinIndex + 1} / {allPinned.length}</span>}
+                                        </span>
+                                        <span className="text-slate-600 text-xs truncate max-w-[200px] md:max-w-md">
+                                            {currentPinned.text}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    {/* Unpin Button */}
                                     <button
-                                        onClick={loadMoreMessages}
-                                        disabled={loadingMore}
-                                        className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-blue-500 transition-colors bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleTogglePin(currentPinned);
+                                        }}
+                                        className="p-1.5 hover:bg-slate-200 rounded-full text-slate-400 hover:text-slate-600"
+                                        title="Unpin"
                                     >
-                                        {loadingMore ? <Loader2 size={14} className="animate-spin" /> : null}
-                                        {loadingMore ? t('loading') : t('load_more') || "Load previous messages"}
+                                        <X size={16} />
                                     </button>
                                 </div>
-                            )}
+                            </div>
+                        )}
 
-                            <div className="flex justify-center my-6">
-                                <span className="text-xs font-medium text-slate-400 bg-slate-100/80 px-4 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
-                                    {t('label_today')}
-                                </span>
+                        {/* Messages List - Telegram Style */}
+                        <div className="flex-1 relative bg-telegram-pattern">
+                            <div
+                                ref={messagesContentRef}
+                                onScroll={() => {
+                                    if (!messagesContentRef.current) return;
+                                    const { scrollTop, scrollHeight, clientHeight } = messagesContentRef.current;
+                                    const isNearBottom = scrollHeight - scrollTop - clientHeight < 300;
+                                    setShowScrollButton(!isNearBottom);
+                                }}
+                                className="absolute inset-0 overflow-y-auto px-4 py-4 space-y-3 no-scrollbar"
+                            >
+                                {hasMore && !loadingMore && !isScheduledView && (
+                                    <div className="flex justify-center pb-4">
+                                        <button
+                                            onClick={loadMoreMessages}
+                                            className="text-xs text-slate-500 bg-white/60 hover:bg-white px-3 py-1 rounded-full shadow-sm transition-colors"
+                                        >
+                                            {t('load_more') || "Load previous messages"}
+                                        </button>
+                                    </div>
+                                )}
+                                {loadingMore && (
+                                    <div className="flex justify-center pb-4">
+                                        <Loader2 size={16} className="animate-spin text-slate-500" />
+                                    </div>
+                                )}
+
+                                {displayedMessages.length === 0 && (
+                                    <div className="text-center text-slate-500 text-sm mt-10 bg-white/60 inline-block px-4 py-2 rounded-full mx-auto">
+                                        {isScheduledView ? t('no_scheduled_messages') : t('no_messages_yet')}
+                                    </div>
+                                )}
+
+                                {(() => {
+                                    // Group messages by Date/Time Header
+                                    const groups: { key: string; messages: typeof displayedMessages }[] = [];
+                                    let currentGroup: { key: string; messages: typeof displayedMessages } | null = null;
+
+                                    displayedMessages.forEach((msg) => {
+                                        const dateProp = isScheduledView ? msg.scheduledFor : msg.createdAt;
+                                        // Use existing helper but pass args
+                                        // Scheduled: Group by Minute (true)
+                                        // Normal: Group by Day (false)
+                                        const includeTime = isScheduledView;
+                                        const key = dateProp ? formatDateHeader(dateProp, includeTime) : 'Unknown Date';
+
+                                        if (!currentGroup || currentGroup.key !== key) {
+                                            currentGroup = { key, messages: [] };
+                                            groups.push(currentGroup);
+                                        }
+                                        currentGroup.messages.push(msg);
+                                    });
+
+                                    return (
+                                        <>
+                                            {groups.map((group, groupIndex) => (
+                                                <div key={group.key + groupIndex} className="relative">
+                                                    {/* Sticky Group Header */}
+                                                    <div className="sticky top-2 z-30 flex justify-center py-2 mb-2 pointer-events-none">
+                                                        <span className="text-sm font-medium text-white bg-black/40 px-4 py-1.5 rounded-full backdrop-blur-md shadow-sm border border-white/10 tracking-wide">
+                                                            {isScheduledView ? `${t('scheduled_for')} ${group.key}` : group.key}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Messages in this group */}
+                                                    {group.messages.map((msg) => (
+                                                        <React.Fragment key={msg.id}>
+                                                            <div id={`msg-${msg.id}`} className={`flex ${msg.sender === 'doctor' ? 'justify-end' : 'justify-start'} relative mb-2`}>
+
+
+                                                                <div className={`max-w-[75%] px-3 py-2 text-[15px] leading-relaxed relative shadow-sm group ${msg.sender === 'doctor'
+                                                                    ? 'bg-blue-500 text-white rounded-2xl bubble-tail-out'
+                                                                    : 'bg-white text-slate-800 rounded-2xl bubble-tail-in'
+                                                                    } ${editingMessageId === msg.id ? 'w-full min-w-[300px]' : ''} ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}>
+
+                                                                    {/* Pinned Icon (Visual Indicator) */}
+                                                                    {msg.isPinned && (
+                                                                        <div className="absolute -right-2 -top-2 bg-blue-500 text-white rounded-full p-0.5 shadow-sm scale-75 z-10">
+                                                                            <Pin size={12} fill="white" />
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Actions Menu (Hover) */}
+                                                                    {editingMessageId !== msg.id && (
+                                                                        <div className={`opacity-0 group-hover:opacity-100 transition-all duration-200 absolute top-0 ${msg.sender === 'doctor' ? 'right-full mr-2' : 'left-full ml-2'} flex flex-col gap-1 z-10`}>
+                                                                            <div className="bg-white/90 backdrop-blur-md shadow-sm rounded-lg p-1 flex flex-col gap-1 items-center">
+                                                                                {/* Reply */}
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setReplyingToMessage(msg);
+                                                                                        textareaRef.current?.focus();
+                                                                                    }}
+                                                                                    className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-blue-500 rounded-md transition-colors"
+                                                                                    title="Reply"
+                                                                                >
+                                                                                    <Reply size={14} />
+                                                                                </button>
+
+                                                                                {/* Copy */}
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        navigator.clipboard.writeText(msg.text);
+                                                                                        // showToastSuccess(t('toast_copied') || 'Copied', t('toast_msg_copied') || 'Message copied to clipboard');
+                                                                                    }}
+                                                                                    className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-blue-500 rounded-md transition-colors"
+                                                                                    title="Copy"
+                                                                                >
+                                                                                    <Copy size={14} />
+                                                                                </button>
+
+                                                                                {/* Pin */}
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleTogglePin(msg);
+                                                                                    }}
+                                                                                    className={`p-1.5 hover:bg-slate-100 rounded-md transition-colors ${msg.isPinned ? 'text-blue-500' : 'text-slate-500 hover:text-blue-500'}`}
+                                                                                    title={msg.isPinned ? "Unpin" : "Pin"}
+                                                                                >
+                                                                                    {msg.isPinned ? <PinOff size={14} /> : <Pin size={14} />}
+                                                                                </button>
+
+                                                                                {/* Edit/Delete (Only for My Messages) */}
+                                                                                {msg.sender === 'doctor' && (
+                                                                                    <>
+                                                                                        <button
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                setEditingMessageId(msg.id);
+                                                                                                setMessageInput(msg.text);
+                                                                                                setTimeout(() => textareaRef.current?.focus(), 10);
+                                                                                            }}
+                                                                                            className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-blue-500 rounded-md transition-colors"
+                                                                                            title="Edit"
+                                                                                        >
+                                                                                            <Edit2 size={14} />
+                                                                                        </button>
+                                                                                        <button
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                setMessageToDelete(msg);
+                                                                                                setIsDeleteModalOpen(true);
+                                                                                            }}
+                                                                                            className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-red-500 rounded-md transition-colors"
+                                                                                            title="Delete"
+                                                                                        >
+                                                                                            <Trash2 size={14} />
+                                                                                        </button>
+                                                                                    </>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Reply Context (Quoted Message) */}
+                                                                    {msg.replyTo && (
+                                                                        <div
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                const el = document.getElementById(`msg-${msg.replyTo!.id}`);
+                                                                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                                            }}
+                                                                            className={`mb-2 border-l-[3px] rounded-r-md px-2 py-1 cursor-pointer text-xs transition-colors ${msg.sender === 'doctor'
+                                                                                ? 'border-white/60 bg-white/10 hover:bg-white/20'
+                                                                                : 'border-blue-500 bg-blue-50/50 hover:bg-blue-100/50'
+                                                                                }`}
+                                                                        >
+                                                                            <div className={`font-semibold ${msg.sender === 'doctor' ? 'text-white/90' : 'text-blue-600'}`}>
+                                                                                {msg.replyTo.displayName || (msg.replyTo.sender === 'doctor' ? 'Doctor' : 'Patient')}
+                                                                            </div>
+                                                                            <div className={`truncate ${msg.sender === 'doctor' ? 'text-white/80' : 'text-slate-600'}`}>{msg.replyTo.text}</div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {msg.text && (
+                                                                        <p className="whitespace-pre-wrap break-words">
+                                                                            {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, index) => {
+                                                                                if (part.match(/https?:\/\/[^\s]+/)) {
+                                                                                    return (
+                                                                                        <a
+                                                                                            key={index}
+                                                                                            href={part}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            className="text-blue-500 hover:underline"
+                                                                                            onClick={(e) => e.stopPropagation()}
+                                                                                        >
+                                                                                            {part}
+                                                                                        </a>
+                                                                                    );
+                                                                                }
+                                                                                return part;
+                                                                            })}
+                                                                        </p>
+                                                                    )}
+                                                                    {msg.preview && (
+                                                                        <div className="mt-2 mb-1 border-l-[3px] border-[#3390EC] pl-2 rounded-sm overflow-hidden cursor-pointer hover:bg-black/5 transition-colors" onClick={() => window.open(msg.preview?.url, '_blank')}>
+                                                                            <div className="text-[#3390EC] font-semibold text-sm line-clamp-1">{msg.preview.title || "Link Preview"}</div>
+                                                                            <div className="text-sm text-black/80 line-clamp-2">{msg.preview.description}</div>
+                                                                            {msg.preview.image && (
+                                                                                <img src={msg.preview.image} alt="Preview" className="mt-1 rounded-md w-full h-32 object-cover" />
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className={`text-[11px] mt-1 flex items-center justify-end gap-1 select-none ${msg.sender === 'doctor' ? 'text-white/80' : 'text-slate-400'
+                                                                        }`}>
+                                                                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                                        {msg.sender === 'doctor' && (
+                                                                            <span>
+                                                                                {(msg.status === 'seen' || msg.status === 'delivered') ? (
+                                                                                    // Double Check (Delivered/Seen)
+                                                                                    <CheckCheck size={16} className="text-white" />
+                                                                                ) : (
+                                                                                    // Single Check (Sent)
+                                                                                    <Check size={16} className="text-white/70" />
+                                                                                )}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </React.Fragment>
+                                                    ))
+                                                    }
+                                                </div>
+                                            ))}
+                                            <div ref={messagesEndRef} />
+                                        </>
+                                    );
+                                })()}
                             </div>
 
-                            {messages.length === 0 && (
-                                <div className="text-center text-slate-400 text-sm mt-10">
-                                    {t('no_messages_yet')}
-                                </div>
-                            )}
+                            {/* Scroll Bottom Button */}
+                            {
+                                showScrollButton && (
+                                    <button
+                                        onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                                        className="absolute bottom-4 right-4 bg-slate-500/50 hover:bg-slate-600/60 backdrop-blur-sm text-white p-2 rounded-full shadow-lg transition-all duration-300 animate-fade-in z-20"
+                                    >
+                                        <ChevronDown size={24} />
+                                    </button>
+                                )
+                            }
+                        </div >
 
-                            {messages.map((msg) => (
-                                <div key={msg.id} className={`flex ${msg.sender === 'doctor' ? 'justify-end' : 'justify-start'} group relative`}>
-
-                                    <div className={`max-w-[75%] px-5 py-3 rounded-2xl shadow-sm text-[15px] leading-relaxed relative group/bubble ${msg.sender === 'doctor'
-                                        ? 'bg-[#4F46E5] text-white rounded-tr-sm' // promed-primary color
-                                        : 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm'
-                                        } ${editingMessageId === msg.id ? 'w-full min-w-[300px]' : ''}`}>
-
-                                        {/* Actions (Only for doctor) - Floating next to bubble */}
-                                        {msg.sender === 'doctor' && editingMessageId !== msg.id && (
-                                            <div className="opacity-0 group-hover/bubble:opacity-100 transition-all duration-200 absolute top-0 right-full mr-3 flex flex-col gap-1 z-10">
-                                                <div className="bg-white shadow-soft-xl rounded-xl p-1 flex flex-col gap-1 items-center w-8">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setEditingMessageId(msg.id);
-                                                            setEditContent(msg.text);
-                                                        }}
-                                                        className="p-1.5 hover:bg-slate-50 text-slate-400 hover:text-blue-500 rounded-lg transition-colors"
-                                                        title={t('edit') || "Edit"}
-                                                    >
-                                                        <Edit2 size={15} strokeWidth={2} />
-                                                    </button>
-                                                    <div className="w-4 h-[1px] bg-slate-100" />
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setMessageToDelete(msg);
-                                                            setIsDeleteModalOpen(true);
-                                                        }}
-                                                        className="p-1.5 hover:bg-slate-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
-                                                        title={t('delete') || "Delete"}
-                                                    >
-                                                        <Trash2 size={15} strokeWidth={2} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-
-
-                                        {editingMessageId === msg.id ? (
-                                            <div className="flex flex-col gap-2">
-                                                <input
-                                                    value={editContent}
-                                                    onChange={(e) => setEditContent(e.target.value)}
-                                                    className="w-full bg-white/10 text-white border border-white/20 rounded px-2 py-1 text-sm focus:outline-none focus:border-white/40"
-                                                    autoFocus
-                                                />
-                                                <div className="flex justify-end gap-2">
-                                                    <button onClick={() => setEditingMessageId(null)} className="p-1 hover:bg-white/10 rounded">
-                                                        <X size={14} />
-                                                    </button>
-                                                    <button onClick={() => handleUpdateMessage(msg.id)} className="p-1 hover:bg-white/10 rounded text-green-300">
-                                                        <Check size={14} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                {msg.image && (
-                                                    <img src={msg.image} alt="attachment" className="rounded-lg max-h-64 w-full object-cover mb-2" />
-                                                )}
-                                                {msg.voice && (
-                                                    <div className={`p-1 rounded-xl mb-2 ${msg.sender === 'doctor' ? 'bg-white/20' : 'bg-slate-50'}`}>
-                                                        <audio src={msg.voice} controls className="h-8 w-56 custom-audio" />
-                                                        <style dangerouslySetInnerHTML={{
-                                                            __html: `
-                                                            .custom-audio::-webkit-media-controls-enclosure {
-                                                                background-color: transparent;
-                                                            }
-                                                            .custom-audio::-webkit-media-controls-panel {
-                                                                background-color: transparent;
-                                                                ${msg.sender === 'doctor' ? 'filter: invert(1);' : ''}
-                                                            }
-                                                        `}} />
-                                                    </div>
-                                                )}
-                                                {msg.text && <p className="whitespace-pre-wrap">{msg.text}</p>}
-                                                <div className={`text-[10px] mt-1.5 flex items-center gap-1 opacity-80 ${msg.sender === 'doctor' ? 'justify-end text-blue-100' : 'justify-end text-slate-400'
-                                                    }`}>
-                                                    {msg.time}
-                                                    {msg.sender === 'doctor' && (
-                                                        <span className="text-[10px] select-none">
-                                                            {(msg.status === 'seen' || msg.status === 'delivered') ? '✓✓' : '✓'}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                            <div ref={messagesEndRef} />
-                        </div>
-
-                        {/* Input Area */}
-                        <div className="p-4 bg-white border-t border-slate-100 relative">
+                        {/* Input Area - White Theme */}
+                        < div className="p-3 bg-white relative z-10" >
                             {/* Emoji Picker Popover */}
-                            {showEmojiPicker && (
-                                <div className="absolute bottom-24 left-4 z-50 shadow-2xl rounded-2xl animate-in fade-in zoom-in-95 duration-200">
-                                    <div className="relative">
-                                        <EmojiPicker
-                                            emojiStyle={EmojiStyle.APPLE}
-                                            onEmojiClick={(emojiData) => {
-                                                setMessageInput(prev => prev + emojiData.emoji);
-                                            }}
-                                            theme={Theme.LIGHT}
-                                            lazyLoadEmojis={true}
-                                            searchDisabled={false}
-                                            width={350}
-                                            height={450}
-                                            previewConfig={{ showPreview: false }}
-                                        />
-                                        {/* Arrow Down */}
-                                        <div className="absolute -bottom-2 left-6 w-4 h-4 bg-white rotate-45 border-r border-b border-gray-200"></div>
+                            {
+                                showEmojiPicker && (
+                                    <div className="absolute bottom-20 left-2 z-50 shadow-xl rounded-2xl border border-slate-100">
+                                        <div className="relative">
+                                            <EmojiPicker
+                                                emojiStyle={EmojiStyle.APPLE}
+                                                onEmojiClick={(emojiData) => {
+                                                    setMessageInput(prev => prev + emojiData.emoji);
+                                                }}
+                                                theme={Theme.LIGHT}
+                                                lazyLoadEmojis={true}
+                                                searchDisabled={false}
+                                                width={300}
+                                                height={400}
+                                                previewConfig={{ showPreview: false }}
+                                            />
+                                        </div>
+                                        <div className="fixed inset-0 z-[-1]" onClick={() => setShowEmojiPicker(false)} />
                                     </div>
-                                    {/* Backdrop to close */}
-                                    <div
-                                        className="fixed inset-0 z-[-1]"
-                                        onClick={() => setShowEmojiPicker(false)}
-                                    />
-                                </div>
-                            )}
+                                )
+                            }
 
-                            {/* Image Preview Overlay */}
-                            {previewUrl && (
-                                <div className="absolute bottom-full left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t border-slate-100 animate-in slide-in-from-bottom-2 duration-300 z-20">
-                                    <div className="relative inline-block group">
-                                        <img
-                                            src={previewUrl}
-                                            alt="Preview"
-                                            className="h-32 w-auto rounded-xl shadow-lg border-2 border-white object-cover"
-                                        />
-                                        <button
-                                            onClick={resetImage}
-                                            className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 transition-colors"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                        {isImageUploading && (
-                                            <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center">
-                                                <div className="text-white text-[10px] font-bold">{progress}%</div>
+                            {/* Reply Indicator (Banner) */}
+                            {
+                                replyingToMessage && (
+                                    <div className="flex items-center justify-between px-4 py-2 border-t border-l border-r border-blue-200 bg-white ml-2 mr-2 border-b-0 rounded-t-xl mb-[-4px] relative z-0 animate-slide-up shadow-sm">
+                                        <div className="flex items-center gap-3 overflow-hidden">
+                                            <div className="h-8 w-1 bg-blue-500 rounded-full"></div>
+                                            <div className="flex flex-col">
+                                                <span className="text-blue-500 text-xs font-bold uppercase tracking-wide flex items-center gap-1">
+                                                    <Reply size={12} /> Reply to {replyingToMessage.sender === 'doctor' ? 'Yourself' : selectedPatient.fullName}
+                                                </span>
+                                                <span className="text-slate-600 text-xs truncate max-w-[200px] md:max-w-xs">{replyingToMessage.text}</span>
                                             </div>
-                                        )}
+                                        </div>
+                                        <button
+                                            onClick={() => setReplyingToMessage(null)}
+                                            className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            <X size={16} />
+                                        </button>
                                     </div>
-                                </div>
-                            )}
+                                )
+                            }
 
-                            <div className="flex items-end gap-1 bg-[#17212B] p-1 rounded-xl border border-white/5 transition-all shadow-2xl">
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    onChange={handleImageSelect}
-                                    accept="image/*"
-                                    className="hidden"
+                            {/* Edit Mode Indicator */}
+                            {
+                                editingMessageId && (
+                                    <div className="flex items-center justify-between px-4 py-2 border-t border-l border-r border-blue-200 bg-blue-50/80 backdrop-blur-sm rounded-t-xl mb-[-1px] relative z-20 animate-slide-up">
+                                        <div className="flex items-center gap-3 overflow-hidden">
+                                            <div className="h-8 w-1 bg-blue-500 rounded-full"></div>
+                                            <div className="flex flex-col">
+                                                <span className="text-blue-500 text-xs font-bold uppercase tracking-wide">Edit Message</span>
+                                                <span className="text-slate-600 text-xs truncate max-w-[200px] md:max-w-xs">{messages.find(m => m.id === editingMessageId)?.text}</span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setEditingMessageId(null);
+                                                setMessageInput('');
+                                            }}
+                                            className="p-1 hover:bg-blue-100 rounded-full text-slate-400 hover:text-blue-500 transition-colors"
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+                                )
+                            }
+
+                            <div className="flex items-end gap-2 bg-white p-1 rounded-xl">
+
+                                {/* Schedule Modal */}
+                                <ScheduleModal
+                                    isOpen={isScheduleModalOpen}
+                                    onClose={() => setIsScheduleModalOpen(false)}
+                                    onSchedule={(date) => {
+                                        setIsScheduleModalOpen(false);
+                                        // Send message with schedule
+                                        handleSendMessage(date);
+                                    }}
                                 />
 
-                                {/* 1. Paperclip (Left) */}
+                                {/* Send Button Context Menu */}
+                                {sendButtonContextMenu && (
+                                    <>
+                                        <div
+                                            className="fixed inset-0 z-40"
+                                            onClick={() => setSendButtonContextMenu(null)}
+                                            onContextMenu={(e) => { e.preventDefault(); setSendButtonContextMenu(null); }}
+                                        ></div>
+                                        <div
+                                            className="fixed z-50 bg-[#1C1C1E]/90 backdrop-blur-md text-white rounded-lg shadow-2xl py-1 w-48 border border-white/10 animate-scale-in origin-bottom-right"
+                                            style={{ top: sendButtonContextMenu.y - 110, left: sendButtonContextMenu.x - 180 }}
+                                        >
+                                            <button
+                                                onClick={() => {
+                                                    setSendButtonContextMenu(null);
+                                                    setIsScheduleModalOpen(true);
+                                                }}
+                                                className="w-full text-left px-4 py-2.5 hover:bg-white/10 flex items-center gap-3 transition-colors"
+                                            >
+                                                <CalendarClock size={16} />
+                                                <span className="text-sm font-medium">Schedule Message</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSendButtonContextMenu(null);
+                                                    handleSendMessage(); // Just send normally? Or send silent? 
+                                                    // For now, keep it simple or implement Silent later
+                                                }}
+                                                className="w-full text-left px-4 py-2.5 hover:bg-white/10 flex items-center gap-3 transition-colors text-white/90"
+                                            >
+                                                <BellOff size={16} />
+                                                <span className="text-sm font-medium">Send Without Sound</span>
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* 1. Emoji (Left) */}
+
+                                {/* 1. Emoji (Left) */}
                                 <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="p-3 text-[#708499] hover:text-[#6AB2F2] transition-colors flex-shrink-0"
-                                    disabled={isSending || isImageUploading}
+                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                    className={`p-3 rounded-full hover:bg-slate-100 transition-colors flex-shrink-0 ${showEmojiPicker ? 'text-[#3390EC]' : 'text-slate-400'}`}
+                                    disabled={isSending}
                                 >
-                                    <Paperclip size={24} className={previewUrl ? 'text-[#6AB2F2]' : ''} />
+                                    <Smile size={24} />
                                 </button>
 
                                 {/* 2. Input (Middle) */}
@@ -716,73 +1139,68 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                                         handleTyping();
                                     }}
                                     placeholder={t('placeholder_type_message') || "Write a message..."}
-                                    disabled={isSending || isImageUploading}
-                                    className="flex-1 bg-transparent border-none focus:outline-none px-2 py-3 text-[15px] resize-none max-h-48 min-h-[44px] overflow-y-auto w-full placeholder:text-[#708499] text-white disabled:opacity-50"
+                                    disabled={isSending}
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                    style={{ outline: 'none', boxShadow: 'none', WebkitTapHighlightColor: 'transparent' }}
+                                    className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none px-0 py-3 text-[16px] resize-none min-h-[44px] overflow-hidden w-full placeholder:text-slate-400 text-black disabled:opacity-50"
                                     rows={1}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && !e.shiftKey) {
                                             e.preventDefault();
-                                            handleSendMessage();
+                                            if (isScheduledView) {
+                                                setIsScheduleModalOpen(true);
+                                            } else {
+                                                handleSendMessage();
+                                            }
                                         }
                                     }}
                                 />
 
-                                {/* 3. Emoji (Right) */}
+                                {/* 3. Send Button (Telegram Blue Plane) */}
+                                {/* 3. Send Button (Telegram Context Menu) */}
                                 <button
-                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                    className={`p-3 transition-colors flex-shrink-0 ${showEmojiPicker ? 'text-[#6AB2F2]' : 'text-[#708499] hover:text-[#6AB2F2]'}`}
-                                    disabled={isSending || isImageUploading}
-                                >
-                                    <Smile size={24} />
-                                </button>
-
-                                {/* 4. Send/Mic (Far Right) */}
-                                {isRecording ? (
-                                    <div className="flex items-center gap-2 px-2 animate-pulse bg-red-500/10 rounded-full mr-1">
-                                        <div className="w-2 h-2 rounded-full bg-red-500" />
-                                        <span className="text-red-500 font-mono text-xs">{formatTime(recordingTime)}</span>
-                                        <button
-                                            onClick={stopRecording}
-                                            className="p-2 text-red-500 hover:scale-110 transition-transform"
-                                        >
-                                            <Square size={20} fill="currentColor" />
-                                        </button>
-                                    </div>
-                                ) : audioBlob ? (
-                                    <div className="flex items-center gap-1">
-                                        <button
-                                            onClick={resetRecorder}
-                                            className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                                        >
-                                            <Trash2 size={20} />
-                                        </button>
-                                        <button
-                                            onClick={handleVoiceSend}
-                                            disabled={isSending}
-                                            className="p-3 text-[#6AB2F2] hover:scale-110 transition-all"
-                                        >
-                                            <Send size={24} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <button
-                                        onClick={handleSendMessage}
-                                        onMouseDown={(e) => {
-                                            if (!messageInput.trim() && !uploadedUrl) {
-                                                e.preventDefault();
-                                                startRecording();
+                                    ref={sendButtonRef}
+                                    onClick={(e) => {
+                                        if (!isSending && messageInput.trim()) {
+                                            if (isScheduledView) {
+                                                setIsScheduleModalOpen(true);
+                                            } else {
+                                                handleSendMessage();
                                             }
-                                        }}
-                                        disabled={isSending || isImageUploading}
-                                        className={`p-3 transition-all duration-200 flex-shrink-0 flex items-center justify-center ${(!messageInput.trim() && !uploadedUrl) ? 'text-[#708499]' : 'text-[#6AB2F2] hover:scale-110 active:scale-90'}`}
-                                    >
-                                        {isSending || isImageUploading ? (
-                                            <div className="w-5 h-5 border-2 border-[#708499] border-t-[#6AB2F2] rounded-full animate-spin" />
-                                        ) : (
-                                            (messageInput.trim() || uploadedUrl) ? <Send size={24} /> : <Mic size={24} />
-                                        )}
-                                    </button>
-                                )}
+                                        }
+                                    }}
+                                    onContextMenu={(e) => {
+                                        e.preventDefault();
+                                        if (messageInput.trim()) {
+                                            setSendButtonContextMenu({ x: e.clientX, y: e.clientY });
+                                        }
+                                    }}
+                                    onTouchStart={(e) => {
+                                        if (!messageInput.trim()) return;
+                                        longPressTimeoutRef.current = setTimeout(() => {
+                                            // Trigger context menu for mobile
+                                            const touch = e.touches[0];
+                                            setSendButtonContextMenu({ x: touch.clientX, y: touch.clientY });
+                                        }, 500); // 500ms long press
+                                    }}
+                                    onTouchEnd={() => {
+                                        if (longPressTimeoutRef.current) {
+                                            clearTimeout(longPressTimeoutRef.current);
+                                        }
+                                    }}
+                                    disabled={!messageInput.trim() || isSending}
+                                    className={`p-3 rounded-full transition-all duration-200 flex-shrink-0 flex items-center justify-center ${!messageInput.trim() ? 'text-[#3390EC] opacity-50 cursor-not-allowed' : 'text-[#3390EC] hover:bg-blue-50 hover:scale-110 active:scale-90'}`}
+                                    title="Send Message (Hold for options)"
+                                >
+                                    {isSending ? (
+                                        <div className="w-6 h-6 border-2 border-slate-200 border-t-[#3390EC] rounded-full animate-spin" />
+                                    ) : editingMessageId ? (
+                                        <Check size={26} className="ml-0.5 mt-0.5" />
+                                    ) : (
+                                        <Send size={24} className="ml-2 mt-1 rotate-45" fill="currentColor" />
+                                    )}
+                                </button>
                             </div>
                         </div>
                     </>
@@ -804,6 +1222,6 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                 }}
                 onConfirm={confirmDeleteMessage}
             />
-        </div>
+        </div >
     );
 };

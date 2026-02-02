@@ -794,10 +794,21 @@ async function processOutboundQueue() {
                 }
 
                 await updateDoc(doc(db, 'outbound_tasks', docId), {
-                    status: 'SENT',
+                    status: 'delivered',
                     sentAt: new Date().toISOString(),
                     telegramMessageId: newTgId
                 });
+
+                // SYNC DELIVERED STATUS TO DASHBOARD MESSAGE
+                if (patientId && originalMessageId) {
+                    try {
+                        const originalMsgRef = doc(db, 'patients', patientId, 'messages', originalMessageId);
+                        await updateDoc(originalMsgRef, { status: 'delivered' });
+                        console.log(`✅ Synced 'delivered' status to patient message: ${originalMessageId}`);
+                    } catch (syncErr) {
+                        console.error(`⚠️ Failed to sync delivered status: ${syncErr.message}`);
+                    }
+                }
 
                 if (originalMessageId && patientId) {
                     try {

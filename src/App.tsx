@@ -254,7 +254,43 @@ const App: React.FC = () => {
       console.log("🔑 App: Detected Password Reset Mode");
       setResetCode(oobCode);
     }
+
+    // Request Notification Permission
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
   }, []);
+
+  // 🔥 GLOBAL NOTIFICATION LISTENER
+  const prevUnreadCountRef = React.useRef(0);
+  const { playNotification } = useAppSounds();
+
+  useEffect(() => {
+    // Calculate total currently unread
+    const currentUnread = patients.reduce((acc, p) => acc + (p.unreadCount || 0), 0);
+
+    // If count INCREASED and we are NOT on messages page
+    if (currentUnread > prevUnreadCountRef.current && view !== 'MESSAGES' && !loading) {
+      console.log("🔔 New Message Detected! Previous:", prevUnreadCountRef.current, "Current:", currentUnread);
+
+      playNotification();
+
+      // Find who sent it (heuristic: patient with unread > 0 and latest message time)
+      const activePatient = patients.find(p => (p.unreadCount || 0) > 0);
+      const senderName = activePatient ? activePatient.fullName : t('patient');
+
+      // Browser Notification
+      if (Notification.permission === 'granted') {
+        new Notification(t('new_message'), {
+          body: `${senderName} ${t('sent_message') || 'sent a message'}`,
+          icon: '/favicon.ico' // or happyIcon if valid URL
+        });
+      }
+    }
+
+    // Update ref for next render
+    prevUnreadCountRef.current = currentUnread;
+  }, [patients, view, loading, playNotification, t]);
 
   // Handle Supabase Auth Events (especially password recovery)
   // MOVED TO AuthContext - skipping specific listener here for now or assuming AuthContext handles it.
@@ -794,7 +830,7 @@ const App: React.FC = () => {
         }
 
         // Add to Outbound Queue (Hardened Polling)
-        await addDoc(collection(db, 'outbound_tasks'), {
+        await addDoc(collection(db, 'outbound_messages'), {
           telegramChatId: patient.telegramChatId,
           text: messageText,
           patientName: patient.fullName,
@@ -847,7 +883,7 @@ const App: React.FC = () => {
         }
 
         // Add to Outbound Queue (Hardened Polling)
-        await addDoc(collection(db, 'outbound_tasks'), {
+        await addDoc(collection(db, 'outbound_messages'), {
           telegramChatId: patient.telegramChatId,
           text: messageText,
           patientName: patient.fullName,

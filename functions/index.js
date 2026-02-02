@@ -1,15 +1,14 @@
 
-const { onRequest } = require("firebase-functions/v2/https");
+const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
 const { Telegraf, Markup } = require("telegraf");
 // const OpenAI = require("openai");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
 
-// Initialize Firebase Admin
 admin.initializeApp();
 const db = admin.firestore();
 
@@ -68,16 +67,108 @@ const TEXTS = {
         schedule_header: (name) => `👤 **Patient:** ${name}\n\n📋 **Your Injection Schedule:**\n\n`,
         schedule_item: (date, time) => `🗓 **Date:** ${date}\n⏰ **Time:** ${time}\n`,
         schedule_footer: "\nPlease arrive on time. Take care of yourself! 😊",
-        no_injection_found: (name) => `👤 **${name}**\n\nYou have no scheduled injections. 😊`
+        no_injection_found: (name) => `👤 **${name}**\n\nYou have no scheduled injections. 😊`,
+        media_reject: "📷 Media files are not supported here.\n\nPlease contact the doctor personally to send images or videos.",
+        contact_doctor: "📞 Contact Doctor",
+        chat_btn: "✍️ Write to Doctor",
+        chat_instruction: "📝 You can write your questions or messages here.\n\nPlease use **text only**. The doctor will reply as soon as possible."
+    },
+    uz: {
+        welcome: "👋 Assalomu alaykum! Muloqot tilini tanlang:",
+        ask_contact: "⬇️ Telefon raqamingizni yuborish uchun pastdagi tugmani bosing:",
+        share_contact_btn: "📱 Raqamni yuborish",
+        searching: "🔎 Tekshirilmoqda...",
+        not_found: "❌ Kechirasiz, raqamingiz tizimda topilmadi. Administratorga murojaat qiling.",
+        success: (name) => `✅ Assalomu alaykum, **${name}**! Graft dasturiga xush kelibsiz! 🚀\n\nSizning muolajalaringiz nazorat ostida.`,
+        reminder_title: "🔔 Eslatma!",
+        injection_msg: (name, date, time) => `Hurmatli **${name}**!\n\nErtaga inyeksiya olishingiz kerak:\n🗓 Sana: **${date}**\n⏰ Vaqt: **${time}**\n\nKechikmasdan kelishingizni so'raymiz! 🏥`,
+        check_btn: "📅 Jadvalni ko'rish",
+        schedule_header: (name) => `👤 **Bemor:** ${name}\n\n📋 **Sizning Inyeksiya Jadvalingiz:**\n\n`,
+        schedule_item: (date, time) => `🗓 **Sana:** ${date}\n⏰ **Vaqt:** ${time}\n`,
+        schedule_footer: "\nKlinikamizga kech qolmasdan kelishingizni so'raymiz. O'zingizni asrang! 😊",
+        no_injection_found: (name) => `👤 **${name}**\n\nSizda rejalashtirilgan inyeksiyalar yo'q. 😊`,
+        media_reject: "📷 Bu bot orqali rasm yoki video qabul qilinmaydi.\n\nIltimos, shifokorning shaxsiy profiliga yuboring.",
+        contact_doctor: "📞 Shifokor bilan bog'lanish",
+        chat_btn: "✍️ Shifokorga yozish",
+        chat_instruction: "📝 Savollaringiz yoki xabaringizni shu yerda yozib qoldirishingiz mumkin.\n\nIltimos, faqat **matn** shaklida yozing. Shifokor tez orada javob beradi."
+    },
+    ru: {
+        welcome: "👋 Здравствуйте! Выберите язык:",
+        ask_contact: "⬇️ Нажмите кнопку ниже, чтобы отправить номер:",
+        share_contact_btn: "📱 Отправить номер",
+        searching: "🔎 Проверка...",
+        not_found: "❌ Номер не найден. Обратитесь к администратору.",
+        success: (name) => `✅ Здравствуйте, **${name}**! Добро пожаловать в Graft! 🚀\n\nВаши процедуры под контролем.`,
+        reminder_title: "🔔 Напоминание!",
+        injection_msg: (name, date, time) => `Уважаемый(ая) **${name}**!\n\nЗавтра у вас инъекция:\n🗓 Дата: **${date}**\n⏰ Время: **${time}**\n\nПожалуйста, не опаздывайте! 🏥`,
+        check_btn: "📅 Проверить график",
+        schedule_header: (name) => `👤 **Пациент:** ${name}\n\n📋 **Ваш График Инъекций:**\n\n`,
+        schedule_item: (date, time) => `🗓 **Дата:** ${date}\n⏰ **Время:** ${time}\n`,
+        schedule_footer: "\nПожалуйста, приходите в клинику вовремя. Берегите себя! 😊",
+        no_injection_found: (name) => `👤 **${name}**\n\nУ вас нет запланированных инъекций. 😊`,
+        media_reject: "📷 Бот не поддерживает фото и видео.\n\nПожалуйста, отправьте их лично врачу.",
+        contact_doctor: "📞 Связаться с врачом",
+        chat_btn: "✍️ Написать врачу",
+        chat_instruction: "📝 Вы можете написать свои вопросы или сообщения здесь.\n\nПожалуйста, используйте только **текст**. Врач ответит в ближайшее время."
     }
 };
 
-// In Cloud Functions, memory is ephemeral, but okay for session flow in short term.
-// In Cloud Functions, memory is ephemeral. We use Firestore for sessions.
-// const userSessions = {}; // REMOVED
+const DOCTOR_PHONE_DEFAULT = "+998901234567"; // Fallback
+
+async function getDoctorInfo(patientData) {
+    try {
+        const extract = (data) => {
+            let phone = data.phone || data.phoneNumber;
+            // Legacy Promed email-based phone extraction
+            if (data.email && data.email.endsWith('@promed.sys')) {
+                phone = '+' + data.email.replace('@promed.sys', '');
+            }
+            return {
+                phone: phone || DOCTOR_PHONE_DEFAULT,
+                username: data.telegramUsername || data.username || null
+            };
+        };
+
+        const accountId = patientData.account_id || patientData.accountId;
+
+        if (accountId) {
+            // 1. Find ADMIN for this specific Account
+            let snapshot = await db.collection('profiles')
+                .where('account_id', '==', accountId)
+                .where('role', '==', 'admin')
+                .limit(1)
+                .get();
+
+            if (!snapshot.empty) return extract(snapshot.docs[0].data());
+
+            // 2. Find DOCTOR for this specific Account
+            snapshot = await db.collection('profiles')
+                .where('account_id', '==', accountId)
+                .where('role', '==', 'doctor')
+                .limit(1)
+                .get();
+
+            if (!snapshot.empty) return extract(snapshot.docs[0].data());
+        }
+
+        // FALLBACK (Global Search - ONLY if no accountId match)
+        console.warn(`⚠️ No account-specific doctor found for Patient. AccountID: ${accountId}. using Global Fallback.`);
+
+        let snapshot = await db.collection('profiles')
+            .where('role', '==', 'admin')
+            .limit(1)
+            .get();
+
+        if (!snapshot.empty) return extract(snapshot.docs[0].data());
+
+        return { phone: DOCTOR_PHONE_DEFAULT, username: null };
+    } catch (error) {
+        console.error("Error fetching doctor info:", error);
+        return { phone: DOCTOR_PHONE_DEFAULT, username: null };
+    }
+}
 
 
-// --- SECURITY CONFIGURATION (FORTRESS) ---
 // 1. WHITELIST: Only these User IDs can interact with the bot.
 const ALLOWED_USER_IDS = [
     1907166652, // Authorized: User provided ID
@@ -395,7 +486,12 @@ bot.on('contact', async (ctx) => {
         const patientName = patientData.fullName || patientData.name || patientData.full_name ||
             (patientData.firstName ? `${patientData.firstName} ${patientData.lastName || ''}` : "Bemor");
         await ctx.reply(TEXTS[lang].success(patientName), { parse_mode: 'Markdown' });
-        await ctx.reply("👇", Markup.keyboard([[TEXTS[lang].check_btn]]).resize());
+
+        // Revised Keyboard: Check Schedule + Write to Doctor
+        await ctx.reply("👇", Markup.keyboard([
+            [TEXTS[lang].check_btn],
+            [TEXTS[lang].chat_btn]
+        ]).resize());
 
     } catch (error) {
         console.error("Error during verification:", error);
@@ -466,6 +562,123 @@ async function checkSchedule(ctx) {
 
 // Handlers for Check Schedule Button (All languages)
 bot.hears([TEXTS.uz.check_btn, TEXTS.ru.check_btn, TEXTS.en.check_btn], (ctx) => checkSchedule(ctx));
+
+// Handlers for Chat Button (New)
+bot.hears([TEXTS.uz.chat_btn, TEXTS.ru.chat_btn, TEXTS.en.chat_btn], async (ctx) => {
+    const userId = ctx.from.id.toString();
+    let lang = 'uz';
+    try {
+        const sessionDoc = await db.collection('bot_sessions').doc(userId).get();
+        if (sessionDoc.exists) lang = sessionDoc.data().lang || 'uz';
+    } catch (e) { }
+
+    ctx.reply(TEXTS[lang].chat_instruction, { parse_mode: 'Markdown' });
+});
+
+// --- INCOMING MESSAGE HANDLER (SYNC TO FIRESTORE) ---
+// --- MEDIA HANDLER (Reject & Redirect) ---
+bot.on(['photo', 'video', 'voice', 'video_note', 'document', 'sticker'], async (ctx) => {
+    const userId = ctx.from.id.toString();
+
+    // 1. Get Language
+    let lang = 'uz';
+    try {
+        const sessionDoc = await db.collection('bot_sessions').doc(userId).get();
+        if (sessionDoc.exists) {
+            lang = sessionDoc.data().lang || 'uz';
+        }
+    } catch (e) { console.error(e); }
+
+    // 2. Resolve Patient Context (to find correct Doctor)
+    let patientData = {};
+    try {
+        const patientsRef = db.collection('patients');
+        // Try String ID
+        let snapshot = await patientsRef.where("telegramChatId", "==", userId).limit(1).get();
+        // Fallback: Try Number ID
+        if (snapshot.empty) {
+            snapshot = await patientsRef.where("telegramChatId", "==", Number(userId)).limit(1).get();
+        }
+
+        if (!snapshot.empty) {
+            patientData = snapshot.docs[0].data();
+        }
+    } catch (e) {
+        console.error("Error resolving patient context:", e);
+    }
+
+    // 3. Refresh Doctor Info dynamically
+    const { phone, username } = await getDoctorInfo(patientData);
+
+    let contactUrl = '';
+    if (username) {
+        // Use Username if available (Most Reliable)
+        contactUrl = `https://t.me/${username.replace('@', '')}`;
+    } else {
+        // Use Phone Number with + prefix (Reliable for linking)
+        const cleanPhone = phone.replace(/[^\d]/g, '');
+        contactUrl = `https://t.me/+${cleanPhone}`;
+    }
+
+    // 4. Reply with Rejection & Contact Button
+    await ctx.reply(TEXTS[lang].media_reject, Markup.inlineKeyboard([
+        [Markup.button.url(TEXTS[lang].contact_doctor, contactUrl)]
+    ]));
+});
+
+// --- INCOMING MESSAGE HANDLER (SYNC TO FIRESTORE) ---
+bot.on('text', async (ctx) => {
+    // Ignore commands or if processed by other handlers
+    if (ctx.message.text && (ctx.message.text.startsWith('/') || Object.values(TEXTS).some(t => t.check_btn === ctx.message.text))) {
+        return;
+    }
+
+    const userId = ctx.from.id.toString();
+    try {
+        const patientsRef = db.collection('patients');
+
+        // 1. Try String ID
+        let snapshot = await patientsRef.where("telegramChatId", "==", userId).limit(1).get();
+
+        // 2. Fallback: Try Number ID
+        if (snapshot.empty) {
+            snapshot = await patientsRef.where("telegramChatId", "==", Number(userId)).limit(1).get();
+        }
+
+        if (snapshot.empty) {
+            console.log(`❌ Patient not found for Telegram ID: ${userId}`);
+            return;
+        }
+
+        const patientDoc = snapshot.docs[0];
+        const patientId = patientDoc.id;
+        const patientData = patientDoc.data();
+
+        const now = new Date();
+        const messageData = {
+            sender: 'user', // From Patient
+            createdAt: now.toISOString(),
+            time: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), // Force HH:mm
+            telegramMessageId: ctx.message.message_id,
+            seen: false,
+            text: ctx.message.text
+        };
+
+        // 1. Save to Messages Subcollection
+        await patientDoc.ref.collection('messages').add(messageData);
+
+        // 2. Update Patient Last Message
+        await patientDoc.ref.update({
+            lastMessage: messageData.text,
+            lastMessageTime: messageData.time,
+            unreadCount: admin.firestore.FieldValue.increment(1),
+            userIsTyping: false // Reset typing if any
+        });
+
+    } catch (e) {
+        console.error("Error syncing message:", e);
+    }
+});
 
 // --- EXPORTS (V2) ---
 
@@ -550,43 +763,115 @@ exports.dailyReminder = onSchedule({
 // Listens for new documents in 'outbound_messages' and sends them via Telegram.
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 
-exports.notificationSender = onDocumentCreated({ document: "outbound_messages/{msgId}", region: "us-central1" }, async (event) => {
-    const snapshot = event.data;
-    if (!snapshot) {
-        console.log("No data associated with the event");
-        return;
-    }
-    const data = snapshot.data();
-    const docId = event.params.msgId;
+// --- HELPER: Process Telegram Task (Shared by Trigger & Scheduler) ---
+async function processTelegramTask(data, ref) {
+    const { telegramChatId, text, patientName, imageUrl, voiceUrl, action, telegramMessageId, replyToMessageId } = data;
+    let sentMessageId = null;
 
-    // Only process PENDING messages
-    if (data.status !== 'PENDING') return;
-
-    const { telegramChatId, text, patientName } = data;
-
-    if (!telegramChatId || !text) {
-        console.error("Missing telegramChatId or text");
-        return;
-    }
-
-    console.log(`📨 Processing outbound message for ${patientName} (${telegramChatId})`);
+    console.log(`📨 Executing task: ${action || 'SEND'} for ${patientName} (${telegramChatId})`);
 
     try {
-        await bot.telegram.sendMessage(telegramChatId, text, { parse_mode: 'Markdown' });
+        if (action === 'EDIT') {
+            if (!telegramMessageId || !text) throw new Error("EDIT requires telegramMessageId and text");
+            await bot.telegram.editMessageText(telegramChatId, telegramMessageId, null, text);
+            console.log(`✏️ Message edited: ${telegramMessageId}`);
+        } else if (action === 'DELETE') {
+            if (!telegramMessageId) throw new Error("DELETE requires telegramMessageId");
+            await bot.telegram.deleteMessage(telegramChatId, telegramMessageId);
+            console.log(`🗑️ Message deleted: ${telegramMessageId}`);
+        } else {
+            // SEND
+            const extra = {};
+            if (replyToMessageId) extra.reply_to_message_id = replyToMessageId;
 
-        // Mark as SENT
-        await snapshot.ref.update({
-            status: 'SENT',
+            if (text) {
+                console.log(`📤 Sending Text...`);
+                const sent = await bot.telegram.sendMessage(telegramChatId, text, extra);
+                sentMessageId = sent.message_id;
+            }
+            if (imageUrl) {
+                const photoExtra = { ...extra, caption: text || undefined };
+                console.log(`📤 Sending Photo...`);
+                const sent = await bot.telegram.sendPhoto(telegramChatId, imageUrl, photoExtra);
+                sentMessageId = sent.message_id;
+            }
+            if (voiceUrl) {
+                console.log(`📤 Sending Voice...`);
+                const sent = await bot.telegram.sendVoice(telegramChatId, voiceUrl, extra);
+                sentMessageId = sent.message_id;
+            }
+        }
+
+        // Update Status to DELIVERED
+        const updateData = {
+            status: 'delivered',
             sentAt: new Date().toISOString()
-        });
-        console.log(`✅ Message sent to ${patientName}`);
+        };
+        if (sentMessageId) updateData.telegramMessageId = sentMessageId;
+
+        await ref.update(updateData);
+
+        // SYNC TO PATIENT CHAT (Only for SEND)
+        if (!action || action === 'SEND') {
+            const { patientId, originalMessageId } = data;
+            if (patientId && originalMessageId) {
+                try {
+                    await db.collection('patients').doc(patientId).collection('messages').doc(originalMessageId).update({
+                        status: 'delivered',
+                        telegramMessageId: sentMessageId || undefined
+                    });
+                    console.log(`✅ Synced to patient message: ${originalMessageId}`);
+                } catch (e) {
+                    console.error("Sync error:", e.message);
+                }
+            }
+        }
+        return true;
     } catch (error) {
-        console.error(`❌ Failed to send message to ${patientName}:`, error.message);
-        // Mark as FAILED
-        await snapshot.ref.update({
-            status: 'FAILED',
-            error: error.message
-        });
+        console.error(`❌ Task Failed:`, error.message);
+        if (action === 'DELETE' && error.message.includes("message to delete not found")) {
+            await ref.update({ status: 'delivered', note: 'Already deleted' });
+        } else {
+            await ref.update({ status: 'FAILED', error: error.message });
+        }
+        return false;
+    }
+}
+
+exports.notificationSender = onDocumentCreated({ document: "outbound_messages/{msgId}", region: "us-central1" }, async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
+
+    const data = snapshot.data();
+    // Only process PENDING messages (Created by App)
+    if (data.status !== 'PENDING') return;
+
+    const { scheduledFor, patientName, telegramChatId } = data;
+
+    // Safety check
+    if (!telegramChatId) {
+        console.error("Missing telegramChatId in outbound message");
+        await snapshot.ref.update({ status: 'FAILED', error: "Missing Chat ID" });
+        return;
+    }
+
+    try {
+        // 1. Check Matching Logic
+        if (scheduledFor) {
+            // PROFESSIONAL FIX: Always queue scheduled messages.
+            // We do not send immediately to avoid race conditions or clock skews.
+            // The Scheduler (processMessageQueue) is the single source of truth for "Time to Send".
+            console.log(`📅 Scheduled Message for ${patientName} detected (${scheduledFor}). Enforcing Queue.`);
+            await snapshot.ref.update({ status: 'QUEUED' });
+            return;
+        }
+
+        // 2. Send Immediately (if no schedule or schedule is now/past)
+        await processTelegramTask(data, snapshot.ref);
+
+    } catch (e) {
+        console.error(`❌ Critical error in notificationSender:`, e);
+        await snapshot.ref.update({ status: 'FAILED', error: e.message });
     }
 });
 
@@ -759,5 +1044,107 @@ exports.deleteSystemAccount = onCall(async (request) => {
         console.error("❌ DELETE SYSTEM ACCOUNT ERROR:", error);
         // FORCE SUCCESS for UI to ensure it disappears
         return { success: true, message: 'Forced local removal. System wipe might have partially failed.' };
+    }
+});
+
+// --- LINK PREVIEW TRIGGER ---
+exports.generateLinkPreview = onDocumentWritten("patients/{patientId}/messages/{messageId}", async (event) => {
+    if (!event.data) return; // Deleted
+    const data = event.data.after.data();
+    const previousData = event.data.before.data();
+
+    // Only run if text exists and preview is missing, or text changed
+    if (!data || !data.text || data.preview) return;
+    if (previousData && previousData.text === data.text && previousData.preview) return;
+
+    // Regex to extract first URL
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const match = data.text.match(urlRegex);
+    if (!match) return;
+
+    const url = match[0];
+
+    try {
+        console.log(`🔍 Fetching preview for: ${url}`);
+        const response = await fetch(url, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' }
+        });
+
+        if (!response.ok) return;
+
+        const html = await response.text();
+
+        // Simple Regex to extract OG tags
+        const getMeta = (prop) => {
+            const regex = new RegExp(`<meta[^>]+property=["']og:${prop}["'][^>]+content=["']([^"']+)["']`, 'i');
+            const match = html.match(regex);
+            return match ? match[1] : null;
+        };
+
+        const title = getMeta('title') || html.match(/<title>([^<]*)<\/title>/i)?.[1];
+        const description = getMeta('description');
+        const image = getMeta('image');
+
+        if (title || description || image) {
+            await event.data.after.ref.update({
+                preview: {
+                    url,
+                    title: title || "",
+                    description: description || "",
+                    image: image || ""
+                }
+            });
+            console.log("✅ Preview generated");
+        }
+    } catch (error) {
+        console.error("Failed to generate preview:", error);
+    }
+});
+
+// --- SCHEDULER: Process Queued Messages ---
+// Runs every minute to check for 'QUEUED' messages that are now due.
+exports.processMessageQueue = onSchedule({
+    schedule: "every 1 minutes",
+    timeZone: "Asia/Tashkent",
+    region: "us-central1"
+}, async (event) => {
+    console.log("⏰ Checking for due scheduled messages...");
+    const now = new Date();
+
+    try {
+        // OPTIMIZATION: Query ONLY by status to avoid missing composite index (status + scheduledFor)
+        // Filtering by date in memory is safe for the expected volume of queued messages.
+        const pendingRef = db.collection('outbound_messages')
+            .where('status', '==', 'QUEUED');
+
+        const snapshot = await pendingRef.get();
+
+        if (snapshot.empty) {
+            return;
+        }
+
+        // Filter in memory: scheduledFor <= now
+        const dueDocs = snapshot.docs.filter(doc => {
+            const data = doc.data();
+            return data.scheduledFor && data.scheduledFor <= now.toISOString();
+        });
+
+        if (dueDocs.length === 0) {
+            // console.log("✅ No due messages found (checked " + snapshot.size + " queued items)");
+            return;
+        }
+
+        console.log(`🚀 Found ${dueDocs.length} due messages (out of ${snapshot.size} queued). Sending...`);
+
+        const promises = dueDocs.map(async (doc) => {
+            const data = doc.data();
+            // Mutates document status to 'delivered'
+            await processTelegramTask(data, doc.ref);
+        });
+
+        await Promise.all(promises);
+        console.log(`🏁 Batch processing complete.`);
+    } catch (e) {
+        console.error("❌ Scheduler Error:", e);
     }
 });

@@ -5,6 +5,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+    @keyframes shimmer {
+        100% {
+            transform: translateX(100%);
+        }
+    }
+}
+
+
 @layer base {
     :root {
         --grid-unit: 4px;
@@ -665,4 +674,53 @@ select:focus {
     .shake {
         animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
     }
+}
+
+/* --- TELEGRAM STYLE PATTERN --- */
+.bg-telegram-pattern {
+    background-color: #8EBCBC;
+    /* Fallback */
+    background: #E6EBEF url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10h10v10H10V10zM50 50h10v10H50V50z' fill='%23B9C7D3' fill-opacity='0.15'/%3E%3C/svg%3E");
+    /* Simple geometric placeholder pattern for "doodle" feel */
+}
+
+/* Telegram Bubbles (Updated to Apple Blue/Gray) */
+.bubble-tail-in {
+    /* Patient */
+    position: relative;
+    border-bottom-left-radius: 0;
+}
+
+.bubble-tail-in::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: -8px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    /* White for received messages */
+    border-bottom-right-radius: 12px;
+    z-index: -1;
+    clip-path: polygon(0 100%, 100% 100%, 100% 0);
+}
+
+.bubble-tail-out {
+    /* Doctor */
+    position: relative;
+    border-bottom-right-radius: 0;
+}
+
+.bubble-tail-out::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    background: #3b82f6;
+    /* Blue-500 */
+    border-bottom-left-radius: 12px;
+    z-index: -1;
+    clip-path: polygon(0 100%, 100% 100%, 0 0);
 }

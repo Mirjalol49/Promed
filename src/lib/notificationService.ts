@@ -242,14 +242,18 @@ export const deleteExpiredUserNotifications = async (userId: string): Promise<vo
         where("viewed_at", "<=", twentyFourHoursAgo)
     );
 
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) return;
+    try {
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) return;
 
-    const batch = writeBatch(db);
-    snapshot.forEach(doc => {
-        batch.delete(doc.ref);
-    });
+        const batch = writeBatch(db);
+        snapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
 
-    await batch.commit();
-    console.log(`🧹 Deleted ${snapshot.size} expired notifications for user ${userId}`);
+        await batch.commit();
+        console.log(`🧹 Deleted ${snapshot.size} expired notifications for user ${userId}`);
+    } catch (e) {
+        console.warn("Auto-deletion disabled: Missing Index", e);
+    }
 };
