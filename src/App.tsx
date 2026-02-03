@@ -286,6 +286,9 @@ const App: React.FC = () => {
           icon: '/favicon.ico' // or happyIcon if valid URL
         });
       }
+
+
+
     }
 
     // Update ref for next render
@@ -1158,7 +1161,7 @@ const App: React.FC = () => {
 
         {/* Messages View */}
         <div style={{ display: view === 'MESSAGES' ? 'block' : 'none' }}>
-          <MessagesPage patients={patients} />
+          <MessagesPage patients={patients} isVisible={view === 'MESSAGES'} />
         </div>
 
       </div >

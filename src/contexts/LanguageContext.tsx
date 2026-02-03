@@ -367,6 +367,8 @@ export const translations = {
     loading: "Loading...",
     scheduled_for: "Scheduled for",
     no_scheduled_messages: "No scheduled messages",
+    tab_chat: "Chat",
+    tab_scheduled: "Scheduled",
   },
   uz: {
     dashboard: "Boshqaruv paneli",
@@ -748,6 +750,8 @@ export const translations = {
     loading: "Yuklanmoqda...",
     scheduled_for: "Rejalashtirilgan",
     no_scheduled_messages: "Rejalashtirilgan xabarlar yo'q",
+    tab_chat: "Suhbat",
+    tab_scheduled: "Rejalashtirilgan",
   },
   ru: {
     dashboard: "Панель управления",
@@ -1122,6 +1126,8 @@ export const translations = {
     tier_pro: "Pro пациент (Бонус)",
     scheduled_for: "Запланировано на",
     no_scheduled_messages: "Нет запланированных сообщений",
+    tab_chat: "Чат",
+    tab_scheduled: "Запланировано",
   }
 };
 

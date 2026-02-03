@@ -19,6 +19,7 @@ import { Play, Pause, Loader2 } from 'lucide-react';
 
 interface MessagesPageProps {
     patients?: Patient[];
+    isVisible?: boolean; // NEW
 }
 
 interface Message {
@@ -48,7 +49,7 @@ interface Message {
     };
 }
 
-export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => {
+export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVisible = true }) => {
     const { t, language } = useLanguage();
     const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
     const [messageInput, setMessageInput] = useState('');
@@ -112,38 +113,76 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
         p.fullName.toLowerCase().includes(searchText.toLowerCase())
     );
 
-    // Auto-scroll Intelligence
+    // Simple scroll memory - save position on every scroll
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContentRef = useRef<HTMLDivElement>(null);
-    const lastMessageIdRef = useRef<string | null>(null);
-    const isPatientSwitchRef = useRef(false);
+    const scrollMemory = useRef<Map<string, number>>(new Map());
+    const justSwitchedRef = useRef(false);
 
-    // Reset switch flag when patient changes
+    // Moved scroll listener to onScroll prop for better React lifecycle integration
+    const handleScroll = () => {
+        if (justSwitchedRef.current) return; // 🛡️ Prevent saving 0 during view transition/render
+
+        const container = messagesContentRef.current;
+        if (!container || !selectedPatientId) return;
+
+        const pos = container.scrollTop;
+        const key = `${selectedPatientId}_${isScheduledView ? 'sched' : 'chat'}`;
+        scrollMemory.current.set(key, pos);
+    };
+
+    // Mark that we just switched patients OR views
     useEffect(() => {
-        isPatientSwitchRef.current = true;
-        setMessages([]); // Clear messages to prevent flash of old content
-        setReplyingToMessage(null); // Clear reply on switch
-    }, [selectedPatientId]);
+        justSwitchedRef.current = true;
+        setReplyingToMessage(null);
+    }, [selectedPatientId, isScheduledView]);
 
-    // Intelligent Scroll Effect
+
+    // Restore scroll after messages load or view switch
     useEffect(() => {
-        if (messages.length === 0) return;
+        // Allow restore even if 0 messages? Maybe. But usually we need content.
+        // For Scheduled view, we might have 0 messages.
+        if (!selectedPatientId || !messagesContentRef.current) return;
 
-        const lastMsg = messages[messages.length - 1];
-        const isLastMessageNew = lastMsg.id !== lastMessageIdRef.current;
+        if (justSwitchedRef.current) {
+            // Restore saved position
+            const key = `${selectedPatientId}_${isScheduledView ? 'sched' : 'chat'}`;
+            const savedPos = scrollMemory.current.get(key);
 
-        if (isPatientSwitchRef.current) {
-            // Case 1: Switched Patient -> Instant Jump to Bottom (Telegram style)
-            messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-            isPatientSwitchRef.current = false;
-        } else if (isLastMessageNew) {
-            // Case 2: New Message Received/Sent -> Smooth Scroll
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            console.log(`📌 View switch (${isScheduledView ? 'Sched' : 'Chat'}) - saved position for ${selectedPatientId}:`, savedPos);
+
+            if (savedPos !== undefined) {
+                // Has saved position - restore it
+                console.log(`📌 Restoring to ${savedPos}px`);
+
+                // RESTORE STRATEGY: 
+                // 1. Immediate try
+                if (messagesContentRef.current) messagesContentRef.current.scrollTop = savedPos;
+
+                // 2. Timeout try (for layout shifts)
+                setTimeout(() => {
+                    if (messagesContentRef.current) {
+                        messagesContentRef.current.scrollTop = savedPos;
+                        justSwitchedRef.current = false; // ✅ Enable saving ONLY after restore attempt
+                        console.log(`✅ Restored scroll finish`);
+                    }
+                }, 100);
+            } else {
+                // First time visiting or no saved pos
+                if (!isScheduledView) {
+                    // Chat: Scroll to bottom
+                    setTimeout(() => {
+                        messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+                        justSwitchedRef.current = false;
+                    }, 100);
+                } else {
+                    // Scheduled: Scroll to top
+                    if (messagesContentRef.current) messagesContentRef.current.scrollTop = 0;
+                    justSwitchedRef.current = false;
+                }
+            }
         }
-        // Case 3: Loaded older messages (Load More) -> Do NOT scroll to bottom
-
-        lastMessageIdRef.current = lastMsg.id;
-    }, [messages]);
+    }, [messages, selectedPatientId, isScheduledView]); // justSwitchedRef check handles the logic flow
 
     // Fetch Messages (with Pagination & Local Cache)
     useEffect(() => {
@@ -194,6 +233,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
             unsubTyping();
         };
     }, [selectedPatientId]);
+
 
     // Safety clear for typing status (backend might get stuck)
     useEffect(() => {
@@ -251,21 +291,36 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
         }, 3000);
     };
 
-    // NEW: Auto-mark as read if chat is open
-    useEffect(() => {
-        if (selectedPatient && selectedPatient.unreadCount && selectedPatient.unreadCount > 0) {
-            updateDoc(doc(db, 'patients', selectedPatient.id), { unreadCount: 0 })
-                .catch(err => console.error("Failed to mark as read:", err));
+    // NEW: Manual Mark as Read Handler
+    const handleMarkAsRead = async () => {
+        if (!selectedPatientId || !selectedPatient) return;
+        if (selectedPatient.unreadCount && selectedPatient.unreadCount > 0) {
+            console.log("👀 Marking as read manually (Interaction detected)");
+            try {
+                await updateDoc(doc(db, 'patients', selectedPatientId), { unreadCount: 0 });
+            } catch (err) {
+                console.error("Failed to mark as read:", err);
+            }
         }
-    }, [selectedPatient, selectedPatient?.unreadCount]);
+    };
 
-    // NEW: Mark messages as SEEN in Firestore (Batched)
+    // REMOVED: Auto-mark as read useEffect
+
+
+    // NEW: Mark messages as SEEN in Firestore (Batched) - Only when page is visible
     useEffect(() => {
         if (!selectedPatientId || messages.length === 0) return;
+
+        // Check if page is visible (user is actually viewing it)
+        if (document.hidden || !isVisible) { // ✅ Check app-level visibility
+            console.log('📱 Page is hidden (or view inactive), not marking messages as seen');
+            return;
+        }
 
         const unseenMessages = messages.filter(m => m.sender === 'user' && m.seen === false);
 
         if (unseenMessages.length > 0) {
+            console.log(`✅ Marking ${unseenMessages.length} messages as seen`);
             const batch = writeBatch(db);
             unseenMessages.forEach(msg => {
                 const msgRef = doc(db, 'patients', selectedPatientId, 'messages', msg.id);
@@ -274,7 +329,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
 
             batch.commit().catch(e => console.error("Error marking seen", e));
         }
-    }, [messages, selectedPatientId]);
+    }, [messages, selectedPatientId, isVisible]);
 
     // NEW: Self-heal inconsistent sidebar times (Backfill lastMessageTimestamp)
     useEffect(() => {
@@ -423,8 +478,13 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
 
     const handleTogglePin = async (msg: Message) => {
         if (!selectedPatientId) return;
+
+        console.log('🔵 Pin toggle clicked:', { messageId: msg.id, currentState: msg.isPinned });
+
         try {
             const newPinnedState = !msg.isPinned;
+
+            console.log('🔵 Updating to:', newPinnedState);
 
             // If pinning this one, unpin others? Telegram allows multiple pins, but simpler to show one in header for now. 
             // Let's toggle just this one. The header will pick the latest pinned.
@@ -432,12 +492,14 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                 isPinned: newPinnedState
             });
 
+            console.log('✅ Pin state updated successfully');
+
             // Verify with Toast (REMOVED per user request)
             // if(newPinnedState) showToastSuccess("Pinned", "Message pinned to top");
             // else showToastSuccess("Unpinned", "Message unpinned");
 
         } catch (e) {
-            console.error("Pin error:", e);
+            console.error("❌ Pin error:", e);
         }
     };
 
@@ -592,14 +654,6 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                             key={patient.id}
                             onClick={async () => {
                                 setSelectedPatientId(patient.id);
-                                if (patient.unreadCount && patient.unreadCount > 0) {
-                                    // Reset unread count
-                                    try {
-                                        await updateDoc(doc(db, 'patients', patient.id), { unreadCount: 0 });
-                                    } catch (e) {
-                                        console.error("Failed to reset unread count", e);
-                                    }
-                                }
                             }}
                             className={`p-3 rounded-2xl cursor-pointer flex items-center gap-4 transition-all duration-200 ${selectedPatientId === patient.id
                                 ? 'bg-blue-500 shadow-md transform scale-[1.01]'
@@ -645,7 +699,10 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col bg-[#F8FAFC]">
+            <div
+                className="flex-1 flex flex-col bg-[#F8FAFC]"
+                onClickCapture={handleMarkAsRead} // Capture phase to ensure it runs before other handlers if needed, or bubble is fine. Let's use standard onClick or onClickCapture. onClick is safer.
+            >
                 {selectedPatient ? (
                     <>
                         {/* Header */}
@@ -669,26 +726,25 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                                 </div>
                             </div>
 
-                            {/* View Toggle */}
                             <div className="flex bg-slate-200 p-1 rounded-lg border border-slate-300">
                                 <button
                                     onClick={() => setIsScheduledView(false)}
                                     className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${!isScheduledView ? 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
                                 >
-                                    Chat
+                                    {t('tab_chat')}
                                 </button>
                                 <button
                                     onClick={() => setIsScheduledView(true)}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${isScheduledView ? 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
                                 >
                                     <CalendarClock size={14} />
-                                    Scheduled
+                                    {t('tab_scheduled')}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Pinned Message Header */}
-                        {currentPinned && (
+                        {/* Pinned Message Header - Only show in Chat view */}
+                        {currentPinned && !isScheduledView && (
                             <div
                                 onClick={() => {
                                     // 1. Scroll to current
@@ -748,12 +804,14 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                         )}
 
                         {/* Messages List - Telegram Style */}
-                        <div className="flex-1 relative bg-telegram-pattern">
+                        <div className="flex-1 relative bg-slate-300">
                             <div
                                 ref={messagesContentRef}
-                                onScroll={() => {
-                                    if (!messagesContentRef.current) return;
-                                    const { scrollTop, scrollHeight, clientHeight } = messagesContentRef.current;
+                                onScroll={(e) => {
+                                    handleScroll();
+
+                                    // Scroll Button Visibility Logic
+                                    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
                                     const isNearBottom = scrollHeight - scrollTop - clientHeight < 300;
                                     setShowScrollButton(!isNearBottom);
                                 }}
@@ -776,8 +834,17 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                                 )}
 
                                 {displayedMessages.length === 0 && (
-                                    <div className="text-center text-slate-500 text-sm mt-10 bg-white/60 inline-block px-4 py-2 rounded-full mx-auto">
-                                        {isScheduledView ? t('no_scheduled_messages') : t('no_messages_yet')}
+                                    <div className="flex flex-col items-center justify-center h-full text-center px-8">
+                                        <div className="mb-4 p-6 rounded-full bg-white shadow-sm">
+                                            {isScheduledView ? (
+                                                <CalendarClock size={48} className="text-slate-800" />
+                                            ) : (
+                                                <User size={48} className="text-slate-800" />
+                                            )}
+                                        </div>
+                                        <p className="text-slate-800 text-base font-medium mb-2">
+                                            {isScheduledView ? t('no_scheduled_messages') : t('no_messages_yet')}
+                                        </p>
                                     </div>
                                 )}
 
@@ -805,9 +872,9 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                                         <>
                                             {groups.map((group, groupIndex) => (
                                                 <div key={group.key + groupIndex} className="relative">
-                                                    {/* Sticky Group Header */}
-                                                    <div className="sticky top-2 z-30 flex justify-center py-2 mb-2 pointer-events-none">
-                                                        <span className="text-sm font-medium text-white bg-black/40 px-4 py-1.5 rounded-full backdrop-blur-md shadow-sm border border-white/10 tracking-wide">
+                                                    {/* Group Header (Static) */}
+                                                    <div className="flex justify-center py-4 mb-2 pointer-events-none fade-in">
+                                                        <span className="text-xs font-bold text-slate-500 bg-white/50 px-3 py-1 rounded-full shadow-sm border border-white/40 tracking-wide uppercase">
                                                             {isScheduledView ? `${t('scheduled_for')} ${group.key}` : group.key}
                                                         </span>
                                                     </div>
@@ -819,8 +886,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
 
 
                                                                 <div className={`max-w-[75%] px-3 py-2 text-[15px] leading-relaxed relative shadow-sm group ${msg.sender === 'doctor'
-                                                                    ? 'bg-blue-500 text-white rounded-2xl bubble-tail-out'
-                                                                    : 'bg-white text-slate-800 rounded-2xl bubble-tail-in'
+                                                                    ? 'bg-blue-500 text-white rounded-3xl bubble-tail-out'
+                                                                    : 'bg-white text-slate-800 rounded-3xl bubble-tail-in'
                                                                     } ${editingMessageId === msg.id ? 'w-full min-w-[300px]' : ''} ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}>
 
                                                                     {/* Pinned Icon (Visual Indicator) */}
@@ -1132,6 +1199,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [] }) => 
                                 {/* 2. Input (Middle) */}
                                 <textarea
                                     ref={textareaRef}
+                                    onFocus={handleMarkAsRead} // Mark read on focus
                                     value={messageInput}
                                     onChange={(e) => {
                                         setMessageInput(e.target.value);
