@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 @import './styles/magic-rainbow.css';
+@import './styles/liquid-glass.css';
 
 @tailwind base;
 @tailwind components;
@@ -46,8 +47,10 @@
     }
 
     body {
-        @apply bg-white text-promed-text;
+        @apply text-promed-text;
         font-family: 'Plus Jakarta Sans', sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 50%, #f0f3f7 100%);
+        background-attachment: fixed;
     }
 
     .dark {

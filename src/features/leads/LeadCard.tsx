@@ -195,7 +195,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
             {/* Header */}
             <div className="flex justify-between items-start mb-1.5">
                 <div className="min-w-0 flex-1 pr-2">
-                    <h4 className="font-bold text-[15px] text-slate-900 leading-tight truncate">{lead.full_name}</h4>
+                    <h4 className="font-bold text-[15px] text-slate-900 leading-tight break-words">{lead.full_name}</h4>
                     <div className="flex flex-col gap-2 mt-2.5 text-xs text-slate-500 font-medium opacity-90">
                         <div className="flex items-center gap-1.5">
                             <SourceIcon source={lead.source} />

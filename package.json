@@ -23,6 +23,7 @@
     "emoji-picker-react": "^4.17.3",
     "firebase": "^12.7.0",
     "framer-motion": "^12.23.26",
+    "html2canvas": "^1.4.1",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.555.0",
     "motion": "^12.23.26",

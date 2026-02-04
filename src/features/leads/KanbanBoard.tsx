@@ -88,15 +88,16 @@ export const KanbanBoard: React.FC = () => {
         return () => unsubscribe();
     }, [userId, isAuthLoading]);
 
-    // Keep selectedLead in sync with latest lead data (for status changes etc.)
+    // Keep selectedLead in sync with latest lead data (for ANY changes)
     useEffect(() => {
         if (selectedLead) {
             const updatedLead = leads.find(l => l.id === selectedLead.id);
-            if (updatedLead && updatedLead.status !== selectedLead.status) {
+            if (updatedLead) {
+                // Always update to reflect latest changes (name, phone, source, etc.)
                 setSelectedLead(updatedLead);
             }
         }
-    }, [leads, selectedLead]);
+    }, [leads, selectedLead?.id]); // Only depend on leads and the ID to avoid infinite loop
 
     const handleStatusChange = async (id: string, newStatus: LeadStatus) => {
         // Optimistic Update
@@ -126,7 +127,7 @@ export const KanbanBoard: React.FC = () => {
     const handleEdit = (lead: Lead) => {
         setLeadToEdit(lead);
         setAddModalOpen(true);
-        setSelectedLead(null); // Close detail modal to prevent overlap (it sits on top due to DOM order)
+        // Keep detail modal open - edit modal will appear on top
     };
 
     const handleDelete = (lead: Lead) => {
@@ -141,6 +142,7 @@ export const KanbanBoard: React.FC = () => {
                 // No need to reload, subscription handles it
                 setIsDeleteModalOpen(false);
                 setLeadToDelete(null);
+                setSelectedLead(null); // Close detail modal if the deleted lead was selected
             } catch (error) {
                 console.error("Failed to delete lead", error);
             }
@@ -362,8 +364,8 @@ export const KanbanBoard: React.FC = () => {
                                 key={key}
                                 onClick={() => toggleSourceFilter(key)}
                                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${selectedSources.includes(key)
-                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/30'
-                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/30'
+                                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
                                     }`}
                             >
                                 {label}
@@ -402,7 +404,7 @@ export const KanbanBoard: React.FC = () => {
             </div>
 
             {/* List Area */}
-            <div className="flex-1 overflow-y-auto overflow-x-visible w-full px-1 pt-3">
+            <div className="flex-1 overflow-y-auto overflow-x-visible w-full px-4 pt-3">
                 {
                     isLoading ? (
                         <div className="flex items-center justify-center h-40" >
@@ -416,7 +418,7 @@ export const KanbanBoard: React.FC = () => {
                             <h3 className="text-lg font-medium text-slate-900">{t('no_leads')}</h3>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-in fade-in duration-300 pb-20 pt-4 overflow-visible">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-in fade-in duration-300 pb-40 pt-4 overflow-visible">
                             {activeLeads.map(lead => (
                                 <LeadCard
                                     key={lead.id}

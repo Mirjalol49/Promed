@@ -1,0 +1,148 @@
+/* LIQUID GLASS EFFECT - macOS Style */
+
+.liquidGlass-wrapper {
+    position: relative;
+    display: flex;
+    font-weight: 600;
+    overflow: hidden;
+    color: black;
+    cursor: pointer;
+    box-shadow: 0 6px 6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.liquidGlass-effect {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    backdrop-filter: blur(12px);
+    filter: url(#glass-distortion);
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.liquidGlass-tint {
+    z-index: 1;
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.liquidGlass-shine {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    overflow: hidden;
+    box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+        inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+}
+
+.liquidGlass-content {
+    z-index: 3;
+    position: relative;
+}
+
+/* Card Variant */
+.liquidGlass-card {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 0 20px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.liquidGlass-card:hover {
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12), 0 0 30px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+}
+
+.liquidGlass-card .liquidGlass-effect {
+    backdrop-filter: blur(16px) saturate(180%);
+}
+
+.liquidGlass-card .liquidGlass-tint {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Widget Variant */
+.liquidGlass-widget {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.liquidGlass-widget .liquidGlass-effect {
+    backdrop-filter: blur(20px) saturate(200%);
+}
+
+.liquidGlass-widget .liquidGlass-tint {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+/* Modal/Panel Variant */
+.liquidGlass-panel {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.liquidGlass-panel .liquidGlass-effect {
+    backdrop-filter: blur(24px) saturate(180%);
+}
+
+.liquidGlass-panel .liquidGlass-tint {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Button Variant */
+.liquidGlass-button {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.liquidGlass-button:hover {
+    transform: scale(1.02);
+}
+
+.liquidGlass-button:active {
+    transform: scale(0.98);
+}
+
+.liquidGlass-button .liquidGlass-effect {
+    backdrop-filter: blur(8px);
+}
+
+.liquidGlass-button .liquidGlass-tint {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Utility Classes */
+.glass-blur-sm {
+    backdrop-filter: blur(8px);
+}
+
+.glass-blur-md {
+    backdrop-filter: blur(12px);
+}
+
+.glass-blur-lg {
+    backdrop-filter: blur(16px);
+}
+
+.glass-blur-xl {
+    backdrop-filter: blur(24px);
+}
+
+.glass-tint-light {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.glass-tint-medium {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.glass-tint-strong {
+    background: rgba(255, 255, 255, 0.4);
+}

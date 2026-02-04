@@ -198,7 +198,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
 
 
             {/* Profile Section (Inline) */}
-            <div className="bg-white rounded-2xl p-4 md:p-6 border border-gray-100 shadow-[0_4px_6px_rgba(0,0,0,0.2)]">
+            <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 md:p-6 border border-white/20 shadow-glass">
                 <div className="flex flex-col items-center mb-8">
                     <div className="relative group/avatar cursor-pointer" onClick={() => document.getElementById('file-upload-settings')?.click()}>
                         {/* Main Avatar Container */}
@@ -243,15 +243,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                 <div className="space-y-6">
                     {/* Language */}
                     <div>
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('select_language')}</label>
+                        <label className="text-footnote font-semibold text-[rgba(60,60,67,0.6)] uppercase tracking-wider mb-2 block">{t('select_language')}</label>
                         <div className="grid grid-cols-3 gap-2">
                             {['en', 'uz', 'ru'].map((lang) => (
                                 <button
                                     key={lang}
                                     onClick={() => setLanguage(lang as any)}
-                                    className={`py-2 px-4 rounded-xl text-sm font-bold border transition-all duration-300 ${language === lang
-                                        ? 'btn-gel-blue px-4 py-2 text-sm rounded-xl'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                                    className={`py-3 px-4 rounded-xl text-callout font-semibold transition-all duration-200 ${language === lang
+                                        ? 'bg-ios-blue text-white shadow-ios-md border border-ios-blue'
+                                        : 'bg-[rgba(120,120,128,0.12)] text-[rgba(60,60,67,0.8)] hover:bg-[rgba(120,120,128,0.2)] border border-transparent'
                                         }`}
                                 >
                                     {lang === 'en' ? 'English' : lang === 'uz' ? "O'zbek" : 'Русский'}
