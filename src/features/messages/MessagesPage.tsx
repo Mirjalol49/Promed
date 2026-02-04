@@ -72,6 +72,9 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
 
+    // Context Menu State (Right-Click)
+    const [contextMenuMessageId, setContextMenuMessageId] = useState<string | null>(null);
+
     // Optimization State
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -106,6 +109,29 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     }, [allPinned.length]);
 
     const currentPinned = allPinned[activePinIndex];
+
+    // Close context menu on click outside
+    useEffect(() => {
+        if (!contextMenuMessageId) return;
+
+        // Use timeout to prevent the opening right-click from immediately closing the menu
+        const timer = setTimeout(() => {
+            const handleClickOutside = () => setContextMenuMessageId(null);
+            document.addEventListener('click', handleClickOutside);
+            document.addEventListener('contextmenu', handleClickOutside);
+
+            // Store cleanup in ref pattern
+            (window as any).__menuCleanup = () => {
+                document.removeEventListener('click', handleClickOutside);
+                document.removeEventListener('contextmenu', handleClickOutside);
+            };
+        }, 10);
+
+        return () => {
+            clearTimeout(timer);
+            (window as any).__menuCleanup?.();
+        };
+    }, [contextMenuMessageId]);
 
 
     // Filter patients
@@ -815,7 +841,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                     const isNearBottom = scrollHeight - scrollTop - clientHeight < 300;
                                     setShowScrollButton(!isNearBottom);
                                 }}
-                                className="absolute inset-0 overflow-y-auto px-4 py-4 space-y-3 no-scrollbar"
+                                className="absolute inset-0 overflow-y-auto px-4 pt-4 pb-1 space-y-3 no-scrollbar"
                             >
                                 {hasMore && !loadingMore && !isScheduledView && (
                                     <div className="flex justify-center pb-4">
@@ -871,7 +897,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                     return (
                                         <>
                                             {groups.map((group, groupIndex) => (
-                                                <div key={group.key + groupIndex} className="relative">
+                                                <div key={group.key + groupIndex} className="relative flex flex-col gap-1.5">
                                                     {/* Group Header (Static) */}
                                                     <div className="flex justify-center py-4 mb-2 pointer-events-none fade-in">
                                                         <span className="text-xs font-bold text-slate-500 bg-white/50 px-3 py-1 rounded-full shadow-sm border border-white/40 tracking-wide uppercase">
@@ -882,13 +908,19 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                                     {/* Messages in this group */}
                                                     {group.messages.map((msg) => (
                                                         <React.Fragment key={msg.id}>
-                                                            <div id={`msg-${msg.id}`} className={`flex ${msg.sender === 'doctor' ? 'justify-end' : 'justify-start'} relative mb-2`}>
+                                                            <div id={`msg-${msg.id}`} className={`flex ${msg.sender === 'doctor' ? 'justify-end' : 'justify-start'} relative`}>
 
 
-                                                                <div className={`max-w-[75%] px-3 py-2 text-[15px] leading-relaxed relative shadow-sm group ${msg.sender === 'doctor'
-                                                                    ? 'bg-blue-500 text-white rounded-3xl bubble-tail-out'
-                                                                    : 'bg-white text-slate-800 rounded-3xl bubble-tail-in'
-                                                                    } ${editingMessageId === msg.id ? 'w-full min-w-[300px]' : ''} ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}>
+                                                                <div
+                                                                    className={`max-w-[75%] px-3 py-2 text-[15px] leading-relaxed relative shadow-sm group ${msg.sender === 'doctor'
+                                                                        ? 'bg-blue-500 text-white rounded-3xl bubble-tail-out'
+                                                                        : 'bg-white text-slate-800 rounded-3xl bubble-tail-in'
+                                                                        } ${editingMessageId === msg.id ? 'w-full min-w-[300px]' : ''} ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}
+                                                                    onContextMenu={(e) => {
+                                                                        e.preventDefault();
+                                                                        setContextMenuMessageId(msg.id);
+                                                                    }}
+                                                                >
 
                                                                     {/* Pinned Icon (Visual Indicator) */}
                                                                     {msg.isPinned && (
@@ -897,73 +929,81 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                                                         </div>
                                                                     )}
 
-                                                                    {/* Actions Menu (Hover) */}
-                                                                    {editingMessageId !== msg.id && (
-                                                                        <div className={`opacity-0 group-hover:opacity-100 transition-all duration-200 absolute top-0 ${msg.sender === 'doctor' ? 'right-full mr-2' : 'left-full ml-2'} flex flex-col gap-1 z-10`}>
-                                                                            <div className="bg-white/90 backdrop-blur-md shadow-sm rounded-lg p-1 flex flex-col gap-1 items-center">
+                                                                    {/* Actions Menu (Right-Click Context Menu) */}
+                                                                    {editingMessageId !== msg.id && contextMenuMessageId === msg.id && (
+                                                                        <div
+                                                                            className={`absolute top-0 ${msg.sender === 'doctor' ? 'right-full mr-2' : 'left-full ml-2'} flex flex-col gap-1 z-20 animate-in fade-in zoom-in-95 duration-150`}
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                            onContextMenu={(e) => e.stopPropagation()}
+                                                                        >
+                                                                            <div className="bg-white/95 backdrop-blur-md shadow-lg rounded-xl p-1.5 flex flex-col gap-0.5 items-stretch border border-slate-200/50">
                                                                                 {/* Reply */}
                                                                                 <button
                                                                                     onClick={(e) => {
                                                                                         e.stopPropagation();
                                                                                         setReplyingToMessage(msg);
                                                                                         textareaRef.current?.focus();
+                                                                                        setContextMenuMessageId(null);
                                                                                     }}
-                                                                                    className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-blue-500 rounded-md transition-colors"
-                                                                                    title="Reply"
+                                                                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-lg transition-colors text-sm font-medium"
                                                                                 >
-                                                                                    <Reply size={14} />
+                                                                                    <Reply size={16} />
+                                                                                    <span>Reply</span>
                                                                                 </button>
-
                                                                                 {/* Copy */}
                                                                                 <button
                                                                                     onClick={(e) => {
                                                                                         e.stopPropagation();
                                                                                         navigator.clipboard.writeText(msg.text);
-                                                                                        // showToastSuccess(t('toast_copied') || 'Copied', t('toast_msg_copied') || 'Message copied to clipboard');
+                                                                                        setContextMenuMessageId(null);
                                                                                     }}
-                                                                                    className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-blue-500 rounded-md transition-colors"
-                                                                                    title="Copy"
+                                                                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-lg transition-colors text-sm font-medium"
                                                                                 >
-                                                                                    <Copy size={14} />
+                                                                                    <Copy size={16} />
+                                                                                    <span>Copy</span>
                                                                                 </button>
 
                                                                                 {/* Pin */}
                                                                                 <button
-                                                                                    onClick={(e) => {
+                                                                                    onClick={async (e) => {
                                                                                         e.stopPropagation();
-                                                                                        handleTogglePin(msg);
+                                                                                        await handleTogglePin(msg);
+                                                                                        setContextMenuMessageId(null);
                                                                                     }}
-                                                                                    className={`p-1.5 hover:bg-slate-100 rounded-md transition-colors ${msg.isPinned ? 'text-blue-500' : 'text-slate-500 hover:text-blue-500'}`}
-                                                                                    title={msg.isPinned ? "Unpin" : "Pin"}
+                                                                                    className={`flex items-center gap-2 px-3 py-2 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium ${msg.isPinned ? 'text-blue-600' : 'text-slate-600 hover:text-blue-600'}`}
                                                                                 >
-                                                                                    {msg.isPinned ? <PinOff size={14} /> : <Pin size={14} />}
+                                                                                    {msg.isPinned ? <PinOff size={16} /> : <Pin size={16} />}
+                                                                                    <span>{msg.isPinned ? 'Unpin' : 'Pin'}</span>
                                                                                 </button>
 
                                                                                 {/* Edit/Delete (Only for My Messages) */}
                                                                                 {msg.sender === 'doctor' && (
                                                                                     <>
+                                                                                        <div className="h-px bg-slate-100 my-1" />
                                                                                         <button
                                                                                             onClick={(e) => {
                                                                                                 e.stopPropagation();
                                                                                                 setEditingMessageId(msg.id);
                                                                                                 setMessageInput(msg.text);
                                                                                                 setTimeout(() => textareaRef.current?.focus(), 10);
+                                                                                                setContextMenuMessageId(null);
                                                                                             }}
-                                                                                            className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-blue-500 rounded-md transition-colors"
-                                                                                            title="Edit"
+                                                                                            className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-lg transition-colors text-sm font-medium"
                                                                                         >
-                                                                                            <Edit2 size={14} />
+                                                                                            <Edit2 size={16} />
+                                                                                            <span>Edit</span>
                                                                                         </button>
                                                                                         <button
                                                                                             onClick={(e) => {
                                                                                                 e.stopPropagation();
                                                                                                 setMessageToDelete(msg);
                                                                                                 setIsDeleteModalOpen(true);
+                                                                                                setContextMenuMessageId(null);
                                                                                             }}
-                                                                                            className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-red-500 rounded-md transition-colors"
-                                                                                            title="Delete"
+                                                                                            className="flex items-center gap-2 px-3 py-2 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg transition-colors text-sm font-medium"
                                                                                         >
-                                                                                            <Trash2 size={14} />
+                                                                                            <Trash2 size={16} />
+                                                                                            <span>Delete</span>
                                                                                         </button>
                                                                                     </>
                                                                                 )}

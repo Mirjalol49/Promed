@@ -18,16 +18,23 @@ import {
     ChevronDown,
     Check,
     Pencil,
-    Trash
+    Trash,
+    Clock
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Portal } from '../../components/ui/Portal';
+import Lottie from 'lottie-react';
+import fireAnimation from '../../assets/images/fire.json';
 
 interface LeadCardProps {
     lead: Lead;
     onStatusChange: (id: string, newStatus: LeadStatus) => void;
     onEdit: (lead: Lead) => void;
     onDelete: (lead: Lead) => void;
+    onRemind: (lead: Lead) => void;
+    onSelect: (lead: Lead) => void;
+    layoutId?: string;
 }
 
 const SourceIcon = ({ source }: { source: Lead['source'] }) => {
@@ -60,9 +67,18 @@ const COL_ICONS: Record<LeadStatus, React.ElementType> = {
     'LOST': Archive
 };
 
-export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit, onDelete }) => {
+export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit, onDelete, onRemind, onSelect, layoutId }) => {
     const { t } = useLanguage();
     const isStale = leadService.checkStale(lead);
+
+    // Check if reminder is overdue
+    const isReminderOverdue = (): boolean => {
+        if (!lead.reminder?.date) return false;
+        try {
+            return new Date(lead.reminder.date) < new Date();
+        } catch { return false; }
+    };
+    const hasActiveReminder = !!lead.reminder?.date;
 
     const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
         { value: 'NEW', label: t('status_new') },
@@ -147,30 +163,53 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
     };
 
     return (
-        <div className={`
-            ${getBackground(statusColor)} p-5 rounded-3xl border transition-all mb-3 relative group
+        <motion.div
+            layoutId={layoutId} // Shared layout ID for seamless expansion
+            onClick={() => onSelect(lead)}
+            className={`
+            ${getBackground(statusColor)} p-5 rounded-3xl border transition-all mb-3 relative group cursor-pointer
             ${isStale ? '!border-red-500 !ring-1 !ring-red-500' : ''}
+            ${isReminderOverdue() ? '!border-red-400 !ring-2 !ring-red-200' : ''}
         `}>
+
+            {/* Overdue Reminder Indicator */}
+            {isReminderOverdue() && (
+                <div className="absolute -top-2 -right-2 z-20">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75" />
+                        <div className="relative bg-red-500 text-white p-1.5 rounded-full shadow-lg">
+                            <Clock size={12} />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Upcoming Reminder Indicator (non-overdue) */}
+            {hasActiveReminder && !isReminderOverdue() && (
+                <div className="absolute -top-1.5 -right-1.5 z-20 bg-purple-500 text-white p-1 rounded-full shadow-sm">
+                    <Clock size={10} />
+                </div>
+            )}
 
 
             {/* Header */}
-            <div className="flex justify-between items-start mb-2">
-                <div>
-                    <h4 className="font-bold text-base text-slate-900">{lead.full_name}</h4>
-                    <div className="flex flex-wrap items-center gap-2 text-xs mt-1 text-slate-500">
-                        <div className="flex items-center space-x-1 bg-white/60 px-2 py-1.5 rounded-lg border border-white/40 shadow-sm whitespace-nowrap">
+            <div className="flex justify-between items-start mb-1.5">
+                <div className="min-w-0 flex-1 pr-2">
+                    <h4 className="font-bold text-[15px] text-slate-900 leading-tight truncate">{lead.full_name}</h4>
+                    <div className="flex flex-col gap-2 mt-2.5 text-xs text-slate-500 font-medium opacity-90">
+                        <div className="flex items-center gap-1.5">
                             <SourceIcon source={lead.source} />
                             <span>{getSourceLabel(lead.source)}</span>
                         </div>
-                        <div className="flex items-center space-x-1 pl-1 whitespace-nowrap">
-                            <Phone size={12} className="" />
-                            <span>{lead.phone_number}</span>
+                        <div className="flex items-center gap-1.5">
+                            <Phone size={12} />
+                            <span className="tabular-nums tracking-tight">{lead.phone_number}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Actions & Stale Warning */}
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     {isStale && (
                         <div className="text-red-500 animate-pulse mr-2" title="Stale Lead">
                             <AlertTriangle size={16} />
@@ -184,6 +223,16 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                         <Pencil size={18} />
                     </button>
                     <button
+                        onClick={(e) => { e.stopPropagation(); onRemind(lead); }}
+                        className={`p-1.5 rounded-lg transition-colors ${lead.reminder
+                            ? 'text-blue-600 bg-blue-50 ring-1 ring-blue-200'
+                            : 'text-slate-600 hover:text-blue-600 hover:bg-white/50'
+                            }`}
+                        title={lead.reminder ? `Reminder: ${new Date(lead.reminder.date).toLocaleString()} - ${lead.reminder.note}` : "Set Reminder"}
+                    >
+                        <Clock size={18} className={lead.reminder ? 'fill-blue-500/10' : ''} />
+                    </button>
+                    <button
                         onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
                         className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-white/50 rounded-lg transition-colors"
                         title="O'chirish"
@@ -192,6 +241,26 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                     </button>
                 </div>
             </div>
+
+            {/* Reminder Badge (if exists) */}
+            {lead.reminder && (
+                <div className="mb-3 mt-1">
+                    <div className="flex items-center gap-2 text-xs text-blue-700 bg-white/50 px-2.5 py-1.5 rounded-lg w-full border border-blue-100/30">
+                        <Clock size={13} className="text-blue-600 shrink-0" />
+                        <span className="font-semibold whitespace-nowrap">
+                            {new Date(lead.reminder.date).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {lead.reminder.note && (
+                            <>
+                                <span className="text-blue-300 mx-0.5">|</span>
+                                <span className="truncate opacity-90 font-medium">
+                                    {lead.reminder.note}
+                                </span>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Badges / Estimates */}
             <div className="flex items-center space-x-2 mt-3 mb-4">
@@ -278,6 +347,6 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                     )}
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };

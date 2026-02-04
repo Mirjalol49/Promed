@@ -76,6 +76,12 @@ export type PageView = 'DASHBOARD' | 'PATIENTS' | 'PATIENT_DETAIL' | 'SETTINGS' 
 export type LeadSource = 'Instagram' | 'Telegram' | 'Walk-in' | 'Referral';
 export type LeadStatus = 'NEW' | 'CONTACTED' | 'PHOTOS_SENT' | 'PRICE_GIVEN' | 'BOOKED' | 'LOST';
 
+export interface Reminder {
+  date: string; // ISO date string
+  note: string;
+  created_at?: string;
+}
+
 export interface Lead {
   id: string;
   full_name: string;
@@ -89,6 +95,17 @@ export interface Lead {
   updated_at: any;
   last_contact_date?: any;
   loss_reason?: string;
+  reminder?: Reminder;
+  timeline?: TimelineEvent[];
+}
+
+export interface TimelineEvent {
+  id: string;
+  type: 'note' | 'status_change' | 'reminder' | 'creation';
+  content: string; // The note text or "Status changed to X"
+  created_at: any; // Firestore Timestamp
+  created_by?: string; // User ID
+  metadata?: any; // Extra data (e.g. oldStatus, newStatus, reminderDate)
 }
 
 export interface LeadColumn {

@@ -43,6 +43,9 @@ import ToastContainer from './components/ui/ToastContainer';
 import DeleteModal from './components/ui/DeleteModal';
 import { Trash2 } from 'lucide-react';
 import { PinInput } from './components/ui/PinInput';
+import { useReminderNotifications } from './hooks/useReminderNotifications';
+import { AnimatePresence } from 'framer-motion';
+import { PageTransition } from './components/ui/PageTransition';
 
 import { auth, db } from './lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
@@ -214,12 +217,19 @@ const App: React.FC = () => {
   const { loading: authLoading, user: authUser, signOut } = useAuth();
   const { playLock } = useAppSounds();
 
+  // Enable global reminder notifications
+  useReminderNotifications();
+
 
   const [view, setView] = useState<PageView>(() => {
     if (window.location.pathname.includes('/admin')) return 'SUPER_ADMIN';
     if (window.location.pathname.includes('/patients')) return 'PATIENTS';
+    if (window.location.pathname.includes('/leads')) return 'LEADS';
+    if (window.location.pathname.includes('/settings')) return 'SETTINGS';
+    if (window.location.pathname.includes('/messages')) return 'MESSAGES';
     return 'DASHBOARD';
   });
+
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
@@ -313,12 +323,14 @@ const App: React.FC = () => {
     if (view === 'SUPER_ADMIN') path = '/admin';
     else if (view === 'PATIENTS') path = '/patients';
     else if (view === 'SETTINGS') path = '/settings';
-
+    else if (view === 'LEADS') path = '/leads';
+    else if (view === 'MESSAGES') path = '/messages';
 
     if (window.location.pathname !== path) {
       window.history.pushState({}, '', path);
     }
   }, [view]);
+
   useEffect(() => {
     // 🔥 ROUTING: Check URL path on load
     const path = window.location.pathname;
@@ -326,6 +338,12 @@ const App: React.FC = () => {
       setView('SUPER_ADMIN');
     } else if (path === '/patients') {
       setView('PATIENTS');
+    } else if (path === '/leads') {
+      setView('LEADS');
+    } else if (path === '/settings') {
+      setView('SETTINGS');
+    } else if (path === '/messages') {
+      setView('MESSAGES');
     }
   }, []); // Run ONCE on mount
 
@@ -1053,63 +1071,64 @@ const App: React.FC = () => {
     const showSkeleton = loading && patients.length === 0;
 
     // Keep-Alive Rendering Strategy for Dashboard and PatientList
+    // Keep-Alive Rendering Strategy for Dashboard and PatientList
     return (
-      <div className="space-y-8 animate-in fade-in duration-500">
-
-        {/* Dashboard View - Always Mounted, Hidden when inactive */}
-        <div style={{ display: view === 'DASHBOARD' ? 'block' : 'none' }}>
-          <Dashboard
-            stats={{
-              total: stats.total,
-              active: patients.length,
-              upcoming: (patients || []).flatMap(p => p.injections || []).filter(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date(new Date().setHours(0, 0, 0, 0))).length,
-              newThisMonth: stats.newThisMonth
-            }}
-            onNewPatient={() => setView('ADD_PATIENT')}
-            onUploadPhoto={() => console.log('Upload Photo Clicked')}
-            onPatientSelect={handleSelectPatient}
-            patients={patients}
-            isLoading={showSkeleton}
-          />
-        </div>
-
-
-
-        {/* Admin Dashboard View - Protected Route */}
-        {view === 'ADMIN_DASHBOARD' && (
-          <AdminRoute onAccessDenied={() => setView('DASHBOARD')}>
-            <AdminDashboard />
-          </AdminRoute>
+      <AnimatePresence mode="wait">
+        {view === 'DASHBOARD' && (
+          <PageTransition key="dashboard">
+            <Dashboard
+              stats={{
+                total: stats.total,
+                active: patients.length,
+                upcoming: (patients || []).flatMap(p => p.injections || []).filter(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date(new Date().setHours(0, 0, 0, 0))).length,
+                newThisMonth: stats.newThisMonth
+              }}
+              onNewPatient={() => setView('ADD_PATIENT')}
+              onUploadPhoto={() => console.log('Upload Photo Clicked')}
+              onPatientSelect={handleSelectPatient}
+              patients={patients}
+              isLoading={showSkeleton}
+            />
+          </PageTransition>
         )}
 
-        {/* Super Admin View - Hidden when inactive */}
-        <div style={{ display: view === 'SUPER_ADMIN' ? 'block' : 'none' }}>
-          <SuperAdmin />
-        </div>
+        {view === 'ADMIN_DASHBOARD' && (
+          <PageTransition key="admin">
+            <AdminRoute onAccessDenied={() => setView('DASHBOARD')}>
+              <AdminDashboard />
+            </AdminRoute>
+          </PageTransition>
+        )}
 
-        {/* Patient List View - Always Mounted, Hidden when inactive */}
-        <div style={{ display: view === 'PATIENTS' || view === 'ADD_PATIENT' ? 'block' : 'none' }}>
-          <PatientList
-            patients={filteredPatients}
-            onSelect={handleSelectPatient}
-            searchQuery={searchQuery}
-            onSearch={setSearchQuery}
-            onAddPatient={() => setView('ADD_PATIENT')}
-            isLoading={showSkeleton}
-          />
-          {view === 'ADD_PATIENT' && (
-            <AddPatientForm
-              onSave={handleSavePatient}
-              onCancel={() => setView('PATIENTS')}
-              saving={saving}
+        {view === 'SUPER_ADMIN' && (
+          <PageTransition key="super-admin">
+            <SuperAdmin />
+          </PageTransition>
+        )}
+
+        {(view === 'PATIENTS' || view === 'ADD_PATIENT') && (
+          <PageTransition key="patients-group">
+            <PatientList
+              patients={filteredPatients}
+              onSelect={handleSelectPatient}
+              searchQuery={searchQuery}
+              onSearch={setSearchQuery}
+              onAddPatient={() => setView('ADD_PATIENT')}
+              isLoading={showSkeleton}
             />
-          )}
-        </div>
+            {view === 'ADD_PATIENT' && (
+              <AddPatientForm
+                onSave={handleSavePatient}
+                onCancel={() => setView('PATIENTS')}
+                saving={saving}
+              />
+            )}
+          </PageTransition>
+        )}
 
-        {/* Detail Views - Conditional (depend on selected ID) */}
-        {
-          ((view === 'PATIENT_DETAIL' || view === 'EDIT_PATIENT') && selectedPatientId) && (
-            (() => {
+        {((view === 'PATIENT_DETAIL' || view === 'EDIT_PATIENT') && selectedPatientId) && (
+          <PageTransition key="patient-detail">
+            {(() => {
               const patient = patients.find(p => p.id === selectedPatientId);
               if (!patient) return null;
               return (
@@ -1135,36 +1154,35 @@ const App: React.FC = () => {
                     />
                   )}
                 </>
-              )
-            })()
-          )
-        }
+              );
+            })()}
+          </PageTransition>
+        )}
 
-        {/* Settings View */}
-        {
-          view === 'SETTINGS' && (
+        {view === 'SETTINGS' && (
+          <PageTransition key="settings">
             <SettingsPage userId={userId} />
-          )
-        }
+          </PageTransition>
+        )}
 
-        {/* Leads Kanban View */}
-        {
-          view === 'LEADS' && (
+        {view === 'LEADS' && (
+          <PageTransition key="leads">
             <LeadsPage />
-          )
-        }
+          </PageTransition>
+        )}
 
-        {/* Notes View - Keep-Alive */}
-        <div style={{ display: view === 'NOTES' ? 'block' : 'none' }}>
-          <NotesPage />
-        </div>
+        {view === 'NOTES' && (
+          <PageTransition key="notes">
+            <NotesPage />
+          </PageTransition>
+        )}
 
-        {/* Messages View */}
-        <div style={{ display: view === 'MESSAGES' ? 'block' : 'none' }}>
-          <MessagesPage patients={patients} isVisible={view === 'MESSAGES'} />
-        </div>
-
-      </div >
+        {view === 'MESSAGES' && (
+          <PageTransition key="messages">
+            <MessagesPage patients={patients} isVisible={view === 'MESSAGES'} />
+          </PageTransition>
+        )}
+      </AnimatePresence>
     );
   };
 

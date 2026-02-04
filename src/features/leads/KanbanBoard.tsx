@@ -1,10 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { Lead, LeadStatus, LeadColumn as ILeadColumn } from '../../types';
 import { LeadCard } from './LeadCard';
 import { leadService } from '../../services/leadService';
 import { AddLeadModal } from './AddLeadModal';
+import { ReminderModal } from './ReminderModal';
+import { LeadDetail } from './LeadDetail';
+
 import DeleteModal from '../../components/ui/DeleteModal';
+import { CelebrationOverlay } from '../../components/ui/CelebrationOverlay';
 
 import {
     Plus,
@@ -19,12 +24,19 @@ import {
     Archive,
     Search,
     Pencil,
-    Trash
+    Trash,
+    Calendar,
+    Clock,
+    Bell,
+    Filter,
+    X
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAccount } from '../../contexts/AccountContext';
 
 
+
+type QuickFilter = 'all' | 'today' | 'week' | 'has_reminder';
 
 export const KanbanBoard: React.FC = () => {
     const { t } = useLanguage();
@@ -34,10 +46,19 @@ export const KanbanBoard: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Filter State
+    const [activeQuickFilter, setActiveQuickFilter] = useState<QuickFilter>('all');
+    const [selectedSources, setSelectedSources] = useState<string[]>([]);
+
     // Edit/Delete State
+    // Check for Stale Leads (Logic: Status 'PRICE_GIVEN' + updated > 3 days ago)
     const [leadToEdit, setLeadToEdit] = useState<Lead | null>(null);
     const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+    const [leadToRemind, setLeadToRemind] = useState<Lead | null>(null);
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+    const [celebrationId, setCelebrationId] = useState<number | null>(null);
 
     const { userId, isLoading: isAuthLoading } = useAccount();
 
@@ -67,6 +88,16 @@ export const KanbanBoard: React.FC = () => {
         return () => unsubscribe();
     }, [userId, isAuthLoading]);
 
+    // Keep selectedLead in sync with latest lead data (for status changes etc.)
+    useEffect(() => {
+        if (selectedLead) {
+            const updatedLead = leads.find(l => l.id === selectedLead.id);
+            if (updatedLead && updatedLead.status !== selectedLead.status) {
+                setSelectedLead(updatedLead);
+            }
+        }
+    }, [leads, selectedLead]);
+
     const handleStatusChange = async (id: string, newStatus: LeadStatus) => {
         // Optimistic Update
         const leadIndex = leads.findIndex(l => l.id === id);
@@ -76,6 +107,13 @@ export const KanbanBoard: React.FC = () => {
         const updatedLeads = [...leads];
         updatedLeads[leadIndex] = { ...updatedLeads[leadIndex], status: newStatus, updated_at: { seconds: Date.now() / 1000 } };
         setLeads(updatedLeads);
+
+        // 🎉 Trigger Celebration if moved to BOOKED (Operation)
+        if (newStatus === 'BOOKED') {
+            const newId = Date.now();
+            console.log("Triggering celebration with ID:", newId);
+            setCelebrationId(newId);
+        }
 
         try {
             await leadService.updateLeadStatus(id, newStatus);
@@ -88,6 +126,7 @@ export const KanbanBoard: React.FC = () => {
     const handleEdit = (lead: Lead) => {
         setLeadToEdit(lead);
         setAddModalOpen(true);
+        setSelectedLead(null); // Close detail modal to prevent overlap (it sits on top due to DOM order)
     };
 
     const handleDelete = (lead: Lead) => {
@@ -156,15 +195,62 @@ export const KanbanBoard: React.FC = () => {
     };
 
     const activeColor = TAB_CONFIG.find(t => t.id === activeTab)?.colorTheme || 'blue';
+
+    // Helper function to check if reminder is today
+    const isReminderToday = (reminder?: { date: string }) => {
+        if (!reminder?.date) return false;
+        const today = new Date();
+        const reminderDate = new Date(reminder.date);
+        return reminderDate.toDateString() === today.toDateString();
+    };
+
+    // Helper function to check if reminder is this week
+    const isReminderThisWeek = (reminder?: { date: string }) => {
+        if (!reminder?.date) return false;
+        const today = new Date();
+        const reminderDate = new Date(reminder.date);
+        const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+        return reminderDate >= today && reminderDate <= weekFromNow;
+    };
+
     const activeLeads = leads
         .filter(l => l.status === activeTab)
+        // Search filter
         .filter(l => {
             const query = searchQuery.toLowerCase();
             return !query ||
                 l.full_name.toLowerCase().includes(query) ||
                 l.phone_number.includes(query) ||
                 (l.source && l.source.toLowerCase().includes(query));
+        })
+        // Quick filters
+        .filter(l => {
+            if (activeQuickFilter === 'all') return true;
+            if (activeQuickFilter === 'today') return isReminderToday(l.reminder);
+            if (activeQuickFilter === 'week') return isReminderThisWeek(l.reminder);
+            if (activeQuickFilter === 'has_reminder') return !!l.reminder;
+            return true;
+        })
+        // Source filter
+        .filter(l => {
+            if (selectedSources.length === 0) return true;
+            return selectedSources.includes(l.source);
         });
+
+    const toggleSourceFilter = (source: string) => {
+        setSelectedSources(prev =>
+            prev.includes(source)
+                ? prev.filter(s => s !== source)
+                : [...prev, source]
+        );
+    };
+
+    const clearAllFilters = () => {
+        setActiveQuickFilter('all');
+        setSelectedSources([]);
+    };
+
+    const hasActiveFilters = activeQuickFilter !== 'all' || selectedSources.length > 0;
 
     return (
         <div className="h-full flex flex-col space-y-4 overflow-hidden p-1.5">
@@ -206,6 +292,86 @@ export const KanbanBoard: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Filters Section */}
+                <div className="flex flex-col gap-3">
+                    {/* Quick Filters Row */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                            <Filter size={14} />
+                            <span>{t('filter_quick_filters')}</span>
+                        </div>
+
+                        <button
+                            onClick={() => setActiveQuickFilter('today')}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeQuickFilter === 'today'
+                                ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md shadow-blue-500/30'
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                                }`}
+                        >
+                            <Calendar size={14} />
+                            {t('filter_today_calls')}
+                        </button>
+
+                        <button
+                            onClick={() => setActiveQuickFilter('week')}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeQuickFilter === 'week'
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md shadow-purple-500/30'
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                                }`}
+                        >
+                            <Clock size={14} />
+                            {t('filter_this_week')}
+                        </button>
+
+                        <button
+                            onClick={() => setActiveQuickFilter('has_reminder')}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeQuickFilter === 'has_reminder'
+                                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md shadow-orange-500/30'
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                                }`}
+                        >
+                            <Bell size={14} />
+                            {t('filter_has_reminder')}
+                        </button>
+
+                        {hasActiveFilters && (
+                            <button
+                                onClick={clearAllFilters}
+                                className="px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300"
+                            >
+                                <X size={14} />
+                                {t('filter_clear_all')}
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Source Filters Row */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                            <Send size={14} />
+                            <span>{t('filter_source')}</span>
+                        </div>
+
+                        {[
+                            { key: 'Instagram', label: t('filter_source_instagram') },
+                            { key: 'Telegram', label: t('filter_source_telegram') },
+                            { key: 'Walk-in', label: t('filter_source_walkin') },
+                            { key: 'Referral', label: t('filter_source_referral') }
+                        ].map(({ key, label }) => (
+                            <button
+                                key={key}
+                                onClick={() => toggleSourceFilter(key)}
+                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${selectedSources.includes(key)
+                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/30'
+                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                                    }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Pipeline Tabs - Bottom Row */}
                 <div className="grid grid-cols-2 gap-2 md:flex md:space-x-2 md:overflow-x-auto md:no-scrollbar">
                     {TAB_CONFIG.map(tab => {
@@ -236,7 +402,7 @@ export const KanbanBoard: React.FC = () => {
             </div>
 
             {/* List Area */}
-            <div className="flex-1 overflow-y-auto w-full">
+            <div className="flex-1 overflow-y-auto overflow-x-visible w-full px-1 pt-3">
                 {
                     isLoading ? (
                         <div className="flex items-center justify-center h-40" >
@@ -250,7 +416,7 @@ export const KanbanBoard: React.FC = () => {
                             <h3 className="text-lg font-medium text-slate-900">{t('no_leads')}</h3>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-in fade-in duration-300 pb-20">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-in fade-in duration-300 pb-20 pt-4 overflow-visible">
                             {activeLeads.map(lead => (
                                 <LeadCard
                                     key={lead.id}
@@ -258,6 +424,12 @@ export const KanbanBoard: React.FC = () => {
                                     onStatusChange={handleStatusChange}
                                     onEdit={handleEdit}
                                     onDelete={handleDelete}
+                                    onRemind={(lead) => {
+                                        setLeadToRemind(lead);
+                                        setIsReminderModalOpen(true);
+                                    }}
+                                    onSelect={(lead) => setSelectedLead(lead)}
+                                    layoutId={`lead-card-${lead.id}`}
                                 />
                             ))}
                         </div>
@@ -283,6 +455,55 @@ export const KanbanBoard: React.FC = () => {
                 }}
                 onConfirm={handleConfirmDelete}
             />
+
+            {/* Reminder Modal */}
+            <ReminderModal
+                isOpen={isReminderModalOpen}
+                onClose={() => {
+                    setIsReminderModalOpen(false);
+                    setLeadToRemind(null);
+                }}
+                onSetReminder={async (date, note) => {
+                    if (leadToRemind) {
+                        try {
+                            const reminderData = {
+                                date: date.toISOString(),
+                                note,
+                                created_at: new Date().toISOString()
+                            };
+                            await leadService.updateLead(leadToRemind.id, { reminder: reminderData });
+                            // Rehydrate local state if needed, or let subscription handle it
+                        } catch (e) {
+                            console.error("Failed to set reminder", e);
+                        }
+                    }
+                }}
+                initialDate={leadToRemind?.reminder ? new Date(leadToRemind.reminder.date) : undefined}
+                initialNote={leadToRemind?.reminder?.note}
+            />
+
+            {/* Lead Detail View */}
+            <AnimatePresence>
+                {selectedLead && (
+                    <LeadDetail
+                        key="lead-detail"
+                        lead={selectedLead}
+                        onClose={() => setSelectedLead(null)}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onStatusChange={handleStatusChange}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Celebration Overlay */}
+            {celebrationId && (
+                <CelebrationOverlay
+                    key={celebrationId}
+                    isVisible={true}
+                    onComplete={() => setCelebrationId(null)}
+                />
+            )}
         </div >
     );
 };

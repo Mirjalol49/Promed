@@ -73,9 +73,9 @@ const Layout: React.FC<LayoutProps> = ({
         }}
         whileHover="hover"
         initial="idle"
-        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-1 group border border-transparent ${isActive
-          ? 'bg-promed-primary/10 border-promed-primary/20 text-promed-primary shadow-sm'
-          : 'text-slate-900 hover:bg-promed-primary/5'
+        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-1 group border border-transparent outline-none relative overflow-hidden active-scale ${isActive
+          ? 'bg-[#007AFF] text-white shadow-md shadow-blue-500/25'
+          : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
           }`}
       >
         {iconImg ? (
@@ -99,15 +99,17 @@ const Layout: React.FC<LayoutProps> = ({
           />
         ) : (
           <AnimateIcon>
-            <Icon size={20} className={`transition-colors ${isActive ? 'text-promed-primary' : 'text-slate-900'}`} />
+            <Icon size={20} className={`transition-colors ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-900'}`} />
           </AnimateIcon>
         )}
         <span className={`text-base font-sans transition-all duration-200 flex-1 text-left ${isActive ? 'font-semibold' : 'font-medium group-hover:font-semibold'}`}>{label}</span>
-        {badge && badge > 0 ? (
-          <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-promed-primary text-white text-[10px] font-bold rounded-full shadow-sm ml-auto">
-            {badge}
-          </span>
-        ) : null}
+        {
+          badge && badge > 0 ? (
+            <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-promed-primary text-white text-[10px] font-bold rounded-full shadow-sm ml-auto">
+              {badge}
+            </span>
+          ) : null
+        }
       </motion.button >
     );
   };
@@ -130,7 +132,7 @@ const Layout: React.FC<LayoutProps> = ({
     <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900 font-sans">
 
       {/* Sidebar (Desktop Only) */}
-      <aside className="hidden md:flex flex-col w-[260px] bg-premium-card h-full shadow-premium border-r border-[#E2E8F0] z-40 relative">
+      <aside className="hidden md:flex flex-col w-[260px] bg-white/80 backdrop-blur-2xl h-full border-r border-slate-200/60 z-40 relative shadow-[5px_0_30px_-10px_rgba(0,0,0,0.03)]">
         {/* Logo */}
         <div className="p-4 md:p-6 flex items-center justify-end md:justify-between">
           <div className="hidden md:flex items-center space-x-3 text-slate-900">
