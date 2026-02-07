@@ -468,20 +468,60 @@ export const KanbanBoard: React.FC = () => {
                 onSetReminder={async (date, note) => {
                     if (leadToRemind) {
                         try {
+                            console.log('Setting reminder for lead:', leadToRemind.id);
+
+                            // 1. Add to Timeline first
+                            await leadService.addTimelineEvent(leadToRemind.id, {
+                                type: 'reminder',
+                                content: `Set reminder: ${note}`,
+                                created_by: 'current-user', // Consistent with other parts
+                                metadata: {
+                                    reminderDate: date.toISOString(),
+                                    reason: note
+                                }
+                            });
+
+                            // 2. Update Lead status
                             const reminderData = {
                                 date: date.toISOString(),
                                 note,
                                 created_at: new Date().toISOString()
                             };
                             await leadService.updateLead(leadToRemind.id, { reminder: reminderData });
-                            // Rehydrate local state if needed, or let subscription handle it
+
+                            console.log('Reminder set successfully (timeline + lead update)');
                         } catch (e) {
                             console.error("Failed to set reminder", e);
+                            alert("Failed to set reminder. Please check console.");
                         }
                     }
                 }}
                 initialDate={leadToRemind?.reminder ? new Date(leadToRemind.reminder.date) : undefined}
                 initialNote={leadToRemind?.reminder?.note}
+                onDelete={async () => {
+                    if (leadToRemind) {
+                        try {
+                            // 1. Add 'Deleted' event to Timeline
+                            await leadService.addTimelineEvent(leadToRemind.id, {
+                                type: 'reminder',
+                                content: `Reminder deleted`,
+                                created_by: 'current-user',
+                                metadata: {
+                                    action: 'deleted',
+                                    previousDate: leadToRemind.reminder?.date
+                                }
+                            });
+
+                            // 2. Remove reminder from Lead
+                            await leadService.updateLead(leadToRemind.id, { reminder: null as any }); // Use null to remove field or check types
+
+                            setIsReminderModalOpen(false);
+                            setLeadToRemind(null);
+                        } catch (e) {
+                            console.error("Failed to delete reminder", e);
+                        }
+                    }
+                }}
             />
 
             {/* Lead Detail View */}

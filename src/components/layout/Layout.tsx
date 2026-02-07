@@ -151,7 +151,7 @@ const Layout: React.FC<LayoutProps> = ({
 
           {role === 'admin' && (
             <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">
-              <p className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Management</p>
+              <p className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{t('management')}</p>
               <NavItem page="ADMIN_DASHBOARD" icon={Shield} label={t('admin_panel')} />
             </div>
           )}

@@ -8,9 +8,10 @@ interface ReminderModalProps {
     onSetReminder: (date: Date, note: string) => void;
     initialDate?: Date;
     initialNote?: string;
+    onDelete?: () => void;
 }
 
-export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, onSetReminder, initialDate, initialNote }) => {
+export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, onSetReminder, initialDate, initialNote, onDelete }) => {
     const { t } = useLanguage();
 
     // Default to tomorrow at 10:00 AM if no initial date
@@ -47,6 +48,7 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, o
         }
     };
 
+    // Footer Actions
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={onClose} />
@@ -109,6 +111,19 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, o
 
                     {/* Footer Actions */}
                     <div className="pt-2 flex gap-3">
+                        {initialDate && onDelete && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (window.confirm("Are you sure you want to delete this reminder?")) {
+                                        onDelete();
+                                    }
+                                }}
+                                className="px-4 py-2.5 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                            >
+                                Delete
+                            </button>
+                        )}
                         <button
                             type="button"
                             onClick={onClose}

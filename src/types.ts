@@ -106,6 +106,7 @@ export interface TimelineEvent {
   created_at: any; // Firestore Timestamp
   created_by?: string; // User ID
   metadata?: any; // Extra data (e.g. oldStatus, newStatus, reminderDate)
+  status?: 'sent' | 'delivered' | 'read';
 }
 
 export interface LeadColumn {

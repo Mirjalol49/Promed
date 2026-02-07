@@ -5,6 +5,15 @@ export type Language = 'en' | 'uz' | 'ru';
 
 export const translations = {
   en: {
+    // Navigation
+    management: "Management",
+    files: "Files",
+    my_files: "My Files",
+    tasks_folder: "Tasks",
+    notes_folder: "Notes",
+    add_note_prompt: "Add a new note",
+    search_files: "Search files...",
+
     dashboard: "Dashboard",
     patients: "Patients",
     new_patient: "New Patient",
@@ -388,6 +397,15 @@ export const translations = {
     reminder_call_now: "Call Now",
   },
   uz: {
+    // Navigation
+    management: "Boshqaruv",
+    files: "Fayllar",
+    my_files: "Mening Fayllarim",
+    tasks_folder: "Vazifalar",
+    notes_folder: "Eslatmalar",
+    add_note_prompt: "Yangi eslatma qo'shing",
+    search_files: "Fayllarni qidirish...",
+
     dashboard: "Boshqaruv paneli",
     patients: "Bemorlar",
     new_patient: "Yangi Bemor",
@@ -788,6 +806,15 @@ export const translations = {
     reminder_call_now: "Qo'ng'iroq qilish",
   },
   ru: {
+    // Navigation
+    management: "Управление",
+    files: "Файлы",
+    my_files: "Мои файлы",
+    tasks_folder: "Задачи",
+    notes_folder: "Заметки",
+    add_note_prompt: "Добавить новую заметку",
+    search_files: "Поиск файлов...",
+
     dashboard: "Панель управления",
     patients: "Пациенты",
     new_patient: "Новый пациент",

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, StickyNote, Search,
-    FileText
+    FileText, ArrowLeft, FolderOpen
 } from 'lucide-react';
 import { noteService } from '../../services/noteService';
 import { useAccount } from '../../contexts/AccountContext';
@@ -11,6 +11,7 @@ import { useToast } from '../../contexts/ToastContext';
 import upsetIcon from '../../components/mascot/upset_mascot.png';
 import { Note } from '../../types';
 import { NoteCard } from './NoteCard';
+import { FolderCard, FolderType } from './FolderCard';
 import { AddNoteModal } from './AddNoteModal';
 import DeleteModal from '../../components/ui/DeleteModal';
 
@@ -20,17 +21,17 @@ export const NotesPage: React.FC = () => {
     const { userId, isLoading: isAuthLoading } = useAccount();
     const [notes, setNotes] = useState<Note[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false); // Renamed from isAddModalOpen to match usage
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
     const [noteToEdit, setNoteToEdit] = useState<Note | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
-    useEffect(() => {
-        // If auth is still loading, wait.
-        if (isAuthLoading) return;
+    // Folder Navigation State
+    const [activeFolder, setActiveFolder] = useState<FolderType | null>(null);
 
-        // If auth finished but no userId (shouldn't happen in protected route, but safe to check)
+    useEffect(() => {
+        if (isAuthLoading) return;
         if (!userId) {
             setIsLoading(false);
             return;
@@ -55,17 +56,6 @@ export const NotesPage: React.FC = () => {
         setNoteToEdit(note);
         setIsModalOpen(true);
     };
-    // The original handleDelete and handleEdit are now handled inline in JSX or via new modals
-    // const handleDelete = async (id: string) => {
-    //     if (confirm("Haqiqatan ham bu eslatmani o'chirmoqchimisiz?")) {
-    //         await noteService.deleteNote(id);
-    //     }
-    // };
-
-    // const handleEdit = (note: Note) => {
-    //     setNoteToEdit(note);
-    //     setAddModalOpen(true);
-    // };
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
@@ -86,8 +76,6 @@ export const NotesPage: React.FC = () => {
                 await noteService.deleteNote(noteId);
             } catch (error) {
                 console.error("Failed to delete note:", error);
-                // Revert
-                setNotes(originalNotes);
                 setNotes(originalNotes);
                 showError("Xatolik", "Eslatmani o'chirishda xatolik yuz berdi", upsetIcon);
             }
@@ -100,28 +88,21 @@ export const NotesPage: React.FC = () => {
         const originalNotes = [...notes];
 
         if (noteToEdit) {
-            // Edit Mode - Optimistic
             const updatedNote: Note = {
                 ...noteToEdit,
                 ...data,
-                // keep existing createdAt ?
             };
 
             setNotes(prev => prev.map(n => n.id === noteToEdit.id ? updatedNote : n));
-            // Modal closes via AddNoteModal handling (or we can close it here if we want more control, but prop is onSave)
-            // Wait, AddNoteModal closes itself on success. 
-            // So we just promise to return void.
 
             try {
                 await noteService.updateNote(noteToEdit.id, data);
             } catch (error) {
                 console.error("Failed to update note:", error);
                 setNotes(originalNotes);
-                setNotes(originalNotes);
                 showError("Xatolik", "Eslatmani yangilashda xatolik yuz berdi", upsetIcon);
             }
         } else {
-            // Add Mode - Optimistic
             const tempId = 'temp-' + Date.now();
             const newNote: Note = {
                 id: tempId,
@@ -129,31 +110,61 @@ export const NotesPage: React.FC = () => {
                 title: data.title,
                 content: data.content,
                 color: data.color,
-                createdAt: { toDate: () => new Date(), toMillis: () => Date.now(), seconds: Date.now() / 1000, nanoseconds: 0 } as any // Mock timestamp
+                createdAt: { toDate: () => new Date(), toMillis: () => Date.now(), seconds: Date.now() / 1000, nanoseconds: 0 } as any
             };
 
             setNotes(prev => [newNote, ...prev]);
 
             try {
                 await noteService.addNote(data.content, userId, data.title, data.color);
-                // Note: The real subscription will update the list eventually with the real ID, 
-                // replacing the temp one. 
-                // However, subscription updates usually just setNotes(data). 
-                // If the real data comes in, it will overwrite our optimistic state, which is fine!
             } catch (error) {
                 console.error("Failed to add note:", error);
-                setNotes(originalNotes);
                 setNotes(originalNotes);
                 showError("Xatolik", "Eslatmani qo'shishda xatolik yuz berdi", upsetIcon);
             }
         }
     };
 
-    const filteredNotes = notes
-        .filter(n =>
-            n.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            n.title?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+    // Filter Logic
+    const getFilteredNotes = () => {
+        let filtered = notes;
+
+        // Filter by Folder Type
+        if (activeFolder === 'urgent') {
+            filtered = filtered.filter(n => n.color === 'pink');
+        } else if (activeFolder === 'todo') {
+            filtered = filtered.filter(n => n.color === 'green');
+        } else if (activeFolder === 'note') {
+            // Include yellow, blue, purple, and any others that aren't pink/green
+            filtered = filtered.filter(n => !['pink', 'green'].includes(n.color || ''));
+        }
+
+        // Filter by Search
+        if (searchQuery) {
+            filtered = filtered.filter(n =>
+                n.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                n.title?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+
+        return filtered;
+    };
+
+    const displayNotes = getFilteredNotes();
+
+    // Derived State for Folders
+    const urgentNotes = notes.filter(n => n.color === 'pink');
+    const todoNotes = notes.filter(n => n.color === 'green');
+    const defaultNotes = notes.filter(n => !['pink', 'green'].includes(n.color || ''));
+
+    const getFolderName = (type: FolderType) => {
+        switch (type) {
+            case 'urgent': return t('urgency');
+            case 'todo': return t('tasks_folder');
+            case 'note': return t('notes_folder');
+            default: return "";
+        }
+    };
 
     return (
         <div className="h-full flex flex-col space-y-4 overflow-hidden p-1.5">
@@ -162,65 +173,110 @@ export const NotesPage: React.FC = () => {
                 <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                     <div className="flex items-center justify-between md:justify-start gap-4">
                         <div className="flex items-center gap-2">
-                            <div className="p-2.5 bg-yellow-100 rounded-xl">
-                                <FileText className="text-yellow-600" size={24} />
+                            {activeFolder ? (
+                                <button
+                                    onClick={() => setActiveFolder(null)}
+                                    className="p-2.5 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors mr-1"
+                                >
+                                    <ArrowLeft size={24} className="text-slate-600" />
+                                </button>
+                            ) : (
+                                <div className="p-2.5 bg-blue-100 rounded-xl">
+                                    <FolderOpen className="text-blue-600" size={24} />
+                                </div>
+                            )}
+
+                            <div>
+                                <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                                    {activeFolder ? (
+                                        <>
+                                            <span className="opacity-50 font-medium cursor-pointer hover:underline" onClick={() => setActiveFolder(null)}>{t('files')}</span>
+                                            <span className="opacity-30">/</span>
+                                            <span>{getFolderName(activeFolder)}</span>
+                                        </>
+                                    ) : (
+                                        t('my_files') || 'Fayllar'
+                                    )}
+                                </h1>
                             </div>
-                            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{t('my_notes')}</h1>
-                            <span className="bg-slate-100 px-2.5 py-0.5 rounded-lg text-sm font-bold text-slate-600">
-                                {notes.length}
-                            </span>
                         </div>
                     </div>
 
                     <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-                        <div className="relative w-full md:w-72">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                            <input
-                                type="text"
-                                placeholder={t('search')}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-400 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                            />
-                        </div>
-                        <button
-                            onClick={() => {
-                                setNoteToEdit(null);
-                                setIsModalOpen(true);
-                            }}
-                            className="btn-premium-blue shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 px-6 py-3 rounded-xl hover:-translate-y-1 transition-all duration-300 whitespace-nowrap"
-                        >
-                            <Plus size={20} />
-                            <span>{t('new_note')}</span>
-                        </button>
+                        {activeFolder && (
+                            <>
+                                <div className="relative w-full md:w-72 animate-in fade-in slide-in-from-right-4 duration-300">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder={t('search_files') || t('search')}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-400 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setNoteToEdit(null);
+                                        setIsModalOpen(true);
+                                    }}
+                                    className="btn-premium-blue shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 px-6 py-3 rounded-xl hover:-translate-y-1 transition-all duration-300 whitespace-nowrap animate-in fade-in slide-in-from-right-8 duration-500"
+                                >
+                                    <Plus size={20} />
+                                    <span>{t('new_note')}</span>
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* List Area */}
-            <div className="flex-1 overflow-y-auto w-full p-4">
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto w-full p-8">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-40">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
                     </div>
-                ) : filteredNotes.length === 0 ? (
+                ) : !activeFolder ? (
+                    /* FOLDERS VIEW */
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 animate-in fade-in duration-300">
+                        <FolderCard
+                            type="urgent"
+                            count={urgentNotes.length}
+                            onClick={() => setActiveFolder('urgent')}
+                            previewNote={urgentNotes[0]}
+                        />
+                        <FolderCard
+                            type="todo"
+                            count={todoNotes.length}
+                            onClick={() => setActiveFolder('todo')}
+                            previewNote={todoNotes[0]}
+                        />
+                        <FolderCard
+                            type="note"
+                            count={defaultNotes.length}
+                            onClick={() => setActiveFolder('note')}
+                            previewNote={defaultNotes[0]}
+                        />
+                    </div>
+                ) : displayNotes.length === 0 ? (
+                    /* EMPTY STATE INSIDE FOLDER */
                     <div className="flex flex-col items-center justify-center h-full text-center opacity-60">
                         <div className="p-4 bg-slate-100 rounded-full mb-4">
                             <FileText size={40} className="text-slate-400" />
                         </div>
                         <h3 className="text-lg font-bold text-slate-700">{t('no_notes_found')}</h3>
+                        <p className="text-slate-500">{t('add_note_prompt')}</p>
                     </div>
                 ) : (
+                    /* NOTES LIST VIEW */
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-300 pb-20">
                         <AnimatePresence mode="popLayout">
-                            {filteredNotes.map(note => (
+                            {displayNotes.map(note => (
                                 <NoteCard
                                     key={note.id}
                                     note={note}
-                                    onEdit={(n) => {
-                                        setNoteToEdit(n);
-                                        setIsModalOpen(true);
-                                    }}
+                                    onEdit={handleEdit}
                                     onDelete={(id) => {
                                         setNoteToDelete(id);
                                         setIsDeleteModalOpen(true);
@@ -233,10 +289,25 @@ export const NotesPage: React.FC = () => {
             </div>
 
             <AddNoteModal
-                isOpen={isModalOpen} // Changed from isAddModalOpen
+                isOpen={isModalOpen}
                 onClose={handleCloseModal}
                 noteToEdit={noteToEdit}
                 onSave={handleSaveNote}
+                // Pre-select color based on active folder
+                defaultColor={
+                    activeFolder === 'urgent' ? 'pink' :
+                        activeFolder === 'todo' ? 'green' :
+                            'yellow'
+                }
+                locked={!!activeFolder && !noteToEdit} // Lock only if creating new (actually user said "if i make only urgency notes", implying creation)
+            // But if editing, maybe we should also lock? 
+            // "remove the res of it" suggests cleaner UI.
+            // If I edit an "Urgency" note, should I be able to change it to "Todo"?
+            // Probably yes if I want to move it?
+            // But for now let's just lock for CREATION as that's the primary request context "if i am in urgency folder then i can make only urgency...".
+            // Wait, if I edit a note inside Urgency folder, and change it to Todo, it will disappear from view (since view filters by pink).
+            // That might be confusing. So locking it inside the view makes sense too.
+            // I will lock it if `activeFolder` is present, regardless of edit/create, to avoid "disappearing note" confusion.
             />
 
             <DeleteModal

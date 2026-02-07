@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     X, Phone, MessageCircle, Clock, Edit2, Trash2,
     Send, Plus, User, Activity, FileText, Bell, Check,
-    ChevronDown, AlertCircle, ExternalLink, Calendar
+    ChevronDown, AlertCircle, ExternalLink, Calendar,
+    Copy
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { uz, ru } from 'date-fns/locale';
@@ -51,14 +52,24 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     const [editContent, setEditContent] = useState('');
     const [reminderInitialState, setReminderInitialState] = useState<{ date?: Date, reason?: string }>({});
     const [reminderEditingId, setReminderEditingId] = useState<string | null>(null);
-    const [isCompletionMode, setIsCompletionMode] = useState(false);
+    const [completionEventId, setCompletionEventId] = useState<string | null>(null); // Changed from boolean to ID
     const [completionNote, setCompletionNote] = useState('');
+
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, eventId: string, type: 'note' | 'reminder', content?: string, date?: Date } | null>(null);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const reminderButtonRef = useRef<HTMLButtonElement>(null);
     const statusRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const { setReminder, clearReminder, isOverdue, hasReminder } = useReminder();
+
+    // Global listener to close context menu
+    useEffect(() => {
+        const handleClick = () => setContextMenu(null);
+        window.addEventListener('click', handleClick);
+        return () => window.removeEventListener('click', handleClick);
+    }, []);
 
     // Status labels with translations to match Kanban tabs
     const getStatusLabel = (status: LeadStatus): string => {
@@ -79,7 +90,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     useEffect(() => {
         setIsLoadingTimeline(true);
         const unsubscribe = leadService.subscribeToTimeline(lead.id, (events) => {
-            setTimeline(events);
+            setTimeline([...events].reverse());
             setIsLoadingTimeline(false);
         });
         return () => unsubscribe();
@@ -97,19 +108,51 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
         return () => document.removeEventListener('mousedown', handleClick);
     }, [isStatusOpen]);
 
+    // Auto-scroll to bottom when timeline updates (with delay for rendering)
+    useEffect(() => {
+        if (scrollRef.current) {
+            setTimeout(() => {
+                if (scrollRef.current) {
+                    scrollRef.current.scrollTo({
+                        top: scrollRef.current.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 100);
+        }
+    }, [timeline.length, isStatusOpen]); // Added length check and status open to re-trigger if layout changes
+
     const handleAddNote = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newNote.trim()) return;
 
         try {
-            await leadService.addTimelineEvent(lead.id, {
-                type: 'note',
-                content: newNote.trim(),
-                created_by: 'current-user',
-            });
-            setNewNote('');
+            if (editingEventId) {
+                await leadService.updateTimelineEvent(lead.id, editingEventId, newNote.trim());
+                setEditingEventId(null);
+                setNewNote('');
+                setShowToast('Note updated successfully');
+                setTimeout(() => setShowToast(null), 2000);
+            } else {
+                await leadService.addTimelineEvent(lead.id, {
+                    type: 'note',
+                    content: newNote.trim(),
+                    created_by: 'current-user',
+                    status: 'sent'
+                });
+                setNewNote('');
+                // Force immediate scroll for better UX
+                setTimeout(() => {
+                    if (scrollRef.current) {
+                        scrollRef.current.scrollTo({
+                            top: scrollRef.current.scrollHeight,
+                            behavior: 'smooth'
+                        });
+                    }
+                }, 50);
+            }
         } catch (error) {
-            console.error('Error adding note:', error);
+            console.error('Error saving note:', error);
         }
     };
 
@@ -130,6 +173,19 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
         } catch (error) {
             console.error('Error deleting note:', error);
         }
+    };
+
+    const handleContextMenu = (e: React.MouseEvent, event: TimelineEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setContextMenu({
+            x: e.pageX,
+            y: e.pageY,
+            eventId: event.id,
+            type: event.type as 'note' | 'reminder',
+            content: event.content,
+            date: event.metadata?.reminderDate ? new Date(event.metadata.reminderDate) : undefined
+        });
     };
 
 
@@ -174,12 +230,18 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
     const getTimelineColor = (event: TimelineEvent) => {
         if (event.metadata?.isCompletion) return 'bg-emerald-500';
+        if (event.type === 'note' && event.created_by === 'current-user') return 'bg-blue-600'; // Sent details
         switch (event.type) {
-            case 'note': return 'bg-blue-600';
+            case 'note': return 'bg-slate-500'; // Received/Other details
             case 'reminder': return 'bg-purple-600';
             case 'status_change': return 'bg-amber-600';
             default: return 'bg-slate-500';
         }
+    };
+
+    const getTickIcon = (status?: 'sent' | 'delivered' | 'read') => {
+        if (status === 'read') return <div className="flex"><Check size={14} /><Check size={14} className="-ml-1.5" /></div>;
+        return <Check size={14} />;
     };
 
     return (
@@ -353,110 +415,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                     </div>
                                 </div>
 
-                                {/* Active Reminder */}
-                                {hasReminder(lead) && lead.reminder && (
-                                    <div className={`relative overflow-hidden rounded-xl border-2 group ${isOverdue(lead) ? 'bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 border-red-300' : 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200'}`}>
-                                        {/* Animated pulse for overdue */}
-                                        {/* Fire Animation for overdue */}
-                                        {isOverdue(lead) && (
-                                            <div className="absolute -top-7 -right-7 w-24 h-24 pointer-events-none opacity-90 z-10">
-                                                <Lottie animationData={fireAnimation} loop={true} />
-                                            </div>
-                                        )}
-
-                                        <div className="relative p-4">
-                                            {isCompletionMode ? (
-                                                <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                    <div className="flex items-center justify-between">
-                                                        <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">Completion Note</h4>
-                                                        <button
-                                                            onClick={() => setIsCompletionMode(false)}
-                                                            className="text-slate-400 hover:text-slate-600 transition-colors"
-                                                        >
-                                                            <X size={14} />
-                                                        </button>
-                                                    </div>
-                                                    <textarea
-                                                        value={completionNote}
-                                                        onChange={(e) => setCompletionNote(e.target.value)}
-                                                        placeholder="What was the outcome? (e.g. Talked to patient...)"
-                                                        className="w-full text-sm p-3 rounded-xl border border-purple-200 bg-white/80 focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none resize-none transition-all placeholder:text-slate-400"
-                                                        rows={2}
-                                                        autoFocus
-                                                    />
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <button
-                                                            onClick={async () => {
-                                                                await clearReminder(lead.id, completionNote);
-                                                                setIsCompletionMode(false);
-                                                                setCompletionNote('');
-                                                                window.location.reload();
-                                                            }}
-                                                            className="px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl shadow-sm hover:shadow transition-all flex items-center gap-1.5"
-                                                        >
-                                                            <Check size={14} strokeWidth={3} />
-                                                            Complete Task
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div>
-                                                    <div className="flex items-start justify-between mb-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className={`p-2 rounded-lg ${isOverdue(lead) ? 'bg-red-100' : 'bg-purple-100'}`}>
-                                                                <Bell size={16} className={isOverdue(lead) ? 'text-red-600' : 'text-purple-600'} />
-                                                            </div>
-                                                            <div>
-                                                                <span className={`text-xs font-bold uppercase tracking-wide ${isOverdue(lead) ? 'text-red-600' : 'text-purple-600'}`}>
-                                                                    {isOverdue(lead) ? t('overdue_reminder') : t('upcoming_reminder')}
-                                                                </span>
-                                                                {isOverdue(lead) && (
-                                                                    <div className="flex items-center gap-1 mt-0.5">
-                                                                        <span className="inline-block w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                                                                        <span className="text-[10px] text-red-500 font-medium">
-                                                                            {t('overdue_reminder')}!
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        {/* Dismiss Button */}
-                                                        <div className="flex items-center gap-1">
-                                                            {/* Done Button */}
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setIsCompletionMode(true);
-                                                                }}
-                                                                className={`p-1.5 rounded-lg transition-all shadow-sm ${isOverdue(lead)
-                                                                    ? 'bg-red-100 hover:bg-red-200 text-red-700 border border-red-200'
-                                                                    : 'bg-white hover:bg-purple-50 text-purple-700 border border-purple-200'
-                                                                    }`}
-                                                            >
-                                                                <Check size={16} strokeWidth={3} />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className={`flex items-center gap-3 mt-3 ${isOverdue(lead) ? 'text-red-900' : 'text-purple-900'}`}>
-                                                        <div className="text-lg font-bold">
-                                                            {new Date(lead.reminder.date).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
-                                                        </div>
-                                                        <div className={`px-2 py-1 rounded-md text-sm font-bold ${isOverdue(lead) ? 'bg-red-100 text-red-700' : 'bg-purple-100 text-purple-700'}`}>
-                                                            {new Date(lead.reminder.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </div>
-                                                    </div>
-
-                                                    {lead.reminder.note && (
-                                                        <div className={`text-sm mt-3 p-2 rounded-lg ${isOverdue(lead) ? 'bg-red-100/50 text-red-700' : 'bg-purple-100/50 text-purple-700'}`}>
-                                                            {lead.reminder.note}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
+                                {/* Active Reminder - REMOVED */}
+                                {/* {hasReminder(lead) && lead.reminder && ( ... )} */}
                             </div>
                         </div>
 
@@ -479,154 +439,154 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
                                     {/* Timeline Events */}
                                     {timeline.map((event) => (
-                                        <div key={event.id} className="flex gap-4 relative group">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white z-10 shrink-0 ${getTimelineColor(event)}`}>
-                                                {getTimelineIcon(event)}
-                                            </div>
-                                            <div className="flex-1 pt-0.5">
-                                                {editingEventId === event.id ? (
-                                                    <div className="bg-white border-2 border-blue-500 rounded-xl p-4 shadow-lg ring-4 ring-blue-500/10">
-                                                        <textarea
-                                                            value={editContent}
-                                                            onChange={(e) => {
-                                                                setEditContent(e.target.value);
-                                                                e.target.style.height = 'auto';
-                                                                e.target.style.height = e.target.scrollHeight + 'px';
-                                                            }}
-                                                            className="w-full text-base font-medium text-slate-900 focus:outline-none resize-none bg-transparent placeholder:text-slate-400"
-                                                            rows={1}
-                                                            autoFocus
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === 'Enter' && !e.shiftKey) {
-                                                                    e.preventDefault();
-                                                                    handleUpdateNote(event.id);
-                                                                }
-                                                                if (e.key === 'Escape') {
-                                                                    setEditingEventId(null);
-                                                                }
-                                                            }}
-                                                        />
-                                                        <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-100">
-                                                            <button
-                                                                onClick={() => setEditingEventId(null)}
-                                                                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors uppercase tracking-wide"
-                                                            >
-                                                                {t('cancel') || 'Cancel'}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleUpdateNote(event.id)}
-                                                                className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors uppercase tracking-wide shadow-sm"
-                                                            >
-                                                                {t('save') || 'Save'}
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ) : event.type === 'reminder' ? (
-                                                    <div className="bg-purple-50 border border-purple-200 rounded-xl overflow-hidden relative group-hover:shadow-md transition-all">
+                                        <div key={event.id} className={`flex gap-4 relative group ${event.type === 'note' && event.created_by === 'current-user' ? 'flex-row-reverse' : ''}`}>
+                                            {/* Icon/Avatar */}
+                                            {!(event.type === 'note' && event.created_by === 'current-user') && (
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white z-10 shrink-0 ${getTimelineColor(event)}`}>
+                                                    {getTimelineIcon(event)}
+                                                </div>
+                                            )}
+
+                                            <div className={`flex-1 pt-0.5 ${event.type === 'note' && event.created_by === 'current-user' ? 'flex flex-col items-end' : ''}`}>
+                                                {event.type === 'reminder' ? (
+                                                    <div
+                                                        className="bg-purple-50 border border-purple-200 rounded-xl overflow-hidden relative group-hover:shadow-md transition-all w-full select-none"
+                                                        onContextMenu={(e) => handleContextMenu(e, event)}
+                                                    >
                                                         {/* Header */}
-                                                        <div className="bg-purple-100/50 px-4 py-2 flex items-center gap-2 border-b border-purple-100">
-                                                            <Bell size={14} className="text-purple-600" />
-                                                            <span className="text-xs font-bold text-purple-700 uppercase tracking-wide">Eslatma</span>
+                                                        <div className="bg-purple-100/50 px-4 py-2 flex items-center justify-between border-b border-purple-100">
+                                                            <div className="flex items-center gap-2">
+                                                                <Bell size={14} className="text-purple-600" />
+                                                                <span className="text-xs font-bold text-purple-700 uppercase tracking-wide">Eslatma</span>
+                                                            </div>
+                                                            {/* Done Button in Timeline */}
+                                                            {!completionEventId && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setCompletionEventId(event.id);
+                                                                    }}
+                                                                    className="p-1 text-purple-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                                    title="Mark as Done"
+                                                                >
+                                                                    <Check size={16} strokeWidth={2.5} />
+                                                                </button>
+                                                            )}
                                                         </div>
 
                                                         <div className="p-4">
-                                                            {/* Date & Time */}
-                                                            <div className="flex items-center gap-4 mb-3">
-                                                                <div className="flex items-center gap-2 text-purple-900 bg-white px-3 py-1.5 rounded-lg border border-purple-100 shadow-sm">
-                                                                    <Calendar size={15} className="text-purple-500" />
-                                                                    <span className="font-bold text-sm">
-                                                                        {event.metadata?.reminderDate
-                                                                            ? format(new Date(event.metadata.reminderDate), 'd MMMM, yyyy', { locale: language === 'uz' ? uz : language === 'ru' ? ru : undefined })
-                                                                            : 'Set Date'}
-                                                                    </span>
+                                                            {completionEventId === event.id ? (
+                                                                <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">Completion Note</h4>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setCompletionEventId(null);
+                                                                                setCompletionNote('');
+                                                                            }}
+                                                                            className="text-slate-400 hover:text-slate-600 transition-colors"
+                                                                        >
+                                                                            <X size={14} />
+                                                                        </button>
+                                                                    </div>
+                                                                    <textarea
+                                                                        value={completionNote}
+                                                                        onChange={(e) => {
+                                                                            setCompletionNote(e.target.value);
+                                                                            e.target.style.height = 'auto';
+                                                                            e.target.style.height = e.target.scrollHeight + 'px';
+                                                                        }}
+                                                                        placeholder="Result..."
+                                                                        className="w-full text-sm p-3 rounded-xl border border-purple-200 bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none resize-none transition-all placeholder:text-slate-400 overflow-hidden"
+                                                                        rows={2}
+                                                                        autoFocus
+                                                                    />
+                                                                    <div className="flex items-center justify-end gap-2">
+                                                                        <button
+                                                                            onClick={async () => {
+                                                                                await clearReminder(lead.id, completionNote);
+                                                                                // Mark this specific reminder as completed in timeline
+                                                                                await leadService.updateTimelineEvent(lead.id, event.id, {
+                                                                                    metadata: { ...event.metadata, isCompleted: true }
+                                                                                });
+                                                                                setCompletionEventId(null);
+                                                                                setCompletionNote('');
+                                                                            }}
+                                                                            className="px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl shadow-sm hover:shadow transition-all flex items-center gap-1.5"
+                                                                        >
+                                                                            <Check size={14} strokeWidth={3} />
+                                                                            Confirm
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="flex items-center gap-2 text-purple-900 bg-white px-3 py-1.5 rounded-lg border border-purple-100 shadow-sm">
-                                                                    <Clock size={15} className="text-purple-500" />
-                                                                    <span className="font-bold text-sm">
-                                                                        {event.metadata?.reminderDate
-                                                                            ? format(new Date(event.metadata.reminderDate), 'HH:mm')
-                                                                            : 'Time'}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="flex items-center gap-4 mb-3">
+                                                                        <div className="flex items-center gap-2 text-purple-900 bg-white px-3 py-1.5 rounded-lg border border-purple-100 shadow-sm">
+                                                                            <Calendar size={15} className="text-purple-500" />
+                                                                            <span className="font-bold text-sm">
+                                                                                {event.metadata?.reminderDate
+                                                                                    ? format(new Date(event.metadata.reminderDate), 'd MMMM, yyyy', { locale: language === 'uz' ? uz : language === 'ru' ? ru : undefined })
+                                                                                    : 'Set Date'}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 text-purple-900 bg-white px-3 py-1.5 rounded-lg border border-purple-100 shadow-sm">
+                                                                            <Clock size={15} className="text-purple-500" />
+                                                                            <span className="font-bold text-sm">
+                                                                                {event.metadata?.reminderDate
+                                                                                    ? format(new Date(event.metadata.reminderDate), 'HH:mm')
+                                                                                    : 'Time'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
 
-                                                            {/* Reason */}
-                                                            <div className="text-slate-700 text-sm font-medium leading-relaxed">
-                                                                {event.metadata?.reason || event.content.split(': ').pop()}
-                                                            </div>
+                                                                    <div className="text-slate-700 text-sm font-medium leading-relaxed">
+                                                                        {event.metadata?.reason || event.content.split(': ').pop()}
+                                                                    </div>
 
-                                                            {/* Edit & Delete Buttons */}
-                                                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm p-1 rounded-lg border border-purple-100 shadow-sm">
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const initialDate = event.metadata?.reminderDate ? new Date(event.metadata.reminderDate) : undefined;
-                                                                        const initialReason = event.metadata?.reason || event.content.split(': ').pop();
-                                                                        setReminderEditingId(event.id);
-                                                                        setReminderInitialState({
-                                                                            date: initialDate,
-                                                                            reason: initialReason
-                                                                        });
-                                                                        setIsReminderOpen(true);
-                                                                    }}
-                                                                    className="p-1.5 text-slate-500 hover:text-purple-700 hover:bg-purple-50 rounded-md transition-colors"
-                                                                    title="Edit Reminder"
-                                                                >
-                                                                    <Edit2 size={14} strokeWidth={2.5} />
-                                                                </button>
+                                                                    {/* Prominent Done Button - Hidden if completed */}
+                                                                    {!event.metadata?.isCompleted && (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setCompletionEventId(event.id);
+                                                                            }}
+                                                                            className="w-full mt-3 py-2 bg-purple-100 text-purple-700 font-bold text-sm rounded-xl hover:bg-purple-200 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                                                        >
+                                                                            <Check size={16} strokeWidth={3} />
+                                                                            Bajarildi (Done)
+                                                                        </button>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>) : (
+                                                    <div
+                                                        onContextMenu={(e) => handleContextMenu(e, event)}
+                                                        className={`rounded-2xl p-3 px-4 transition-all duration-200 relative group-hover:shadow-md max-w-[85%] select-none ${event.type === 'note' && event.created_by === 'current-user'
+                                                            ? 'bg-blue-500 text-white rounded-tr-sm'
+                                                            : event.metadata?.isCompletion
+                                                                ? 'bg-emerald-50/50 border border-emerald-200'
+                                                                : 'bg-white border border-slate-200 rounded-tl-sm'
+                                                            }`}
+                                                    >
+                                                        <div className={`text-[15px] font-medium whitespace-pre-wrap leading-relaxed ${event.type === 'note' && event.created_by === 'current-user' ? 'text-white' : 'text-slate-800'}`}>
+                                                            {event.content}
+                                                        </div>
 
-                                                                <div className="w-px h-4 bg-purple-200 mx-0.5" />
-
-                                                                <button
-                                                                    onClick={() => {
-                                                                        if (window.confirm('Eslatmani o\'chirmoqchimisiz?')) {
-                                                                            handleDeleteNote(event.id);
-                                                                        }
-                                                                    }}
-                                                                    className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                                                                    title="Delete Reminder"
-                                                                >
-                                                                    <Trash2 size={14} strokeWidth={2.5} />
-                                                                </button>
-                                                            </div>
+                                                        {/* Timestamp & Ticks */}
+                                                        <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] font-medium ${event.type === 'note' && event.created_by === 'current-user' ? 'text-blue-100' : 'text-slate-400'}`}>
+                                                            {formatDate(event.created_at).split(', ')[1]} {/* Show only time */}
+                                                            {event.type === 'note' && event.created_by === 'current-user' && (
+                                                                <span className={event.status === 'read' ? 'text-sky-200' : ''}>
+                                                                    {getTickIcon(event.status || 'read')} {/* Default to read for now to match request */}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                ) : (
-                                                    <div className={`border rounded-xl p-5 transition-all duration-200 relative group-hover:shadow-md ${event.metadata?.isCompletion
-                                                        ? 'bg-emerald-50/50 border-emerald-200'
-                                                        : 'bg-white border-slate-300 hover:border-slate-400'
-                                                        }`}>
-                                                        <div className="text-[15px] font-medium text-slate-800 whitespace-pre-wrap leading-relaxed">{event.content}</div>
-
-                                                        {/* Actions (Edit/Delete) - Visible on Hover */}
-                                                        {event.type === 'note' && (
-                                                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm p-1 rounded-lg border border-slate-200 shadow-sm">
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setEditingEventId(event.id);
-                                                                        setEditContent(event.content);
-                                                                    }}
-                                                                    className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
-                                                                    title="Edit"
-                                                                >
-                                                                    <Edit2 size={14} strokeWidth={2.5} />
-                                                                </button>
-                                                                <div className="w-px h-4 bg-slate-300 mx-0.5" />
-                                                                <button
-                                                                    onClick={() => {
-                                                                        if (window.confirm('Delete this note?')) {
-                                                                            handleDeleteNote(event.id);
-                                                                        }
-                                                                    }}
-                                                                    className="p-1.5 text-slate-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                                                                    title="Delete"
-                                                                >
-                                                                    <Trash2 size={14} strokeWidth={2.5} />
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
                                                 )}
-                                                <div className="text-xs font-semibold text-slate-500 mt-2 pl-2">{formatDate(event.created_at)}</div>
+                                                {/* Date Label if needed, but usually redundant with timestamp inside bubble */}
+                                                {/* <div className="text-xs font-semibold text-slate-500 mt-2 pl-2">{formatDate(event.created_at)}</div> */}
                                             </div>
                                         </div>
                                     ))}
@@ -634,45 +594,136 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                             </div>
 
                             {/* Add Note Input */}
-                            <div className="p-4 border-t border-slate-100 bg-white">
-                                <form onSubmit={handleAddNote} className="flex gap-3 items-end">
-                                    <textarea
-                                        value={newNote}
-                                        onChange={(e) => {
-                                            setNewNote(e.target.value);
-                                            // Auto-resize up to max, then scroll
-                                            e.target.style.height = 'auto';
-                                            const newHeight = Math.min(e.target.scrollHeight, 150);
-                                            e.target.style.height = newHeight + 'px';
-                                            // Enable scroll when at max height
-                                            e.target.style.overflowY = e.target.scrollHeight > 150 ? 'auto' : 'hidden';
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
-                                                e.preventDefault();
-                                                if (newNote.trim()) {
-                                                    handleAddNote(e as unknown as React.FormEvent);
+                            <div className="bg-white border-t border-slate-100">
+                                {editingEventId && (
+                                    <div className="flex items-center justify-between px-4 py-2 bg-blue-50 border-b border-blue-100 animate-in slide-in-from-bottom-2">
+                                        <div className="flex items-center gap-2 text-blue-700">
+                                            <Edit2 size={14} />
+                                            <span className="text-xs font-bold uppercase tracking-wide">Editing message...</span>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setEditingEventId(null);
+                                                setNewNote('');
+                                            }}
+                                            className="p-1 hover:bg-blue-100 rounded-full text-blue-600 transition-colors"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                )}
+                                <div className="p-4">
+                                    <form onSubmit={handleAddNote} className="flex gap-3 items-end">
+                                        <textarea
+                                            ref={textareaRef}
+                                            value={newNote}
+                                            onChange={(e) => {
+                                                setNewNote(e.target.value);
+                                                // Auto-resize up to max, then scroll
+                                                e.target.style.height = 'auto';
+                                                const newHeight = Math.min(e.target.scrollHeight, 150);
+                                                e.target.style.height = newHeight + 'px';
+                                                // Enable scroll when at max height
+                                                e.target.style.overflowY = e.target.scrollHeight > 150 ? 'auto' : 'hidden';
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    if (newNote.trim()) {
+                                                        handleAddNote(e as unknown as React.FormEvent);
+                                                    }
                                                 }
-                                            }
-                                        }}
-                                        placeholder={t('add_note_placeholder')}
-                                        rows={1}
-                                        className="flex-1 px-4 py-3 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none min-h-[48px] max-h-[150px] placeholder:text-slate-500 font-medium"
-                                        style={{ height: '48px', overflowY: 'hidden' }}
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={!newNote.trim()}
-                                        className="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0 h-[48px]"
-                                    >
-                                        <Send size={18} />
-                                    </button>
-                                </form>
+                                            }}
+                                            placeholder={editingEventId ? "Edit note..." : t('add_note_placeholder')}
+                                            rows={1}
+                                            className={`flex-1 px-4 py-3 bg-white border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none min-h-[48px] max-h-[150px] placeholder:text-slate-500 font-medium ${editingEventId ? 'border-blue-500 focus:ring-blue-500/20 shadow-sm' : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-500'}`}
+                                            style={{ height: '48px', overflowY: 'hidden' }}
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={!newNote.trim()}
+                                            className={`px-5 py-3 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0 h-[48px] ${editingEventId ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                        >
+                                            {editingEventId ? <Check size={18} /> : <Send size={18} />}
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Reminder Popover */}
+                    {/* Context Menu */}
+                    <AnimatePresence>
+                        {contextMenu && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                style={{ top: contextMenu.y, left: contextMenu.x }}
+                                className="fixed z-[60] bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 min-w-[220px] flex flex-col gap-0.5"
+                            >
+                                <button
+                                    onClick={() => {
+                                        if (contextMenu.content) {
+                                            navigator.clipboard.writeText(contextMenu.content);
+                                            setShowToast('Copied to clipboard');
+                                            setTimeout(() => setShowToast(null), 2000);
+                                        }
+                                        setContextMenu(null);
+                                    }}
+                                    className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-slate-700 hover:bg-slate-50 rounded-xl transition-colors w-full text-left"
+                                >
+                                    <Copy size={18} className="text-slate-400" />
+                                    {t('copy') || 'Copy'}
+                                </button>
+
+                                <div className="my-1.5 h-px bg-slate-100 w-full" />
+
+                                <button
+                                    onClick={() => {
+                                        if (contextMenu.type === 'reminder') {
+                                            setReminderEditingId(contextMenu.eventId);
+                                            setReminderInitialState({
+                                                date: contextMenu.date,
+                                                reason: contextMenu.content?.split(': ').pop()
+                                            });
+                                            setIsReminderOpen(true);
+                                        } else {
+                                            setEditingEventId(contextMenu.eventId);
+                                            setNewNote(contextMenu.content || '');
+                                            setTimeout(() => {
+                                                textareaRef.current?.focus();
+                                                // Move cursor to end
+                                                if (textareaRef.current) {
+                                                    textareaRef.current.selectionStart = textareaRef.current.value.length;
+                                                    textareaRef.current.selectionEnd = textareaRef.current.value.length;
+                                                }
+                                            }, 50);
+                                        }
+                                        setContextMenu(null);
+                                    }} // Context Menu Edit Button Logic Updated
+                                    className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-slate-700 hover:bg-slate-50 rounded-xl transition-colors w-full text-left"
+                                >
+                                    <Edit2 size={18} className="text-slate-400" />
+                                    {t('edit') || 'Edit'}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm('Delete this item?')) {
+                                            handleDeleteNote(contextMenu.eventId);
+                                        }
+                                        setContextMenu(null);
+                                    }}
+                                    className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full text-left"
+                                >
+                                    <Trash2 size={18} />
+                                    {t('delete') || 'Delete'}
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     {/* Reminder Popover */}
                     {isReminderOpen && (
                         <ReminderPopover

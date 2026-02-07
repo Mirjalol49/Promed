@@ -72,12 +72,37 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
     const isStale = leadService.checkStale(lead);
 
     // Check if reminder is overdue
-    const isReminderOverdue = (): boolean => {
+    const checkIsOverdue = React.useCallback((): boolean => {
         if (!lead.reminder?.date) return false;
         try {
             return new Date(lead.reminder.date) < new Date();
         } catch { return false; }
-    };
+    }, [lead.reminder?.date]);
+
+    const [isOverdue, setIsOverdue] = React.useState(checkIsOverdue());
+
+    // Update overdue status every second if there is a reminder
+    React.useEffect(() => {
+        if (!lead.reminder?.date) {
+            setIsOverdue(false);
+            return;
+        }
+
+        // Initial check
+        setIsOverdue(checkIsOverdue());
+
+        const interval = setInterval(() => {
+            const nowOverdue = checkIsOverdue();
+            setIsOverdue(prev => {
+                // Only update state if it changes to avoid unnecessary re-renders
+                if (prev !== nowOverdue) return nowOverdue;
+                return prev;
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [lead.reminder?.date, checkIsOverdue]);
+
     const hasActiveReminder = !!lead.reminder?.date;
 
     const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
@@ -169,12 +194,19 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
             className={`
             ${getBackground(statusColor)} p-5 rounded-3xl border transition-all mb-3 relative group cursor-pointer
             ${isStale ? '!border-red-500 !ring-1 !ring-red-500' : ''}
-            ${isReminderOverdue() ? '!border-red-400 !ring-2 !ring-red-200' : ''}
+            ${isOverdue ? '!border-red-400 !ring-2 !ring-red-200' : ''}
         `}>
 
             {/* Overdue Reminder Indicator */}
-            {isReminderOverdue() && (
-                <div className="absolute -top-2 -right-2 z-20">
+            {isOverdue && (
+                <div
+                    className="absolute -top-2 -right-2 z-20 cursor-pointer hover:scale-110 transition-transform"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onRemind(lead);
+                    }}
+                    title="Muddati o'tgan eslatma (O'zgartirish uchun bosing)"
+                >
                     <div className="relative">
                         <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75" />
                         <div className="relative bg-red-500 text-white p-1.5 rounded-full shadow-lg">
@@ -185,8 +217,15 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
             )}
 
             {/* Upcoming Reminder Indicator (non-overdue) */}
-            {hasActiveReminder && !isReminderOverdue() && (
-                <div className="absolute -top-1.5 -right-1.5 z-20 bg-purple-500 text-white p-1 rounded-full shadow-sm">
+            {hasActiveReminder && !isOverdue && (
+                <div
+                    className="absolute -top-1.5 -right-1.5 z-20 bg-purple-500 text-white p-1 rounded-full shadow-sm cursor-pointer hover:bg-purple-600 transition-colors"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onRemind(lead);
+                    }}
+                    title="Eslatmani o'zgartirish"
+                >
                     <Clock size={10} />
                 </div>
             )}
@@ -350,3 +389,4 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
         </motion.div>
     );
 };
+

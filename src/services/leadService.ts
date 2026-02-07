@@ -144,6 +144,35 @@ export const leadService = {
         return diffHours > 72; // 72 hours = 3 days
     },
 
+    // Set Reminder (Transactional: Update Lead + Add Timeline Event)
+    async setReminder(leadId: string, date: Date, note: string): Promise<void> {
+        try {
+            const reminderData = {
+                date: date.toISOString(),
+                note,
+                created_at: new Date().toISOString()
+            };
+
+            // 1. Add Timeline Event
+            await this.addTimelineEvent(leadId, {
+                type: 'reminder',
+                content: `Set reminder: ${note}`,
+                created_by: 'current-user',
+                metadata: {
+                    reminderDate: date.toISOString(),
+                    reason: note
+                }
+            });
+
+            // 2. Update Lead
+            await this.updateLead(leadId, { reminder: reminderData });
+
+        } catch (error) {
+            console.error("Error setting reminder:", error);
+            throw error;
+        }
+    },
+
     // Add Timeline Event (Comment/Note)
     async addTimelineEvent(leadId: string, event: Omit<TimelineEvent, 'id' | 'created_at'>): Promise<void> {
         try {
