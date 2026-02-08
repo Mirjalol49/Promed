@@ -25,7 +25,6 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Portal } from '../../components/ui/Portal';
 import Lottie from 'lottie-react';
-import fireAnimation from '../../assets/images/fire.json';
 
 interface LeadCardProps {
     lead: Lead;
@@ -155,29 +154,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
     const StatusIcon = COL_ICONS[lead.status] || User;
     const statusColor = COL_COLORS[lead.status] || 'slate';
 
-    const getBackground = (color: string) => {
-        switch (color) {
-            case 'blue': return 'bg-blue-200 border-transparent shadow-custom hover:scale-[1.02] active:scale-[0.98]';
-            case 'orange': return 'bg-orange-200 border-transparent shadow-custom hover:scale-[1.02] active:scale-[0.98]';
-            case 'purple': return 'bg-purple-200 border-transparent shadow-custom hover:scale-[1.02] active:scale-[0.98]';
-            case 'emerald': return 'bg-emerald-200 border-transparent shadow-custom hover:scale-[1.02] active:scale-[0.98]';
-            case 'red': return 'bg-red-200 border-transparent shadow-custom hover:scale-[1.02] active:scale-[0.98]';
-            default: return 'bg-white border-slate-100 shadow-sm text-slate-900';
-        }
-    };
 
-    const getIconColor = (color: string) => {
-        switch (color) {
-            case 'blue': return 'text-blue-600';
-            case 'orange': return 'text-orange-600';
-            case 'purple': return 'text-purple-600';
-            case 'emerald': return 'text-emerald-600';
-            case 'red': return 'text-red-600';
-            default: return 'text-slate-600';
-        }
-    };
-
-    const iconBaseColor = getIconColor(statusColor);
 
     const getSourceLabel = (source: string) => {
         switch (source) {
@@ -187,175 +164,158 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
         }
     };
 
+    const getStatusHeaderColor = (status: string) => {
+        const color = COL_COLORS[status as LeadStatus] || 'slate';
+        switch (color) {
+            case 'blue': return 'bg-blue-500';
+            case 'orange': return 'bg-orange-500';
+            case 'purple': return 'bg-purple-500';
+            case 'emerald': return 'bg-emerald-500';
+            case 'red': return 'bg-rose-500';
+            default: return 'bg-slate-500';
+        }
+    };
+
+    const getStatusLabel = (status: string) => {
+        return STATUS_OPTIONS.find(opt => opt.value === status)?.label || status;
+    };
+
     return (
         <motion.div
             layoutId={layoutId} // Shared layout ID for seamless expansion
             onClick={() => onSelect(lead)}
             className={`
-            ${getBackground(statusColor)} p-5 rounded-3xl border transition-all mb-3 relative group cursor-pointer
-            ${isStale ? '!border-red-500 !ring-1 !ring-red-500' : ''}
-            ${isOverdue ? '!border-red-400 !ring-2 !ring-red-200' : ''}
+            bg-white rounded-[2rem] border border-slate-200 mb-4 relative group cursor-pointer transition-all hover:border-blue-400 hover:bg-slate-50/50 z-0 hover:z-10
+            ${isStale ? 'ring-2 ring-rose-500' : ''}
+            ${isOverdue ? 'ring-2 ring-rose-300' : ''}
         `}>
+            {/* Status Header - Absolute Positioned */}
+            <div className={`absolute top-0 inset-x-0 h-10 rounded-t-[2rem] flex items-center justify-center font-extrabold text-white text-[11px] tracking-[0.2em] uppercase z-10 ${getStatusHeaderColor(lead.status)}`}>
+                {getStatusLabel(lead.status)}
 
-            {/* Overdue Reminder Indicator */}
-            {isOverdue && (
-                <div
-                    className="absolute -top-2 -right-2 z-20 cursor-pointer hover:scale-110 transition-transform"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onRemind(lead);
-                    }}
-                    title="Muddati o'tgan eslatma (O'zgartirish uchun bosing)"
-                >
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75" />
-                        <div className="relative bg-red-500 text-white p-1.5 rounded-full shadow-lg">
-                            <Clock size={12} />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Upcoming Reminder Indicator (non-overdue) */}
-            {hasActiveReminder && !isOverdue && (
-                <div
-                    className="absolute -top-1.5 -right-1.5 z-20 bg-purple-500 text-white p-1 rounded-full shadow-sm cursor-pointer hover:bg-purple-600 transition-colors"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onRemind(lead);
-                    }}
-                    title="Eslatmani o'zgartirish"
-                >
-                    <Clock size={10} />
-                </div>
-            )}
-
-
-            {/* Header */}
-            <div className="flex justify-between items-start mb-1.5">
-                <div className="min-w-0 flex-1 pr-2">
-                    <h4 className="font-bold text-[15px] text-slate-900 leading-tight break-words">{lead.full_name}</h4>
-                    <div className="flex flex-col gap-2 mt-2.5 text-xs text-slate-500 font-medium opacity-90">
-                        <div className="flex items-center gap-1.5">
-                            <SourceIcon source={lead.source} />
-                            <span>{getSourceLabel(lead.source)}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <Phone size={12} />
-                            <span className="tabular-nums tracking-tight">{lead.phone_number}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Actions & Stale Warning */}
-                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    {isStale && (
-                        <div className="text-red-500 animate-pulse mr-2" title="Stale Lead">
-                            <AlertTriangle size={16} />
+                {/* Indicators */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    {isOverdue && (
+                        <div className="bg-white/20 p-1 rounded-full animate-pulse" title="Overdue">
+                            <Clock size={12} className="text-white" />
                         </div>
                     )}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
-                        className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white/50 rounded-lg transition-colors"
-                        title="Tahrirlash"
-                    >
-                        <Pencil size={18} />
-                    </button>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onRemind(lead); }}
-                        className={`p-1.5 rounded-lg transition-colors ${lead.reminder
-                            ? 'text-blue-600 bg-blue-50 ring-1 ring-blue-200'
-                            : 'text-slate-600 hover:text-blue-600 hover:bg-white/50'
-                            }`}
-                        title={lead.reminder ? `Reminder: ${new Date(lead.reminder.date).toLocaleString()} - ${lead.reminder.note}` : "Set Reminder"}
-                    >
-                        <Clock size={18} className={lead.reminder ? 'fill-blue-500/10' : ''} />
-                    </button>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
-                        className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-white/50 rounded-lg transition-colors"
-                        title="O'chirish"
-                    >
-                        <Trash size={18} />
-                    </button>
+                    {hasActiveReminder && !isOverdue && (
+                        <div className="bg-white/20 p-1 rounded-full" title="Reminder Set">
+                            <Clock size={12} className="text-white" />
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Reminder Badge (if exists) */}
-            {lead.reminder && (
-                <div className="mb-3 mt-1">
-                    <div className="flex items-center gap-2 text-xs text-blue-700 bg-white/50 px-2.5 py-1.5 rounded-lg w-full border border-blue-100/30">
-                        <Clock size={13} className="text-blue-600 shrink-0" />
-                        <span className="font-semibold whitespace-nowrap">
-                            {new Date(lead.reminder.date).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        {lead.reminder.note && (
-                            <>
-                                <span className="text-blue-300 mx-0.5">|</span>
-                                <span className="truncate opacity-90 font-medium">
-                                    {lead.reminder.note}
+            {/* Main Content Area - Padded top for header */}
+            <div className="pt-14 px-5 pb-5">
+                {/* Dashed Content Box - Darker border for accessibility */}
+                <div className="border-[2px] border-dashed border-slate-300 rounded-[1.5rem] p-5 mb-4 relative bg-slate-50/30 group-hover:bg-slate-50/60 transition-colors">
+                    <div className="flex justify-between items-start mb-3">
+                        <h4 className="font-bold text-lg text-slate-900 leading-tight">{lead.full_name}</h4>
+                    </div>
+
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
+                            <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm text-slate-500">
+                                <SourceIcon source={lead.source} />
+                            </div>
+                            <span>{getSourceLabel(lead.source)}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
+                            <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm text-slate-500">
+                                <Phone size={14} />
+                            </div>
+                            <span className="tabular-nums tracking-wide text-slate-700">{lead.phone_number}</span>
+                        </div>
+                    </div>
+
+                    {/* Badges / Estimates or Time */}
+                    <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-dashed border-slate-200">
+                        {lead.graft_estimate && (
+                            <div className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-[11px] font-bold border border-blue-100 shadow-sm">
+                                {lead.graft_estimate} grafts
+                            </div>
+                        )}
+                        {lead.price_quote && (
+                            <div className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[11px] font-bold border border-emerald-100 shadow-sm">
+                                {lead.currency} {lead.price_quote.toLocaleString()}
+                            </div>
+                        )}
+
+                        {/* Show Scheduled/Created Time */}
+                        {lead.reminder?.date ? (
+                            <div className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-200/50" title="Scheduled Reminder">
+                                <Clock size={14} className="text-white" />
+                                <span className="tracking-wide">
+                                    {new Date(lead.reminder.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </span>
-                            </>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-300" title="Creation Date">
+                                <span className="opacity-60 text-[10px] uppercase tracking-wider font-semibold mr-1">Added</span>
+                                <span>
+                                    {lead.created_at?.seconds
+                                        ? new Date(lead.created_at.seconds * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                        : 'Just now'
+                                    }
+                                </span>
+                            </div>
                         )}
                     </div>
                 </div>
-            )}
 
-            {/* Badges / Estimates */}
-            <div className="flex items-center space-x-2 mt-3 mb-4">
-                {lead.graft_estimate ? (
-                    <div className="inline-flex items-center px-2.5 py-1 bg-white/60 text-slate-600 backdrop-blur-md rounded-lg text-xs font-semibold border border-white/40">
-                        {lead.graft_estimate} grafts
-                    </div>
-                ) : null}
-
-                {lead.price_quote ? (
-                    <div className="inline-flex items-center px-2.5 py-1 bg-white/60 text-slate-600 backdrop-blur-md rounded-lg text-xs font-semibold border border-white/40">
-                        {lead.currency} {lead.price_quote.toLocaleString()}
-                    </div>
-                ) : null}
-            </div>
-
-            {/* Action Bar (Status Dropdown) */}
-            <div className="pt-3 border-t border-slate-200/50 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider opacity-70">Status</span>
-
-                <div className="relative">
+                {/* Footer Actions - Matching the reference exactly */}
+                <div className="flex items-center gap-3">
+                    {/* Edit Button - Pill Outline */}
                     <button
-                        ref={buttonRef}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            toggleDropdown();
-                        }}
-                        className={`
-                            flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border
-                            bg-white/60 ${iconBaseColor} border-white/40
-                            hover:bg-white/80 hover:shadow-sm
-                        `}
+                        onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
+                        className="flex-1 h-10 px-4 bg-white border border-slate-300 rounded-full flex items-center justify-center gap-2 text-xs font-bold text-slate-700 hover:border-slate-400 hover:text-slate-900 hover:shadow-sm active:scale-95 transition-all group/btn"
                     >
-                        <StatusIcon size={14} className={iconBaseColor} />
-                        <span>{STATUS_OPTIONS.find(opt => opt.value === lead.status)?.label || lead.status}</span>
-                        <ChevronDown size={14} className={`${iconBaseColor} opacity-70 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                        <Pencil size={14} className="text-slate-500 group-hover/btn:text-slate-700" />
+                        <span>{t('edit') || 'Edit'}</span>
                     </button>
 
+                    {/* Remind Button - Pill Outline (Blue when active) */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onRemind(lead); }}
+                        className={`flex-1 h-10 px-4 border rounded-full flex items-center justify-center gap-2 text-xs font-bold transition-all shadow-sm active:scale-95 group/btn
+                            ${lead.reminder
+                                ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-blue-100'
+                                : 'bg-white border-slate-300 text-slate-700 hover:border-slate-400 hover:text-slate-900 hover:shadow-sm'
+                            }`}
+                    >
+                        <Clock size={14} className={lead.reminder ? 'text-blue-600' : 'text-slate-500 group-hover/btn:text-slate-700'} />
+                        <span>{lead.reminder ? 'Remind' : 'Remind'}</span>
+                    </button>
+
+                    {/* More Button - Circle Outline */}
+                    <button
+                        ref={buttonRef}
+                        onClick={(e) => { e.stopPropagation(); toggleDropdown(); }}
+                        className="h-10 w-10 bg-white border border-slate-300 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-50 hover:border-slate-400 hover:shadow-md active:scale-95 transition-all"
+                    >
+                        {isDropdownOpen ? <ChevronDown size={18} className="rotate-180 transition-transform" /> : <MoreHorizontal size={18} />}
+                    </button>
+
+                    {/* Floating Portal Dropdown */}
                     {isDropdownOpen && (
                         <Portal lockScroll={false}>
-                            {/* Backdrop to close on click outside */}
                             <div
                                 className="fixed inset-0 z-[9998]"
                                 onClick={() => setIsDropdownOpen(false)}
                             />
-
-                            {/* Dropdown Content */}
                             <div
-                                className="fixed bg-white border border-slate-200 rounded-xl shadow-xl z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+                                className="fixed bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-1.5 min-w-[200px]"
                                 style={{
-                                    top: dropdownPos.top,
-                                    left: dropdownPos.left,
-                                    width: dropdownPos.width,
+                                    top: dropdownPos.top - 60,
+                                    left: dropdownPos.left - 160,
+                                    width: 200,
                                 }}
                             >
-                                <div className="p-1">
+                                <div className="text-[10px] font-bold text-slate-400 px-3 py-2 uppercase tracking-wider mb-1">Change Status</div>
+                                <div className="space-y-1">
                                     {STATUS_OPTIONS.map(opt => {
                                         const isActive = opt.value === lead.status;
                                         const optColor = COL_COLORS[opt.value];
@@ -368,11 +328,11 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                                                     handleStatusClick(opt.value);
                                                 }}
                                                 className={`
-                                                    w-full flex items-center space-x-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors
-                                                    ${isActive ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+                                                    w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-bold rounded-xl transition-all
+                                                    ${isActive ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
                                                 `}
                                             >
-                                                <div className={`p-1 rounded-md ${isActive ? 'bg-white shadow-sm' : 'bg-slate-100'} mr-1`}>
+                                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isActive ? 'bg-white shadow-sm' : 'bg-slate-100'} transition-colors`}>
                                                     <OptIcon size={12} className={`text-${optColor}-500`} />
                                                 </div>
                                                 <span>{opt.label}</span>
@@ -381,6 +341,16 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                                         );
                                     })}
                                 </div>
+                                <div className="h-px bg-slate-100 my-2 mx-2" />
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
+                                    className="w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-bold rounded-xl text-rose-600 hover:bg-rose-50 transition-colors group/del"
+                                >
+                                    <div className="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center group-hover/del:bg-rose-100 transition-colors">
+                                        <Trash size={12} className="text-rose-500" />
+                                    </div>
+                                    Delete Lead
+                                </button>
                             </div>
                         </Portal>
                     )}

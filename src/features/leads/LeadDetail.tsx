@@ -108,19 +108,32 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
         return () => document.removeEventListener('mousedown', handleClick);
     }, [isStatusOpen]);
 
+    // Track if it's the initial scroll for this lead
+    const isInitialScroll = useRef(true);
+
+    // Reset initial scroll when lead changes
+    useEffect(() => {
+        isInitialScroll.current = true;
+    }, [lead.id]);
+
     // Auto-scroll to bottom when timeline updates (with delay for rendering)
     useEffect(() => {
         if (scrollRef.current) {
             setTimeout(() => {
                 if (scrollRef.current) {
+                    const behavior = isInitialScroll.current ? 'auto' : 'smooth';
                     scrollRef.current.scrollTo({
                         top: scrollRef.current.scrollHeight,
-                        behavior: 'smooth'
+                        behavior: behavior
                     });
+
+                    if (isInitialScroll.current) {
+                        isInitialScroll.current = false;
+                    }
                 }
             }, 100);
         }
-    }, [timeline.length, isStatusOpen]); // Added length check and status open to re-trigger if layout changes
+    }, [timeline.length, isStatusOpen, lead.id]); // Added lead.id to dependencies to ensure scroll runs on new lead
 
     const handleAddNote = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -229,7 +242,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     };
 
     const getTimelineColor = (event: TimelineEvent) => {
-        if (event.metadata?.isCompletion) return 'bg-emerald-500';
+        if (event.metadata?.isCompletion) return 'bg-blue-600'; // Changed from emerald-500 to blue-600
         if (event.type === 'note' && event.created_by === 'current-user') return 'bg-blue-600'; // Sent details
         switch (event.type) {
             case 'note': return 'bg-slate-500'; // Received/Other details
@@ -439,154 +452,137 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
                                     {/* Timeline Events */}
                                     {timeline.map((event) => (
-                                        <div key={event.id} className={`flex gap-4 relative group ${event.type === 'note' && event.created_by === 'current-user' ? 'flex-row-reverse' : ''}`}>
+                                        <div key={event.id} className="flex gap-4 relative group">
                                             {/* Icon/Avatar */}
-                                            {!(event.type === 'note' && event.created_by === 'current-user') && (
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white z-10 shrink-0 ${getTimelineColor(event)}`}>
-                                                    {getTimelineIcon(event)}
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white z-10 shrink-0 ring-4 ring-white ${getTimelineColor(event)}`}>
+                                                {getTimelineIcon(event)}
+                                            </div>
+
+                                            <div className="flex-1 min-w-0 pb-6">
+                                                {/* Header: Author & Time */}
+                                                <div className="flex items-center gap-2 mb-1.5">
+                                                    <span className="text-sm font-bold text-slate-900">
+                                                        {event.created_by === 'current-user' ? (t('you') || 'Siz') : (t('system') || 'Tizim')}
+                                                    </span>
+                                                    <span className="text-[11px] font-medium text-slate-400">
+                                                        {formatDate(event.created_at)}
+                                                    </span>
                                                 </div>
-                                            )}
 
-                                            <div className={`flex-1 pt-0.5 ${event.type === 'note' && event.created_by === 'current-user' ? 'flex flex-col items-end' : ''}`}>
-                                                {event.type === 'reminder' ? (
-                                                    <div
-                                                        className="bg-purple-50 border border-purple-200 rounded-xl overflow-hidden relative group-hover:shadow-md transition-all w-full select-none"
-                                                        onContextMenu={(e) => handleContextMenu(e, event)}
-                                                    >
-                                                        {/* Header */}
-                                                        <div className="bg-purple-100/50 px-4 py-2 flex items-center justify-between border-b border-purple-100">
-                                                            <div className="flex items-center gap-2">
-                                                                <Bell size={14} className="text-purple-600" />
-                                                                <span className="text-xs font-bold text-purple-700 uppercase tracking-wide">Eslatma</span>
-                                                            </div>
-                                                            {/* Done Button in Timeline */}
-                                                            {!completionEventId && (
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setCompletionEventId(event.id);
-                                                                    }}
-                                                                    className="p-1 text-purple-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                                                    title="Mark as Done"
-                                                                >
-                                                                    <Check size={16} strokeWidth={2.5} />
-                                                                </button>
-                                                            )}
-                                                        </div>
-
-                                                        <div className="p-4">
-                                                            {completionEventId === event.id ? (
-                                                                <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                                    <div className="flex items-center justify-between">
-                                                                        <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">Completion Note</h4>
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                setCompletionEventId(null);
-                                                                                setCompletionNote('');
-                                                                            }}
-                                                                            className="text-slate-400 hover:text-slate-600 transition-colors"
-                                                                        >
-                                                                            <X size={14} />
-                                                                        </button>
-                                                                    </div>
-                                                                    <textarea
-                                                                        value={completionNote}
-                                                                        onChange={(e) => {
-                                                                            setCompletionNote(e.target.value);
-                                                                            e.target.style.height = 'auto';
-                                                                            e.target.style.height = e.target.scrollHeight + 'px';
-                                                                        }}
-                                                                        placeholder="Result..."
-                                                                        className="w-full text-sm p-3 rounded-xl border border-purple-200 bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none resize-none transition-all placeholder:text-slate-400 overflow-hidden"
-                                                                        rows={2}
-                                                                        autoFocus
-                                                                    />
-                                                                    <div className="flex items-center justify-end gap-2">
-                                                                        <button
-                                                                            onClick={async () => {
-                                                                                await clearReminder(lead.id, completionNote);
-                                                                                // Mark this specific reminder as completed in timeline
-                                                                                await leadService.updateTimelineEvent(lead.id, event.id, {
-                                                                                    metadata: { ...event.metadata, isCompleted: true }
-                                                                                });
-                                                                                setCompletionEventId(null);
-                                                                                setCompletionNote('');
-                                                                            }}
-                                                                            className="px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl shadow-sm hover:shadow transition-all flex items-center gap-1.5"
-                                                                        >
-                                                                            <Check size={14} strokeWidth={3} />
-                                                                            Confirm
-                                                                        </button>
-                                                                    </div>
+                                                {/* Content Block */}
+                                                <div className={`relative group/content ${event.type === 'note' ? 'bg-slate-50/80 hover:bg-slate-50 border border-slate-300' : ''} rounded-2xl ${event.type === 'note' ? 'p-3' : ''} transition-colors`}>
+                                                    {event.type === 'reminder' ? (
+                                                        <div
+                                                            className="bg-white border text-left border-purple-300 rounded-xl overflow-hidden relative shadow-sm hover:shadow-md transition-all w-full select-none max-w-lg group-hover/content:border-purple-400"
+                                                            onContextMenu={(e) => handleContextMenu(e, event)}
+                                                        >
+                                                            {/* Minimal Header */}
+                                                            <div className="px-4 py-2.5 flex items-center justify-between bg-purple-50/50 border-b border-purple-100">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+                                                                    <span className="text-xs font-bold text-purple-700 uppercase tracking-wide">Eslatma</span>
                                                                 </div>
-                                                            ) : (
-                                                                <>
-                                                                    <div className="flex items-center gap-4 mb-3">
-                                                                        <div className="flex items-center gap-2 text-purple-900 bg-white px-3 py-1.5 rounded-lg border border-purple-100 shadow-sm">
-                                                                            <Calendar size={15} className="text-purple-500" />
-                                                                            <span className="font-bold text-sm">
-                                                                                {event.metadata?.reminderDate
-                                                                                    ? format(new Date(event.metadata.reminderDate), 'd MMMM, yyyy', { locale: language === 'uz' ? uz : language === 'ru' ? ru : undefined })
-                                                                                    : 'Set Date'}
-                                                                            </span>
-                                                                        </div>
-                                                                        <div className="flex items-center gap-2 text-purple-900 bg-white px-3 py-1.5 rounded-lg border border-purple-100 shadow-sm">
-                                                                            <Clock size={15} className="text-purple-500" />
-                                                                            <span className="font-bold text-sm">
-                                                                                {event.metadata?.reminderDate
-                                                                                    ? format(new Date(event.metadata.reminderDate), 'HH:mm')
-                                                                                    : 'Time'}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
+                                                                {!completionEventId && !event.metadata?.isCompleted && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setCompletionEventId(event.id);
+                                                                        }}
+                                                                        className="text-xs font-bold text-purple-600 hover:text-purple-700 hover:underline px-2"
+                                                                    >
+                                                                        Bajarish
+                                                                    </button>
+                                                                )}
+                                                            </div>
 
-                                                                    <div className="text-slate-700 text-sm font-medium leading-relaxed">
-                                                                        {event.metadata?.reason || event.content.split(': ').pop()}
-                                                                    </div>
-
-                                                                    {/* Prominent Done Button - Hidden if completed */}
-                                                                    {!event.metadata?.isCompleted && (
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setCompletionEventId(event.id);
+                                                            <div className="p-4">
+                                                                {completionEventId === event.id ? (
+                                                                    <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">Natija</h4>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    setCompletionEventId(null);
+                                                                                    setCompletionNote('');
+                                                                                }}
+                                                                                className="text-slate-400 hover:text-slate-600 transition-colors"
+                                                                            >
+                                                                                <X size={14} />
+                                                                            </button>
+                                                                        </div>
+                                                                        <textarea
+                                                                            value={completionNote}
+                                                                            onChange={(e) => {
+                                                                                setCompletionNote(e.target.value);
+                                                                                e.target.style.height = 'auto';
+                                                                                e.target.style.height = e.target.scrollHeight + 'px';
                                                                             }}
-                                                                            className="w-full mt-3 py-2 bg-purple-100 text-purple-700 font-bold text-sm rounded-xl hover:bg-purple-200 transition-colors flex items-center justify-center gap-2 shadow-sm"
-                                                                        >
-                                                                            <Check size={16} strokeWidth={3} />
-                                                                            Bajarildi (Done)
-                                                                        </button>
-                                                                    )}
-                                                                </>
-                                                            )}
+                                                                            placeholder="Izoh..."
+                                                                            className="w-full text-sm p-3 rounded-xl border border-purple-200 bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none resize-none transition-all placeholder:text-slate-400 overflow-hidden"
+                                                                            rows={2}
+                                                                            autoFocus
+                                                                        />
+                                                                        <div className="flex items-center justify-end">
+                                                                            <button
+                                                                                onClick={async () => {
+                                                                                    await clearReminder(lead.id, completionNote);
+                                                                                    await leadService.updateTimelineEvent(lead.id, event.id, {
+                                                                                        metadata: { ...event.metadata, isCompleted: true }
+                                                                                    });
+                                                                                    setCompletionEventId(null);
+                                                                                    setCompletionNote('');
+                                                                                }}
+                                                                                className="px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow-sm transition-all"
+                                                                            >
+                                                                                Tasdiqlash
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="flex flex-col gap-3">
+                                                                        <div className="flex flex-wrap gap-2 text-sm">
+                                                                            <div className="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                                                                                <Calendar size={13} />
+                                                                                <span className="font-medium">
+                                                                                    {event.metadata?.reminderDate
+                                                                                        ? format(new Date(event.metadata.reminderDate), 'd MMM, yyyy')
+                                                                                        : 'No Date'}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                                                                                <Clock size={13} />
+                                                                                <span className="font-medium">
+                                                                                    {event.metadata?.reminderDate
+                                                                                        ? format(new Date(event.metadata.reminderDate), 'HH:mm')
+                                                                                        : '--:--'}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <p className="text-slate-800 font-medium leading-relaxed">
+                                                                            {event.metadata?.reason || event.content.split(': ').pop()}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    </div>) : (
-                                                    <div
-                                                        onContextMenu={(e) => handleContextMenu(e, event)}
-                                                        className={`rounded-2xl p-3 px-4 transition-all duration-200 relative group-hover:shadow-md max-w-[85%] select-none ${event.type === 'note' && event.created_by === 'current-user'
-                                                            ? 'bg-blue-500 text-white rounded-tr-sm'
-                                                            : event.metadata?.isCompletion
-                                                                ? 'bg-emerald-50/50 border border-emerald-200'
-                                                                : 'bg-white border border-slate-200 rounded-tl-sm'
-                                                            }`}
-                                                    >
-                                                        <div className={`text-[15px] font-medium whitespace-pre-wrap leading-relaxed ${event.type === 'note' && event.created_by === 'current-user' ? 'text-white' : 'text-slate-800'}`}>
+                                                    ) : (
+                                                        <div
+                                                            onContextMenu={(e) => handleContextMenu(e, event)}
+                                                            className={`text-[15px] leading-relaxed whitespace-pre-wrap text-slate-700 ${event.metadata?.isCompletion ? 'italic text-slate-500' : ''}`}
+                                                        >
                                                             {event.content}
                                                         </div>
+                                                    )}
 
-                                                        {/* Timestamp & Ticks */}
-                                                        <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] font-medium ${event.type === 'note' && event.created_by === 'current-user' ? 'text-blue-100' : 'text-slate-400'}`}>
-                                                            {formatDate(event.created_at).split(', ')[1]} {/* Show only time */}
-                                                            {event.type === 'note' && event.created_by === 'current-user' && (
-                                                                <span className={event.status === 'read' ? 'text-sky-200' : ''}>
-                                                                    {getTickIcon(event.status || 'read')} {/* Default to read for now to match request */}
-                                                                </span>
-                                                            )}
+                                                    {/* Status Ticks for User Notes */}
+                                                    {event.type === 'note' && event.created_by === 'current-user' && (
+                                                        <div className="absolute bottom-2 right-2 opacity-0 group-hover/content:opacity-100 transition-opacity">
+                                                            <span className={event.status === 'read' ? 'text-blue-500' : 'text-slate-300'}>
+                                                                {getTickIcon(event.status || 'read')}
+                                                            </span>
                                                         </div>
-                                                    </div>
-                                                )}
-                                                {/* Date Label if needed, but usually redundant with timestamp inside bubble */}
-                                                {/* <div className="text-xs font-semibold text-slate-500 mt-2 pl-2">{formatDate(event.created_at)}</div> */}
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     ))}

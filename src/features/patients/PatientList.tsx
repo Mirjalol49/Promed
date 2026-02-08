@@ -36,7 +36,9 @@ import {
   Phone,
   Camera,
   ImageIcon,
-  Loader2
+  Loader2,
+  DollarSign,
+  Wallet
 } from 'lucide-react';
 import { Patient, InjectionStatus, Injection } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -53,6 +55,8 @@ import { CustomSelect } from '../../components/ui/CustomSelect';
 import { ImageUploadingOverlay } from '../../components/ui/ImageUploadingOverlay';
 import { InjectionTimeline } from '../../components/ui/InjectionTimeline';
 import { AnimateIcon } from '../../components/ui/AnimateIcon';
+import { PatientFinanceStats } from './PatientFinanceStats';
+import { useAccount } from '../../contexts/AccountContext';
 
 
 // Re-importing to force build update
@@ -618,6 +622,9 @@ export const PatientDetail: React.FC<{
   const [photoToDeleteId, setPhotoToDeleteId] = useState<string | null>(null);
   const [injToDeleteId, setInjToDeleteId] = useState<string | null>(null);
 
+  const [activeTab, setActiveTab] = useState<'general' | 'finance'>('general');
+  const { accountId } = useAccount();
+
   const [optimisticPhotos, setOptimisticPhotos] = useState<{ id: string, url: string, label: string }[]>([]);
 
   // Sync optimistic photos with real data
@@ -812,106 +819,135 @@ export const PatientDetail: React.FC<{
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Col: Photos */}
-        <div className="lg:col-span-1 space-y-8">
-          <div className="bg-white rounded-2xl p-6 shadow-apple border border-slate-200">
-            <h3 className="font-bold text-slate-800 mb-5 flex items-center space-x-3">
-              <div className="">
-                <Camera className="w-9 h-9 text-slate-700" />
-              </div>
-              <span>{t('before_operation')}</span>
-            </h3>
-            <div className="aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer relative group border border-slate-200" onClick={() => setSelectedImage(patient.beforeImage || null)}>
-              {patient.beforeImage ? (
-                <>
-                  <ImageWithFallback src={patient.beforeImage} optimisticId={`${patient.id}_before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-full text-slate-400">{t('no_image')}</div>
-              )}
-            </div>
+      {/* Tab Navigation */}
+      <div className="flex items-center gap-4 border-b border-slate-200 mb-8">
+        <button
+          onClick={() => setActiveTab('general')}
+          className={`pb-4 px-2 font-bold text-sm uppercase tracking-wider relative transition-colors ${activeTab === 'general' ? 'text-promed-primary' : 'text-slate-400 hover:text-slate-600'}`}
+        >
+          {t('general_info') || "General Info"}
+          {activeTab === 'general' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-promed-primary rounded-t-full"></div>}
+        </button>
+        <button
+          onClick={() => setActiveTab('finance')}
+          className={`pb-4 px-2 font-bold text-sm uppercase tracking-wider relative transition-colors ${activeTab === 'finance' ? 'text-promed-primary' : 'text-slate-400 hover:text-slate-600'}`}
+        >
+          <div className="flex items-center gap-2">
+            <DollarSign size={16} />
+            {t('finance') || "Finance"}
           </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-apple border border-slate-200">
-            <div className="flex justify-between items-center mb-5">
-              <h3 className="font-bold text-slate-800 flex items-center space-x-3">
-                <div className="p-2 bg-promed-light rounded-lg text-promed-primary border border-promed-primary/20">
-                  <Activity size={20} />
-                </div>
-                <span>{t('progress')}</span>
-              </h3>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {/* Add Photo Card */}
-              <label className="cursor-pointer aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-300 bg-slate-50/50 group">
-                <PlusCircle size={28} className="group-hover:scale-110 transition-transform mb-1.5 opacity-60 group-hover:opacity-100" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('add_photo')}</span>
-                <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
-              </label>
-
-              {/* Optimistic Photos (Pending) */}
-              {optimisticPhotos.map((img) => (
-                <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-promed-primary/30 shadow-sm animate-pulse">
-                  <ImageWithFallback
-                    src={img.url}
-                    optimisticId={img.id} // Use temp ID
-                    className="w-full h-full object-cover object-center opacity-80"
-                    alt={img.label}
-                    fallbackType="image"
-                  />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-promed-primary/80 via-promed-primary/20 to-transparent p-4 pt-12 flex flex-col justify-end">
-                    <p className="text-white text-sm font-bold tracking-wide drop-shadow-md">{img.label}</p>
-                    <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider flex items-center gap-1">
-                      <Loader2 size={10} className="animate-spin" /> Saving...
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              {patient.afterImages.map((img, idx) => (
-                <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer group border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300" onClick={() => setSelectedImage(img.url)}>
-                  <ImageWithFallback
-                    src={img.url}
-                    optimisticId={img.id}
-                    className="w-full h-full object-cover object-center group-hover:scale-105 transition duration-700 ease-in-out"
-                    alt={img.label}
-                    fallbackType="image"
-                  />
-
-                  {/* Delete Button (Hover) */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteAfterPhotoClick(img.id);
-                    }}
-                    className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 shadow-sm z-20 hover:scale-110"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-
-                  {/* Gradient & Label */}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 pt-12 flex flex-col justify-end">
-                    <p className="text-white text-sm font-bold tracking-wide drop-shadow-md">{img.label}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Col: Injection Timeline */}
-        <div className="lg:col-span-2">
-          <InjectionTimeline
-            injections={patient.injections}
-            onAddInjection={openAddInjection}
-            onEditInjection={(inj) => openEditInjection(inj)}
-            onDeleteInjection={(id, e) => handleDeleteClick(e, id)}
-            onUpdateStatus={(id, status) => onUpdateInjection(patient.id, id, status)}
-          />
-        </div>
+          {activeTab === 'finance' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-promed-primary rounded-t-full"></div>}
+        </button>
       </div>
+
+      {
+        activeTab === 'general' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Left Col: Photos */}
+            <div className="lg:col-span-1 space-y-8">
+              <div className="bg-white rounded-2xl p-6 shadow-apple border border-slate-200">
+                <h3 className="font-bold text-slate-800 mb-5 flex items-center space-x-3">
+                  <div className="">
+                    <Camera className="w-9 h-9 text-slate-700" />
+                  </div>
+                  <span>{t('before_operation')}</span>
+                </h3>
+                <div className="aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer relative group border border-slate-200" onClick={() => setSelectedImage(patient.beforeImage || null)}>
+                  {patient.beforeImage ? (
+                    <>
+                      <ImageWithFallback src={patient.beforeImage} optimisticId={`${patient.id}_before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-slate-400">{t('no_image')}</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 shadow-apple border border-slate-200">
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="font-bold text-slate-800 flex items-center space-x-3">
+                    <div className="p-2 bg-promed-light rounded-lg text-promed-primary border border-promed-primary/20">
+                      <Activity size={20} />
+                    </div>
+                    <span>{t('progress')}</span>
+                  </h3>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Add Photo Card */}
+                  <label className="cursor-pointer aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-300 bg-slate-50/50 group">
+                    <PlusCircle size={28} className="group-hover:scale-110 transition-transform mb-1.5 opacity-60 group-hover:opacity-100" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('add_photo')}</span>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+                  </label>
+
+                  {/* Optimistic Photos (Pending) */}
+                  {optimisticPhotos.map((img) => (
+                    <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-promed-primary/30 shadow-sm animate-pulse">
+                      <ImageWithFallback
+                        src={img.url}
+                        optimisticId={img.id} // Use temp ID
+                        className="w-full h-full object-cover object-center opacity-80"
+                        alt={img.label}
+                        fallbackType="image"
+                      />
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-promed-primary/80 via-promed-primary/20 to-transparent p-4 pt-12 flex flex-col justify-end">
+                        <p className="text-white text-sm font-bold tracking-wide drop-shadow-md">{img.label}</p>
+                        <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider flex items-center gap-1">
+                          <Loader2 size={10} className="animate-spin" /> Saving...
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {patient.afterImages.map((img, idx) => (
+                    <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer group border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300" onClick={() => setSelectedImage(img.url)}>
+                      <ImageWithFallback
+                        src={img.url}
+                        optimisticId={img.id}
+                        className="w-full h-full object-cover object-center group-hover:scale-105 transition duration-700 ease-in-out"
+                        alt={img.label}
+                        fallbackType="image"
+                      />
+
+                      {/* Delete Button (Hover) */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteAfterPhotoClick(img.id);
+                        }}
+                        className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 shadow-sm z-20 hover:scale-110"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+
+                      {/* Gradient & Label */}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 pt-12 flex flex-col justify-end">
+                        <p className="text-white text-sm font-bold tracking-wide drop-shadow-md">{img.label}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Col: Injection Timeline */}
+            <div className="lg:col-span-2">
+              <InjectionTimeline
+                injections={patient.injections}
+                onAddInjection={openAddInjection}
+                onEditInjection={(inj) => openEditInjection(inj)}
+                onDeleteInjection={(id, e) => handleDeleteClick(e, id)}
+                onUpdateStatus={(id, status) => onUpdateInjection(patient.id, id, status)}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {accountId && <PatientFinanceStats patient={patient} accountId={accountId} />}
+          </div>
+        )
+      }
 
 
       {/* Image Full View Modal */}
@@ -991,7 +1027,7 @@ const formatUzbekPhoneNumber = (value: string) => {
 
 // --- Add/Edit Patient Form (Refined Modal) ---
 export const AddPatientForm: React.FC<{
-  onSave: (patient: Patient, files?: { profileImage?: File; beforeImage?: File }) => void;
+  onSave: (patient: Patient, files?: { profileImage?: File; beforeImage?: File }, initialPayment?: number) => void;
   onCancel: () => void;
   initialData?: Patient;
   saving?: boolean;
@@ -1022,6 +1058,10 @@ export const AddPatientForm: React.FC<{
   // Validation error state
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  const [totalAmount, setTotalAmount] = useState(initialData?.totalAmount?.toString() || '');
+  const [initialPayment, setInitialPayment] = useState('');
+  const [currency, setCurrency] = useState<Patient['currency']>(initialData?.currency || 'USD');
+
   // Validate form before submission
   const validateForm = (): string | null => {
     const rawData = {
@@ -1032,7 +1072,9 @@ export const AddPatientForm: React.FC<{
       technique: technique || undefined,
       grafts: grafts ? parseInt(grafts) : undefined,
       operationDate,
-      status: 'Active'
+      status: 'Active',
+      totalAmount: totalAmount ? parseFloat(totalAmount) : undefined,
+      currency
     };
 
     const result = safeValidate(patientSchema, rawData);
@@ -1190,13 +1232,16 @@ export const AddPatientForm: React.FC<{
       afterImages: initialData?.afterImages || [],
       injections: initialData?.injections || [],
       status: initialData?.status || 'Active',
-      tier
+
+      tier,
+      totalAmount: totalAmount ? parseFloat(totalAmount) : undefined,
+      currency
     };
 
     // Pass EMPTY files object so parent doesn't re-upload
 
     try {
-      await onSave(newPatient, {});
+      await onSave(newPatient, {}, initialPayment ? parseFloat(initialPayment) : undefined);
     } catch (e) {
       console.error("Save failed", e);
     } finally {
@@ -1450,6 +1495,56 @@ export const AddPatientForm: React.FC<{
                             placeholder="2500" />
                         </div>
                       </div>
+                    </div>
+                  </div>
+                  {/* Finance Specs */}
+                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200">
+                    <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 text-sm uppercase tracking-wide border-b border-slate-100 pb-2">
+                      <DollarSign size={18} className="text-promed-primary" />
+                      {t('financial_details') || "Financial Details"}
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('total_price') || "Total Price"}</label>
+                        <div className="relative group">
+                          <DollarSign size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                          <input
+                            type="number"
+                            value={totalAmount}
+                            onChange={e => setTotalAmount(e.target.value)}
+                            className="w-full pl-10 pr-20 py-3 bg-slate-50 border border-slate-400 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                            placeholder="2500"
+                          />
+                          <div className="absolute right-2 top-2 bottom-2">
+                            <select
+                              value={currency}
+                              onChange={e => setCurrency(e.target.value as any)}
+                              className="h-full bg-slate-100 rounded-lg px-2 text-xs font-bold text-slate-600 border-none focus:ring-0 outline-none"
+                            >
+                              <option value="USD">USD</option>
+                              <option value="UZS">UZS</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Initial Payment - Only for New Patients */}
+                      {!initialData && (
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('initial_payment') || "Initial Payment"}</label>
+                          <div className="relative group">
+                            <Wallet size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                            <input
+                              type="number"
+                              value={initialPayment}
+                              onChange={e => setInitialPayment(e.target.value)}
+                              className="w-full pl-10 pr-4 py-3 bg-emerald-50/50 border border-emerald-200 rounded-xl focus:bg-white outline-none transition-all font-medium text-emerald-900 placeholder-emerald-300"
+                              placeholder="500"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

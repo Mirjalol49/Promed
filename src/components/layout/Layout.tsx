@@ -11,7 +11,9 @@ import {
   Shield,
   LayoutList,
   StickyNote,
-  MessageSquare
+  MessageSquare,
+  Briefcase,
+  Wallet
 } from 'lucide-react';
 import { Patient, PageView } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -123,6 +125,8 @@ const Layout: React.FC<LayoutProps> = ({
       case 'PATIENT_DETAIL': return t('details');
       case 'SETTINGS': return t('settings');
       case 'LEADS': return t('leads');
+      case 'STAFF': return t('staff') || 'Staff';
+      case 'FINANCE': return t('finance') || 'Finance';
       default: return '';
     }
   };
@@ -148,6 +152,8 @@ const Layout: React.FC<LayoutProps> = ({
           <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />
           <NavItem page="MESSAGES" icon={MessageSquare} label={t('messages')} badge={totalUnread} />
           <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />
+          <NavItem page="STAFF" icon={Briefcase} label={t('staff')} />
+          <NavItem page="FINANCE" icon={Wallet} label={t('finance')} />
 
           {role === 'admin' && (
             <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">

@@ -7,7 +7,9 @@ import {
     Settings,
     Lock,
     LayoutList,
-    StickyNote
+    StickyNote,
+    Briefcase,
+    Wallet
 } from 'lucide-react';
 import { PageView } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -29,6 +31,8 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
         { page: 'PATIENTS' as PageView, icon: Users, label: t('patients'), id: 'add-patient-btn-mobile' },
         { page: 'LEADS' as PageView, icon: LayoutList, label: t('leads') },
         { page: 'NOTES' as PageView, icon: StickyNote, label: t('notes') },
+        { page: 'STAFF' as PageView, icon: Briefcase, label: t('staff') },
+        { page: 'FINANCE' as PageView, icon: Wallet, label: t('finance') },
         ...(role === 'admin' ? [{ page: 'ADMIN_DASHBOARD' as PageView, icon: Shield, label: t('admin_panel') }] : []),
         { page: 'SETTINGS' as PageView, icon: Settings, label: t('settings') },
     ];

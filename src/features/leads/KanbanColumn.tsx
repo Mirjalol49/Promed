@@ -42,13 +42,13 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, leads, co
         <div
             ref={setNodeRef}
             className={`
-                min-w-[280px] w-80 flex flex-col h-full rounded-2xl bg-slate-50/50 border border-slate-100
+                min-w-[320px] w-84 flex flex-col h-full rounded-2xl bg-slate-50/50 border border-slate-100
                 transition-colors duration-200
                 ${isOver ? 'ring-2 ring-promed-primary/20 bg-slate-100' : ''}
             `}
         >
             {/* Header */}
-            <div className={`p-3 border-b border-slate-100 flex items-center justify-between`}>
+            <div className={`p-4 border-b border-slate-100 flex items-center justify-between`}>
                 <div className="flex items-center space-x-2">
                     <div className={`w-2.5 h-2.5 rounded-full ${color === 'blue' ? 'bg-blue-500' : color === 'green' ? 'bg-green-500' : color === 'orange' ? 'bg-orange-500' : color === 'red' ? 'bg-red-500' : color === 'purple' ? 'bg-purple-500' : 'bg-yellow-500'}`}></div>
                     <span className="font-semibold text-sm text-slate-700">{title}</span>
@@ -59,7 +59,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, leads, co
             </div>
 
             {/* Droppable Area */}
-            <div className="flex-1 p-2 overflow-y-auto custom-scrollbar space-y-3">
+            <div className="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-4 pb-32">
                 {leads.map(lead => (
                     <LeadCard key={lead.id} lead={lead} />
                 ))}

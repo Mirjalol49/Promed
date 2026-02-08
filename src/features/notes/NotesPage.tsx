@@ -13,6 +13,7 @@ import { Note } from '../../types';
 import { NoteCard } from './NoteCard';
 import { FolderCard, FolderType } from './FolderCard';
 import { AddNoteModal } from './AddNoteModal';
+import { TimelineNote } from './TimelineNote';
 import DeleteModal from '../../components/ui/DeleteModal';
 
 export const NotesPage: React.FC = () => {
@@ -147,6 +148,15 @@ export const NotesPage: React.FC = () => {
             );
         }
 
+        // Special Sorting for Timeline (Todo) - Oldest First (Step 1, Step 2...)
+        if (activeFolder === 'todo') {
+            filtered = filtered.sort((a, b) => {
+                const dateA = a.createdAt?.seconds ? a.createdAt.seconds : 0;
+                const dateB = b.createdAt?.seconds ? b.createdAt.seconds : 0;
+                return dateA - dateB; // Ascending (Oldest first)
+            });
+        }
+
         return filtered;
     };
 
@@ -232,7 +242,9 @@ export const NotesPage: React.FC = () => {
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 overflow-y-auto w-full p-8">
+            <div className="flex-1 overflow-y-auto w-full p-8 relative">
+                {/* Background Line for Timeline (only visible in todo mode, rendered conditionally below or via CSS) - Actually better handled in the item loop container or a wrapper */}
+
                 {isLoading ? (
                     <div className="flex items-center justify-center h-40">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
@@ -268,8 +280,32 @@ export const NotesPage: React.FC = () => {
                         <h3 className="text-lg font-bold text-slate-700">{t('no_notes_found')}</h3>
                         <p className="text-slate-500">{t('add_note_prompt')}</p>
                     </div>
+                ) : activeFolder === 'todo' ? (
+                    /* TIMELINE VIEW FOR TASKS */
+                    <div className="max-w-4xl mx-auto py-8 relative min-h-[500px]">
+                        {/* Central dashed line base - visual guide */}
+                        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 border-l-2 border-dashed border-slate-200 -translate-x-1/2" />
+
+                        <div className="space-y-0 relative z-10">
+                            <AnimatePresence mode="popLayout">
+                                {displayNotes.map((note, index) => (
+                                    <TimelineNote
+                                        key={note.id}
+                                        note={note}
+                                        index={index}
+                                        isLeft={index % 2 === 0}
+                                        onEdit={handleEdit}
+                                    />
+                                ))}
+                            </AnimatePresence>
+                        </div>
+                        {/* End of timeline indicator */}
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full pt-4">
+                            <div className="w-3 h-3 rounded-full bg-slate-300"></div>
+                        </div>
+                    </div>
                 ) : (
-                    /* NOTES LIST VIEW */
+                    /* STANDARD GRID VIEW FOR OTHERS */
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-300 pb-20">
                         <AnimatePresence mode="popLayout">
                             {displayNotes.map(note => (

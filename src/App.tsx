@@ -11,6 +11,8 @@ const PatientDetail = React.lazy(() => import('./features/patients/PatientList')
 const LeadsPage = React.lazy(() => import('./pages/LeadsPage').then(m => ({ default: m.LeadsPage })));
 const NotesPage = React.lazy(() => import('./features/notes/NotesPage').then(m => ({ default: m.NotesPage })));
 const MessagesPage = React.lazy(() => import('./features/messages/MessagesPage').then(m => ({ default: m.MessagesPage })));
+const StaffPage = React.lazy(() => import('./features/staff/StaffPage').then(m => ({ default: m.StaffPage })));
+const FinancePage = React.lazy(() => import('./features/finance/FinancePage').then(m => ({ default: m.FinancePage })));
 import { AddPatientForm } from './features/patients/PatientList';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { EmergencySetup } from './pages/EmergencySetup'; // Added EmergencySetup
@@ -36,6 +38,7 @@ import {
   COLUMNS,
 } from './lib/patientService';
 import { subscribeToUserProfile, updateUserProfile } from './lib/userService';
+import { addTransaction } from './lib/financeService';
 import { uploadImage, uploadAvatar, setOptimisticImage, getOptimisticImage } from './lib/imageService';
 import { ProfileAvatar } from './components/layout/ProfileAvatar';
 import { useImagePreloader } from './lib/useImagePreloader';
@@ -227,6 +230,8 @@ const App: React.FC = () => {
     if (window.location.pathname.includes('/leads')) return 'LEADS';
     if (window.location.pathname.includes('/settings')) return 'SETTINGS';
     if (window.location.pathname.includes('/messages')) return 'MESSAGES';
+    if (window.location.pathname.includes('/staff')) return 'STAFF';
+    if (window.location.pathname.includes('/finance')) return 'FINANCE';
     return 'DASHBOARD';
   });
 
@@ -325,6 +330,8 @@ const App: React.FC = () => {
     else if (view === 'SETTINGS') path = '/settings';
     else if (view === 'LEADS') path = '/leads';
     else if (view === 'MESSAGES') path = '/messages';
+    else if (view === 'STAFF') path = '/staff';
+    else if (view === 'FINANCE') path = '/finance';
 
     if (window.location.pathname !== path) {
       window.history.pushState({}, '', path);
@@ -344,6 +351,10 @@ const App: React.FC = () => {
       setView('SETTINGS');
     } else if (path === '/messages') {
       setView('MESSAGES');
+    } else if (path === '/staff') {
+      setView('STAFF');
+    } else if (path === '/finance') {
+      setView('FINANCE');
     }
   }, []); // Run ONCE on mount
 
@@ -626,7 +637,7 @@ const App: React.FC = () => {
     handleUpdateProfile({ name: accountName, image: imageOrFile });
   };
 
-  const handleSavePatient = async (patientData: Patient, files?: { profileImage?: File; beforeImage?: File }) => {
+  const handleSavePatient = async (patientData: Patient, files?: { profileImage?: File; beforeImage?: File }, initialPayment?: number) => {
     if (!accountId) {
       alert('Please log in again.');
       logout();
@@ -707,6 +718,26 @@ const App: React.FC = () => {
 
         // Update navigation to use real ID
         setSelectedPatientId(realId);
+        // 🔥 FINANCE SYNC: Add Initial Payment Transaction if provided
+        if (initialPayment && initialPayment > 0) {
+          console.log("💰 Creating initial payment transaction...", initialPayment);
+          try {
+            await addTransaction({
+              amount: initialPayment,
+              currency: patientData.currency || 'USD',
+              type: 'income',
+              category: 'surgery',
+              date: new Date().toISOString().split('T')[0],
+              description: `Initial payment for ${patientData.fullName}`,
+              patientId: realId,
+              accountId: activeAccountId
+            });
+            success(t('payment_added'), `${t('initial_payment')}: ${initialPayment} ${patientData.currency || 'USD'}`);
+          } catch (finErr) {
+            console.error("Failed to create initial transaction:", finErr);
+            showError("Finance Error", "Failed to record initial payment");
+          }
+        }
       } else {
         await updatePatient(patientData.id, patientData, accountId);
       }
@@ -1174,6 +1205,18 @@ const App: React.FC = () => {
         {view === 'NOTES' && (
           <PageTransition key="notes">
             <NotesPage />
+          </PageTransition>
+        )}
+
+        {view === 'STAFF' && (
+          <PageTransition key="staff">
+            <StaffPage />
+          </PageTransition>
+        )}
+
+        {view === 'FINANCE' && (
+          <PageTransition key="finance">
+            <FinancePage onPatientClick={(id) => { setSelectedPatientId(id); setView('PATIENT_DETAIL'); }} />
           </PageTransition>
         )}
 

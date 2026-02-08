@@ -44,6 +44,8 @@ export interface Patient {
   lastMessageTime?: string;
   lastMessageTimestamp?: string; // ISO string for sorting/formatting
   botLanguage?: string;
+  totalAmount?: number; // Total agreed price for surgery/treatment
+  currency?: 'USD' | 'UZS';
 }
 
 export interface StatData {
@@ -71,7 +73,7 @@ export interface Profile {
   lockPassword?: string;
 }
 
-export type PageView = 'DASHBOARD' | 'PATIENTS' | 'PATIENT_DETAIL' | 'SETTINGS' | 'ADD_PATIENT' | 'EDIT_PATIENT' | 'ADMIN_DASHBOARD' | 'SUPER_ADMIN' | 'LEADS' | 'NOTES' | 'MESSAGES';
+export type PageView = 'DASHBOARD' | 'PATIENTS' | 'PATIENT_DETAIL' | 'SETTINGS' | 'ADD_PATIENT' | 'EDIT_PATIENT' | 'ADMIN_DASHBOARD' | 'SUPER_ADMIN' | 'LEADS' | 'NOTES' | 'MESSAGES' | 'STAFF' | 'FINANCE';
 
 export type LeadSource = 'Instagram' | 'Telegram' | 'Walk-in' | 'Referral';
 export type LeadStatus = 'NEW' | 'CONTACTED' | 'PHOTOS_SENT' | 'PRICE_GIVEN' | 'BOOKED' | 'LOST';
@@ -121,4 +123,61 @@ export interface Note {
   color?: string; // For sticky note color effect
   createdAt: any; // Firestore Timestamp
   userId: string;
+}
+
+// --- STAFF MODULE TYPES ---
+export type StaffRole = 'doctor' | 'assistant' | 'admin' | 'receptionist' | 'nurse' | 'cleaner' | 'other';
+
+export interface Staff {
+  id: string;
+  fullName: string;
+  role: StaffRole;
+  phone: string;
+  email?: string;
+  salary: number; // Monthly salary or fixed rate
+  currency: 'USD' | 'UZS';
+  status: 'active' | 'on_leave' | 'terminated';
+  imageUrl?: string;
+  joinDate: string; // ISO Date
+  notes?: string;
+  accountId: string;
+}
+
+// --- FINANCE MODULE TYPES ---
+export type TransactionType = 'income' | 'expense';
+export type TransactionCategory =
+  | 'surgery'       // Income
+  | 'consultation'  // Income
+  | 'injection'     // Income
+  | 'salary'        // Expense
+  | 'rent'          // Expense
+  | 'equipment'     // Expense
+  | 'marketing'     // Expense
+  | 'food'          // Expense
+  | 'utility'       // Expense
+  | 'tax'           // Expense
+  | 'other';        // Both
+
+export interface Transaction {
+  id: string;
+  amount: number;
+  currency: 'USD' | 'UZS';
+  type: TransactionType;
+  category: TransactionCategory;
+  date: string; // ISO Date
+  description?: string;
+
+  // Relations
+  patientId?: string; // If income from patient
+  staffId?: string;   // If salary payment
+
+  accountId: string;
+  createdAt: any;
+}
+
+export interface FinanceStats {
+  totalIncome: number;
+  totalExpense: number;
+  netProfit: number;
+  salaryExpense: number;
 }
