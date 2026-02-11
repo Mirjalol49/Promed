@@ -5,6 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Patient } from '../../types';
 import { Search, Send, User, Smile, Trash2, Edit2, X, Check, CheckCheck, ChevronDown, Copy, Reply, Pin, PinOff, CalendarClock, Clock, BellOff } from 'lucide-react';
 import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { format } from 'date-fns';
 import { uz, ru, enGB } from 'date-fns/locale';
 
@@ -681,8 +682,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                             onClick={async () => {
                                 setSelectedPatientId(patient.id);
                             }}
-                            className={`p-3 rounded-2xl cursor-pointer flex items-center gap-4 transition-all duration-200 ${selectedPatientId === patient.id
-                                ? 'bg-blue-500 shadow-md transform scale-[1.01]'
+                            className={`p-3 rounded-2xl cursor-pointer flex items-center gap-4 transition-all duration-300 ${selectedPatientId === patient.id
+                                ? 'gel-blue-style shadow-xl scale-[1.02] !border-none'
                                 : 'hover:bg-slate-100'
                                 }`}
                         >
@@ -708,7 +709,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                         {patient.lastMessage || t('no_messages_yet')}
                                     </p>
                                     {patient.unreadCount && patient.unreadCount > 0 ? (
-                                        <span className={`flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full shadow-sm ml-2 ${selectedPatientId === patient.id ? 'bg-white text-blue-500' : 'bg-blue-500 text-white'}`}>
+                                        <span className={`flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full shadow-sm ml-2 ${selectedPatientId === patient.id ? 'bg-white text-promed-primary' : 'bg-promed-primary text-white'}`}>
                                             {patient.unreadCount}
                                         </span>
                                     ) : null}
@@ -717,8 +718,11 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                         </div>
                     ))}
                     {filteredPatients.length === 0 && (
-                        <div className="p-8 text-center text-slate-400 text-sm">
-                            No patients found
+                        <div className="py-8">
+                            <EmptyState
+                                message={t('no_patients_found') || "No patients found"}
+                                fullHeight={false}
+                            />
                         </div>
                     )}
                 </div>
@@ -741,10 +745,10 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                         {selectedPatient.tier === 'pro' && <ProBadge size={22} />}
                                     </h3>
                                     {patientIsTyping && !isScheduledView && (
-                                        <div className="flex items-center gap-1.5 text-blue-500 text-xs font-medium animate-pulse">
+                                        <div className="flex items-center gap-1.5 text-promed-primary text-xs font-black animate-pulse">
                                             <span className="relative flex h-1.5 w-1.5">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-promed-primary/40 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-promed-primary"></span>
                                             </span>
                                             yozmoqda...
                                         </div>
@@ -755,13 +759,13 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                             <div className="flex bg-slate-200 p-1 rounded-lg border border-slate-300">
                                 <button
                                     onClick={() => setIsScheduledView(false)}
-                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${!isScheduledView ? 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
+                                    className={`px-3 py-1.5 text-xs font-black rounded-md transition-all ${!isScheduledView ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
                                 >
                                     {t('tab_chat')}
                                 </button>
                                 <button
                                     onClick={() => setIsScheduledView(true)}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${isScheduledView ? 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-md transition-all ${isScheduledView ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
                                 >
                                     <CalendarClock size={14} />
                                     {t('tab_scheduled')}
@@ -913,7 +917,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
                                                                 <div
                                                                     className={`max-w-[75%] px-3 py-2 text-[15px] leading-relaxed relative shadow-sm group ${msg.sender === 'doctor'
-                                                                        ? 'bg-blue-500 text-white rounded-3xl bubble-tail-out'
+                                                                        ? 'gel-blue-style text-white rounded-3xl bubble-tail-out'
                                                                         : 'bg-white text-slate-800 rounded-3xl bubble-tail-in'
                                                                         } ${editingMessageId === msg.id ? 'w-full min-w-[300px]' : ''} ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}
                                                                     onContextMenu={(e) => {
@@ -970,7 +974,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                                                                         await handleTogglePin(msg);
                                                                                         setContextMenuMessageId(null);
                                                                                     }}
-                                                                                    className={`flex items-center gap-2 px-3 py-2 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium ${msg.isPinned ? 'text-blue-600' : 'text-slate-600 hover:text-blue-600'}`}
+                                                                                    className={`flex items-center gap-2 px-3 py-2 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium ${msg.isPinned ? 'text-promed-primary' : 'text-slate-600 hover:text-promed-primary'}`}
                                                                                 >
                                                                                     {msg.isPinned ? <PinOff size={16} /> : <Pin size={16} />}
                                                                                     <span>{msg.isPinned ? 'Unpin' : 'Pin'}</span>
@@ -988,7 +992,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                                                                                 setTimeout(() => textareaRef.current?.focus(), 10);
                                                                                                 setContextMenuMessageId(null);
                                                                                             }}
-                                                                                            className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-lg transition-colors text-sm font-medium"
+                                                                                            className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 text-slate-600 hover:text-promed-primary rounded-lg transition-colors text-sm font-medium"
                                                                                         >
                                                                                             <Edit2 size={16} />
                                                                                             <span>Edit</span>
@@ -1021,10 +1025,10 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                                                             }}
                                                                             className={`mb-2 border-l-[3px] rounded-r-md px-2 py-1 cursor-pointer text-xs transition-colors ${msg.sender === 'doctor'
                                                                                 ? 'border-white/60 bg-white/10 hover:bg-white/20'
-                                                                                : 'border-blue-500 bg-blue-50/50 hover:bg-blue-100/50'
+                                                                                : 'border-promed-primary bg-promed-light/50 hover:bg-promed-light'
                                                                                 }`}
                                                                         >
-                                                                            <div className={`font-semibold ${msg.sender === 'doctor' ? 'text-white/90' : 'text-blue-600'}`}>
+                                                                            <div className={`font-black uppercase tracking-widest text-[10px] ${msg.sender === 'doctor' ? 'text-white/90' : 'text-promed-primary'}`}>
                                                                                 {msg.replyTo.displayName || (msg.replyTo.sender === 'doctor' ? 'Doctor' : 'Patient')}
                                                                             </div>
                                                                             <div className={`truncate ${msg.sender === 'doctor' ? 'text-white/80' : 'text-slate-600'}`}>{msg.replyTo.text}</div>
@@ -1131,14 +1135,14 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                             {/* Reply Indicator (Banner) */}
                             {
                                 replyingToMessage && (
-                                    <div className="flex items-center justify-between px-4 py-2 border-t border-l border-r border-blue-200 bg-white ml-2 mr-2 border-b-0 rounded-t-xl mb-[-4px] relative z-0 animate-slide-up shadow-sm">
+                                    <div className="flex items-center justify-between px-4 py-2 border-t border-l border-r border-promed-primary/20 bg-white ml-2 mr-2 border-b-0 rounded-t-xl mb-[-4px] relative z-0 animate-slide-up shadow-sm">
                                         <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className="h-8 w-1 bg-blue-500 rounded-full"></div>
+                                            <div className="h-8 w-1 bg-promed-primary rounded-full"></div>
                                             <div className="flex flex-col">
-                                                <span className="text-blue-500 text-xs font-bold uppercase tracking-wide flex items-center gap-1">
+                                                <span className="text-promed-primary text-xs font-black uppercase tracking-wide flex items-center gap-1">
                                                     <Reply size={12} /> Reply to {replyingToMessage.sender === 'doctor' ? 'Yourself' : selectedPatient.fullName}
                                                 </span>
-                                                <span className="text-slate-600 text-xs truncate max-w-[200px] md:max-w-xs">{replyingToMessage.text}</span>
+                                                <span className="text-slate-600 text-xs truncate max-w-[200px] md:max-w-xs font-black">{replyingToMessage.text}</span>
                                             </div>
                                         </div>
                                         <button
@@ -1154,12 +1158,12 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                             {/* Edit Mode Indicator */}
                             {
                                 editingMessageId && (
-                                    <div className="flex items-center justify-between px-4 py-2 border-t border-l border-r border-blue-200 bg-blue-50/80 backdrop-blur-sm rounded-t-xl mb-[-1px] relative z-20 animate-slide-up">
+                                    <div className="flex items-center justify-between px-4 py-2 border-t border-l border-r border-promed-primary/20 bg-promed-light/80 backdrop-blur-sm rounded-t-xl mb-[-1px] relative z-20 animate-slide-up">
                                         <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className="h-8 w-1 bg-blue-500 rounded-full"></div>
+                                            <div className="h-8 w-1 bg-promed-primary rounded-full"></div>
                                             <div className="flex flex-col">
-                                                <span className="text-blue-500 text-xs font-bold uppercase tracking-wide">Edit Message</span>
-                                                <span className="text-slate-600 text-xs truncate max-w-[200px] md:max-w-xs">{messages.find(m => m.id === editingMessageId)?.text}</span>
+                                                <span className="text-promed-primary text-xs font-black uppercase tracking-wide">Edit Message</span>
+                                                <span className="text-slate-600 text-xs truncate max-w-[200px] md:max-w-xs font-black">{messages.find(m => m.id === editingMessageId)?.text}</span>
                                             </div>
                                         </div>
                                         <button
@@ -1167,7 +1171,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                                 setEditingMessageId(null);
                                                 setMessageInput('');
                                             }}
-                                            className="p-1 hover:bg-blue-100 rounded-full text-slate-400 hover:text-blue-500 transition-colors"
+                                            className="p-1 hover:bg-promed-light rounded-full text-slate-400 hover:text-promed-primary transition-colors"
                                         >
                                             <X size={18} />
                                         </button>
@@ -1230,7 +1234,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                 {/* 1. Emoji (Left) */}
                                 <button
                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                    className={`p-3 rounded-full hover:bg-slate-100 transition-colors flex-shrink-0 ${showEmojiPicker ? 'text-[#3390EC]' : 'text-slate-400'}`}
+                                    className={`p-3 rounded-full hover:bg-slate-100 transition-colors flex-shrink-0 ${showEmojiPicker ? 'text-promed-primary' : 'text-slate-400'}`}
                                     disabled={isSending}
                                 >
                                     <Smile size={24} />
@@ -1298,11 +1302,11 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                         }
                                     }}
                                     disabled={!messageInput.trim() || isSending}
-                                    className={`p-3 rounded-full transition-all duration-200 flex-shrink-0 flex items-center justify-center ${!messageInput.trim() ? 'text-[#3390EC] opacity-50 cursor-not-allowed' : 'text-[#3390EC] hover:bg-blue-50 hover:scale-110 active:scale-90'}`}
+                                    className={`p-3 rounded-full transition-all duration-200 flex-shrink-0 flex items-center justify-center ${!messageInput.trim() ? 'text-promed-primary opacity-50 cursor-not-allowed' : 'text-promed-primary hover:bg-promed-light hover:scale-110 active:scale-90'}`}
                                     title="Send Message (Hold for options)"
                                 >
                                     {isSending ? (
-                                        <div className="w-6 h-6 border-2 border-slate-200 border-t-[#3390EC] rounded-full animate-spin" />
+                                        <div className="w-6 h-6 border-2 border-slate-200 border-t-promed-primary rounded-full animate-spin" />
                                     ) : editingMessageId ? (
                                         <Check size={26} className="ml-0.5 mt-0.5" />
                                     ) : (

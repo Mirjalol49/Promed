@@ -135,19 +135,19 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                         }}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-5 bg-gradient-to-br from-blue-600 to-indigo-700 shrink-0">
+                        <div className="flex items-center justify-between px-6 py-6 bg-gradient-to-br from-promed-primary to-promed-dark shrink-0">
                             <div className="flex items-center gap-4">
                                 <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md shadow-inner ring-1 ring-white/20">
                                     <Bell size={22} className="text-white" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-white tracking-tight">Eslatma o'rnatish</h2>
-                                    <p className="text-sm text-blue-100 font-medium opacity-90">Mijozga qo'ng'iroq qilishni unutmang</p>
+                                    <h2 className="text-xl font-black text-white tracking-tight leading-none">Eslatma o'rnatish</h2>
+                                    <p className="text-[10px] text-white/70 font-black uppercase tracking-widest mt-1">Mijozga qo'ng'iroq qilishni unutmang</p>
                                 </div>
                             </div>
                             <button
                                 onClick={onClose}
-                                className="p-2.5 hover:bg-white/10 rounded-xl transition-colors text-blue-100 hover:text-white"
+                                className="p-2.5 hover:bg-white/10 rounded-xl transition-colors text-white/70 hover:text-white"
                             >
                                 <X size={22} />
                             </button>
@@ -170,9 +170,9 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                                     e.stopPropagation();
                                                     applyQuickOption(idx, opt.getDate);
                                                 }}
-                                                className={`py-2.5 px-2 rounded-xl text-sm font-bold transition-all duration-200 border ${selectedQuick === idx
-                                                    ? 'bg-blue-700 text-white border-blue-700 shadow-md transform scale-[1.02]'
-                                                    : 'bg-white text-slate-700 border-slate-400 hover:border-slate-500 hover:bg-slate-50'
+                                                className={`py-2.5 px-2 rounded-xl text-sm font-black transition-all duration-300 border ${selectedQuick === idx
+                                                    ? 'bg-promed-primary text-white border-promed-primary shadow-lg shadow-promed-primary/30 transform scale-[1.02]'
+                                                    : 'bg-white text-slate-700 border-slate-200 hover:border-promed-primary/30 hover:bg-slate-50'
                                                     }`}
                                             >
                                                 {opt.label}
@@ -197,12 +197,12 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                                 }}
                                                 className={`w-full px-4 py-3.5 flex items-center justify-between text-sm font-bold border rounded-xl transition-all duration-200 bg-white
                                                     ${showCalendar
-                                                        ? 'border-blue-600 ring-4 ring-blue-600/10 text-blue-800 shadow-sm'
-                                                        : 'border-slate-400 text-slate-900 hover:border-slate-500 hover:bg-slate-50'
+                                                        ? 'border-promed-primary ring-4 ring-promed-primary/10 text-promed-primary shadow-sm'
+                                                        : 'border-slate-200 text-slate-900 hover:border-promed-primary/30 hover:bg-slate-50'
                                                     }`}
                                             >
                                                 <span className="font-bold">{format(parse(date, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy')}</span>
-                                                <ChevronDown size={18} className={`text-slate-500 transition-transform duration-300 ${showCalendar ? 'rotate-180 text-blue-600' : ''}`} />
+                                                <ChevronDown size={18} className={`text-slate-500 transition-transform duration-300 ${showCalendar ? 'rotate-180 text-promed-primary' : ''}`} />
                                             </button>
                                         </div>
                                         <div className="col-span-2 space-y-2">
@@ -214,7 +214,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                                 type="time"
                                                 value={time}
                                                 onChange={(e) => { setTime(e.target.value); setSelectedQuick(null); }}
-                                                className="w-full px-4 py-3.5 text-sm font-bold text-slate-900 border border-slate-400 bg-white rounded-xl focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 transition-all hover:border-slate-500 hover:bg-slate-50 appearance-none"
+                                                className="w-full px-4 py-3.5 text-sm font-black text-slate-900 border border-slate-200 bg-white rounded-xl focus:outline-none focus:border-promed-primary focus:ring-4 focus:ring-promed-primary/10 transition-all hover:border-promed-primary/30 hover:bg-slate-50 appearance-none"
                                             />
                                         </div>
                                     </div>
@@ -263,7 +263,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                         onClick={(e) => e.stopPropagation()}
                                         placeholder="Eslatma sababini kiriting..."
                                         rows={1}
-                                        className="w-full px-4 py-3.5 text-sm font-bold border border-slate-400 bg-white rounded-xl focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 transition-all placeholder:text-slate-400 text-slate-900 min-h-[52px] resize-none hover:border-slate-500 hover:bg-slate-50"
+                                        className="w-full px-4 py-3.5 text-sm font-black border border-slate-200 bg-white rounded-xl focus:outline-none focus:border-promed-primary focus:ring-4 focus:ring-promed-primary/10 transition-all placeholder:text-slate-400 text-slate-900 min-h-[52px] resize-none hover:border-promed-primary/30 hover:bg-slate-50"
                                         style={{ height: '52px' }}
                                     />
                                 </div>
@@ -300,7 +300,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                         type="submit"
                                         disabled={isSaving}
                                         onClick={(e) => e.stopPropagation()}
-                                        className="flex-[2] px-5 py-3.5 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-lg hover:shadow-blue-500/30 active:scale-[0.98] disabled:opacity-50 disabled:scale-100 rounded-xl transition-all flex items-center justify-center gap-2"
+                                        className="flex-[2] px-5 py-3.5 text-sm font-black text-white bg-gradient-to-r from-promed-primary to-promed-dark hover:shadow-lg hover:shadow-promed-primary/30 active:scale-[0.98] disabled:opacity-50 disabled:scale-100 rounded-xl transition-all flex items-center justify-center gap-2"
                                     >
                                         {showSuccess ? (
                                             <motion.div

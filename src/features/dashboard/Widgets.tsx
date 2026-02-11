@@ -289,7 +289,7 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
     switch (status) {
       case 'Extraction': return 'text-amber-600 bg-amber-50 border-amber-100';
       case 'Implantation': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
-      case 'Lunch': return 'text-blue-600 bg-blue-50 border-blue-100';
+      case 'Lunch': return 'text-promed-primary bg-promed-light border-promed-primary/10';
       case 'Anesthesia': return 'text-purple-600 bg-purple-50 border-purple-100';
       default: return 'text-slate-600 bg-slate-50 border-slate-100';
     }

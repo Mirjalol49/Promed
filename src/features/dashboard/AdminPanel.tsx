@@ -406,7 +406,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                       <td className="px-6 py-4">
                         <span className={`inline - flex px - 3 py - 1 text - xs font - medium rounded - full ${user.role === 'admin'
                           ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                          : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                          : 'bg-promed-primary/10 text-promed-primary border border-promed-primary/20'
                           } `}>
                           {user.role}
                         </span>
@@ -561,7 +561,7 @@ const AdminPanel: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-promed-primary/30 border-t-promed-primary rounded-full animate-spin"></div>
       </div>
     );
   }

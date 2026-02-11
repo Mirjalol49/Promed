@@ -19,14 +19,14 @@ export const TimelineNote: React.FC<TimelineNoteProps> = ({ note, index, isLeft,
     // Color-specific styles for the 3D Pin parts
     const getPinColors = (idx: number) => {
         const palettes = [
-            { // Blue
-                head: 'bg-gradient-to-br from-blue-400 to-blue-600',
-                highlight: 'bg-blue-300',
-                neck: 'bg-blue-700',
-                base: 'bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600',
-                shadow: 'shadow-blue-900/40',
-                text: 'text-blue-700',
-                border: 'border-blue-200'
+            { // Blue (Promed)
+                head: 'bg-gradient-to-br from-promed-primary to-promed-dark',
+                highlight: 'bg-promed-light',
+                neck: 'bg-promed-deep',
+                base: 'bg-gradient-to-r from-promed-dark via-promed-primary to-promed-dark',
+                shadow: 'shadow-promed-deep/40',
+                text: 'text-promed-primary',
+                border: 'border-promed-primary/20'
             },
             { // Orange
                 head: 'bg-gradient-to-br from-orange-400 to-orange-600',
@@ -127,7 +127,7 @@ export const TimelineNote: React.FC<TimelineNoteProps> = ({ note, index, isLeft,
                     </div>
                 </div>
 
-                <h3 className="font-bold text-slate-800 text-lg leading-tight mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                <h3 className="font-bold text-slate-800 text-lg leading-tight mb-2 line-clamp-2 group-hover:text-promed-primary transition-colors">
                     {note.title || 'Sarlavhasiz'}
                 </h3>
 

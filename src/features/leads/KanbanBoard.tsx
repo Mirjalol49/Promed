@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAccount } from '../../contexts/AccountContext';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 
 
@@ -163,7 +164,7 @@ export const KanbanBoard: React.FC = () => {
                 case 'CONTACTED': return "bg-white text-slate-500 border-slate-200 hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50 hover:shadow-md";
                 case 'BOOKED': return "bg-white text-slate-500 border-slate-200 hover:border-emerald-300 hover:text-emerald-600 hover:bg-emerald-50 hover:shadow-md";
                 case 'LOST': return "bg-white text-slate-500 border-slate-200 hover:border-red-300 hover:text-red-600 hover:bg-red-50 hover:shadow-md";
-                case 'NEW': default: return "bg-white text-slate-500 border-slate-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 hover:shadow-md";
+                case 'NEW': default: return "bg-white text-slate-500 border-slate-200 hover:border-promed-primary/30 hover:text-promed-primary hover:bg-promed-light hover:shadow-md";
             }
         }
 
@@ -172,7 +173,7 @@ export const KanbanBoard: React.FC = () => {
             case 'CONTACTED': return "btn-premium-orange shadow-lg shadow-orange-500/20 ring-0 border-transparent";
             case 'BOOKED': return "btn-premium-emerald shadow-lg shadow-emerald-500/20 ring-0 border-transparent";
             case 'LOST': return "btn-premium-red shadow-lg shadow-red-500/20 ring-0 border-transparent";
-            case 'NEW': default: return "btn-premium-blue shadow-lg shadow-blue-500/20 ring-0 border-transparent";
+            case 'NEW': default: return "btn-premium-blue shadow-lg shadow-promed-primary/20 ring-0 border-transparent";
         }
     };
 
@@ -182,7 +183,7 @@ export const KanbanBoard: React.FC = () => {
             case 'CONTACTED': return "bg-orange-100 text-orange-700";
             case 'BOOKED': return "bg-emerald-100 text-emerald-700";
             case 'LOST': return "bg-red-100 text-red-700";
-            case 'NEW': default: return "bg-blue-100 text-blue-700";
+            case 'NEW': default: return "bg-promed-light text-promed-primary";
         }
     };
 
@@ -192,7 +193,7 @@ export const KanbanBoard: React.FC = () => {
             case 'CONTACTED': return "text-orange-500 group-hover:scale-110";
             case 'BOOKED': return "text-emerald-500 group-hover:scale-110";
             case 'LOST': return "text-red-500 group-hover:scale-110";
-            case 'NEW': default: return "text-blue-500 group-hover:scale-110";
+            case 'NEW': default: return "text-promed-primary group-hover:scale-110";
         }
     };
 
@@ -285,7 +286,7 @@ export const KanbanBoard: React.FC = () => {
                                     setLeadToEdit(null);
                                     setAddModalOpen(true);
                                 }}
-                                className="btn-premium-blue shadow-lg shadow-promed-primary/20 flex items-center justify-center gap-2 px-5 py-2.5 flex-shrink-0 whitespace-nowrap w-full md:w-auto"
+                                className="btn-premium-blue shadow-lg shadow-promed-primary/20 flex items-center justify-center gap-2 px-6 py-3 flex-shrink-0 whitespace-nowrap w-full md:w-auto"
                             >
                                 <PlusCircle size={18} className="relative z-10" />
                                 <span className="font-bold">{t('add_btn')}</span>
@@ -306,7 +307,7 @@ export const KanbanBoard: React.FC = () => {
                         <button
                             onClick={() => setActiveQuickFilter('today')}
                             className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeQuickFilter === 'today'
-                                ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md shadow-blue-500/30'
+                                ? 'bg-gradient-to-r from-promed-primary to-promed-dark text-white shadow-md shadow-promed-primary/30'
                                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
                                 }`}
                         >
@@ -385,7 +386,7 @@ export const KanbanBoard: React.FC = () => {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`
-                                    group flex items-center justify-center gap-2 px-2 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 border whitespace-nowrap w-full md:w-auto
+                                    group flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 border-none whitespace-nowrap w-full md:w-auto
                                     ${getTabStyles(tab.id, isActive)}
                                 `}
                             >
@@ -411,11 +412,10 @@ export const KanbanBoard: React.FC = () => {
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
                         </div>
                     ) : activeLeads.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-64 text-center">
-                            <div className={`p-4 rounded-full bg-${activeColor}-50 text-${activeColor}-500 mb-3`}>
-                                <LayoutTemplate size={32} />
-                            </div>
-                            <h3 className="text-lg font-medium text-slate-900">{t('no_leads')}</h3>
+                        <div className="h-full">
+                            <EmptyState
+                                message={t('no_leads') || "No leads"}
+                            />
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-in fade-in duration-300 pb-40 pt-4 overflow-visible">

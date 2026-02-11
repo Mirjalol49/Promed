@@ -7,13 +7,14 @@ import { uz, enUS, ru } from 'date-fns/locale';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CustomDatePickerProps {
-    value: Date;
+    value: Date | null;
     onChange: (date: Date) => void;
     label?: string;
     minimal?: boolean;
+    placeholder?: string;
 }
 
-export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, label, minimal = false }) => {
+export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, label, minimal = false, placeholder }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const containerRef = useRef<HTMLDivElement>(null);
@@ -138,7 +139,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                 formattedDate = format(day, dateFormat);
                 const cloneDay = day;
 
-                const isSelected = isSameDay(day, value);
+                const isSelected = value ? isSameDay(day, value) : false;
                 const isCurrentMonth = isSameMonth(day, monthStart);
                 const isTodayDate = isToday(day);
 
@@ -157,15 +158,15 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                                 w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold transition-all relative z-10 mx-auto
                                 ${!isCurrentMonth ? 'text-slate-300' : ''}
                                 ${isSelected
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                                    ? 'bg-promed-primary text-white shadow-lg shadow-promed-primary/30'
                                     : isCurrentMonth ? 'text-slate-700 hover:bg-slate-100' : ''
                                 }
-                                ${isTodayDate && !isSelected ? 'text-blue-600 bg-blue-50' : ''}
+                                ${isTodayDate && !isSelected ? 'text-promed-primary bg-promed-light' : ''}
                             `}
                         >
                             {formattedDate}
                             {isTodayDate && !isSelected && (
-                                <span className="absolute bottom-1 w-1 h-1 bg-blue-500 rounded-full" />
+                                <span className="absolute bottom-1 w-1 h-1 bg-promed-primary rounded-full" />
                             )}
                         </button>
                     </div>
@@ -227,16 +228,16 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                     w-full text-left flex items-center gap-3 transition-all duration-200 outline-none group
                     ${minimal
                         ? 'bg-transparent border-none px-3 h-full'
-                        : `bg-slate-50 border border-slate-300 rounded-2xl py-3.5 px-4 ${isOpen ? 'ring-4 ring-blue-500/10 border-blue-500 bg-white' : 'hover:border-slate-400 hover:bg-white'}`
+                        : `bg-slate-50 border border-slate-300 rounded-2xl py-3.5 px-4 ${isOpen ? 'ring-4 ring-promed-primary/10 border-promed-primary bg-white' : 'hover:border-slate-400 hover:bg-white'}`
                     }
                     text-slate-700 font-bold
                 `}
             >
-                <CalendarIcon className={`w-5 h-5 text-slate-400 transition-colors ${isOpen ? 'text-blue-500' : 'group-hover:text-slate-600'}`} />
+                <CalendarIcon className={`w-5 h-5 text-slate-400 transition-colors ${isOpen ? 'text-promed-primary' : 'group-hover:text-slate-600'}`} />
                 <span className="flex-1 whitespace-nowrap">
-                    {format(value, 'dd MMMM yyyy', { locale })}
+                    {value ? format(value, 'dd MMMM yyyy', { locale }) : (placeholder || 'Select Date')}
                 </span>
-                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-500' : ''}`} />
+                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-promed-primary' : ''}`} />
             </button>
 
             {/* Render Portal */}

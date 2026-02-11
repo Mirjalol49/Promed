@@ -1,17 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAccount } from '../../contexts/AccountContext';
 import { Staff, StaffRole } from '../../types';
 import { subscribeToStaff, addStaff, updateStaff, deleteStaff } from '../../lib/staffService';
-import { uploadImage, setOptimisticImage, getOptimisticImage } from '../../lib/imageService'; // Updated import
+import { uploadImage, setOptimisticImage, getOptimisticImage } from '../../lib/imageService';
+import { getStaffPaymentHistory, addTransaction } from '../../lib/financeService';
 import { useToast } from '../../contexts/ToastContext';
 import {
     Users, Plus, Search, Phone, Mail, DollarSign, Trash2, Edit2,
-    MoreVertical, Calendar, Briefcase, User
+    MoreVertical, Calendar, Briefcase, User, X, ChevronLeft, Activity,
+    Clock, Camera, PlusCircle, Loader2, Check, ArrowLeft
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { CustomSelect } from '../../components/ui/CustomSelect';
+import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
+import { ProBadge } from '../../components/ui/ProBadge';
+import { Portal } from '../../components/ui/Portal';
+import Lottie from 'lottie-react';
+import emptyAnimation from '../../assets/images/mascots/empty.json';
 
 // --- Add/Edit Staff Modal ---
+interface StaffFormData extends Partial<Staff> {
+    firstName: string;
+    lastName: string;
+}
+
 const StaffModal = ({
     isOpen,
     onClose,
@@ -24,37 +39,40 @@ const StaffModal = ({
     initialData?: Staff | null
 }) => {
     const { t } = useLanguage();
-    const [formData, setFormData] = useState<Partial<Staff>>({
-        fullName: '',
-        role: 'doctor',
-        phone: '',
-        email: '',
-        salary: 0,
-        currency: 'USD',
-        status: 'active',
-        notes: ''
+    const [formData, setFormData] = useState<StaffFormData>({
+        firstName: initialData?.fullName.split(' ')[0] || '',
+        lastName: initialData?.fullName.split(' ').slice(1).join(' ') || '',
+        role: initialData?.role || 'doctor',
+        phone: initialData?.phone || '',
+        salary: initialData?.salary || 0,
+        currency: initialData?.currency || 'UZS',
+        status: initialData?.status || 'active',
+        notes: initialData?.notes || ''
     });
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [imageFile, setImageFile] = useState<File | null>(null);
-    const [previewId, setPreviewId] = useState<string | null>(null); // Use ID for optimistic preview
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (initialData) {
-            setFormData(initialData);
-            setPreviewId(null); // Reset local preview
+            setFormData({
+                ...initialData,
+                firstName: initialData.fullName.split(' ')[0] || '',
+                lastName: initialData.fullName.split(' ').slice(1).join(' ') || ''
+            });
         } else {
             setFormData({
-                fullName: '',
+                firstName: '',
+                lastName: '',
                 role: 'doctor',
                 phone: '',
-                email: '',
                 salary: 0,
-                currency: 'USD',
+                currency: 'UZS',
                 status: 'active',
                 notes: ''
             });
-            setPreviewId(null);
         }
+        setImageFile(null);
     }, [initialData, isOpen]);
 
     if (!isOpen) return null;
@@ -65,164 +83,652 @@ const StaffModal = ({
         try {
             await onSave(formData, imageFile || undefined);
             onClose();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            alert(error.message || 'Failed to save staff member');
         } finally {
             setLoading(false);
         }
     };
 
-    const roles: StaffRole[] = ['doctor', 'assistant', 'receptionist', 'nurse', 'cleaner', 'admin', 'other'];
+    const roles: StaffRole[] = ['doctor', 'assistant', 'nurse', 'cleaner', 'admin', 'other'];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                    <h3 className="font-bold text-lg text-slate-800">
-                        {initialData ? t('edit_staff') || 'Edit Staff' : t('add_new_staff') || 'Add New Staff'}
-                    </h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><Users size={20} /></button>
+        <Portal>
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
+                    className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-[0_30px_100px_rgba(0,0,0,0.15)] overflow-hidden relative z-10 border border-slate-100 flex flex-col md:flex-row min-h-[500px]"
+                >
+                    {/* Close Button */}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-6 right-6 p-2 bg-slate-100 hover:bg-slate-200 text-slate-400 rounded-full transition-colors z-20"
+                    >
+                        <X size={20} />
+                    </button>
+
+                    {/* Left Side: Avatar & Basic Info */}
+                    <div className="w-full md:w-2/5 p-10 bg-slate-50/50 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-100">
+                        <div className="relative group mb-6">
+                            <motion.div
+                                whileHover={{ scale: 1.05 }}
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-40 h-40 rounded-[3rem] bg-white border border-slate-200 flex items-center justify-center relative overflow-hidden cursor-pointer hover:border-blue-500 transition-all shadow-sm"
+                            >
+                                {(imageFile || initialData?.imageUrl) ? (
+                                    <img
+                                        src={imageFile ? URL.createObjectURL(imageFile) : initialData?.imageUrl}
+                                        className="w-full h-full object-cover"
+                                        alt="Staff"
+                                    />
+                                ) : (
+                                    <User className="text-slate-200 w-16 h-16" />
+                                )}
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        if (e.target.files?.[0]) setImageFile(e.target.files[0]);
+                                    }}
+                                />
+                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Plus className="text-white w-10 h-10" />
+                                </div>
+                            </motion.div>
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg border-4 border-white hover:bg-blue-700 transition-colors"
+                            >
+                                <Plus size={20} />
+                            </button>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-2 hover:text-blue-700 transition-colors"
+                        >
+                            {t('upload_photo')}
+                        </button>
+                        <h3 className="font-black text-2xl text-slate-900 tracking-tight text-center">
+                            {initialData ? t('edit_staff') : t('add_new_staff')}
+                        </h3>
+                    </div>
+
+                    {/* Right Side: Detailed Fields */}
+                    <form onSubmit={handleSubmit} className="w-full md:w-3/5 p-10 flex flex-col justify-center">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('first_name')}</label>
+                                <input
+                                    required
+                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all outline-none"
+                                    value={formData.firstName}
+                                    onChange={e => setFormData({ ...formData, firstName: e.target.value })}
+                                    placeholder="Mirjalol"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('last_name')}</label>
+                                <input
+                                    required
+                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all outline-none"
+                                    value={formData.lastName}
+                                    onChange={e => setFormData({ ...formData, lastName: e.target.value })}
+                                    placeholder="Shamsiddinov"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('role')}</label>
+                                <div className="relative">
+                                    <select
+                                        className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold appearance-none focus:border-blue-500 transition-all outline-none cursor-pointer"
+                                        value={formData.role}
+                                        onChange={e => setFormData({ ...formData, role: e.target.value as StaffRole })}
+                                    >
+                                        {roles.map(r => (
+                                            <option key={r} value={r}>{t(`role_${r}`) || r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                                        <MoreVertical size={16} />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('phone')}</label>
+                                <input
+                                    required
+                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all outline-none"
+                                    value={formData.phone}
+                                    onChange={e => {
+                                        let val = e.target.value;
+                                        // Ensure it starts with +998
+                                        if (!val.startsWith('+998')) {
+                                            if (val.startsWith('998')) val = '+' + val;
+                                            else val = '+998' + val.replace(/\D/g, '');
+                                        }
+
+                                        // Strip everything except + and digits
+                                        const clean = val.replace(/[^\d+]/g, '');
+
+                                        // Format: +998XX XXX XX XX
+                                        let formatted = clean;
+                                        if (clean.length > 6) {
+                                            formatted = clean.slice(0, 6) + ' ' + clean.slice(6);
+                                        }
+                                        if (clean.length > 9) {
+                                            formatted = formatted.slice(0, 10) + ' ' + clean.slice(9);
+                                        }
+                                        if (clean.length > 11) {
+                                            formatted = formatted.slice(0, 13) + ' ' + clean.slice(11);
+                                        }
+
+                                        setFormData({ ...formData, phone: formatted.slice(0, 17) });
+                                    }}
+                                    placeholder="+998XX XXX XX XX"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div className={initialData ? "space-y-2" : "space-y-2 col-span-2"}>
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('salary')}</label>
+                                <div className="relative">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">UZS</div>
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 pl-12 pr-5 text-slate-900 font-bold focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all outline-none"
+                                        value={formData.salary ? new Intl.NumberFormat('uz-UZ').format(Number(formData.salary)) : ''}
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                            setFormData({ ...formData, salary: val ? Number(val) : 0 });
+                                        }}
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+
+                            {initialData && (
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('status')}</label>
+                                    <div className="flex bg-slate-100/50 p-1 rounded-xl gap-1 h-[46px] items-center">
+                                        {['active', 'on_leave', 'terminated'].map((s) => (
+                                            <button
+                                                key={s}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, status: s as any })}
+                                                className={`flex-1 h-full rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${formData.status === s
+                                                    ? 'bg-white shadow-sm text-blue-600'
+                                                    : 'text-slate-400 hover:text-slate-600'}`}
+                                            >
+                                                {t(`status_${s}`)?.split(' ')[0] || s.split('_')[0]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-2 mb-8">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('notes')}</label>
+                            <textarea
+                                className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all outline-none resize-none"
+                                rows={2}
+                                value={formData.notes || ''}
+                                onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                placeholder="..."
+                            />
+                        </div>
+
+                        <motion.button
+                            whileHover={{ translateY: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                            type="submit"
+                            disabled={loading}
+                            className="btn-glossy-blue !py-5 !rounded-full !text-sm !uppercase !tracking-widest disabled:opacity-70"
+                        >
+                            {loading ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <>
+                                    {initialData ? <Edit2 size={18} /> : <Plus size={18} />}
+                                    {initialData ? t('update_staff') : t('save_staff')}
+                                </>
+                            )}
+                        </motion.button>
+                    </form>
+                </motion.div>
+            </div>
+        </Portal>
+    );
+};
+
+const StaffDetail = ({
+    staff,
+    onBack,
+    onStatusChange,
+    onEdit
+}: {
+    staff: Staff;
+    onBack: () => void;
+    onStatusChange?: (staffId: string, newStatus: string) => Promise<void>;
+    onEdit: () => void;
+}) => {
+    const { t } = useLanguage();
+    // Removed tabs, single view logic
+    const [payments, setPayments] = useState<any[]>([]);
+    const [loadingPayments, setLoadingPayments] = useState(true);
+    const [selectedMonth, setSelectedMonth] = useState<string>('all');
+    const [showStatusMenu, setShowStatusMenu] = useState(false);
+    const [updatingStatus, setUpdatingStatus] = useState(false);
+
+    // Fetch payments
+    useEffect(() => {
+        if (!staff?.id) return;
+        setLoadingPayments(true);
+        const unsub = getStaffPaymentHistory(
+            staff.id,
+            (data: any[]) => {
+                setPayments(data);
+                setLoadingPayments(false);
+            },
+            (err: any) => {
+                console.error('Error fetching payments:', err);
+                setLoadingPayments(false);
+            }
+        );
+        return () => unsub();
+    }, [staff?.id]);
+
+    const handleStatusChange = async (newStatus: string) => {
+        if (!onStatusChange || !staff?.id || newStatus === staff.status) {
+            setShowStatusMenu(false);
+            return;
+        }
+        setUpdatingStatus(true);
+        try {
+            await onStatusChange(staff.id, newStatus);
+        } catch (err) {
+            console.error('Failed to update status:', err);
+        } finally {
+            setUpdatingStatus(false);
+            setShowStatusMenu(false);
+        }
+    };
+
+    const statusOptions = [
+        { value: 'active', label: 'Active', color: 'bg-emerald-500', textColor: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+        { value: 'on_leave', label: 'On Leave', color: 'bg-amber-500', textColor: 'text-amber-600', bgColor: 'bg-amber-50' },
+        { value: 'inactive', label: 'Inactive', color: 'bg-slate-300', textColor: 'text-slate-600', bgColor: 'bg-slate-50' }
+    ];
+    const currentStatus = statusOptions.find(s => s.value === staff.status) || statusOptions[0];
+
+    // Group payments by month
+    const paymentsByMonth = useMemo(() => {
+        return payments.reduce((acc, payment) => {
+            const date = new Date(payment.date);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const monthLabel = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            if (!acc[monthKey]) {
+                acc[monthKey] = {
+                    label: monthLabel,
+                    payments: [],
+                    total: 0
+                };
+            }
+
+            acc[monthKey].payments.push(payment);
+            acc[monthKey].total += Number(payment.amount) || 0;
+
+            return acc;
+        }, {} as Record<string, { label: string; payments: any[]; total: number }>);
+    }, [payments]);
+
+    const months = Object.keys(paymentsByMonth).sort().reverse();
+    const filteredPayments = selectedMonth === 'all'
+        ? payments
+        : paymentsByMonth[selectedMonth]?.payments || [];
+
+    const sortedPayments = [...filteredPayments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // Calculate payment statistics for current month
+    const paymentStats = useMemo(() => {
+        const now = new Date();
+        const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const currentMonth = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        // Filter payments for current month only
+        const currentMonthPayments = payments.filter(p => {
+            const paymentDate = new Date(p.date);
+            const paymentMonthKey = `${paymentDate.getFullYear()}-${String(paymentDate.getMonth() + 1).padStart(2, '0')}`;
+            return paymentMonthKey === currentMonthKey;
+        });
+
+        const totalPaidThisMonth = currentMonthPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
+        const expectedSalary = staff.salary || 0;
+        const remaining = Math.max(0, expectedSalary - totalPaidThisMonth);
+        const percentagePaid = expectedSalary > 0 ? Math.min(100, (totalPaidThisMonth / expectedSalary) * 100) : 0;
+
+        let statusColor = 'bg-rose-50';
+        let statusTextColor = 'text-rose-600';
+        let statusBorderColor = 'border-rose-200';
+        let statusLabel = t('underpaid') || 'Underpaid';
+        let progressColor = 'bg-rose-500';
+
+        if (percentagePaid >= 100) {
+            statusColor = 'bg-emerald-50';
+            statusTextColor = 'text-emerald-600';
+            statusBorderColor = 'border-emerald-200';
+            statusLabel = t('fully_paid') || 'Fully Paid';
+            progressColor = 'bg-emerald-500';
+        } else if (percentagePaid >= 50) {
+            statusColor = 'bg-amber-50';
+            statusTextColor = 'text-amber-600';
+            statusBorderColor = 'border-amber-200';
+            statusLabel = t('partially_paid') || 'Partially Paid';
+            progressColor = 'bg-amber-500';
+        }
+
+        return {
+            currentMonth,
+            currentMonthPayments,
+            totalPaidThisMonth,
+            remaining,
+            percentagePaid: Math.round(percentagePaid),
+            isFullyPaid: percentagePaid >= 100,
+            statusColor,
+            statusTextColor,
+            statusBorderColor,
+            statusLabel,
+            progressColor
+        };
+    }, [payments, staff.salary, t]);
+
+    return (
+        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+            <button onClick={onBack} className="flex items-center space-x-2 text-slate-500 hover:text-blue-600 transition mb-2 font-bold hover:-translate-x-1 duration-200 px-1">
+                <ChevronLeft size={20} />
+                <span>{t('back_to_list') || 'Back to List'}</span>
+            </button>
+
+            {/* Header Info */}
+            <div className="bg-white rounded-3xl p-4 md:p-8 border border-slate-200 flex flex-col md:flex-row gap-8 relative overflow-hidden shadow-sm">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+
+                <div className="flex-shrink-0 relative w-40 h-40">
+                    {staff.imageUrl ? (
+                        <div className="w-full h-full rounded-2xl overflow-hidden ring-4 ring-white border border-slate-100 relative">
+                            <img src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
+                        </div>
+                    ) : (
+                        <div className="w-full h-full rounded-2xl flex items-center justify-center bg-slate-50 text-blue-500 text-4xl font-bold ring-4 ring-white border border-slate-100">
+                            {staff.fullName.charAt(0)}
+                        </div>
+                    )}
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-                    {/* Image Upload */}
-                    <div className="flex flex-col items-center mb-4">
-                        <div className="w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center relative overflow-hidden group cursor-pointer hover:border-blue-500 transition-colors">
-                            {(imageFile || initialData?.imageUrl) ? (
-                                <img
-                                    src={imageFile ? URL.createObjectURL(imageFile) : initialData?.imageUrl}
-                                    className="w-full h-full object-cover"
-                                    alt="Staff"
-                                />
-                            ) : (
-                                <User className="text-slate-400 w-10 h-10" />
-                            )}
-                            <input
-                                type="file"
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                accept="image/*"
-                                onChange={(e) => {
-                                    if (e.target.files?.[0]) {
-                                        setImageFile(e.target.files[0]);
-                                        // Generate temporary ID for preview if needed, or just use blob URL directly in img src
-                                    }
-                                }}
-                            />
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Edit2 className="text-white w-6 h-6" />
+                <div className="flex-1 space-y-6 z-10">
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                        <div>
+                            <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                                {staff.fullName}
+                            </h2>
+                            <div className="flex flex-wrap items-center gap-6 text-slate-600 mt-3">
+                                <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                                    <Calendar className="w-4 h-4 text-slate-400" />
+                                    <span className="font-semibold text-sm">Joined: {new Date().getFullYear()}</span>
+                                </span>
+                                <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                                    <Phone className="w-4 h-4 text-slate-400" />
+                                    <span className="font-semibold text-sm">{staff.phone}</span>
+                                </span>
                             </div>
                         </div>
-                        <span className="text-xs text-slate-500 mt-2">{t('upload_photo') || 'Upload Photo'}</span>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-500 uppercase">{t('full_name')}</label>
-                            <input
-                                required
-                                className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
-                                value={formData.fullName}
-                                onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-                                placeholder="John Doe"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-500 uppercase">{t('role') || 'Role'}</label>
-                            <select
-                                className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm bg-white"
-                                value={formData.role}
-                                onChange={e => setFormData({ ...formData, role: e.target.value as StaffRole })}
+                        <div className="flex items-center space-x-3 flex-shrink-0">
+                            <button
+                                onClick={onEdit}
+                                className="h-10 px-5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl flex items-center gap-2 transition-colors shadow-sm"
                             >
-                                {roles.map(r => (
-                                    <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-500 uppercase">{t('phone')}</label>
-                            <input
-                                required
-                                className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
-                                value={formData.phone}
-                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                placeholder="+998..."
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-500 uppercase">{t('salary') || 'Salary'}</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="number"
-                                    className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
-                                    value={formData.salary}
-                                    onChange={e => setFormData({ ...formData, salary: Number(e.target.value) })}
-                                />
-                                <select
-                                    className="w-20 p-2.5 rounded-xl border border-slate-200 text-sm bg-white"
-                                    value={formData.currency}
-                                    onChange={e => setFormData({ ...formData, currency: e.target.value as any })}
+                                <Edit2 size={18} />
+                                <span>{t('edit') || 'Edit'}</span>
+                            </button>
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowStatusMenu(!showStatusMenu)}
+                                    className={`h-10 px-5 rounded-xl font-bold border transition-colors flex items-center gap-2 ${currentStatus.bgColor} ${currentStatus.textColor} border-transparent`}
                                 >
-                                    <option value="USD">USD</option>
-                                    <option value="UZS">UZS</option>
-                                </select>
+                                    <span className={`w-2 h-2 rounded-full ${currentStatus.color}`} />
+                                    {t(`status_${staff.status}`)?.split(' ')[0] || staff.status}
+                                </button>
+                                {showStatusMenu && (
+                                    <>
+                                        <div className="fixed inset-0 z-30" onClick={() => setShowStatusMenu(false)} />
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 5 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="absolute top-full mt-2 right-0 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-40 min-w-[140px]"
+                                        >
+                                            {statusOptions.map(option => (
+                                                <button
+                                                    key={option.value}
+                                                    onClick={() => handleStatusChange(option.value)}
+                                                    className={`w-full px-4 py-2 text-left text-xs font-bold uppercase tracking-wide flex items-center gap-2 hover:bg-slate-50 transition-colors ${option.value === staff.status ? 'text-blue-600' : 'text-slate-600'}`}
+                                                >
+                                                    <div className={`w-2 h-2 rounded-full ${option.color}`} />
+                                                    {option.label}
+                                                </button>
+                                            ))}
+                                        </motion.div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase">{t('status') || 'Status'}</label>
-                        <div className="flex items-center gap-4">
-                            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                                <input type="radio" name="status" value="active" checked={formData.status === 'active'} onChange={() => setFormData({ ...formData, status: 'active' })} className="accent-blue-600" />
-                                Active
-                            </label>
-                            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                                <input type="radio" name="status" value="on_leave" checked={formData.status === 'on_leave'} onChange={() => setFormData({ ...formData, status: 'on_leave' })} className="accent-amber-500" />
-                                On Leave
-                            </label>
-                            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                                <input type="radio" name="status" value="terminated" checked={formData.status === 'terminated'} onChange={() => setFormData({ ...formData, status: 'terminated' })} className="accent-red-500" />
-                                Terminated
-                            </label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('role') || 'ROLE'}</p>
+                            <p className="font-bold text-xl text-slate-800 capitalize">{t(`role_${staff.role}`) || staff.role}</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('status') || 'STATUS'}</p>
+                            <p className={`font-bold text-xl ${currentStatus.textColor} capitalize`}>{t(`status_${staff.status}`)?.split(' ')[0] || staff.status}</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('salary') || 'SALARY'}</p>
+                            <p className="font-bold text-xl text-slate-800">{staff.salary?.toLocaleString()}</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('currency') || 'CURRENCY'}</p>
+                            <p className="font-bold text-xl text-slate-800">{staff.currency}</p>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase">{t('notes')}</label>
-                        <textarea
-                            className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm resize-none"
-                            rows={3}
-                            value={formData.notes || ''}
-                            onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                            placeholder="Additional information..."
-                        />
+            {/* Payment Summary - Only show if not fully paid */}
+            {!paymentStats.isFullyPaid && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className={`bg-white rounded-3xl border-2 ${paymentStats.statusBorderColor} overflow-hidden shadow-lg`}>
+                        <div className={`p-6 ${paymentStats.statusColor} border-b-2 ${paymentStats.statusBorderColor}`}>
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                                        <DollarSign className={`w-5 h-5 ${paymentStats.statusTextColor}`} />
+                                        {t('payment_progress') || 'Payment Progress'} · {paymentStats.currentMonth}
+                                    </h3>
+                                    {paymentStats.currentMonthPayments.length > 0 && (
+                                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                                            <Clock className="w-3.5 h-3.5" />
+                                            <span className="font-semibold">
+                                                {t('last_payment') || 'Last Payment'}: {new Date(paymentStats.currentMonthPayments[0].date).toLocaleDateString()} • {paymentStats.currentMonthPayments[0].time || '--:--'}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${paymentStats.statusColor} ${paymentStats.statusTextColor} border ${paymentStats.statusBorderColor} self-start md:self-auto`}>
+                                    {paymentStats.statusLabel}
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div className="bg-white rounded-2xl p-4 border border-slate-200">
+                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('total_paid') || 'Total Paid'}</p>
+                                    <p className="font-bold text-2xl text-emerald-600">
+                                        {paymentStats.totalPaidThisMonth.toLocaleString()}
+                                        <span className="text-xs text-slate-400 ml-1">UZS</span>
+                                    </p>
+                                </div>
+
+                                <div className="bg-white rounded-2xl p-4 border border-slate-200">
+                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('salary') || 'Expected'}</p>
+                                    <p className="font-bold text-2xl text-slate-800">
+                                        {staff.salary?.toLocaleString()}
+                                        <span className="text-xs text-slate-400 ml-1">UZS</span>
+                                    </p>
+                                </div>
+
+                                <div className="bg-white rounded-2xl p-4 border border-slate-200">
+                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('remaining_balance') || 'Remaining'}</p>
+                                    <p className={`font-bold text-2xl ${paymentStats.statusTextColor}`}>
+                                        {paymentStats.remaining.toLocaleString()}
+                                        <span className="text-xs text-slate-400 ml-1">UZS</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center text-xs font-bold">
+                                    <span className="text-slate-600">{paymentStats.percentagePaid}% {t('completed') || 'Completed'}</span>
+                                    <span className={paymentStats.statusTextColor}>{paymentStats.statusLabel}</span>
+                                </div>
+                                <div className="w-full h-3 bg-white rounded-full overflow-hidden border border-slate-200 shadow-inner">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${paymentStats.percentagePaid}%` }}
+                                        transition={{ duration: 1, ease: "easeOut" }}
+                                        className={`h-full ${paymentStats.progressColor} rounded-full`}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            )}
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                        {loading ? (
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <>
-                                {initialData ? <Edit2 size={18} /> : <Plus size={18} />}
-                                {initialData ? t('update_staff') || 'Update Staff' : t('save_staff') || 'Save Staff'}
-                            </>
-                        )}
-                    </button>
-                </form>
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {/* Timeline (Transactions) */}
+                <div className="w-full">
+                    <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div className="flex items-center gap-3">
+                                <h3 className="font-bold text-lg text-slate-900">{t('payment_history') || 'Payment History'}</h3>
+                                <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">{payments.length}</span>
+                            </div>
+
+                            {months.length > 0 && (
+                                <div className="w-56">
+                                    <CustomSelect
+                                        options={[
+                                            { value: 'all', label: t('all_time') || 'All Time' },
+                                            ...months.map(monthKey => ({
+                                                value: monthKey,
+                                                label: paymentsByMonth[monthKey].label
+                                            }))
+                                        ]}
+                                        value={selectedMonth}
+                                        onChange={(val) => setSelectedMonth(val)}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-6 md:p-8">
+                            {loadingPayments ? (
+                                <div className="flex justify-center py-12">
+                                    <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+                                </div>
+                            ) : sortedPayments.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <div className="w-48 h-48 mx-auto mb-4">
+                                        <Lottie animationData={emptyAnimation} loop={true} />
+                                    </div>
+                                    <h3 className="text-slate-900 font-bold text-lg mb-2">{t('no_payments_found') || 'No payments found'}</h3>
+                                </div>
+                            ) : (
+                                <div className="relative pl-8 space-y-8 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
+                                    {sortedPayments.map((payment, idx) => (
+                                        <div key={payment.id} className="relative">
+                                            {/* Timeline Node */}
+                                            <div className="absolute -left-[29px] top-4 w-6 h-6 rounded-full bg-emerald-100 border-[3px] border-white ring-1 ring-emerald-200 flex items-center justify-center z-10">
+                                                <Check size={12} className="text-emerald-600 stroke-[3]" />
+                                            </div>
+
+                                            {/* Card Content */}
+                                            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 hover:border-blue-200 hover:shadow-md transition-all group">
+                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <h4 className="font-bold text-slate-900 text-lg">
+                                                                {t('payment') || 'Payment'} #{sortedPayments.length - idx}
+                                                            </h4>
+                                                            <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border border-emerald-200">
+                                                                {t('paid') || 'PAID'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Calendar size={12} />
+                                                                {new Date(payment.date).toLocaleDateString()}
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Clock size={12} />
+                                                                {payment.time || new Date(payment.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between md:justify-end gap-6 bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm">
+                                                        <div>
+                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{t('amount') || 'Amount'}</p>
+                                                            <p className="text-lg font-bold text-slate-900">
+                                                                {Number(payment.amount).toLocaleString()} <span className="text-xs text-slate-500">{payment.currency}</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
 };
 
-
-// --- Main Page ---
 export const StaffPage = () => {
     const { t } = useLanguage();
     const { accountId } = useAccount();
@@ -232,6 +738,7 @@ export const StaffPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
+    const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -243,28 +750,33 @@ export const StaffPage = () => {
         return () => unsub();
     }, [accountId]);
 
-    const handleSave = async (data: Partial<Staff>, imageFile?: File) => {
+    const handleSave = async (data: StaffFormData, imageFile?: File) => {
         try {
             let imageUrl = data.imageUrl;
 
             if (imageFile) {
-                // For simplicity, using a generic path or we can organize by staff ID after creation
-                // If creating new, we don't have ID yet. Strategy: Upload with temp name or handle after ID creation?
-                // Simpler: Just upload with timestamp-random name to 'staff-images' folder
                 const path = `staff/${Date.now()}_${imageFile.name}`;
                 imageUrl = await uploadImage(imageFile, path);
             }
 
+            const { firstName, lastName, ...sanitizedData } = data;
+            const finalFullName = `${firstName || ''} ${lastName || ''}`.trim();
+
             if (editingStaff) {
-                await updateStaff(editingStaff.id, { ...data, imageUrl });
+                await updateStaff(editingStaff.id, {
+                    ...sanitizedData,
+                    fullName: finalFullName,
+                    imageUrl
+                });
                 success(t('staff_updated_title') || 'Updated', t('staff_updated_msg') || 'Staff member updated successfully');
             } else {
                 await addStaff({
-                    ...data as any,
+                    ...sanitizedData,
+                    fullName: finalFullName,
                     accountId,
                     imageUrl,
                     joinDate: new Date().toISOString()
-                });
+                } as Staff);
                 success(t('staff_added_title') || 'Added', t('staff_added_msg') || 'New staff member added');
             }
             setIsModalOpen(false);
@@ -291,118 +803,175 @@ export const StaffPage = () => {
     );
 
     return (
-        <div className="h-full flex flex-col p-6 max-w-7xl mx-auto space-y-6">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{t('staff_management') || 'Staff Management'}</h1>
-                    <p className="text-slate-500 font-medium mt-1">{t('staff_subtitle') || 'Manage your team members and roles'}</p>
-                </div>
-                <button
-                    onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
-                    className="btn-glossy-blue flex items-center gap-2 shadow-blue-500/20 shadow-lg hover:shadow-blue-500/30 transition-all"
-                >
-                    <Plus size={20} className="stroke-[2.5]" />
-                    <span>{t('add_staff') || 'Add Staff'}</span>
-                </button>
-            </div>
-
-            {/* Stats/Filter Bar */}
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="relative w-full md:w-96">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                    <input
-                        type="text"
-                        placeholder={t('search_staff') || "Search by name or role..."}
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                    />
-                </div>
-                <div className="flex items-center gap-4 text-sm font-medium text-slate-500">
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                        <span>Active: {staffList.filter(s => s.status === 'active').length}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-                        <span>Total: {staffList.length}</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Grid */}
-            {loading ? (
-                <div className="text-center py-20 text-slate-400">Loading staff...</div>
-            ) : filteredStaff.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                        <Users size={32} className="opacity-50" />
-                    </div>
-                    <p className="text-lg font-medium">No staff members found</p>
-                </div>
+        <div className="h-full flex flex-col p-6 max-w-7xl mx-auto space-y-6 relative z-10">
+            {selectedStaff ? (
+                <StaffDetail
+                    staff={selectedStaff}
+                    onBack={() => setSelectedStaff(null)}
+                    onStatusChange={async (staffId, newStatus) => {
+                        await updateStaff(staffId, { status: newStatus as any });
+                        setSelectedStaff(prev => prev ? { ...prev, status: newStatus as any } : null);
+                        success(t('status_updated_title') || 'Status Updated', t('status_updated_msg') || 'Staff status changed');
+                    }}
+                    onEdit={() => { setEditingStaff(selectedStaff); setIsModalOpen(true); }}
+                />
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <AnimatePresence>
-                        {filteredStaff.map(staff => (
-                            <motion.div
-                                key={staff.id}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                layout
-                                className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative group"
+                <>
+                    {/* Elegant Header */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
+                        <div className="space-y-1">
+                            <motion.h1
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="text-3xl font-bold text-slate-900 tracking-tight"
                             >
-                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                    <button onClick={() => { setEditingStaff(staff); setIsModalOpen(true); }} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
-                                        <Edit2 size={16} />
-                                    </button>
-                                    <button onClick={() => handleDelete(staff)} className="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100">
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
+                                {t('staff_management') || 'Staff Management'}
+                            </motion.h1>
+                        </div>
+                        <motion.button
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            whileHover={{ scale: 1.01, translateY: -1 }}
+                            whileTap={{ scale: 0.99 }}
+                            onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
+                            className="btn-glossy-blue !w-auto !py-3 !rounded-full px-6 flex items-center gap-2.5 transition-all duration-300 self-start md:self-auto"
+                        >
+                            <Plus size={18} className="stroke-[3]" />
+                            <span className="text-sm uppercase tracking-wider">{t('add_staff') || 'Add Staff'}</span>
+                        </motion.button>
+                    </div>
 
-                                <div className="flex flex-col items-center text-center">
-                                    <div className="w-20 h-20 rounded-full bg-slate-100 overflow-hidden mb-3 border-2 border-white shadow-sm">
-                                        {staff.imageUrl ? (
-                                            <img src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-500 font-bold text-2xl">
-                                                {staff.fullName.charAt(0)}
+                    {/* Premium White Search Bar */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4"
+                    >
+                        <div className="relative w-full md:w-[450px] group">
+                            <input
+                                type="text"
+                                placeholder={t('search_staff') || "Search by name or role..."}
+                                className="w-full pl-14 pr-12 py-4 bg-white/60 backdrop-blur-xl border border-white/40 rounded-[1.25rem] text-slate-900 placeholder:text-slate-400 font-semibold text-base shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] focus:shadow-[0_8px_30px_-5px_rgba(59,130,246,0.15)] focus:bg-white focus:border-blue-500/30 transition-all outline-none"
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-slate-400 group-focus-within:text-blue-600 transition-all duration-300 z-10 pointer-events-none">
+                                <Search size={22} className="group-focus-within:scale-110 transition-transform" />
+                            </div>
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20"
+                                >
+                                    <X size={14} strokeWidth={3} />
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-2 pr-2">
+                            <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-slate-600 font-bold text-xs uppercase tracking-wider">{t('active')}: {staffList.filter(s => s.status === 'active').length}</span>
+                            </div>
+                            <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                                <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                                <span className="text-slate-600 font-bold text-xs uppercase tracking-wider">{t('total')}: {staffList.length}</span>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Grid */}
+                    {loading ? (
+                        <div className="text-center py-20 text-slate-400">{t('loading') || 'Loading...'}</div>
+                    ) : filteredStaff.length === 0 ? (
+                        <div className="flex-1 flex items-center justify-center p-12">
+                            <EmptyState
+                                message={t('no_staff_found') || "No staff members found"}
+                                action={
+                                    <motion.button
+                                        whileHover={{ scale: 1.03, translateY: -1 }}
+                                        whileTap={{ scale: 0.97 }}
+                                        onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
+                                        className="flex items-center gap-2.5 bg-white text-[#0071e3] px-8 py-4 rounded-xl font-bold shadow-lg shadow-blue-500/5 border border-blue-50 hover:shadow-xl transition-all uppercase tracking-wider text-xs"
+                                    >
+                                        <Plus size={18} className="stroke-[3]" />
+                                        {t('add_staff') || 'Add Staff'}
+                                    </motion.button>
+                                }
+                            />
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                            <AnimatePresence>
+                                {filteredStaff.map(staff => (
+                                    <motion.div
+                                        key={staff.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        layout
+                                        onClick={() => setSelectedStaff(staff)}
+                                        className="bg-white rounded-[2rem] p-6 border border-slate-100 hover:border-blue-100 hover:shadow-xl transition-all duration-300 cursor-pointer relative group overflow-hidden"
+                                    >
+                                        {/* Hover Gradient Backlight */}
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-[100px] -mr-10 -mt-10 transition-all group-hover:bg-blue-500/10" />
+
+                                        <div className="flex items-start gap-5 relative z-10">
+                                            {/* Avatar */}
+                                            <div className="relative flex-shrink-0">
+                                                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-50 shadow-sm ring-4 ring-white">
+                                                    {staff.imageUrl ? (
+                                                        <img src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-blue-500 font-bold bg-blue-50 text-xl">
+                                                            {staff.fullName.charAt(0)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-[3px] border-white flex items-center justify-center ${staff.status === 'active' ? 'bg-emerald-500' :
+                                                    staff.status === 'on_leave' ? 'bg-amber-400' : 'bg-slate-300'
+                                                    }`}>
+                                                    {staff.status === 'active' && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
+                                                </div>
                                             </div>
-                                        )}
-                                    </div>
-                                    <h3 className="font-bold text-slate-900 text-lg">{staff.fullName}</h3>
-                                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold uppercase tracking-wide mt-1">
-                                        {staff.role}
-                                    </span>
-                                </div>
 
-                                <div className="mt-5 space-y-3">
-                                    <div className="flex items-center gap-3 text-sm text-slate-600">
-                                        <Phone size={16} className="text-slate-400" />
-                                        <span>{staff.phone}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 text-sm text-slate-600">
-                                        <DollarSign size={16} className="text-slate-400" />
-                                        <span className="font-medium text-slate-900">
-                                            {staff.salary.toLocaleString()} <span className="text-xs text-slate-400">{staff.currency}</span>
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-3 text-sm text-slate-600">
-                                        <div className={`w-2 h-2 rounded-full ${staff.status === 'active' ? 'bg-emerald-500' :
-                                                staff.status === 'on_leave' ? 'bg-amber-500' : 'bg-red-500'
-                                            }`} />
-                                        <span className="capitalize">{staff.status.replace('_', ' ')}</span>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
+                                            {/* Info */}
+                                            <div className="flex-1 min-w-0 pt-1">
+                                                <h3 className="font-bold text-slate-900 text-lg leading-tight truncate group-hover:text-blue-600 transition-colors">
+                                                    {staff.fullName}
+                                                </h3>
+                                                <span className="inline-block mt-1.5 px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-lg">
+                                                    {t(`role_${staff.role}`) || staff.role}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Stats Grid */}
+                                        <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-50 relative z-10">
+                                            <div>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">{t('salary')}</p>
+                                                <p className="font-bold text-slate-700 text-base">{staff.salary?.toLocaleString()}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">{t('phone')}</p>
+                                                <p className="font-bold text-slate-700 text-sm truncate">{staff.phone}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                                            <div className="w-8 h-8 rounded-full bg-slate-50 text-blue-600 flex items-center justify-center shadow-sm">
+                                                <ChevronLeft size={16} className="rotate-180" />
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
+                    )}
+                </>
             )}
 
-            {/* Modal */}
             <StaffModal
                 isOpen={isModalOpen}
                 onClose={() => { setIsModalOpen(false); setEditingStaff(null); }}

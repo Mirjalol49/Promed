@@ -129,7 +129,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     placeholder="Search..."
-                                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all"
                                     onClick={(e) => e.stopPropagation()}
                                 />
                             </div>
@@ -148,7 +148,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
                                     }}
                                     className={`
                                         w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-colors text-left
-                                        ${value === option.value ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'}
+                                        ${value === option.value ? 'bg-promed-light text-promed-primary ring-1 ring-promed-primary/20' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'}
                                     `}
                                 >
                                     <div className="flex items-center gap-2">
@@ -181,13 +181,13 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
                 className={`
                     w-full h-[52px] bg-slate-50 border border-slate-300 rounded-2xl px-4 text-left flex items-center justify-between
                     text-slate-700 font-bold transition-all duration-200 outline-none
-                    ${isOpen ? 'ring-4 ring-blue-500/10 border-blue-500 bg-white' : 'hover:border-slate-400 hover:bg-white'}
+                    ${isOpen ? 'ring-4 ring-promed-primary/10 border-promed-primary bg-white' : 'hover:border-slate-400 hover:bg-white'}
                 `}
             >
                 <div className="flex items-center gap-2 overflow-hidden">
                     {selectedOption ? (renderOption ? renderOption(selectedOption) : selectedOption.label) : <span className="text-slate-400 font-normal">{placeholder}</span>}
                 </div>
-                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-500' : ''}`} />
+                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-promed-primary' : ''}`} />
             </button>
 
             {typeof document !== 'undefined' && createPortal(dropdownContent, document.body)}

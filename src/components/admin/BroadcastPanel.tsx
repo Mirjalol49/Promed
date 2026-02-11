@@ -187,7 +187,7 @@ export const BroadcastPanel: React.FC<BroadcastPanelProps> = ({ users = [] }) =>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-indigo-200"
+                        className="btn-premium-blue px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-promed-primary/20"
                     >
                         <span>{loading ? 'Transmitting...' : t('transmit')}</span>
                         <Send className="w-4 h-4" />

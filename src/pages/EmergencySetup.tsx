@@ -571,7 +571,7 @@ const SidebarItem: React.FC<{ icon: any, label: string, active?: boolean, onClic
 
 const ActionBtn: React.FC<{ label: string, icon: any, color: 'blue' | 'red' | 'green' | 'amber', onClick: () => void }> = ({ label, icon: Icon, color, onClick }) => {
     const colors = {
-        blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
+        blue: 'bg-promed-light text-promed-primary hover:bg-promed-light/80',
         red: 'bg-rose-50 text-rose-600 hover:bg-rose-100',
         green: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100',
         amber: 'bg-amber-50 text-amber-600 hover:bg-amber-100'

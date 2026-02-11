@@ -86,7 +86,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     className={`
                     h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200
                     ${isSelected
-                            ? 'bg-promed-primary text-white shadow-md shadow-promed-primary/30'
+                            ? 'gel-blue-style text-white shadow-lg'
                             : isToday
                                 ? 'bg-amber-100 text-amber-700 font-bold border border-amber-200'
                                 : 'text-slate-700 hover:bg-slate-100'

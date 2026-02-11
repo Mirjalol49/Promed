@@ -55,13 +55,13 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                             {/* Icon Container with Active Squircle Background */}
                             <div className={`
                                 relative p-2.5 rounded-2xl transition-all duration-300
-                                ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-transparent text-slate-500 group-hover:bg-slate-100'}
+                                ${isActive ? 'gel-blue-style text-white shadow-xl scale-110 !border-none' : 'bg-transparent text-slate-500 group-hover:bg-slate-100'}
                             `}>
                                 {/* Active Indicator Animation */}
                                 {isActive && (
                                     <motion.div
                                         layoutId="activeTabMobile"
-                                        className="absolute inset-0 bg-blue-600 rounded-2xl z-0"
+                                        className="absolute inset-0 gel-blue-style rounded-2xl z-0 !border-none shadow-none"
                                         initial={false}
                                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                     />
@@ -78,7 +78,7 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                             </div>
 
                             {/* Label */}
-                            <span className={`text-[10px] font-bold tracking-tight transition-colors duration-300 ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                            <span className={`text-[10px] font-black tracking-tight transition-colors duration-300 ${isActive ? 'text-promed-primary' : 'text-slate-400 group-hover:text-slate-600'}`}>
                                 {item.label}
                             </span>
                         </button>

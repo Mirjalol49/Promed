@@ -93,9 +93,9 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({ value, onChange 
                                 ${!isCurrentMonth
                                     ? 'text-slate-300 cursor-default border-transparent'
                                     : isSelected
-                                        ? 'bg-blue-700 text-white shadow-lg shadow-blue-900/20 border-blue-800'
+                                        ? 'bg-promed-primary text-white shadow-lg shadow-promed-primary/20 border-promed-primary'
                                         : isDayToday
-                                            ? 'bg-blue-100 text-blue-900 border-blue-200'
+                                            ? 'bg-promed-light text-promed-primary border-promed-primary/20'
                                             : 'text-slate-900 hover:bg-slate-100 border-transparent hover:border-slate-300'
                                 }
                             `}

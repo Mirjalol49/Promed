@@ -249,8 +249,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                                 <button
                                     key={lang}
                                     onClick={() => setLanguage(lang as any)}
-                                    className={`py-3 px-4 rounded-xl text-callout font-semibold transition-all duration-200 ${language === lang
-                                        ? 'bg-ios-blue text-white shadow-ios-md border border-ios-blue'
+                                    className={`py-3 px-4 rounded-xl text-callout font-bold transition-all duration-200 ${language === lang
+                                        ? 'gel-blue-style text-white shadow-lg border-none scale-105'
                                         : 'bg-[rgba(120,120,128,0.12)] text-[rgba(60,60,67,0.8)] hover:bg-[rgba(120,120,128,0.2)] border border-transparent'
                                         }`}
                                 >
@@ -472,7 +472,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                     <button
                         onClick={handleSave}
                         disabled={loading || imageUploading}
-                        className="btn-gel-blue min-w-[150px] sm:min-w-[180px] shadow-lg disabled:opacity-70"
+                        className="btn-premium-blue min-w-[150px] sm:min-w-[180px] shadow-lg disabled:opacity-70"
                     >
                         <span className="relative z-10">{loading ? t('saving') : t('save')}</span>
                     </button>

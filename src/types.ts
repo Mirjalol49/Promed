@@ -71,6 +71,7 @@ export interface Profile {
   accountId?: string;
   lockEnabled?: boolean;
   lockPassword?: string;
+  phoneNumber?: string;
 }
 
 export type PageView = 'DASHBOARD' | 'PATIENTS' | 'PATIENT_DETAIL' | 'SETTINGS' | 'ADD_PATIENT' | 'EDIT_PATIENT' | 'ADMIN_DASHBOARD' | 'SUPER_ADMIN' | 'LEADS' | 'NOTES' | 'MESSAGES' | 'STAFF' | 'FINANCE';
@@ -158,6 +159,7 @@ export type TransactionCategory =
   | 'tax'           // Expense
   | 'other';        // Both
 
+
 export interface Transaction {
   id: string;
   amount: number;
@@ -165,11 +167,17 @@ export interface Transaction {
   type: TransactionType;
   category: TransactionCategory;
   date: string; // ISO Date
+  time?: string; // HH:mm format (e.g., "14:30")
   description?: string;
 
   // Relations
   patientId?: string; // If income from patient
   staffId?: string;   // If salary payment
+
+  // Return/Refund tracking
+  returned?: boolean;
+  returnedAt?: string; // ISO Date when returned
+  returnNote?: string;
 
   accountId: string;
   createdAt: any;

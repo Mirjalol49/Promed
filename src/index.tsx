@@ -24,19 +24,19 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <LanguageProvider>
-          <AccountProvider>
-            <SettingsProvider>
-              <ToastProvider>
-                <SystemAlertProvider>
+        <AccountProvider>
+          <SettingsProvider>
+            <ToastProvider>
+              <SystemAlertProvider>
+                <LanguageProvider>
                   <Routes>
                     <Route path="/*" element={<App />} />
                   </Routes>
-                </SystemAlertProvider>
-              </ToastProvider>
-            </SettingsProvider>
-          </AccountProvider>
-        </LanguageProvider>
+                </LanguageProvider>
+              </SystemAlertProvider>
+            </ToastProvider>
+          </SettingsProvider>
+        </AccountProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

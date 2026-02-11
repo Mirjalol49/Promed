@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Bell } from 'lucide-react';
+import { X, Calendar, Clock, Bell, Trash, ChevronDown, Check } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ReminderModalProps {
@@ -37,6 +38,19 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, o
 
     if (!isOpen) return null;
 
+    const handleQuickSelect = (type: '1h' | 'tomorrow' | '3d' | '1w') => {
+        const d = new Date();
+        if (type === '1h') d.setHours(d.getHours() + 1);
+        else if (type === 'tomorrow') d.setDate(d.getDate() + 1);
+        else if (type === '3d') d.setDate(d.getDate() + 3);
+        else if (type === '1w') d.setDate(d.getDate() + 7);
+
+        setDate(d.toISOString().split('T')[0]);
+        // Round to nearest 5 mins for cleaner time
+        const roundedTime = new Date(Math.round(d.getTime() / 300000) * 300000);
+        setTime(roundedTime.toTimeString().slice(0, 5));
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -48,98 +62,153 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, o
         }
     };
 
-    // Footer Actions
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={onClose} />
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+                onClick={onClose}
+            />
 
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-scale-in">
-                {/* Header */}
-                <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50 to-white">
-                    <div className="flex items-center gap-2 text-blue-600">
-                        <Bell size={20} className="fill-blue-600/20" />
-                        <h3 className="font-bold text-lg">Set Reminder</h3>
+            <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden"
+            >
+                {/* Premium Gradient Header */}
+                <div className="relative px-8 py-10 bg-gradient-to-br from-blue-700 via-blue-800 to-blue-950 overflow-hidden">
+                    {/* Abstract background glow */}
+                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl animate-pulse" />
+
+                    <div className="relative flex items-center gap-5">
+                        <div className="w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[1.25rem] flex items-center justify-center shadow-lg transform rotate-3">
+                            <Bell size={28} className="text-white fill-white/10" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-black text-2xl text-white tracking-tight leading-none mb-1.5">{t('set_reminder')}</h3>
+                            <p className="text-[10px] font-bold text-blue-200 uppercase tracking-[0.15em] opacity-80">{t('dont_forget_call')}</p>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="absolute top-0 right-0 p-2 text-white/40 hover:text-white transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
                     </div>
-                    <button onClick={onClose} className="p-1 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
-                        <X size={20} />
-                    </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-5 space-y-4">
-                    {/* Date Input */}
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-                            <Calendar size={14} className="text-slate-400" />
-                            Date
+                <form onSubmit={handleSubmit} className="p-8 space-y-7">
+                    {/* Quick Select Buttons */}
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <Clock size={12} strokeWidth={3} />
+                            {t('quick_select')}
                         </label>
-                        <input
-                            type="date"
-                            required
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                            min={new Date().toISOString().split('T')[0]}
-                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-700"
-                        />
+                        <div className="grid grid-cols-4 gap-2">
+                            {[
+                                { id: '1h', label: t('one_hour') },
+                                { id: 'tomorrow', label: t('tomorrow') },
+                                { id: '3d', label: t('three_days') },
+                                { id: '1w', label: t('one_week') }
+                            ].map(btn => (
+                                <button
+                                    key={btn.id}
+                                    type="button"
+                                    onClick={() => handleQuickSelect(btn.id as any)}
+                                    className="h-11 rounded-2xl border border-slate-100 bg-slate-50 text-[11px] font-bold text-slate-700 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 transition-all active:scale-95 shadow-sm"
+                                >
+                                    {btn.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Time Input */}
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-                            <Clock size={14} className="text-slate-400" />
-                            Time
-                        </label>
-                        <input
-                            type="time"
-                            required
-                            value={time}
-                            onChange={(e) => setTime(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-700"
-                        />
+                    {/* Date/Time Inputs */}
+                    <div className="flex gap-4">
+                        <div className="flex-1 space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 pl-1">
+                                <Calendar size={12} strokeWidth={3} />
+                                {t('date_label')}
+                            </label>
+                            <div className="relative group">
+                                <input
+                                    type="date"
+                                    required
+                                    value={date}
+                                    onChange={(e) => setDate(e.target.value)}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold text-slate-800 text-sm shadow-sm cursor-pointer hover:border-slate-300"
+                                />
+                                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-slate-600 transition-colors" />
+                            </div>
+                        </div>
+                        <div className="w-[120px] space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 pl-1">
+                                <Clock size={12} strokeWidth={3} />
+                                {t('time_label')}
+                            </label>
+                            <input
+                                type="time"
+                                required
+                                value={time}
+                                onChange={(e) => setTime(e.target.value)}
+                                className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold text-slate-800 text-sm shadow-sm cursor-pointer hover:border-slate-300"
+                            />
+                        </div>
                     </div>
 
-                    {/* Note Input */}
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-slate-700">Note (Optional)</label>
+                    {/* Label/Note */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 pl-1">
+                            <Check size={12} strokeWidth={3} />
+                            {t('reason_label')}
+                        </label>
                         <textarea
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
-                            placeholder="Checking regarding..."
-                            rows={3}
-                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-700 placeholder:text-slate-400 resize-none"
+                            placeholder="..."
+                            rows={1}
+                            className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold text-slate-800 text-sm shadow-sm placeholder:text-slate-300 resize-none hover:border-slate-300"
                         />
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="pt-2 flex gap-3">
-                        {initialDate && onDelete && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (window.confirm("Are you sure you want to delete this reminder?")) {
-                                        onDelete();
-                                    }
-                                }}
-                                className="px-4 py-2.5 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
-                            >
-                                Delete
-                            </button>
-                        )}
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 px-4 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
-                        >
-                            Cancel
-                        </button>
+                    <div className="flex flex-col gap-3 pt-4">
                         <button
                             type="submit"
-                            className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20 rounded-xl transition-all active:scale-[0.98]"
+                            className="w-full h-16 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-[1.25rem] flex items-center justify-center gap-3 font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/40 hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all"
                         >
-                            Set Reminder
+                            <Bell size={18} strokeWidth={3} />
+                            {t('save')}
                         </button>
+
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="flex-1 h-14 bg-slate-50 text-slate-500 border border-slate-100 rounded-[1.25rem] font-bold text-sm hover:bg-slate-100 transition-all active:scale-[0.98]"
+                            >
+                                {t('cancel')}
+                            </button>
+                            {initialDate && onDelete && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (window.confirm("Delete this reminder?")) {
+                                            onDelete();
+                                            onClose();
+                                        }
+                                    }}
+                                    className="h-14 px-6 bg-rose-50 text-rose-500 border border-rose-100 rounded-[1.25rem] font-bold text-sm hover:bg-rose-100 transition-all active:scale-[0.98]"
+                                >
+                                    <Trash size={18} />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </form>
-            </div>
+            </motion.div>
         </div>
     );
 };

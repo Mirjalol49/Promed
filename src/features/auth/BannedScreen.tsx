@@ -23,7 +23,7 @@ export const BannedScreen: React.FC<BannedScreenProps> = ({ onLogout }) => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('banned_title')}</h2>
                 <p className="text-gray-600 mb-6">{t('banned_desc')}</p>
 
-                <a href="tel:+998937489141" className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-xl mb-3 flex items-center justify-center gap-2 transition-colors">
+                <a href="tel:+998937489141" className="block w-full gel-blue-style text-white font-bold py-4 px-4 rounded-xl mb-3 flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95">
                     <Phone className="w-5 h-5" />
                     {t('banned_contact_btn')}
                 </a>

@@ -76,7 +76,7 @@ const Layout: React.FC<LayoutProps> = ({
         whileHover="hover"
         initial="idle"
         className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-1 group border border-transparent outline-none relative overflow-hidden active-scale ${isActive
-          ? 'bg-[#007AFF] text-white shadow-md shadow-blue-500/25'
+          ? 'gel-blue-style text-white shadow-lg shadow-promed-primary/20'
           : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
           }`}
       >

@@ -461,9 +461,11 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                             <div className="flex-1 min-w-0 pb-6">
                                                 {/* Header: Author & Time */}
                                                 <div className="flex items-center gap-2 mb-1.5">
-                                                    <span className="text-sm font-bold text-slate-900">
-                                                        {event.created_by === 'current-user' ? (t('you') || 'Siz') : (t('system') || 'Tizim')}
-                                                    </span>
+                                                    {event.created_by !== 'current-user' && (
+                                                        <span className="text-sm font-bold text-slate-900">
+                                                            {t('system') || 'Tizim'}
+                                                        </span>
+                                                    )}
                                                     <span className="text-[11px] font-medium text-slate-400">
                                                         {formatDate(event.created_at)}
                                                     </span>
@@ -488,9 +490,10 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                             e.stopPropagation();
                                                                             setCompletionEventId(event.id);
                                                                         }}
-                                                                        className="text-xs font-bold text-purple-600 hover:text-purple-700 hover:underline px-2"
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-100/80 text-purple-700 hover:bg-purple-200 rounded-lg text-xs font-bold transition-all shadow-sm shadow-purple-200/50 group/done"
                                                                     >
-                                                                        Bajarish
+                                                                        <Check size={14} strokeWidth={3} className="group-hover/done:scale-110 transition-transform" />
+                                                                        <span>{t('complete')}</span>
                                                                     </button>
                                                                 )}
                                                             </div>
@@ -499,7 +502,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                 {completionEventId === event.id ? (
                                                                     <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
                                                                         <div className="flex items-center justify-between">
-                                                                            <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">Natija</h4>
+                                                                            <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">{t('remind_result')}</h4>
                                                                             <button
                                                                                 onClick={() => {
                                                                                     setCompletionEventId(null);
@@ -517,7 +520,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                                 e.target.style.height = 'auto';
                                                                                 e.target.style.height = e.target.scrollHeight + 'px';
                                                                             }}
-                                                                            placeholder="Izoh..."
+                                                                            placeholder={t('notes_placeholder')}
                                                                             className="w-full text-sm p-3 rounded-xl border border-purple-200 bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none resize-none transition-all placeholder:text-slate-400 overflow-hidden"
                                                                             rows={2}
                                                                             autoFocus
@@ -534,7 +537,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                                 }}
                                                                                 className="px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow-sm transition-all"
                                                                             >
-                                                                                Tasdiqlash
+                                                                                {t('confirm')}
                                                                             </button>
                                                                         </div>
                                                                     </div>
@@ -638,7 +641,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                         <button
                                             type="submit"
                                             disabled={!newNote.trim()}
-                                            className={`px-5 py-3 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0 h-[48px] ${editingEventId ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                            className={`px-5 py-3 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 h-[48px] flex items-center justify-center ${editingEventId ? 'bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20' : 'btn-premium-blue'}`}
                                         >
                                             {editingEventId ? <Check size={18} /> : <Send size={18} />}
                                         </button>

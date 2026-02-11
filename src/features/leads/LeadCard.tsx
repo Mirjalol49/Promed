@@ -67,7 +67,7 @@ const COL_ICONS: Record<LeadStatus, React.ElementType> = {
 };
 
 export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit, onDelete, onRemind, onSelect, layoutId }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const isStale = leadService.checkStale(lead);
 
     // Check if reminder is overdue
@@ -101,6 +101,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
 
         return () => clearInterval(interval);
     }, [lead.reminder?.date, checkIsOverdue]);
+
+    const locale = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
 
     const hasActiveReminder = !!lead.reminder?.date;
 
@@ -184,34 +186,68 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
         <motion.div
             layoutId={layoutId} // Shared layout ID for seamless expansion
             onClick={() => onSelect(lead)}
+            animate={isOverdue ? {
+                boxShadow: [
+                    '0 0 0 0px rgba(244, 63, 94, 0)',
+                    '0 0 0 4px rgba(244, 63, 94, 0.2)',
+                    '0 0 0 8px rgba(244, 63, 94, 0)'
+                ],
+                borderColor: ['#e2e8f0', '#fda4af', '#e2e8f0'],
+                transition: {
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                }
+            } : {
+                boxShadow: '0 0 0 0px rgba(244, 63, 94, 0)',
+                borderColor: '#e2e8f0',
+                transition: { duration: 0.5 }
+            }}
             className={`
-            bg-white rounded-[2rem] border border-slate-200 mb-4 relative group cursor-pointer transition-all hover:border-blue-400 hover:bg-slate-50/50 z-0 hover:z-10
-            ${isStale ? 'ring-2 ring-rose-500' : ''}
-            ${isOverdue ? 'ring-2 ring-rose-300' : ''}
+            bg-white rounded-[2rem] border mb-4 relative group cursor-pointer transition-all hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 z-0 hover:z-10
+            ${(isStale && !isOverdue && !hasActiveReminder) ? 'ring-2 ring-rose-500' : ''}
+            ${!isStale && !isOverdue ? 'border-slate-200' : ''}
+            ${isOverdue ? 'z-20' : ''}
         `}>
+            {/* Premium Floating Reminder Indicator */}
+            {(isOverdue || hasActiveReminder) && (
+                <div className="absolute -top-1 -right-1 z-30">
+                    <motion.div
+                        initial={{ scale: 0, rotate: -20 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        className="relative"
+                    >
+                        {/* Outer Pulse Glow (for Overdue) */}
+                        {isOverdue && (
+                            <motion.div
+                                animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className="absolute inset-0 rounded-full bg-rose-500 blur-md"
+                            />
+                        )}
+
+                        {/* Main Indicator Circle */}
+                        <div className={`
+                            w-9 h-9 rounded-full flex items-center justify-center shadow-lg border-2 backdrop-blur-md transition-all duration-300
+                            ${isOverdue
+                                ? 'bg-rose-500 border-white text-white shadow-rose-500/40'
+                                : 'bg-white/90 border-blue-100 text-blue-600 shadow-blue-500/10'}
+                        `}>
+                            <Clock size={18} strokeWidth={3} className={isOverdue ? "animate-pulse" : ""} />
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
             {/* Status Header - Absolute Positioned */}
             <div className={`absolute top-0 inset-x-0 h-10 rounded-t-[2rem] flex items-center justify-center font-extrabold text-white text-[11px] tracking-[0.2em] uppercase z-10 ${getStatusHeaderColor(lead.status)}`}>
                 {getStatusLabel(lead.status)}
-
-                {/* Indicators */}
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    {isOverdue && (
-                        <div className="bg-white/20 p-1 rounded-full animate-pulse" title="Overdue">
-                            <Clock size={12} className="text-white" />
-                        </div>
-                    )}
-                    {hasActiveReminder && !isOverdue && (
-                        <div className="bg-white/20 p-1 rounded-full" title="Reminder Set">
-                            <Clock size={12} className="text-white" />
-                        </div>
-                    )}
-                </div>
             </div>
 
             {/* Main Content Area - Padded top for header */}
             <div className="pt-14 px-5 pb-5">
-                {/* Dashed Content Box - Darker border for accessibility */}
-                <div className="border-[2px] border-dashed border-slate-300 rounded-[1.5rem] p-5 mb-4 relative bg-slate-50/30 group-hover:bg-slate-50/60 transition-colors">
+                {/* Dashed Content Box - Clean White aesthetic */}
+                <div className="border-[2px] border-dashed border-slate-200 rounded-[1.5rem] p-5 mb-4 relative bg-white transition-colors">
                     <div className="flex justify-between items-start mb-3">
                         <h4 className="font-bold text-lg text-slate-900 leading-tight">{lead.full_name}</h4>
                     </div>
@@ -245,118 +281,144 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                         )}
 
                         {/* Show Scheduled/Created Time */}
+                        {/* Interactive Reminder / Added Date Pill */}
                         {lead.reminder?.date ? (
-                            <div className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-200/50" title="Scheduled Reminder">
-                                <Clock size={14} className="text-white" />
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onRemind(lead); }}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-200/50 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all group/remind"
+                                title={t('edit_reminder') || 'Edit Reminder'}
+                            >
+                                <Clock size={14} className="group-hover/remind:rotate-12 transition-transform" />
                                 <span className="tracking-wide">
-                                    {new Date(lead.reminder.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(lead.reminder.date).toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </span>
-                            </div>
+                            </button>
                         ) : (
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-300" title="Creation Date">
-                                <span className="opacity-60 text-[10px] uppercase tracking-wider font-semibold mr-1">Added</span>
-                                <span>
-                                    {lead.created_at?.seconds
-                                        ? new Date(lead.created_at.seconds * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-                                        : 'Just now'
-                                    }
-                                </span>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-500 rounded-lg text-[11px] font-bold border border-slate-200">
+                                <Clock size={14} className="opacity-40" />
+                                <div className="flex items-center whitespace-nowrap">
+                                    <span className="opacity-60 text-[10px] uppercase tracking-wider font-semibold mr-1">{t('added') || 'Added'}</span>
+                                    <span>
+                                        {lead.created_at?.seconds
+                                            ? new Date(lead.created_at.seconds * 1000).toLocaleDateString(locale, { month: 'short', day: 'numeric' })
+                                            : t('just_now')
+                                        }
+                                    </span>
+                                </div>
                             </div>
                         )}
                     </div>
                 </div>
 
                 {/* Footer Actions - Matching the reference exactly */}
-                <div className="flex items-center gap-3">
-                    {/* Edit Button - Pill Outline */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
-                        className="flex-1 h-10 px-4 bg-white border border-slate-300 rounded-full flex items-center justify-center gap-2 text-xs font-bold text-slate-700 hover:border-slate-400 hover:text-slate-900 hover:shadow-sm active:scale-95 transition-all group/btn"
-                    >
-                        <Pencil size={14} className="text-slate-500 group-hover/btn:text-slate-700" />
-                        <span>{t('edit') || 'Edit'}</span>
-                    </button>
+                {/* Footer Actions - Clean, Consolidated UI */}
+                <div className="flex items-center justify-between gap-3 px-1 pt-2">
+                    {/* Management Actions (Left - Minimalist Icons) */}
+                    <div className="flex items-center gap-2">
+                        {/* Edit Button */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
+                            title={t('edit')}
+                            className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all active:scale-90 shadow-sm"
+                        >
+                            <Pencil size={18} />
+                        </button>
 
-                    {/* Remind Button - Pill Outline (Blue when active) */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onRemind(lead); }}
-                        className={`flex-1 h-10 px-4 border rounded-full flex items-center justify-center gap-2 text-xs font-bold transition-all shadow-sm active:scale-95 group/btn
-                            ${lead.reminder
-                                ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-blue-100'
-                                : 'bg-white border-slate-300 text-slate-700 hover:border-slate-400 hover:text-slate-900 hover:shadow-sm'
-                            }`}
-                    >
-                        <Clock size={14} className={lead.reminder ? 'text-blue-600' : 'text-slate-500 group-hover/btn:text-slate-700'} />
-                        <span>{lead.reminder ? 'Remind' : 'Remind'}</span>
-                    </button>
+                        {/* Delete Button */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
+                            title={t('delete')}
+                            className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-all active:scale-90 shadow-sm"
+                        >
+                            <Trash size={18} />
+                        </button>
+                    </div>
 
-                    {/* More Button - Circle Outline */}
-                    <button
-                        ref={buttonRef}
-                        onClick={(e) => { e.stopPropagation(); toggleDropdown(); }}
-                        className="h-10 w-10 bg-white border border-slate-300 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-50 hover:border-slate-400 hover:shadow-md active:scale-95 transition-all"
-                    >
-                        {isDropdownOpen ? <ChevronDown size={18} className="rotate-180 transition-transform" /> : <MoreHorizontal size={18} />}
-                    </button>
+                    {/* Consolidated Status Dropdown (Right) */}
+                    <div className="relative">
+                        <button
+                            ref={buttonRef}
+                            onClick={(e) => { e.stopPropagation(); toggleDropdown(); }}
+                            className={`h-10 px-4 rounded-full flex items-center gap-2 transition-all active:scale-95 shadow-sm border
+                                ${isDropdownOpen
+                                    ? 'bg-slate-900 border-slate-900 text-white'
+                                    : `bg-${COL_COLORS[lead.status]}-50 border-${COL_COLORS[lead.status]}-100 text-${COL_COLORS[lead.status]}-700 hover:bg-${COL_COLORS[lead.status]}-100`
+                                }`}
+                        >
+                            {isDropdownOpen ? (
+                                <ChevronDown size={16} className="rotate-180 transition-transform" />
+                            ) : (
+                                React.createElement(COL_ICONS[lead.status], { size: 16 })
+                            )}
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider">
+                                {STATUS_OPTIONS.find(opt => opt.value === lead.status)?.label || lead.status}
+                            </span>
+                        </button>
 
-                    {/* Floating Portal Dropdown */}
-                    {isDropdownOpen && (
-                        <Portal lockScroll={false}>
-                            <div
-                                className="fixed inset-0 z-[9998]"
-                                onClick={() => setIsDropdownOpen(false)}
-                            />
-                            <div
-                                className="fixed bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-1.5 min-w-[200px]"
-                                style={{
-                                    top: dropdownPos.top - 60,
-                                    left: dropdownPos.left - 160,
-                                    width: 200,
-                                }}
-                            >
-                                <div className="text-[10px] font-bold text-slate-400 px-3 py-2 uppercase tracking-wider mb-1">Change Status</div>
-                                <div className="space-y-1">
-                                    {STATUS_OPTIONS.map(opt => {
-                                        const isActive = opt.value === lead.status;
-                                        const optColor = COL_COLORS[opt.value];
-                                        const OptIcon = COL_ICONS[opt.value];
-                                        return (
-                                            <button
-                                                key={opt.value}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleStatusClick(opt.value);
-                                                }}
-                                                className={`
-                                                    w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-bold rounded-xl transition-all
-                                                    ${isActive ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
-                                                `}
-                                            >
-                                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isActive ? 'bg-white shadow-sm' : 'bg-slate-100'} transition-colors`}>
-                                                    <OptIcon size={12} className={`text-${optColor}-500`} />
-                                                </div>
-                                                <span>{opt.label}</span>
-                                                {isActive && <Check size={14} className="ml-auto text-promed-primary" />}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                                <div className="h-px bg-slate-100 my-2 mx-2" />
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
-                                    className="w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-bold rounded-xl text-rose-600 hover:bg-rose-50 transition-colors group/del"
+                        {/* Dropdown Portal */}
+                        {isDropdownOpen && (
+                            <Portal lockScroll={false}>
+                                <div className="fixed inset-0 z-[9998]" onClick={() => setIsDropdownOpen(false)} />
+                                <div
+                                    className="fixed bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-1.5 min-w-[220px]"
+                                    style={{
+                                        top: dropdownPos.top - 50, // Slight offset for better alignment
+                                        left: dropdownPos.left - 150, // Shifted left to center better
+                                    }}
                                 >
-                                    <div className="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center group-hover/del:bg-rose-100 transition-colors">
-                                        <Trash size={12} className="text-rose-500" />
+                                    <div className="text-[10px] font-bold text-slate-400 px-3 py-2 uppercase tracking-wider mb-1">{t('set_lead_status') || 'Set Lead Status'}</div>
+                                    <div className="space-y-1">
+                                        {STATUS_OPTIONS.map(opt => {
+                                            const isActive = opt.value === lead.status;
+                                            const optColor = COL_COLORS[opt.value];
+                                            const OptIcon = COL_ICONS[opt.value];
+
+                                            // Mapping custom colors to tailwind classes carefully
+                                            const colorClasses: Record<string, string> = {
+                                                blue: 'text-blue-600 bg-blue-100/50 border-blue-200',
+                                                orange: 'text-orange-600 bg-orange-100/50 border-orange-200',
+                                                purple: 'text-purple-600 bg-purple-100/50 border-purple-200',
+                                                emerald: 'text-emerald-600 bg-emerald-100/50 border-emerald-200',
+                                                red: 'text-rose-600 bg-rose-100/50 border-rose-200',
+                                            };
+                                            const activeColorClass = colorClasses[optColor] || 'text-slate-600 bg-slate-100/50 border-slate-200';
+                                            const iconColorClass = optColor === 'blue' ? 'text-blue-500' :
+                                                optColor === 'orange' ? 'text-orange-500' :
+                                                    optColor === 'purple' ? 'text-purple-500' :
+                                                        optColor === 'emerald' ? 'text-emerald-500' :
+                                                            optColor === 'red' ? 'text-rose-500' : 'text-slate-500';
+
+                                            return (
+                                                <button
+                                                    key={opt.value}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleStatusClick(opt.value);
+                                                    }}
+                                                    className={`
+                                                        w-full flex items-center gap-3 px-3 py-2 text-xs font-bold rounded-xl transition-all border border-transparent
+                                                        ${isActive ? `shadow-sm ${activeColorClass}` : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+                                                    `}
+                                                >
+                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? 'bg-white shadow-sm' : 'bg-slate-50'} transition-colors`}>
+                                                        <OptIcon size={16} className={iconColorClass} />
+                                                    </div>
+                                                    <span className="flex-1 text-left">{opt.label}</span>
+                                                    {isActive && (
+                                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center ${isActive ? iconColorClass.replace('text', 'bg') : 'bg-blue-600'}`}>
+                                                            <Check size={10} className="text-white" strokeWidth={4} />
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
-                                    Delete Lead
-                                </button>
-                            </div>
-                        </Portal>
-                    )}
+                                </div>
+                            </Portal>
+                        )}
+                    </div>
                 </div>
             </div>
         </motion.div>
     );
 };
-

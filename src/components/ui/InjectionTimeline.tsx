@@ -70,7 +70,7 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
 
                     <button
                         onClick={onAddInjection}
-                        className="btn-premium-blue !px-4 !py-2 text-xs shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all"
+                        className="btn-premium-blue !px-4 !py-2 text-xs shadow-lg shadow-promed-primary/20 hover:shadow-promed-primary/40 hover:-translate-y-0.5 transition-all"
                     >
                         <Plus size={16} className="relative z-10" />
                         <span>{t('add_injection')}</span>
@@ -117,7 +117,7 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                     ${isDone && injections[index + 1]?.status === InjectionStatus.COMPLETED
                                                         ? 'bg-emerald-500' // History (Done -> Done)
                                                         : isDone && injections[index + 1]?.status === InjectionStatus.SCHEDULED
-                                                            ? 'bg-blue-500' // Done -> Active (Connects last completed to current)
+                                                            ? 'bg-promed-primary' // Done -> Active (Connects last completed to current)
                                                             : 'border-l-2 border-dashed border-slate-300 left-[8px] bg-transparent' // Future (Dashed)
                                                     }
                                                 `}
@@ -130,12 +130,12 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                           w-9 h-9 rounded-full border-[3px] z-20
                                           transition-all duration-500 flex items-center justify-center
                                           ${isDone ? 'bg-emerald-500 border-emerald-100 shadow-lg shadow-emerald-200 ring-4 ring-emerald-50' :
-                                                isActive ? 'bg-white border-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.2)] animate-[pulse_8s_ease-in-out_infinite]' :
+                                                isActive ? 'bg-white border-promed-primary shadow-[0_0_0_4px_rgba(0,51,255,0.2)] animate-[pulse_8s_ease-in-out_infinite]' :
                                                     'bg-slate-50 border-slate-300' // Future
                                             }
                                         `}>
                                             {isDone && <Check size={16} className="text-white font-bold" strokeWidth={3} />}
-                                            {isActive && <div className="w-3 h-3 bg-blue-500 rounded-full" />}
+                                            {isActive && <div className="w-3 h-3 bg-promed-primary rounded-full" />}
                                             {isFuture && <div className="w-2.5 h-2.5 rounded-full border-2 border-slate-300" />}
                                             {isMissed && <X size={16} className="text-white" strokeWidth={3} />}
                                         </div>
@@ -145,10 +145,10 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                             p-5 rounded-2xl border transition-all duration-300 
                                             flex flex-col md:flex-row justify-between items-start group/card relative overflow-hidden pr-5 gap-4 md:gap-0
                                             ${isActive
-                                                ? 'bg-white border-blue-100/50 shadow-apple opacity-100 scale-100'
+                                                ? 'bg-white border-promed-primary/10 shadow-apple opacity-100 scale-100'
                                                 : isFuture
                                                     ? 'bg-slate-50 border-slate-100 shadow-none opacity-60 hover:opacity-100'
-                                                    : 'bg-[hsl(204,66%,92%)] border-blue-100/50 shadow-sm opacity-100' // Completed/Done style
+                                                    : 'bg-promed-light/60 border-promed-primary/10 shadow-sm opacity-100' // Completed/Done style
                                             }
                                         `}>
 
@@ -160,7 +160,7 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
 
                                             <div className="flex-1 min-w-0 pr-4">
                                                 <div className="flex items-center gap-3">
-                                                    <h4 className={`font-bold text-base ${isDone ? 'text-emerald-700' : isActive ? 'text-blue-700' : 'text-slate-500'}`}>
+                                                    <h4 className={`font-black text-base ${isDone ? 'text-emerald-700' : isActive ? 'text-promed-primary' : 'text-slate-500'}`}>
                                                         {t('injection')} #{index + 1}
                                                     </h4>
 
@@ -168,7 +168,7 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                     <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); onEditInjection(inj); }}
-                                                            className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 rounded-lg transition-colors"
+                                                            className="p-1.5 text-slate-400 hover:text-promed-primary hover:bg-slate-100 rounded-lg transition-colors"
                                                             title={t('edit')}
                                                         >
                                                             <Edit2 size={14} />
@@ -192,8 +192,8 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                             })()}
                                                         </span>
                                                         {inj.date.includes('T') && (
-                                                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-md border flex items-center gap-1 whitespace-nowrap
-                                                                ${isActive ? 'bg-blue-50 text-blue-600 border-blue-100' : 'text-slate-400 bg-slate-50 border-slate-100'}
+                                                            <span className={`text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-md border flex items-center gap-1 whitespace-nowrap
+                                                                ${isActive ? 'bg-promed-light text-promed-primary border-promed-primary/10' : 'text-slate-400 bg-slate-50 border-slate-100'}
                                                             `}>
                                                                 <Clock size={10} />
                                                                 {inj.date.split('T')[1].substring(0, 5)}

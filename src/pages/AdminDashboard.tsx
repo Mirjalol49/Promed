@@ -547,7 +547,7 @@ export const AdminDashboard: React.FC = () => {
                                         {[
                                             { id: 'billing', label: 'Billing / Invoice', color: 'bg-amber-500' },
                                             { id: 'congratulations', label: 'Congratulations', color: 'bg-emerald-500' },
-                                            { id: 'message', label: 'General Message', color: 'bg-blue-500' }
+                                            { id: 'message', label: 'General Message', color: 'bg-promed-primary' }
                                         ].map(cat => (
                                             <button
                                                 key={cat.id}

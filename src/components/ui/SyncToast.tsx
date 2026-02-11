@@ -44,8 +44,8 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
             return {
                 mascotImg: injectionMascot,
                 mascotSide: 'left', // Doctor leans on the left
-                titleColor: 'text-blue-600',
-                progressColor: 'bg-blue-500',
+                titleColor: 'text-promed-primary',
+                progressColor: 'bg-promed-primary',
                 tailColor: 'bg-white'
             };
         }
@@ -87,7 +87,7 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
         success: 'shadow-emerald-500/20',
         error: 'shadow-rose-500/20',
         warning: 'shadow-amber-500/20',
-        injection: 'shadow-blue-500/20',
+        injection: 'shadow-promed-primary/20',
         info: 'shadow-slate-500/20'
     }[type] || 'shadow-slate-500/20';
 
@@ -95,7 +95,7 @@ const SyncToast: React.FC<SyncToastProps> = ({ isVisible, title, message, type =
         success: 'from-emerald-400 to-emerald-600',
         error: 'from-rose-400 to-rose-600',
         warning: 'from-amber-400 to-amber-600',
-        injection: 'from-blue-400 to-blue-600',
+        injection: 'from-promed-primary to-promed-dark',
         info: 'from-slate-400 to-slate-600'
     }[type] || 'from-slate-400 to-slate-600';
 

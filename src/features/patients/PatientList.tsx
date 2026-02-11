@@ -46,6 +46,7 @@ import thinkingMascot from '../../assets/images/patients.png'; // Fallback
 import injectionMascot from '../../assets/images/injection.png';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { TimePicker } from '../../components/ui/TimePicker';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { Portal } from '../../components/ui/Portal';
 import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
 import { compressImage } from '../../lib/imageOptimizer';
@@ -435,18 +436,10 @@ export const PatientList: React.FC<{
             })}
           </div>
         ) : (
-          <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center space-y-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-blue-100/50 blur-3xl rounded-full scale-150"></div>
-              <img
-                src={thinkingMascot}
-                alt="Thinking"
-                className="w-24 h-24 object-contain relative z-10 "
-              />
-            </div>
-            <div className="text-center relative z-10">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest opacity-80 mb-2">{t('empty_patient_list_title') || "No Patients Found"}</h3>
-            </div>
+          <div className="py-12">
+            <EmptyState
+              message={t('empty_patient_list_title') || "No Patients Found"}
+            />
           </div>
         )}
       </div>
@@ -527,20 +520,10 @@ export const PatientList: React.FC<{
               })
             ) : (
               <tr key="empty">
-                <td colSpan={4} className="p-12 text-center text-slate-500">
-                  <div className="flex flex-col items-center justify-center space-y-6">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-blue-100/50 blur-3xl rounded-full scale-150"></div>
-                      <img
-                        src={thinkingMascot}
-                        alt="Thinking"
-                        className="w-24 h-24 object-contain relative z-10 "
-                      />
-                    </div>
-                    <div className="text-center relative z-10">
-                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest opacity-80 mb-2">{t('empty_patient_list_title') || "No Patients Found"}</h3>
-                    </div>
-                  </div>
+                <td colSpan={4} className="p-12">
+                  <EmptyState
+                    message={t('empty_patient_list_title') || "No Patients Found"}
+                  />
                 </td>
               </tr>
             )}

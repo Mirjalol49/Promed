@@ -24,7 +24,7 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
         { id: 'pink', bg: 'bg-rose-500', label: t('urgency') },
         { id: 'green', bg: 'bg-teal-500', label: t('todo') },
         { id: 'yellow', bg: 'bg-amber-400', label: t('note') },
-        { id: 'blue', bg: 'bg-blue-500', label: t('note') },
+        { id: 'blue', bg: 'bg-promed-primary', label: t('note') },
         { id: 'purple', bg: 'bg-violet-500', label: t('note') },
     ];
 
@@ -69,7 +69,7 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
             case 'pink': return { badge: 'bg-rose-100 text-rose-700 border-rose-200', dot: 'bg-rose-500' };
             case 'green': return { badge: 'bg-teal-100 text-teal-700 border-teal-200', dot: 'bg-teal-500' };
             case 'yellow': return { badge: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500' };
-            case 'blue': return { badge: 'bg-blue-100 text-blue-700 border-blue-200', dot: 'bg-blue-500' };
+            case 'blue': return { badge: 'bg-promed-light text-promed-primary border-promed-primary/20', dot: 'bg-promed-primary' };
             case 'purple': return { badge: 'bg-violet-100 text-violet-700 border-violet-200', dot: 'bg-violet-500' };
             default: return { badge: 'bg-slate-100 text-slate-700 border-slate-200', dot: 'bg-slate-500' };
         }

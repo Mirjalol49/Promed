@@ -15,6 +15,7 @@ import { FolderCard, FolderType } from './FolderCard';
 import { AddNoteModal } from './AddNoteModal';
 import { TimelineNote } from './TimelineNote';
 import DeleteModal from '../../components/ui/DeleteModal';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 export const NotesPage: React.FC = () => {
     const { t } = useLanguage();
@@ -191,8 +192,8 @@ export const NotesPage: React.FC = () => {
                                     <ArrowLeft size={24} className="text-slate-600" />
                                 </button>
                             ) : (
-                                <div className="p-2.5 bg-blue-100 rounded-xl">
-                                    <FolderOpen className="text-blue-600" size={24} />
+                                <div className="p-2.5 gel-blue-style text-white rounded-xl">
+                                    <FolderOpen size={24} />
                                 </div>
                             )}
 
@@ -222,7 +223,7 @@ export const NotesPage: React.FC = () => {
                                         placeholder={t('search_files') || t('search')}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-400 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all font-medium"
                                     />
                                 </div>
                                 <button
@@ -273,13 +274,10 @@ export const NotesPage: React.FC = () => {
                     </div>
                 ) : displayNotes.length === 0 ? (
                     /* EMPTY STATE INSIDE FOLDER */
-                    <div className="flex flex-col items-center justify-center h-full text-center opacity-60">
-                        <div className="p-4 bg-slate-100 rounded-full mb-4">
-                            <FileText size={40} className="text-slate-400" />
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-700">{t('no_notes_found')}</h3>
-                        <p className="text-slate-500">{t('add_note_prompt')}</p>
-                    </div>
+                    <EmptyState
+                        message={t('no_notes_found') || "No notes found"}
+                        description={t('add_note_prompt') || "Click the + button to add a new note"}
+                    />
                 ) : activeFolder === 'todo' ? (
                     /* TIMELINE VIEW FOR TASKS */
                     <div className="max-w-4xl mx-auto py-8 relative min-h-[500px]">

@@ -17,9 +17,9 @@ export default {
 			colors: {
 				// ProMed branding colors
 				promed: {
-					dark: 'hsl(244, 86%, 35%)',
-					primary: 'hsl(244, 86%, 50%)',
-					deep: 'hsl(243, 85%, 28%)',
+					dark: '#001188',
+					primary: '#0033FF',
+					deep: '#000c66',
 					light: 'hsl(244, 86%, 96%)',
 					bg: '#ffffff',
 					text: 'hsl(0, 0%, 0%)',
@@ -34,7 +34,7 @@ export default {
 					mint: '#00C7BE',
 					teal: '#30B0C7',
 					cyan: '#32ADE6',
-					blue: '#007AFF',
+					blue: '#0033FF',
 					indigo: '#5856D6',
 					purple: '#AF52DE',
 					pink: '#FF2D55',
