@@ -660,7 +660,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     return (
         <div className="flex h-[calc(100vh-96px)] md:h-[calc(100vh-120px)] bg-white rounded-3xl shadow-2xl border border-slate-300 overflow-hidden font-sans">
             {/* Sidebar */}
-            <div className="w-full md:w-96 border-r border-slate-300 flex flex-col bg-white">
+            <div className={`w-full md:w-96 border-r border-slate-300 flex-col bg-white ${selectedPatientId ? 'hidden md:flex' : 'flex'}`}>
                 <div className="p-5 border-b border-slate-300">
                     <h2 className="font-bold text-2xl text-slate-800 mb-4 tracking-tight">{t('messages')}</h2>
                     <div className="relative">
@@ -730,7 +730,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
             {/* Chat Area */}
             <div
-                className="flex-1 flex flex-col bg-[#F8FAFC]"
+                className={`flex-1 flex-col bg-[#F8FAFC] ${selectedPatientId ? 'flex' : 'hidden md:flex'}`}
                 onClickCapture={handleMarkAsRead} // Capture phase to ensure it runs before other handlers if needed, or bubble is fine. Let's use standard onClick or onClickCapture. onClick is safer.
             >
                 {selectedPatient ? (
@@ -738,6 +738,12 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                         {/* Header */}
                         <div className="px-6 py-4 bg-white border-b border-slate-300 flex items-center justify-between shadow-md z-20 sticky top-0">
                             <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setSelectedPatientId(null)}
+                                    className="md:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors"
+                                >
+                                    <ChevronDown className="rotate-90" size={24} />
+                                </button>
                                 <ProfileAvatar src={selectedPatient.profileImage} alt={selectedPatient.fullName} size={44} className="rounded-full shadow-sm" />
                                 <div>
                                     <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">

@@ -52,16 +52,16 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                                 key={item.page}
                                 onClick={() => onNavigate(item.page)}
                                 className={`
-                                    relative flex-1 min-w-[64px] h-[64px] flex flex-col items-center justify-center gap-1 rounded-2xl transition-all duration-300 outline-none
-                                    ${isActive ? 'bg-promed-primary text-white shadow-lg shadow-promed-primary/25 scale-105 z-10' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}
+                                    relative flex-1 min-w-[64px] h-[64px] flex flex-col items-center justify-center gap-1.5 transition-all duration-300 outline-none rounded-2xl
+                                    ${isActive ? 'bg-blue-50 text-promed-primary ring-1 ring-blue-100' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50/50'}
                                 `}
                             >
                                 <item.icon
                                     size={24}
                                     strokeWidth={isActive ? 2.5 : 2}
-                                    className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-105'}`}
+                                    className={`transition-transform duration-300 ${isActive ? 'scale-110 drop-shadow-sm' : 'group-hover:scale-105'}`}
                                 />
-                                <span className={`text-[9px] font-bold tracking-tight ${isActive ? 'text-white/90' : 'text-slate-400'}`}>
+                                <span className={`text-[10px] font-bold tracking-tight ${isActive ? 'text-promed-primary' : 'text-slate-400'}`}>
                                     {item.label}
                                 </span>
                             </button>

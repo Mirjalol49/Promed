@@ -226,7 +226,7 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                                     animate={{ opacity: 1, y: 0 }}
                                                     layout
                                                     className={`group relative rounded-2xl bg-white border transition-all duration-300 overflow-hidden
-                                                        ${isExpanded ? 'border-promed-primary shadow-lg ring-1 ring-promed-primary/20' : 'border-indigo-200 shadow-md hover:border-promed-primary/40 hover:shadow-lg'}
+                                                        ${isExpanded ? 'border-promed-primary shadow-lg' : 'border-indigo-50 shadow-sm hover:border-promed-primary/40 hover:shadow-md'}
                                                     `}
                                                 >
                                                     {/* Primary Card Content */}

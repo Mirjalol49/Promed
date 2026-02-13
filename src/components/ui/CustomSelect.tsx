@@ -184,7 +184,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
                     text-slate-700 font-bold transition-all duration-200 outline-none
                     ${minimal
                         ? 'bg-transparent border-none h-full'
-                        : `h-[52px] bg-slate-50 border border-slate-300 rounded-2xl ${isOpen ? 'ring-4 ring-promed-primary/10 border-promed-primary bg-white' : 'hover:border-slate-400 hover:bg-white'}`
+                        : `h-[52px] bg-slate-50 border border-slate-300 rounded-2xl ${isOpen ? 'border-promed-primary bg-white' : 'hover:border-slate-400 hover:bg-white'}`
                     }
                 `}
             >

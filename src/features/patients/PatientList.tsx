@@ -1494,55 +1494,7 @@ export const AddPatientForm: React.FC<{
                     </div>
                   </div>
                   {/* Finance Specs */}
-                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200">
-                    <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 text-sm uppercase tracking-wide border-b border-slate-100 pb-2">
-                      <DollarSign size={18} className="text-promed-primary" />
-                      {t('financial_details') || "Financial Details"}
-                    </h4>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('total_price') || "Total Price"}</label>
-                        <div className="relative group">
-                          <DollarSign size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-                          <input
-                            type="number"
-                            value={totalAmount}
-                            onChange={e => setTotalAmount(e.target.value)}
-                            className="w-full pl-10 pr-20 py-3 bg-slate-50 border border-slate-400 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
-                            placeholder="2500"
-                          />
-                          <div className="absolute right-2 top-2 bottom-2">
-                            <select
-                              value={currency}
-                              onChange={e => setCurrency(e.target.value as any)}
-                              className="h-full bg-slate-100 rounded-lg px-2 text-xs font-bold text-slate-600 border-none focus:ring-0 outline-none"
-                            >
-                              <option value="USD">USD</option>
-                              <option value="UZS">UZS</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Initial Payment - Only for New Patients */}
-                      {!initialData && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('initial_payment') || "Initial Payment"}</label>
-                          <div className="relative group">
-                            <Wallet size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-                            <input
-                              type="number"
-                              value={initialPayment}
-                              onChange={e => setInitialPayment(e.target.value)}
-                              className="w-full pl-10 pr-4 py-3 bg-emerald-50/50 border border-emerald-200 rounded-xl focus:bg-white outline-none transition-all font-medium text-emerald-900 placeholder-emerald-300"
-                              placeholder="500"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
                 </div>
               </div>
 
