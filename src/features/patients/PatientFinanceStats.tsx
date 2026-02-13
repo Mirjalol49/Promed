@@ -1,102 +1,318 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Patient, Transaction, TransactionCategory } from '../../types';
-import { subscribeToTransactions, addTransaction } from '../../lib/financeService';
+import { subscribeToTransactions, deleteTransaction, restoreTransaction } from '../../lib/financeService';
 import { useToast } from '../../contexts/ToastContext';
 import {
-    DollarSign,
-    TrendingUp,
     CreditCard,
-    Calendar,
     Plus,
     Wallet,
     CheckCircle2,
-    Clock,
-    AlertCircle
+    ChevronDown,
+    User,
+    Percent,
+    Building2,
+    ArrowDownRight,
+    TrendingUp,
+    ChevronLeft,
+    ChevronRight,
+    X as XIcon,
+    TrendingDown,
+    PieChart,
+    Trash2,
+    RotateCcw,
+    Activity,
+    Syringe,
+    Users,
+    Calendar as CalendarIcon,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { AddPaymentModal } from './AddPaymentModal';
 import { formatWithSpaces } from '../../lib/formatters';
+import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
+import DeleteModal from '../../components/ui/DeleteModal';
+import { subscribeToStaff } from '../../lib/staffService';
+import { Staff } from '../../types';
 
 interface PatientFinanceStatsProps {
     patient: Patient;
     accountId: string;
 }
 
+interface GroupedTransaction {
+    income: Transaction;
+    splits: Transaction[];
+    clinicAmount: number;
+    clinicPercent: number;
+}
+
+// A unified timeline item: either grouped income or standalone expense
+type TimelineItem =
+    | { kind: 'income'; data: GroupedTransaction }
+    | { kind: 'expense'; data: Transaction };
+
+// ── Color palette for split items ──
+const SPLIT_COLORS = [
+    { bg: 'bg-violet-500', light: 'bg-violet-50', border: 'border-violet-100', text: 'text-violet-600', ring: 'ring-violet-100' },
+    { bg: 'bg-blue-500', light: 'bg-blue-50', border: 'border-blue-100', text: 'text-blue-600', ring: 'ring-blue-100' },
+    { bg: 'bg-pink-500', light: 'bg-pink-50', border: 'border-pink-100', text: 'text-pink-600', ring: 'ring-pink-100' },
+    { bg: 'bg-orange-500', light: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-600', ring: 'ring-orange-100' },
+    { bg: 'bg-cyan-500', light: 'bg-cyan-50', border: 'border-cyan-100', text: 'text-cyan-600', ring: 'ring-cyan-100' },
+];
+
 export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patient, accountId }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { success, error: toastError } = useToast();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [staffList, setStaffList] = useState<Staff[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddingPayment, setIsAddingPayment] = useState(false);
     const [filterCategory, setFilterCategory] = useState<'all' | 'surgery' | 'injection'>('all');
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+    const [deleteItem, setDeleteItem] = useState<TimelineItem | null>(null);
 
+    const [selectedMonth, setSelectedMonth] = useState<string>('');
+    const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+    const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+    const monthPickerRef = useRef<HTMLDivElement>(null);
+
+    // Click outside to close month picker
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (monthPickerRef.current && !monthPickerRef.current.contains(e.target as Node)) {
+                setIsMonthPickerOpen(false);
+            }
+        };
+        if (isMonthPickerOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isMonthPickerOpen]);
+
+    const MONTH_NAMES_SHORT_MAP: Record<string, string[]> = {
+        en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        uz: ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'],
+        ru: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+    };
+    const MONTH_NAMES_FULL_MAP: Record<string, string[]> = {
+        en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        uz: ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'],
+        ru: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+    };
+    const MONTH_NAMES_SHORT = MONTH_NAMES_SHORT_MAP[language] || MONTH_NAMES_SHORT_MAP.uz;
+    const MONTH_NAMES_FULL = MONTH_NAMES_FULL_MAP[language] || MONTH_NAMES_FULL_MAP.uz;
+
+    const getMonthShort = (dateStr: string) => {
+        const d = new Date(dateStr);
+        return MONTH_NAMES_SHORT[d.getMonth()];
+    };
+
+    const handleSelectMonth = (monthIndex: number) => {
+        const mm = String(monthIndex + 1).padStart(2, '0');
+        setSelectedMonth(`${pickerYear}-${mm}`);
+        setIsMonthPickerOpen(false);
+    };
+
+    const handleClearMonth = () => {
+        setSelectedMonth('');
+        setIsMonthPickerOpen(false);
+    };
+
+    const selectedMonthLabel = useMemo(() => {
+        if (!selectedMonth) return t('all_months') || 'Barcha oylar';
+        const [y, m] = selectedMonth.split('-');
+        return `${MONTH_NAMES_FULL[parseInt(m) - 1]} ${y}`;
+    }, [selectedMonth, t]);
+
+    // Filter by Month first (shared by Timeline and Stats)
+    const dateFilteredTransactions = useMemo(() => {
+        if (!selectedMonth) return transactions;
+        return transactions.filter(t => t.date.startsWith(selectedMonth));
+    }, [transactions, selectedMonth]);
+
+    const performDelete = async () => {
+        if (!deleteItem) return;
+        try {
+            if (deleteItem.kind === 'income') {
+                const { splits, income } = deleteItem.data;
+                if (splits.length > 0) {
+                    await Promise.all(splits.map(s => deleteTransaction(s.id)));
+                }
+                await deleteTransaction(income.id);
+            } else {
+                await deleteTransaction(deleteItem.data.id);
+            }
+            success(t('transaction_deleted') || "O'chirildi");
+        } catch (err) {
+            console.error(err);
+            toastError(t('error_deleting') || "Xatolik");
+        } finally {
+            setDeleteItem(null);
+        }
+    };
+
+    const handleRestore = async (item: TimelineItem) => {
+        try {
+            if (item.kind === 'income') {
+                const { splits, income } = item.data;
+                // Restore income
+                await restoreTransaction(income.id);
+                // Restore splits
+                if (splits.length > 0) {
+                    await Promise.all(splits.map(s => restoreTransaction(s.id)));
+                }
+            } else {
+                await restoreTransaction(item.data.id);
+            }
+            success("Tranzaksiya tiklandi");
+        } catch (err) {
+            console.error(err);
+            toastError("Xatolik yuz berdi");
+        }
+    };
+
+    // Fetch transactions
     useEffect(() => {
         if (!accountId) return;
-
         const unsub = subscribeToTransactions(accountId, (allTransactions) => {
-            const patientTransactions = allTransactions.filter(t => t.patientId === patient.id);
-            // Sort by date and time desc
-            patientTransactions.sort((a, b) => {
+            const patientTx = allTransactions.filter(t => t.patientId === patient.id);
+            patientTx.sort((a, b) => {
                 const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
                 const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
                 return dateB.getTime() - dateA.getTime();
             });
-            setTransactions(patientTransactions);
+            setTransactions(patientTx);
             setLoading(false);
         });
-
         return () => unsub();
     }, [accountId, patient.id]);
 
-    const filteredTransactions = useMemo(() => {
-        if (filterCategory === 'all') return transactions;
-        return transactions.filter(t => t.category === filterCategory);
-    }, [transactions, filterCategory]);
+    // Fetch staff for avatars
+    useEffect(() => {
+        if (!accountId) return;
+        const unsub = subscribeToStaff(accountId, (staff) => setStaffList(staff));
+        return () => unsub();
+    }, [accountId]);
+
+    // Build unified timeline: grouped incomes + standalone expenses
+    const timeline = useMemo((): TimelineItem[] => {
+        // Use dateFilteredTransactions instead of transactions
+        const incomes = dateFilteredTransactions.filter(t => t.type === 'income' && !t.returned);
+        const allSplits = dateFilteredTransactions.filter(t => t.description?.startsWith('[Split]'));
+        const splitIds = new Set(allSplits.map(s => s.id));
+        // Standalone expenses = expense type, not a [Split], for this patient
+        const standaloneExpenses = dateFilteredTransactions.filter(t =>
+            t.type === 'expense' && !splitIds.has(t.id) && !t.description?.startsWith('[Split]')
+        );
+
+        const filteredIncomes = filterCategory === 'all'
+            ? incomes
+            : incomes.filter(t => t.category === filterCategory);
+
+        const incomeItems: TimelineItem[] = filteredIncomes.map(income => {
+            const relatedSplits = allSplits.filter(s =>
+                s.date === income.date &&
+                s.time === income.time &&
+                s.patientId === income.patientId
+            );
+            const totalSplitAmount = relatedSplits.reduce((sum, s) => sum + Number(s.amount), 0);
+            const clinicAmount = Math.max(0, Number(income.amount) - totalSplitAmount);
+            const clinicPercent = Number(income.amount) > 0
+                ? Math.round((clinicAmount / Number(income.amount)) * 100) : 100;
+
+            return { kind: 'income', data: { income, splits: relatedSplits, clinicAmount, clinicPercent } };
+        });
+
+        const expenseItems: TimelineItem[] = standaloneExpenses.map(exp => ({
+            kind: 'expense',
+            data: exp
+        }));
+
+        // Merge and sort by date+time descending
+        const all = [...incomeItems, ...expenseItems];
+        all.sort((a, b) => {
+            const txA = a.kind === 'income' ? a.data.income : a.data;
+            const txB = b.kind === 'income' ? b.data.income : b.data;
+            const dA = new Date(`${txA.date}T${txA.time || '00:00'}`);
+            const dB = new Date(`${txB.date}T${txB.time || '00:00'}`);
+            return dB.getTime() - dA.getTime();
+        });
+        return all;
+    }, [dateFilteredTransactions, filterCategory]);
 
     const stats = useMemo(() => {
-        const totalPaid = filteredTransactions
-            .filter(t => t.type === 'income' && !t.returned)
-            .reduce((sum, t) => sum + Number(t.amount), 0);
+        // Use dateFilteredTransactions instead of transactions
+        const incomes = dateFilteredTransactions.filter(t => t.type === 'income' && !t.returned && !t.isVoided);
+        const filteredInc = filterCategory === 'all' ? incomes : incomes.filter(t => t.category === filterCategory);
+        const totalPaid = filteredInc.reduce((sum, t) => sum + Number(t.amount), 0);
 
-        const totalCost = patient.totalAmount || 0;
-        const remaining = Math.max(0, totalCost - totalPaid);
-        const percentPaid = totalCost > 0 ? Math.round((totalPaid / totalCost) * 100) : 0;
+        const allSplits = dateFilteredTransactions.filter(t => t.description?.startsWith('[Split]'));
+        const splitIds = new Set(allSplits.map(s => s.id));
+        const standaloneExpenses = dateFilteredTransactions.filter(t =>
+            t.type === 'expense' && !splitIds.has(t.id) && !t.description?.startsWith('[Split]') && !t.isVoided
+        );
+        const totalExpenses = standaloneExpenses.reduce((sum, t) => sum + Number(t.amount), 0);
 
-        return { totalPaid, totalCost, remaining, percentPaid };
-    }, [filteredTransactions, patient.totalAmount]);
+        return { totalPaid, totalExpenses };
+    }, [dateFilteredTransactions, filterCategory]);
 
+    const toggleExpand = useCallback((id: string) => {
+        setExpandedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+                // Auto-scroll to the breakdown after it renders
+                setTimeout(() => {
+                    const el = document.querySelector(`[data-breakdown-id="${id}"]`);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }, 350);
+            }
+            return next;
+        });
+    }, []);
+
+    // Find staff info for a split transaction
+    const getStaffForSplit = (tx: Transaction) => {
+        if (tx.staffId) return staffList.find(s => s.id === tx.staffId);
+        return undefined;
+    };
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Simplified Summary Header */}
+            {/* ── Summary Stats ── */}
             <div className="flex flex-wrap items-center justify-between gap-4 p-6 bg-white rounded-3xl border border-slate-200 shadow-sm">
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-8">
                     <div>
                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('paid_so_far')}</div>
                         <div className="text-2xl font-black text-emerald-600">
                             {formatWithSpaces(stats.totalPaid)} <span className="text-xs text-slate-400">UZS</span>
                         </div>
                     </div>
+                    {stats.totalExpenses > 0 && (
+                        <div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('expense') || 'Xarajat'}</div>
+                            <div className="text-2xl font-black text-rose-500">
+                                {formatWithSpaces(stats.totalExpenses)} <span className="text-xs text-slate-400">UZS</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
-
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setIsAddingPayment(!isAddingPayment)}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all ${isAddingPayment ? 'bg-slate-100 text-slate-600' : 'btn-premium-emerald hover:scale-105 active:scale-95'}`}
-                    >
-                        {isAddingPayment ? t('cancel') : (
-                            <>
-                                <Plus size={18} strokeWidth={3} />
-                                {t('add_payment')}
-                            </>
-                        )}
-                    </button>
-                </div>
+                <button
+                    onClick={() => setIsAddingPayment(!isAddingPayment)}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all ${isAddingPayment ? 'bg-slate-100 text-slate-600' : 'btn-premium-emerald hover:scale-105 active:scale-95'}`}
+                >
+                    {isAddingPayment ? t('cancel') : (
+                        <><Plus size={18} strokeWidth={3} />{t('add_payment')}</>
+                    )}
+                </button>
             </div>
 
-            {/* Add Payment Modal */}
             <AddPaymentModal
                 isOpen={isAddingPayment}
                 onClose={() => setIsAddingPayment(false)}
@@ -104,8 +320,9 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                 accountId={accountId}
             />
 
-            {/* Transactions List */}
+            {/* ── Transaction History ── */}
             <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-premium overflow-hidden">
+                {/* Header */}
                 <div className="px-8 py-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
                     <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
                         <div className="p-2 bg-promed-light rounded-xl">
@@ -114,74 +331,457 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                         {t('transaction_history')}
                     </h3>
 
-                    {/* Category Filter Chips */}
-                    <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-2xl border border-slate-100">
-                        <button
-                            onClick={() => setFilterCategory('all')}
-                            className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${filterCategory === 'all' ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            {t('filter_all')}
-                        </button>
-                        <button
-                            onClick={() => setFilterCategory('surgery')}
-                            className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${filterCategory === 'surgery' ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            {t('surgery')}
-                        </button>
-                        <button
-                            onClick={() => setFilterCategory('injection')}
-                            className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${filterCategory === 'injection' ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            {t('injection')}
-                        </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* Custom Month Picker */}
+                        <div className="relative" ref={monthPickerRef}>
+                            {/* Trigger Button */}
+                            <button
+                                onClick={() => {
+                                    if (!isMonthPickerOpen && selectedMonth) {
+                                        setPickerYear(parseInt(selectedMonth.split('-')[0]));
+                                    } else if (!isMonthPickerOpen) {
+                                        setPickerYear(new Date().getFullYear());
+                                    }
+                                    setIsMonthPickerOpen(!isMonthPickerOpen);
+                                }}
+                                className={`flex items-center gap-2.5 pl-3.5 pr-4 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200 border ${selectedMonth
+                                    ? 'bg-promed-primary/5 border-promed-primary/20 text-promed-primary hover:bg-promed-primary/10'
+                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'
+                                    } ${isMonthPickerOpen ? 'ring-2 ring-promed-primary/20 shadow-lg shadow-promed-primary/5' : ''}`}
+                            >
+                                <CalendarIcon size={16} strokeWidth={2.5} />
+                                <span className="whitespace-nowrap">{selectedMonthLabel}</span>
+                                {selectedMonth && (
+                                    <span
+                                        onClick={(e) => { e.stopPropagation(); handleClearMonth(); }}
+                                        className="ml-1 p-0.5 rounded-full hover:bg-promed-primary/20 transition-colors cursor-pointer"
+                                    >
+                                        <XIcon size={12} strokeWidth={3} />
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* Dropdown */}
+                            {isMonthPickerOpen && (
+                                <div className="absolute top-full left-0 mt-2 z-50 w-[280px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-2xl shadow-slate-900/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {/* Year Navigation */}
+                                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+                                        <button
+                                            onClick={() => setPickerYear(y => y - 1)}
+                                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all active:scale-90"
+                                        >
+                                            <ChevronLeft size={18} strokeWidth={2.5} />
+                                        </button>
+                                        <span className="text-base font-black text-slate-800 tracking-tight">{pickerYear}</span>
+                                        <button
+                                            onClick={() => setPickerYear(y => y + 1)}
+                                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all active:scale-90"
+                                        >
+                                            <ChevronRight size={18} strokeWidth={2.5} />
+                                        </button>
+                                    </div>
+
+                                    {/* Month Grid */}
+                                    <div className="grid grid-cols-3 gap-1.5 p-4">
+                                        {MONTH_NAMES_SHORT.map((name, idx) => {
+                                            const mm = String(idx + 1).padStart(2, '0');
+                                            const value = `${pickerYear}-${mm}`;
+                                            const isActive = selectedMonth === value;
+                                            const isCurrentMonth = new Date().getFullYear() === pickerYear && new Date().getMonth() === idx;
+
+                                            return (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => handleSelectMonth(idx)}
+                                                    className={`relative py-2.5 px-1 rounded-xl text-[13px] font-bold transition-all duration-150 ${isActive
+                                                        ? 'bg-promed-primary text-white shadow-md shadow-promed-primary/30 scale-105'
+                                                        : isCurrentMonth
+                                                            ? 'bg-promed-primary/8 text-promed-primary ring-1 ring-promed-primary/20 hover:bg-promed-primary/15'
+                                                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800 active:scale-95'
+                                                        }`}
+                                                >
+                                                    {name}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Footer */}
+                                    <div className="px-4 pb-4 flex items-center gap-2">
+                                        <button
+                                            onClick={handleClearMonth}
+                                            className="flex-1 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all"
+                                        >
+                                            {t('clear') || 'Tozalash'}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const now = new Date();
+                                                setPickerYear(now.getFullYear());
+                                                handleSelectMonth(now.getMonth());
+                                            }}
+                                            className="flex-1 py-2 rounded-xl text-xs font-bold text-promed-primary hover:bg-promed-primary/5 transition-all"
+                                        >
+                                            {t('this_month') || 'Shu oy'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Category Filters */}
+                        <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+                            {(['all', 'surgery', 'injection'] as const).map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setFilterCategory(cat)}
+                                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${filterCategory === cat ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    {cat === 'all' ? t('filter_all') : t(cat)}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                {/* List */}
-                <div className="max-h-[600px] overflow-y-auto">
-                    {filteredTransactions.length > 0 ? (
-                        <div className="divide-y divide-slate-50">
-                            {filteredTransactions.map(tx => (
-                                <div key={tx.id} className="p-6 md:px-8 hover:bg-slate-50/50 transition-colors flex items-center justify-between group">
-                                    <div className="flex items-center gap-6">
-                                        <div className="hidden md:flex flex-col items-center justify-center p-3 bg-white rounded-2xl border border-slate-100 shadow-sm min-w-[70px]">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">{format(new Date(tx.date), 'MMM')}</span>
-                                            <span className="text-xl font-black text-slate-800 leading-none">{format(new Date(tx.date), 'dd')}</span>
-                                            <span className="text-[9px] font-bold text-promed-primary mt-1">{tx.time || '--:--'}</span>
-                                        </div>
-                                        <div>
-                                            <div className="font-black text-slate-800 text-lg mb-1">
-                                                {tx.description && tx.description !== t(tx.category)
-                                                    ? tx.description.replace(` - ${patient.fullName}`, '')
-                                                    : t(tx.category)}
+                {/* ── Transaction List ── */}
+                <div className="max-h-[700px] overflow-y-auto no-scrollbar">
+                    {timeline.length > 0 ? (
+                        <div>
+                            {timeline.map((item, itemIdx) => {
+                                // ══════════════════════════════
+                                // ── EXPENSE ROW ──
+                                // ══════════════════════════════
+                                if (item.kind === 'expense') {
+                                    const exp = item.data;
+                                    const isVoided = !!exp.isVoided;
+                                    return (
+                                        <div
+                                            key={exp.id}
+                                            className={`group relative px-6 md:px-8 py-5 flex items-center gap-5 transition-all duration-200 ${isVoided ? 'bg-gray-50/80 opacity-75' : 'hover:bg-rose-50/30'} ${itemIdx > 0 ? 'border-t border-slate-100' : ''}`}
+                                        >
+                                            {/* Date */}
+                                            <div className="hidden md:flex flex-col items-center justify-center w-16 h-16 bg-gradient-to-br from-rose-50 to-white rounded-2xl border border-rose-100 shadow-sm shrink-0">
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider leading-none">{getMonthShort(exp.date)}</span>
+                                                <span className="text-2xl font-black text-slate-800 leading-none mt-0.5">{format(new Date(exp.date), 'dd')}</span>
+                                                <span className="text-[9px] font-bold text-rose-400 leading-none mt-0.5">{exp.time || '--:--'}</span>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ${tx.category === 'surgery' ? 'bg-purple-50 text-purple-600' : tx.category === 'injection' ? 'bg-promed-light text-promed-primary' : 'bg-slate-100 text-slate-500'}`}>
-                                                    {t(tx.category)}
-                                                </span>
-                                                <span className="md:hidden text-[10px] font-bold text-slate-400">
-                                                    {format(new Date(tx.date), 'MMM dd')} • {tx.time || '--:--'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                    <div className="text-right flex items-center gap-8">
-                                        <div className="text-right">
-                                            <div className="text-xl font-black text-emerald-600">
-                                                +{formatWithSpaces(tx.amount)}
+                                            {/* Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className={`font-medium text-slate-600 text-sm leading-snug mb-1.5 line-clamp-2 break-words ${isVoided ? 'line-through decoration-slate-400 text-slate-400' : ''}`}>
+                                                    {exp.description || (t('expense') || 'Xarajat')}
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    {isVoided ? (
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-gray-200 text-gray-500">
+                                                            BEKOR QILINGAN
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-500 ring-1 ring-rose-100">
+                                                            <TrendingDown size={10} />
+                                                            {t('expense') || 'Xarajat'}
+                                                        </span>
+                                                    )}
+                                                    <span className="md:hidden text-[10px] font-bold text-slate-400">
+                                                        {getMonthShort(exp.date)} {format(new Date(exp.date), 'dd')} • {exp.time || '--:--'}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">UZS</div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest border border-emerald-100">
-                                                <CheckCircle2 size={12} strokeWidth={3} />
-                                                {t('completed')}
+
+                                            {/* Amount */}
+                                            <div className="text-right shrink-0">
+                                                <div className={`text-xl font-black tabular-nums ${isVoided ? 'text-slate-400 line-through decoration-slate-400' : 'text-rose-500'}`}>
+                                                    -{formatWithSpaces(exp.amount)} <span className={`text-xs font-bold ml-0.5 ${isVoided ? 'text-slate-300 no-underline' : 'text-rose-300'}`}>UZS</span>
+                                                </div>
                                             </div>
+
+                                            {isVoided ? (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleRestore(item); }}
+                                                    className="flex p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
+                                                    title="Tranzaksiyani tiklash"
+                                                >
+                                                    <RotateCcw size={18} strokeWidth={2.5} />
+                                                </button>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
+                                                        className="hidden md:flex p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                                        title={t('delete') || "O'chirish"}
+                                                    >
+                                                        <Trash2 size={18} strokeWidth={2.5} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
+                                                        className="md:hidden flex p-2 text-slate-300 active:text-rose-500"
+                                                    >
+                                                        <Trash2 size={18} strokeWidth={2.5} />
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
+                                    );
+                                }
+
+                                // ══════════════════════════════
+                                // ── INCOME ROW (grouped) ──
+                                // ══════════════════════════════
+                                const { income, splits, clinicAmount, clinicPercent } = item.data;
+                                const hasSplits = splits.length > 0;
+                                const isVoided = !!income.isVoided;
+                                const isExpanded = expandedIds.has(income.id);
+                                const totalAmount = Number(income.amount);
+
+                                return (
+                                    <div key={income.id}>
+                                        {/* ── Main Transaction Row ── */}
+                                        <div
+                                            className={`group relative px-6 md:px-8 py-5 flex items-center gap-5 transition-all duration-200 ${isVoided ? 'bg-gray-50/80 opacity-75' : (hasSplits ? 'cursor-pointer hover:bg-slate-50/70' : 'hover:bg-slate-50/40')} ${isExpanded ? 'bg-slate-50/50' : ''} ${itemIdx > 0 ? 'border-t border-slate-100' : ''}`}
+                                            onClick={() => !isVoided && hasSplits && toggleExpand(income.id)}
+                                        >
+                                            {/* Date */}
+                                            <div className="hidden md:flex flex-col items-center justify-center w-16 h-16 bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-100 shadow-sm shrink-0">
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider leading-none">{getMonthShort(income.date)}</span>
+                                                <span className="text-2xl font-black text-slate-800 leading-none mt-0.5">{format(new Date(income.date), 'dd')}</span>
+                                                <span className="text-[9px] font-bold text-emerald-500 leading-none mt-0.5">{income.time || '--:--'}</span>
+                                            </div>
+
+                                            {/* Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className={`font-medium text-slate-600 text-sm leading-snug mb-1.5 line-clamp-2 break-words ${isVoided ? 'line-through decoration-slate-400 text-slate-400' : ''}`}>
+                                                    {income.description && income.description !== t(income.category)
+                                                        ? income.description.replace(` - ${patient.fullName}`, '')
+                                                        : t(income.category)}
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    {isVoided ? (
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-gray-200 text-gray-500">
+                                                            BEKOR QILINGAN
+                                                        </span>
+                                                    ) : (
+                                                        <>
+                                                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${income.category === 'surgery'
+                                                                ? 'bg-violet-50 text-violet-600 ring-1 ring-violet-100'
+                                                                : 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100'
+                                                                }`}>
+                                                                {income.category === 'surgery' ? <Activity size={10} /> : <Syringe size={10} />}
+                                                                {t(income.category)}
+                                                            </span>
+
+                                                            {/* Split Badges */}
+                                                            {hasSplits && (
+                                                                <div className="flex items-center gap-1">
+                                                                    {splits.some(s => s.category === 'salary') && (
+                                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[9px] font-bold border border-blue-100">
+                                                                            <Users size={8} />
+                                                                            {t('salary_split') || 'Ish haqi'}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}<span className="md:hidden text-[10px] font-bold text-slate-400">
+                                                        {getMonthShort(income.date)} {format(new Date(income.date), 'dd')} • {income.time || '--:--'}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Amount */}
+                                            <div className="text-right shrink-0">
+                                                <div className={`text-xl font-black tabular-nums ${isVoided ? 'text-slate-400 line-through decoration-slate-400' : 'text-emerald-500'}`}>
+                                                    +{formatWithSpaces(income.amount)} <span className={`text-xs font-bold ml-0.5 ${isVoided ? 'text-slate-300 no-underline' : 'text-emerald-300'}`}>UZS</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Expand chevron */}
+                                            {hasSplits && !isVoided && (
+                                                <motion.div
+                                                    animate={{ rotate: isExpanded ? 180 : 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="w-8 h-8 rounded-xl gel-blue-style flex items-center justify-center shrink-0 shadow-lg shadow-promed-primary/20"
+                                                >
+                                                    <ChevronDown size={16} className="text-white" />
+                                                </motion.div>
+                                            )}
+
+                                            {isVoided ? (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleRestore(item); }}
+                                                    className="flex p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
+                                                    title="Tranzaksiyani tiklash"
+                                                >
+                                                    <RotateCcw size={18} strokeWidth={2.5} />
+                                                </button>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
+                                                        className="hidden md:flex p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                                        title={t('delete') || "O'chirish"}
+                                                    >
+                                                        <Trash2 size={18} strokeWidth={2.5} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
+                                                        className="md:hidden flex p-2 text-slate-300 active:text-rose-500"
+                                                    >
+                                                        <Trash2 size={18} strokeWidth={2.5} />
+                                                    </button>
+                                                </>
+                                            )}
+
+
+                                        </div>
+
+                                        {/* ── Expanded Split Breakdown ── */}
+                                        <AnimatePresence>
+                                            {hasSplits && isExpanded && (
+                                                <motion.div
+                                                    data-breakdown-id={income.id}
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <div className="px-6 md:px-8 pb-6">
+                                                        <div className="rounded-2xl border border-slate-100 bg-gradient-to-b from-slate-50/80 to-white overflow-hidden shadow-sm">
+
+                                                            {/* ── Visual Distribution Header ── */}
+                                                            <div className="p-5 pb-4">
+                                                                {/* Segment bar */}
+                                                                <div className="flex gap-1 h-2.5 w-full rounded-full overflow-hidden mb-4">
+                                                                    <motion.div
+                                                                        initial={{ width: 0 }}
+                                                                        animate={{ width: `${clinicPercent}%` }}
+                                                                        transition={{ delay: 0.1, duration: 0.5, ease: 'easeOut' }}
+                                                                        className="h-full bg-emerald-400 rounded-full"
+                                                                    />
+                                                                    {splits.map((s, idx) => {
+                                                                        const pct = totalAmount > 0 ? (Number(s.amount) / totalAmount) * 100 : 0;
+                                                                        return (
+                                                                            <motion.div
+                                                                                key={s.id || idx}
+                                                                                initial={{ width: 0 }}
+                                                                                animate={{ width: `${pct}%` }}
+                                                                                transition={{ delay: 0.15 + idx * 0.05, duration: 0.5, ease: 'easeOut' }}
+                                                                                className={`h-full ${SPLIT_COLORS[idx % SPLIT_COLORS.length].bg} rounded-full`}
+                                                                            />
+                                                                        );
+                                                                    })}
+                                                                </div>
+
+                                                                {/* Legend pills */}
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-[10px] font-black ring-1 ring-emerald-100">
+                                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                                                        Klinika {clinicPercent}%
+                                                                    </span>
+                                                                    {splits.map((s, idx) => {
+                                                                        const pct = totalAmount > 0 ? Math.round((Number(s.amount) / totalAmount) * 100) : 0;
+                                                                        const colors = SPLIT_COLORS[idx % SPLIT_COLORS.length];
+                                                                        const label = s.description?.replace('[Split] ', '') || '';
+                                                                        return (
+                                                                            <span key={s.id || idx} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${colors.light} ${colors.text} text-[10px] font-black ring-1 ${colors.ring}`}>
+                                                                                <span className={`w-1.5 h-1.5 rounded-full ${colors.bg}`} />
+                                                                                {label.length > 15 ? label.slice(0, 15) + '…' : label} {pct}%
+                                                                            </span>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* ── Split Cards ── */}
+                                                            <div className="px-4 pb-3 space-y-2">
+                                                                {splits.map((s, idx) => {
+                                                                    const staff = getStaffForSplit(s);
+                                                                    const pct = totalAmount > 0 ? Math.round((Number(s.amount) / totalAmount) * 100) : 0;
+                                                                    const label = s.description?.replace('[Split] ', '') || '';
+                                                                    const colors = SPLIT_COLORS[idx % SPLIT_COLORS.length];
+                                                                    const isTax = s.category === 'tax';
+
+                                                                    return (
+                                                                        <motion.div
+                                                                            key={s.id || idx}
+                                                                            initial={{ opacity: 0, x: -10 }}
+                                                                            animate={{ opacity: 1, x: 0 }}
+                                                                            transition={{ delay: 0.1 + idx * 0.05 }}
+                                                                            className="flex items-center gap-3.5 p-3.5 bg-white rounded-xl border border-slate-100 hover:border-slate-200 transition-colors"
+                                                                        >
+                                                                            {/* Avatar / Icon */}
+                                                                            {isTax ? (
+                                                                                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center ring-1 ring-amber-100 shrink-0">
+                                                                                    <Percent size={16} className="text-amber-500" />
+                                                                                </div>
+                                                                            ) : staff?.imageUrl ? (
+                                                                                <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white shadow-sm shrink-0">
+                                                                                    <ImageWithFallback src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className={`w-10 h-10 rounded-xl ${colors.light} flex items-center justify-center ring-1 ${colors.ring} shrink-0`}>
+                                                                                    <User size={16} className={colors.text} />
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* Name & Role */}
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <div className="font-bold text-slate-800 text-[13px] truncate">{label || (isTax ? t('tax') : 'Staff')}</div>
+                                                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                                                    {isTax ? (t('tax') || 'Soliq') : (staff?.role || t('salary') || 'Ish haqi')} • {pct}%
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Amount */}
+                                                                            <div className="text-right shrink-0">
+                                                                                <div className={`font-black text-sm tabular-nums ${colors.text}`}>
+                                                                                    {formatWithSpaces(s.amount)}
+                                                                                </div>
+                                                                                <div className="text-[9px] font-bold text-slate-300 uppercase">so'm</div>
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    );
+                                                                })}
+
+                                                                {/* ── Clinic Remainder Card ── */}
+                                                                <motion.div
+                                                                    initial={{ opacity: 0, x: -10 }}
+                                                                    animate={{ opacity: 1, x: 0 }}
+                                                                    transition={{ delay: 0.1 + splits.length * 0.05 }}
+                                                                    className="flex items-center gap-3.5 p-3.5 bg-gradient-to-r from-emerald-50 to-emerald-50/30 rounded-xl border border-emerald-100"
+                                                                >
+                                                                    <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center ring-1 ring-emerald-200 shrink-0">
+                                                                        <Building2 size={16} className="text-emerald-600" />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="font-bold text-emerald-700 text-[13px]">Klinika</div>
+                                                                        <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                                                                            {t('net_income') || 'Sof daromad'} • {clinicPercent}%
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-right shrink-0">
+                                                                        <div className="font-black text-sm text-emerald-600 tabular-nums">
+                                                                            {formatWithSpaces(clinicAmount)}
+                                                                        </div>
+                                                                        <div className="text-[9px] font-bold text-emerald-300 uppercase">so'm</div>
+                                                                    </div>
+                                                                </motion.div>
+                                                            </div>
+
+                                                            {/* ── Summary Footer ── */}
+                                                            <div className="mx-4 mb-4 mt-1 flex items-center justify-between px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('total') || 'Jami'}</span>
+                                                                <span className="text-sm font-black text-slate-700 tabular-nums">{formatWithSpaces(income.amount)} <span className="text-slate-300 text-[10px]">UZS</span></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="py-24 text-center">
@@ -191,10 +791,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                             <h4 className="font-black text-slate-800 text-xl mb-2">{t('no_payments_yet')}</h4>
                             <p className="text-slate-400 text-sm max-w-xs mx-auto leading-relaxed">{t('no_payments_desc')}</p>
                             {filterCategory !== 'all' && (
-                                <button
-                                    onClick={() => setFilterCategory('all')}
-                                    className="mt-6 text-promed-primary font-black text-sm hover:underline"
-                                >
+                                <button onClick={() => setFilterCategory('all')} className="mt-6 text-promed-primary font-black text-sm hover:underline">
                                     {t('clear_filters')}
                                 </button>
                             )}
@@ -202,6 +799,13 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                     )}
                 </div>
             </div>
-        </div>
+            <DeleteModal
+                isOpen={!!deleteItem}
+                onClose={() => setDeleteItem(null)}
+                onConfirm={performDelete}
+                title={t('delete_transaction_title') || "To'lovni o'chirish"}
+                description=""
+            />
+        </div >
     );
 };

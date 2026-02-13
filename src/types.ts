@@ -178,6 +178,8 @@ export interface Transaction {
   returned?: boolean;
   returnedAt?: string; // ISO Date when returned
   returnNote?: string;
+  isVoided?: boolean;
+  voidedAt?: string | null; // ISO Date when voided
 
   accountId: string;
   createdAt: any;

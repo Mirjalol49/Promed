@@ -309,7 +309,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
                                     }
                                     onSchedule(selectedDate);
                                 }}
-                                className={`w-full py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg ${selectedDate < new Date() ? 'bg-slate-200 text-slate-400 cursor-not-allowed font-medium' : 'btn-premium-blue font-bold tracking-wide'}`}
+                                className={`w-full py-3.5 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg ${selectedDate < new Date() ? 'bg-slate-200 text-slate-400 cursor-not-allowed font-medium' : 'btn-premium-blue font-bold tracking-wide'}`}
                             >
                                 <span>
                                     {activeTab === 'today' && `${t('schedule_send_today')} ${formatTime(selectedDate)}`}

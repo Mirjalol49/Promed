@@ -75,8 +75,8 @@ const Layout: React.FC<LayoutProps> = ({
         }}
         whileHover="hover"
         initial="idle"
-        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-1 group border border-transparent outline-none relative overflow-hidden active-scale ${isActive
-          ? 'gel-blue-style text-white shadow-lg shadow-promed-primary/20'
+        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-200 mb-1 group border border-transparent outline-none relative overflow-hidden active-scale ${isActive
+          ? 'gel-blue-style text-white'
           : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
           }`}
       >
@@ -169,7 +169,7 @@ const Layout: React.FC<LayoutProps> = ({
           {isLockEnabled && (
             <button
               onClick={onLock}
-              className="w-full flex items-center space-x-3 text-slate-900 hover:bg-promed-primary/10 px-4 py-3 rounded-xl font-medium transition active:scale-95 group"
+              className="w-full flex items-center space-x-3 text-slate-900 hover:bg-promed-primary/10 px-4 py-3 rounded-2xl font-medium transition active:scale-95 group"
             >
               <Lock size={20} />
               <span className="text-base font-sans font-medium group-hover:font-semibold transition-all duration-200">{t('lock_app')}</span>
@@ -181,7 +181,7 @@ const Layout: React.FC<LayoutProps> = ({
               onNavigate('SETTINGS');
               setIsSidebarOpen(false);
             }}
-            className="flex items-center w-full space-x-3 group px-4 py-3 rounded-xl hover:bg-promed-primary/5 transition duration-200 border border-transparent hover:border-promed-primary/10"
+            className="flex items-center w-full space-x-3 group px-4 py-3 rounded-2xl hover:bg-promed-primary/5 transition duration-200 border border-transparent hover:border-promed-primary/10"
           >
             <div className="relative">
               <ProfileAvatar src={userImage} alt="Profile" size={44} className="rounded-lg  shadow-slate-200 border border-slate-100 group-hover:border-slate-300 transition-colors" optimisticId={`${userId}_profile`} />

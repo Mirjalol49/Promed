@@ -179,13 +179,13 @@ const InjectionModal: React.FC<{
             <div className="grid grid-cols-2 gap-3 pt-2">
               <button
                 onClick={onClose}
-                className="h-12 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-900 text-[15px] font-semibold rounded-xl transition-colors active:scale-95 duration-200 whitespace-nowrap"
+                className="h-12 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-900 text-[15px] font-semibold rounded-2xl transition-colors active:scale-95 duration-200 whitespace-nowrap"
               >
                 {t('cancel')}
               </button>
               <button
                 onClick={handleSave}
-                className="btn-premium-blue h-12 flex items-center justify-center rounded-xl active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
+                className="btn-premium-blue h-12 flex items-center justify-center active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
               >
                 <span>{t('save')}</span>
               </button>
@@ -257,14 +257,14 @@ const PhotoLabelModal: React.FC<{
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 mt-6">
               <button
                 onClick={onClose}
-                className="h-12 flex items-center justify-center bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all active:scale-[0.98] shadow-sm whitespace-nowrap px-1"
+                className="h-12 flex items-center justify-center bg-white border border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all active:scale-[0.98] shadow-sm whitespace-nowrap px-1"
               >
                 {t('cancel')}
               </button>
               <button
                 onClick={handleSave}
                 disabled={!value}
-                className="btn-premium-blue h-12 flex items-center justify-center rounded-xl active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
+                className="btn-premium-blue h-12 flex items-center justify-center active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
               >
                 <span>{t('save')}</span>
               </button>
@@ -803,24 +803,37 @@ export const PatientDetail: React.FC<{
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex items-center gap-4 border-b border-slate-200 mb-8">
-        <button
-          onClick={() => setActiveTab('general')}
-          className={`pb-4 px-2 font-bold text-sm uppercase tracking-wider relative transition-colors ${activeTab === 'general' ? 'text-promed-primary' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          {t('general_info') || "General Info"}
-          {activeTab === 'general' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-promed-primary rounded-t-full"></div>}
-        </button>
-        <button
-          onClick={() => setActiveTab('finance')}
-          className={`pb-4 px-2 font-bold text-sm uppercase tracking-wider relative transition-colors ${activeTab === 'finance' ? 'text-promed-primary' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          <div className="flex items-center gap-2">
-            <DollarSign size={16} />
-            {t('finance') || "Finance"}
-          </div>
-          {activeTab === 'finance' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-promed-primary rounded-t-full"></div>}
-        </button>
+      <div className="flex justify-start mb-8">
+        <div className="relative inline-flex items-center bg-slate-100/80 rounded-2xl p-1.5 border border-slate-200/60 shadow-sm">
+          <button
+            onClick={() => setActiveTab('general')}
+            className={`relative z-10 flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-colors duration-200 ${activeTab === 'general' ? 'text-promed-primary' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            {activeTab === 'general' && (
+              <motion.div
+                layoutId="activeTabPill"
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                className="absolute inset-0 rounded-xl bg-white shadow-md shadow-slate-900/8 border border-slate-200/50"
+              />
+            )}
+            <User size={16} strokeWidth={2.5} className="relative z-10" />
+            <span className="relative z-10">{t('general_info') || "General Info"}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('finance')}
+            className={`relative z-10 flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-colors duration-200 ${activeTab === 'finance' ? 'text-promed-primary' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            {activeTab === 'finance' && (
+              <motion.div
+                layoutId="activeTabPill"
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                className="absolute inset-0 rounded-xl bg-white shadow-md shadow-slate-900/8 border border-slate-200/50"
+              />
+            )}
+            <Wallet size={16} strokeWidth={2.5} className="relative z-10" />
+            <span className="relative z-10">{t('finance') || "Finance"}</span>
+          </button>
+        </div>
       </div>
 
       {
@@ -869,7 +882,7 @@ export const PatientDetail: React.FC<{
                     <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-promed-primary/30 shadow-sm animate-pulse">
                       <ImageWithFallback
                         src={img.url}
-                        optimisticId={img.id} // Use temp ID
+                        optimisticId={img.id}
                         className="w-full h-full object-cover object-center opacity-80"
                         alt={img.label}
                         fallbackType="image"

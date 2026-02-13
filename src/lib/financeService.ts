@@ -68,9 +68,24 @@ export const returnTransaction = async (id: string, note?: string) => {
 
 export const deleteTransaction = async (id: string) => {
     try {
-        await deleteDoc(doc(db, COLLECTION_NAME, id));
+        await updateDoc(doc(db, COLLECTION_NAME, id), {
+            isVoided: true,
+            voidedAt: new Date().toISOString()
+        });
     } catch (error) {
-        console.error("Error deleting transaction:", error);
+        console.error("Error voiding transaction:", error);
+        throw error;
+    }
+};
+
+export const restoreTransaction = async (id: string) => {
+    try {
+        await updateDoc(doc(db, COLLECTION_NAME, id), {
+            isVoided: false,
+            voidedAt: null
+        });
+    } catch (error) {
+        console.error("Error restoring transaction:", error);
         throw error;
     }
 };
@@ -85,8 +100,8 @@ export const calculateStats = (transactions: Transaction[]): FinanceStats => {
         salaryExpense: 0
     };
 
-    // Filter out returned transactions from stats
-    const activeTransactions = transactions.filter(t => !t.returned);
+    // Filter out returned and VOIDED transactions from stats
+    const activeTransactions = transactions.filter(t => !t.returned && !t.isVoided);
 
     activeTransactions.forEach(t => {
         const amount = Number(t.amount) || 0;

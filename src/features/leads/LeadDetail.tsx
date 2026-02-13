@@ -353,7 +353,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                 <div className="relative">
                                     <button
                                         onClick={() => setIsStatusOpen(!isStatusOpen)}
-                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors shadow-sm ${statusColors.color} ${isStatusOpen ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-300 hover:border-slate-400'}`}
+                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-colors shadow-sm ${statusColors.color} ${isStatusOpen ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-300 hover:border-slate-400'}`}
                                     >
                                         <div className="flex items-center gap-2">
                                             <div className={`w-2 h-2 rounded-full ${statusColors.bg.replace('100', '500')}`} />
@@ -641,7 +641,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                         <button
                                             type="submit"
                                             disabled={!newNote.trim()}
-                                            className={`px-5 py-3 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 h-[48px] flex items-center justify-center ${editingEventId ? 'bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20' : 'btn-premium-blue'}`}
+                                            className={`px-5 py-3 text-white rounded-2xl disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 h-[48px] flex items-center justify-center ${editingEventId ? 'bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20' : 'btn-premium-blue'}`}
                                         >
                                             {editingEventId ? <Check size={18} /> : <Send size={18} />}
                                         </button>

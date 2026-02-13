@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAccount } from '../../contexts/AccountContext';
 import { Transaction, TransactionType, TransactionCategory, Staff, Patient } from '../../types';
-import { subscribeToTransactions, addTransaction, deleteTransaction, returnTransaction, calculateStats } from '../../lib/financeService';
+import { subscribeToTransactions, addTransaction, deleteTransaction, returnTransaction, restoreTransaction, calculateStats } from '../../lib/financeService';
 import { subscribeToStaff } from '../../lib/staffService';
 import { subscribeToPatients } from '../../lib/patientService';
 import { useToast } from '../../contexts/ToastContext';
@@ -28,6 +28,8 @@ import { formatCompactNumber, formatCurrency } from '../../lib/formatters';
 import { EmptyState } from '../../components/ui/EmptyState';
 
 
+import { TransactionModal } from './TransactionModal';
+
 // --- Types ---
 type DateFilter = 'all' | 'month' | 'week';
 
@@ -37,615 +39,7 @@ type DateFilter = 'all' | 'month' | 'week';
 const incomeCategories: TransactionCategory[] = ['surgery', 'consultation', 'injection'];
 const expenseCategories: TransactionCategory[] = ['salary', 'tax'];
 
-// --- Add Transaction Modal (Redesigned) ---
-const TransactionModal = ({
-    isOpen,
-    onClose,
-    onSave,
-    staffList,
-    patientList,
-    initialPatientId
-}: {
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (data: any) => Promise<void>;
-    staffList: Staff[];
-    patientList: Patient[];
-    initialPatientId?: string;
-}) => {
-    const { t } = useLanguage();
-    const [type, setType] = useState<TransactionType>('income');
-    const [formData, setFormData] = useState<Partial<Transaction>>({
-        amount: 0,
-        currency: 'UZS',
-        category: 'consultation',
-        date: new Date().toISOString().split('T')[0],
-        description: '',
-        patientId: '',
-        staffId: ''
-    });
-    const [customCategory, setCustomCategory] = useState('');
-    const [loading, setLoading] = useState(false);
 
-    // Splits state
-    const [splits, setSplits] = useState<{
-        category: TransactionCategory;
-        amount: number;
-        note?: string;
-        staffId?: string;
-        type: 'fixed' | 'percent'; // New field
-        rawValue: number; // The value entered (e.g., 12 for 12%)
-    }[]>([]);
-
-    const [isSplitting, setIsSplitting] = useState(false);
-
-    // Month/Year state for salary transactions
-    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-
-    useEffect(() => {
-        if (isOpen) {
-            setType('income');
-            setFormData({
-                amount: 0,
-                currency: 'UZS',
-                category: 'consultation',
-                date: new Date().toISOString().split('T')[0],
-                description: '',
-                patientId: initialPatientId || '',
-                staffId: ''
-            });
-            setCustomCategory('');
-            setSplits([]);
-            setIsSplitting(false);
-            setSelectedMonth(new Date().getMonth());
-            setSelectedYear(new Date().getFullYear());
-        }
-    }, [isOpen, initialPatientId]);
-
-    // Month names for picker
-    const monthOptions = [
-        { value: 0, label: 'January' },
-        { value: 1, label: 'February' },
-        { value: 2, label: 'March' },
-        { value: 3, label: 'April' },
-        { value: 4, label: 'May' },
-        { value: 5, label: 'June' },
-        { value: 6, label: 'July' },
-        { value: 7, label: 'August' },
-        { value: 8, label: 'September' },
-        { value: 9, label: 'October' },
-        { value: 10, label: 'November' },
-        { value: 11, label: 'December' }
-    ];
-
-    // Year options (current year ± 2 years)
-    const currentYear = new Date().getFullYear();
-    const yearOptions = [-2, -1, 0, 1, 2].map(offset => ({
-        value: currentYear + offset,
-        label: String(currentYear + offset)
-    }));
-
-    // Recalculate percentage splits when main Income Amount changes
-    useEffect(() => {
-        if (type === 'income') {
-            setSplits(prevSplits => {
-                let hasChanges = false;
-                const newSplits = prevSplits.map(s => {
-                    if (s.type === 'percent') {
-                        const newAmount = Math.round((formData.amount || 0) * (s.rawValue / 100));
-                        if (newAmount !== s.amount) {
-                            hasChanges = true;
-                            return { ...s, amount: newAmount };
-                        }
-                    }
-                    return s;
-                });
-                return hasChanges ? newSplits : prevSplits;
-            });
-        }
-    }, [formData.amount, type]);
-
-    // Auto-fill salary amount when staff is selected for salary expense
-    useEffect(() => {
-        if (type === 'expense' && formData.category === 'salary' && formData.staffId) {
-            const selectedStaff = staffList.find(s => s.id === formData.staffId);
-            if (selectedStaff && selectedStaff.salary) {
-                setFormData(prev => ({
-                    ...prev,
-                    amount: selectedStaff.salary
-                }));
-            }
-        }
-    }, [type, formData.category, formData.staffId, staffList]);
-
-    if (!isOpen) return null;
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const finalCategory = formData.category === 'other' ? customCategory : formData.category;
-            const currentTime = new Date().toTimeString().slice(0, 5); // HH:mm format
-
-            // 1. Create Main Transaction with current device time
-            await onSave({ ...formData, category: finalCategory, type, time: currentTime });
-
-            // 2. Create Split Transactions (Expenses) with same time
-            if (type === 'income' && splits.length > 0) {
-                for (const split of splits) {
-                    await onSave({
-                        amount: split.amount,
-                        currency: formData.currency,
-                        type: 'expense',
-                        category: split.category,
-                        date: formData.date,
-                        time: currentTime,
-                        description: `[Split from Income] ${split.note || ''}`,
-                        staffId: split.staffId || '',
-                        patientId: formData.patientId || '' // Keep link to patient if relevant
-                    });
-                }
-            }
-
-            onClose();
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const addSplit = () => {
-        setSplits([...splits, { category: 'tax', amount: 0, rawValue: 0, type: 'percent', note: '' }]);
-    };
-
-    const removeSplit = (index: number) => {
-        setSplits(splits.filter((_, i) => i !== index));
-    };
-
-    const updateSplit = (index: number, field: string, value: any) => {
-        setSplits(prevSplits => {
-            const newSplits = prevSplits.map((s, i) => {
-                if (i !== index) return s;
-
-                const updatedSplit = { ...s, [field]: value };
-
-                // Force type to 'fixed' if category is not 'tax'
-                if (field === 'category' && value !== 'tax') {
-                    updatedSplit.type = 'fixed';
-                }
-
-                // Recalculate based on new field value
-                if (updatedSplit.type === 'percent') {
-                    // If changing rawValue or type to percent, calc amount from total
-                    updatedSplit.amount = Math.round((formData.amount || 0) * (updatedSplit.rawValue / 100));
-                } else {
-                    // Fixed mode: amount = rawValue
-                    updatedSplit.amount = updatedSplit.rawValue;
-                }
-
-                return updatedSplit;
-            });
-            return newSplits;
-        });
-    };
-
-
-
-    const totalSplits = splits.reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
-    const netIncome = (formData.amount || 0) - totalSplits;
-
-    return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md transition-all duration-300">
-            <div className="bg-white rounded-[2.5rem] w-full max-w-6xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 relative flex flex-col md:flex-row max-h-[90vh]">
-
-                {/* Close Button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-6 right-6 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors z-20 md:hidden"
-                >
-                    <X size={20} />
-                </button>
-
-                {/* LEFT SIDE: Type & Amount */}
-                <div className={`w-full md:w-5/12 p-8 flex flex-col items-center justify-between relative overflow-hidden transition-colors duration-500 ${type === 'income' ? 'bg-emerald-600' : 'bg-rose-600'}`}>
-                    {/* Background Decor */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-
-                    <div className="w-full relative z-10 text-white">
-                        <h3 className="font-black text-2xl mb-1 text-center">
-                            {t('add_transaction') || "Tranzaksiya Qo'shish"}
-                        </h3>
-                        <p className="text-white/70 font-medium text-sm text-center mb-8">{t('fill_details')}</p>
-
-                    </div>
-
-                    {/* Amount Input */}
-                    <div className="flex-1 flex flex-col justify-center items-center w-full z-10 text-white">
-                        <label className="text-xs font-bold text-white/60 uppercase tracking-widest mb-4">{t('amount') || 'AMOUNT'}</label>
-
-                        <div className="flex items-center justify-center gap-1 mb-8 w-full px-4">
-                            {formData.currency === 'USD' && (
-                                <span className={`font-bold text-white/50 select-none transition-all duration-300 ${(formData.amount ? new Intl.NumberFormat('en-US').format(formData.amount).length : 0) > 10 ? 'text-3xl' :
-                                    (formData.amount ? new Intl.NumberFormat('en-US').format(formData.amount).length : 0) > 7 ? 'text-4xl' : 'text-5xl'
-                                    }`}>$</span>
-                            )}
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                required
-                                autoFocus
-                                className={`w-auto min-w-[50px] text-center font-black bg-transparent focus:outline-none placeholder-white/30 text-white p-0 transition-all duration-300 ${(formData.amount ? new Intl.NumberFormat('en-US').format(formData.amount).length : 0) > 12 ? 'text-3xl' :
-                                    (formData.amount ? new Intl.NumberFormat('en-US').format(formData.amount).length : 0) > 9 ? 'text-4xl' :
-                                        (formData.amount ? new Intl.NumberFormat('en-US').format(formData.amount).length : 0) > 6 ? 'text-5xl' : 'text-6xl'
-                                    }`}
-                                value={formData.amount ? new Intl.NumberFormat('en-US').format(formData.amount) : ''}
-                                onChange={e => {
-                                    const val = e.target.value.replace(/[^0-9]/g, '');
-                                    setFormData({ ...formData, amount: val ? Number(val) : 0 });
-                                }}
-                                placeholder="0"
-                            />
-                            {formData.currency === 'UZS' && (
-                                <span className={`font-bold text-white/50 select-none transition-all duration-300 ${(formData.amount ? new Intl.NumberFormat('en-US').format(formData.amount).length : 0) > 10 ? 'text-xl' : 'text-2xl'
-                                    }`}>so'm</span>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Type Toggle - KISS Method */}
-                    <div className="relative z-10 bg-black/20 backdrop-blur-md rounded-2xl p-1 flex w-full border border-white/10">
-                        <button
-                            type="button"
-                            onClick={() => { setType('income'); setFormData({ ...formData, category: 'consultation' }); }}
-                            className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${type === 'income'
-                                ? 'bg-emerald-500 text-white shadow-lg'
-                                : 'text-white/60 hover:text-white hover:bg-white/5'
-                                }`}
-                        >
-                            <ArrowUpRight size={16} className="stroke-[3]" />
-                            {t('income') || 'Income'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => { setType('expense'); setFormData({ ...formData, category: 'salary' }); }}
-                            className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${type === 'expense'
-                                ? 'bg-rose-500 text-white shadow-lg'
-                                : 'text-white/60 hover:text-white hover:bg-white/5'
-                                }`}
-                        >
-                            <ArrowDownRight size={16} className="stroke-[3]" />
-                            {t('expense') || 'Expense'}
-                        </button>
-                    </div>
-                </div>
-
-                {/* RIGHT SIDE: Details Form */}
-                <form onSubmit={handleSubmit} className="w-full md:w-7/12 p-8 md:p-10 pb-12 bg-white flex flex-col h-full overflow-hidden">
-                    <div className="flex justify-between items-center mb-8 hidden md:flex">
-                        <h3 className="text-xl font-bold text-slate-800">{t('transaction_details')}</h3>
-
-                        <button type="button" onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                            <X size={24} />
-                        </button>
-                    </div>
-
-                    <div className="flex-1 space-y-6 overflow-y-auto custom-scrollbar pr-2">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Date Picker - Conditional based on category */}
-                            {type === 'expense' && formData.category === 'salary' ? (
-                                <div className="space-y-2">
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">{t('month') || 'Month'} / {t('year') || 'Year'}</label>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <CustomSelect
-                                            label=""
-                                            options={monthOptions}
-                                            value={selectedMonth}
-                                            onChange={(val) => {
-                                                setSelectedMonth(Number(val));
-                                                const dateStr = `${selectedYear}-${String(Number(val) + 1).padStart(2, '0')}-01`;
-                                                setFormData({ ...formData, date: dateStr });
-                                            }}
-                                        />
-                                        <CustomSelect
-                                            label=""
-                                            options={yearOptions}
-                                            value={selectedYear}
-                                            onChange={(val) => {
-                                                setSelectedYear(Number(val));
-                                                const dateStr = `${val}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
-                                                setFormData({ ...formData, date: dateStr });
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            ) : (
-                                <CustomDatePicker
-                                    label={t('date') || 'Date'}
-                                    value={new Date(formData.date)}
-                                    onChange={(date) => setFormData({ ...formData, date: date.toISOString().split('T')[0] })}
-                                />
-                            )}
-
-                            <CustomSelect
-                                label={t('category') || 'Category'}
-                                options={[
-                                    ...(type === 'income' ? incomeCategories : expenseCategories).map(c => ({ value: c, label: t(c) || c })),
-                                    { value: 'other', label: t('other') || 'Other...' }
-                                ]}
-                                value={formData.category}
-                                onChange={(val) => setFormData({ ...formData, category: val as TransactionCategory })}
-                            />
-                        </div>
-
-                        <AnimatePresence>
-                            {formData.category === 'other' && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="overflow-hidden"
-                                >
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">
-                                        {t('custom_category_name')}
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        value={customCategory}
-                                        onChange={(e) => setCustomCategory(e.target.value)}
-                                        placeholder={t('enter_custom_category') || "Enter custom category..."}
-                                        className="w-full bg-slate-50 border border-slate-300 rounded-2xl py-3.5 px-4 text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary hover:border-slate-400 transition-all outline-none"
-                                    />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        <AnimatePresence mode="wait">
-                            {type === 'income' && (formData.category === 'consultation' || formData.category === 'surgery' || formData.category === 'injection') && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="space-y-2 overflow-hidden"
-                                >
-                                    <CustomSelect
-                                        label={`${t('patient') || 'Patient'} ${formData.category === 'consultation' || formData.category === 'surgery' ? '' : '(Optional)'}`}
-                                        options={patientList.map(p => ({ value: p.id, label: p.fullName }))}
-                                        value={formData.patientId || ''}
-                                        onChange={(val) => setFormData({ ...formData, patientId: val })}
-                                        placeholder={t('select_patient') || "Select Patient"}
-                                        searchable
-                                        renderOption={(option) => {
-                                            const patient = patientList.find(p => p.id === option.value);
-                                            return (
-                                                <div className="flex items-center gap-3">
-                                                    {patient?.profileImage && (
-                                                        <div className="w-6 h-6 rounded-full bg-slate-200 overflow-hidden">
-                                                            <ImageWithFallback src={patient.profileImage} alt={patient.fullName} className="w-full h-full object-cover" />
-                                                        </div>
-                                                    )}
-                                                    <span>{option.label}</span>
-                                                </div>
-                                            );
-                                        }}
-                                    />
-                                </motion.div>
-                            )}
-
-                            {/* Income Splits Section - Scrollable Area */}
-                            {type === 'income' && (
-                                <div className="mt-6 pt-6 border-t border-slate-100">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h4 className="font-bold text-slate-700">{t('income_distribution')}</h4>
-
-                                        <button
-                                            type="button"
-                                            onClick={addSplit}
-                                            className="text-xs font-bold text-promed-primary bg-promed-light px-3 py-1.5 rounded-lg hover:bg-promed-primary/10 transition-colors"
-                                        >
-                                            {t('add_split')}
-
-                                        </button>
-                                    </div>
-
-                                    <div className="space-y-4 mb-4 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
-                                        {splits.map((split, index) => (
-                                            <div key={index} className="bg-slate-50 p-4 rounded-xl border border-slate-200 relative group transition-all hover:border-promed-primary/30">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeSplit(index)}
-                                                    className="absolute -top-2 -right-2 bg-white text-slate-400 hover:text-red-500 rounded-full p-1.5 shadow-sm border border-slate-200 opacity-0 group-hover:opacity-100 transition-all z-10"
-                                                >
-                                                    <X size={14} />
-                                                </button>
-
-                                                <div className="flex gap-2 mb-3">
-                                                    <div className="flex-[2] flex gap-2">
-                                                        {split.category === 'other' ? (
-                                                            <>
-                                                                <input
-                                                                    type="text"
-                                                                    value={split.note || ''}
-                                                                    onChange={(e) => updateSplit(index, 'note', e.target.value)}
-                                                                    placeholder={t('enter_category')}
-                                                                    className="w-full bg-white px-3 py-2 rounded-xl border border-slate-300 focus:border-promed-primary outline-none text-slate-700 font-medium"
-                                                                    autoFocus
-                                                                />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => updateSplit(index, 'category', 'tax')}
-                                                                    className="bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-red-500 p-2 rounded-xl transition-colors"
-                                                                >
-                                                                    <X size={18} />
-                                                                </button>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <CustomSelect
-                                                                    options={expenseCategories.map(c => ({ value: c, label: t(c) || c }))}
-                                                                    value={split.category}
-                                                                    onChange={(val) => updateSplit(index, 'category', val)}
-                                                                    placeholder={t('category') || "Category"}
-                                                                />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => updateSplit(index, 'category', 'other')}
-                                                                    className="bg-promed-light text-promed-primary hover:bg-promed-primary/10 px-3 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap"
-                                                                >
-                                                                    {t('other')}
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-
-                                                    <div className={`flex bg-white rounded-xl border border-slate-300 overflow-hidden h-[52px] shrink-0 ${split.category === 'tax' ? 'w-[140px]' : 'w-full flex-1'}`}>
-                                                        <input
-                                                            type="number"
-                                                            value={split.rawValue || ''}
-                                                            onChange={(e) => updateSplit(index, 'rawValue', Number(e.target.value))}
-                                                            className="w-full h-full px-3 font-bold text-slate-700 outline-none text-right"
-                                                            placeholder="0"
-                                                        />
-                                                        {split.category === 'tax' ? (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => updateSplit(index, 'type', split.type === 'percent' ? 'fixed' : 'percent')}
-                                                                className="px-3 bg-slate-100 hover:bg-slate-200 border-l border-slate-300 font-bold text-xs text-slate-600 transition-colors w-[50px]"
-                                                            >
-                                                                {split.type === 'percent' ? '%' : formData.currency}
-                                                            </button>
-                                                        ) : (
-                                                            <div className="px-3 bg-slate-50 border-l border-slate-300 flex items-center justify-center font-bold text-xs text-slate-500 w-[50px]">
-                                                                {formData.currency}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {split.category === 'salary' && (
-                                                    <div className="flex gap-3 mb-3">
-                                                        <div className="w-full">
-                                                            <CustomSelect
-                                                                options={staffList.map(s => ({ value: s.id, label: s.fullName }))}
-                                                                value={split.staffId || ''}
-                                                                onChange={(val) => updateSplit(index, 'staffId', val)}
-                                                                placeholder={`${t('staff_member') || 'Staff Member'} (Optional)`}
-                                                                searchable
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                <div className="flex gap-3 items-center">
-                                                    <textarea
-                                                        value={split.note || ''}
-                                                        onChange={(e) => updateSplit(index, 'note', e.target.value)}
-                                                        onInput={(e) => {
-                                                            const target = e.target as HTMLTextAreaElement;
-                                                            target.style.height = 'auto';
-                                                            target.style.height = target.scrollHeight + 'px';
-                                                        }}
-                                                        rows={1}
-                                                        placeholder={t('description') || "Description (e.g. Tax Fund)"}
-                                                        className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-promed-primary resize-none overflow-hidden min-h-[38px] leading-tight"
-                                                    />
-                                                    {split.type === 'percent' && (
-                                                        <div className="text-right min-w-[80px]">
-                                                            <div className="text-[10px] text-slate-400 font-bold uppercase">{t('amount') || "Amount"}</div>
-                                                            <div className="font-bold text-slate-700">{formatCurrency(split.amount, formData.currency)}</div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {splits.length === 0 && (
-                                            <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl">
-                                                <p className="text-slate-400 text-sm font-medium">{t('splits_empty_state')}</p>
-
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {type === 'expense' && formData.category === 'salary' && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="space-y-2 overflow-hidden"
-                                >
-                                    <CustomSelect
-                                        label={t('staff_member') || 'Staff Member'}
-                                        options={staffList.map(s => ({ value: s.id, label: `${s.fullName} (${s.role})` }))}
-                                        value={formData.staffId || ''}
-                                        onChange={(val) => setFormData({ ...formData, staffId: val })}
-                                        placeholder="Select Staff"
-                                        searchable
-                                    />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        <div className="space-y-2">
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">{t('description') || 'Note'}</label>
-                            <textarea
-                                className="w-full p-4 bg-slate-50 border border-slate-300 rounded-2xl font-medium text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary hover:border-slate-400 transition-all resize-none placeholder-slate-400 min-h-[100px]"
-                                value={formData.description || ''}
-                                onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                placeholder={t('add_note_details') || "Add a note details..."}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Footer Summary & Submit */}
-                    <div className="pt-6 border-t border-slate-100 bg-white mt-auto z-20">
-                        {type === 'income' && splits.length > 0 && (
-                            <div className="flex flex-col gap-2 mb-4 bg-emerald-50 p-3 rounded-xl border border-emerald-100">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-500">{t('gross_income')}:</span>
-
-                                    <span className="font-bold text-slate-700">{formatCurrency(formData.amount || 0, formData.currency)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-500">{t('total_deductions') || 'Total Deductions'}:</span>
-                                    <span className="font-bold text-red-500">-{formatCurrency(totalSplits, formData.currency)}</span>
-                                </div>
-                                <div className="flex justify-between items-center pt-2 border-t border-emerald-100">
-                                    <div className="text-xs text-slate-500 font-medium">{t('net_income')}</div>
-
-                                    <div className="text-lg font-black text-emerald-600">{formatCurrency(netIncome, formData.currency)}</div>
-                                </div>
-                            </div>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={loading || !formData.amount}
-                            className={`w-full py-4 text-white rounded-2xl font-black text-lg shadow-[0_10px_25px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all hover:shadow-[0_20px_40px_rgba(0,0,0,0.15)] hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${type === 'income'
-                                ? 'bg-gradient-to-r from-emerald-600 to-emerald-500'
-                                : 'bg-gradient-to-r from-rose-600 to-rose-500'
-                                }`}
-                        >
-                            {loading ? (
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
-                            ) : (
-                                <>
-                                    {type === 'income' ? (t('confirm_income') || 'Confirm Income') : (t('confirm_expense') || 'Confirm Expense')}
-
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>,
-        document.body
-    );
-};
 
 export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) => void }) => {
     const { t, language } = useLanguage();
@@ -736,10 +130,12 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
         let result = transactions;
 
         if (startDate) {
-            result = result.filter(t => isAfter(new Date(t.date), subDays(startOfDay(startDate), 1)));
+            const startStr = format(startDate, 'yyyy-MM-dd');
+            result = result.filter(t => t.date >= startStr);
         }
         if (endDate) {
-            result = result.filter(t => isBefore(new Date(t.date), addDays(endOfDay(endDate), 0)));
+            const endStr = format(endDate, 'yyyy-MM-dd');
+            result = result.filter(t => t.date <= endStr);
         }
 
         return result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -756,10 +152,12 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
 
         // 2. Date Range Filter
         if (startDate) {
-            result = result.filter(t => isAfter(new Date(t.date), subDays(startOfDay(startDate), 1))); // Inclusive start
+            const startStr = format(startDate, 'yyyy-MM-dd');
+            result = result.filter(t => t.date >= startStr);
         }
         if (endDate) {
-            result = result.filter(t => isBefore(new Date(t.date), addDays(endOfDay(endDate), 0))); // Inclusive end
+            const endStr = format(endDate, 'yyyy-MM-dd');
+            result = result.filter(t => t.date <= endStr);
         }
 
         // 4. Category Filter
@@ -870,10 +268,20 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
         }
         setIsDeleteModalOpen(false);
         setDeleteTransactionId(null);
+        setDeleteTransactionId(null);
+    };
+
+    const handleRestore = async (id: string) => {
+        try {
+            await restoreTransaction(id);
+            success(t('restored') || 'Restored', t('transaction_restored') || 'Transaction restored successfully');
+        } catch (err: any) {
+            toastError(t('error'), err.message);
+        }
     };
 
     return (
-        <div className="h-full flex flex-col p-6 max-w-7xl mx-auto space-y-6 relative overflow-hidden">
+        <div className="h-full flex flex-col p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6 relative overflow-hidden">
 
             {/* --- Background Decor Removed for KISS/Apple Aesthetic --- */}
 
@@ -908,9 +316,9 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                 <div className="flex items-center gap-3 self-end md:self-auto">
                     <button
                         onClick={() => { setInitialPatientId(undefined); setIsModalOpen(true); }}
-                        className="bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_10px_25px_rgba(0,0,0,0.08)] rounded-2xl px-6 py-3 font-bold transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2"
+                        className="btn-glossy-blue !w-auto !py-3 px-6 flex items-center gap-2"
                     >
-                        <Plus className="w-5 h-5 stroke-[2.5]" />
+                        <Plus className="w-5 h-5 stroke-[3]" />
                         {t('add_transaction') || 'Tranzaksiya'}
                     </button>
                 </div>
@@ -933,33 +341,42 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                     >
                         {/* 1. KEY STATS CARDS */}
                         {!loading && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                                 {/* Income Card */}
                                 <motion.div
                                     variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                                    whileHover={{ y: -4, transition: { duration: 0.25 } }}
-                                    className="relative rounded-2xl p-5 bg-white border border-slate-100 group cursor-default"
-                                    style={{
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)',
-                                    }}
+                                    whileHover={{ translateY: -5 }}
+                                    className="relative rounded-[2rem] p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
                                 >
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                                                <ArrowUpRight className="w-5 h-5 text-emerald-500 stroke-[2.5]" />
+                                    <div className="relative z-10">
+                                        <div className="flex items-start justify-between mb-6">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('income') || 'Kirim'}</span>
+                                                <Tooltip content={formatCurrency(stats.totalIncome)}>
+                                                    <div className="text-[2.5rem] font-black text-slate-900 tracking-tighter leading-none mt-1">
+                                                        +{formatCompactNumber(stats.totalIncome)}
+                                                    </div>
+                                                </Tooltip>
                                             </div>
-                                            <span className="text-[13px] font-semibold text-slate-500 tracking-wide">{t('income') || 'Kirim'}</span>
+                                            <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors duration-300">
+                                                <ArrowUpRight className="w-7 h-7 text-emerald-600 stroke-[2.5]" />
+                                            </div>
                                         </div>
-                                        <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                                    </div>
-                                    <Tooltip content={formatCurrency(stats.totalIncome)}>
-                                        <div className="text-[2rem] font-extrabold text-slate-900 tracking-tight leading-none mb-1">
-                                            +{formatCompactNumber(stats.totalIncome)}
-                                        </div>
-                                    </Tooltip>
-                                    <div className="flex items-center gap-1.5 mt-2">
-                                        <div className="h-1 flex-1 rounded-full bg-slate-100 overflow-hidden">
-                                            <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500" style={{ width: `${stats.totalIncome > 0 ? Math.min(100, (stats.totalIncome / (stats.totalIncome + stats.totalExpense)) * 100) : 0}%` }}></div>
+
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between text-xs font-bold">
+                                                <span className="text-emerald-600">
+                                                    {stats.totalIncome > 0 ? Math.round((stats.totalIncome / (stats.totalIncome + stats.totalExpense)) * 100) : 0}% of volume
+                                                </span>
+                                            </div>
+                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${stats.totalIncome > 0 ? Math.min(100, (stats.totalIncome / (stats.totalIncome + stats.totalExpense)) * 100) : 0}%` }}
+                                                    transition={{ duration: 1, delay: 0.5 }}
+                                                    className="h-full bg-emerald-500 rounded-full"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -967,29 +384,38 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                 {/* Expense Card */}
                                 <motion.div
                                     variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                                    whileHover={{ y: -4, transition: { duration: 0.25 } }}
-                                    className="relative rounded-2xl p-5 bg-white border border-slate-100 group cursor-default"
-                                    style={{
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)',
-                                    }}
+                                    whileHover={{ translateY: -5 }}
+                                    className="relative rounded-[2rem] p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
                                 >
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center">
-                                                <ArrowDownRight className="w-5 h-5 text-rose-500 stroke-[2.5]" />
+                                    <div className="relative z-10">
+                                        <div className="flex items-start justify-between mb-6">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('expense') || 'Xarajat'}</span>
+                                                <Tooltip content={formatCurrency(stats.totalExpense)}>
+                                                    <div className="text-[2.5rem] font-black text-slate-900 tracking-tighter leading-none mt-1">
+                                                        -{formatCompactNumber(stats.totalExpense)}
+                                                    </div>
+                                                </Tooltip>
                                             </div>
-                                            <span className="text-[13px] font-semibold text-slate-500 tracking-wide">{t('expense') || 'Xarajat'}</span>
+                                            <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center group-hover:bg-rose-100 transition-colors duration-300">
+                                                <ArrowDownRight className="w-7 h-7 text-rose-600 stroke-[2.5]" />
+                                            </div>
                                         </div>
-                                        <div className="w-2 h-2 rounded-full bg-rose-400"></div>
-                                    </div>
-                                    <Tooltip content={formatCurrency(stats.totalExpense)}>
-                                        <div className="text-[2rem] font-extrabold text-slate-900 tracking-tight leading-none mb-1">
-                                            -{formatCompactNumber(stats.totalExpense)}
-                                        </div>
-                                    </Tooltip>
-                                    <div className="flex items-center gap-1.5 mt-2">
-                                        <div className="h-1 flex-1 rounded-full bg-slate-100 overflow-hidden">
-                                            <div className="h-full rounded-full bg-gradient-to-r from-rose-400 to-rose-500" style={{ width: `${stats.totalExpense > 0 ? Math.min(100, (stats.totalExpense / (stats.totalIncome + stats.totalExpense)) * 100) : 0}%` }}></div>
+
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between text-xs font-bold">
+                                                <span className="text-rose-600">
+                                                    {stats.totalExpense > 0 ? Math.round((stats.totalExpense / (stats.totalIncome + stats.totalExpense)) * 100) : 0}% of volume
+                                                </span>
+                                            </div>
+                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${stats.totalExpense > 0 ? Math.min(100, (stats.totalExpense / (stats.totalIncome + stats.totalExpense)) * 100) : 0}%` }}
+                                                    transition={{ duration: 1, delay: 0.5 }}
+                                                    className="h-full bg-rose-500 rounded-full"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -997,29 +423,38 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                 {/* Net Profit Card */}
                                 <motion.div
                                     variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                                    whileHover={{ y: -4, transition: { duration: 0.25 } }}
-                                    className="relative rounded-2xl p-5 bg-white border border-slate-100 group cursor-default"
-                                    style={{
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)',
-                                    }}
+                                    whileHover={{ translateY: -5 }}
+                                    className="relative rounded-[2rem] p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
                                 >
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stats.netProfit >= 0 ? 'bg-blue-50' : 'bg-amber-50'}`}>
-                                                <Wallet className={`w-5 h-5 stroke-[2.5] ${stats.netProfit >= 0 ? 'text-promed-primary' : 'text-amber-500'}`} />
+                                    <div className="relative z-10">
+                                        <div className="flex items-start justify-between mb-6">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('net_profit') || 'Sof foyda'}</span>
+                                                <Tooltip content={formatCurrency(stats.netProfit)}>
+                                                    <div className={`text-[2.5rem] font-black tracking-tighter leading-none mt-1 ${stats.netProfit >= 0 ? 'text-slate-900' : 'text-amber-500'}`}>
+                                                        {formatCompactNumber(stats.netProfit)}
+                                                    </div>
+                                                </Tooltip>
                                             </div>
-                                            <span className="text-[13px] font-semibold text-slate-500 tracking-wide">{t('net_profit') || 'Sof foyda'}</span>
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors duration-300 ${stats.netProfit >= 0 ? 'bg-blue-50 group-hover:bg-blue-100' : 'bg-amber-50 group-hover:bg-amber-100'}`}>
+                                                <Wallet className={`w-7 h-7 stroke-[2.5] ${stats.netProfit >= 0 ? 'text-blue-600' : 'text-amber-600'}`} />
+                                            </div>
                                         </div>
-                                        <div className={`w-2 h-2 rounded-full ${stats.netProfit >= 0 ? 'bg-blue-400' : 'bg-amber-400'}`}></div>
-                                    </div>
-                                    <Tooltip content={formatCurrency(stats.netProfit)}>
-                                        <div className={`text-[2rem] font-extrabold tracking-tight leading-none mb-1 ${stats.netProfit >= 0 ? 'text-slate-900' : 'text-amber-600'}`}>
-                                            {formatCompactNumber(stats.netProfit)}
-                                        </div>
-                                    </Tooltip>
-                                    <div className="flex items-center gap-1.5 mt-2">
-                                        <div className="h-1 flex-1 rounded-full bg-slate-100 overflow-hidden">
-                                            <div className={`h-full rounded-full ${stats.netProfit >= 0 ? 'bg-gradient-to-r from-blue-400 to-blue-500' : 'bg-gradient-to-r from-amber-400 to-amber-500'}`} style={{ width: `${stats.totalIncome > 0 ? Math.min(100, Math.max(0, (stats.netProfit / stats.totalIncome) * 100)) : 0}%` }}></div>
+
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between text-xs font-bold">
+                                                <span className={stats.netProfit >= 0 ? 'text-blue-600' : 'text-amber-600'}>
+                                                    {stats.totalIncome > 0 ? Math.round((stats.netProfit / stats.totalIncome) * 100) : 0}% margin
+                                                </span>
+                                            </div>
+                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${stats.totalIncome > 0 ? Math.min(100, Math.max(0, (stats.netProfit / stats.totalIncome) * 100)) : 0}%` }}
+                                                    transition={{ duration: 1, delay: 0.5 }}
+                                                    className={`h-full rounded-full ${stats.netProfit >= 0 ? 'bg-blue-500' : 'bg-amber-500'}`}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -1077,7 +512,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                         </div>
                                     </div>
                                 </div>
-                                <div className="h-96 w-full">
+                                <div className="h-64 md:h-96 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }} barGap={0}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -1186,7 +621,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                     {paginatedPatients.map(patient => {
                                         // Specific calc for this patient
-                                        const pTransactions = transactions.filter(t => t.patientId === patient.id && t.type === 'income');
+                                        const pTransactions = transactions.filter(t => t.patientId === patient.id && t.type === 'income' && !t.isVoided);
                                         const totalPaid = pTransactions.reduce((sum, t) => sum + t.amount, 0);
                                         const totalCost = patient.totalAmount || 0;
                                         const remaining = Math.max(0, totalCost - totalPaid);
@@ -1258,7 +693,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 text-sm">
                                             {paginatedPatients.map((patient) => {
-                                                const pTransactions = transactions.filter(t => t.patientId === patient.id && t.type === 'income');
+                                                const pTransactions = transactions.filter(t => t.patientId === patient.id && t.type === 'income' && !t.isVoided);
                                                 const totalPaid = pTransactions.reduce((sum, t) => sum + t.amount, 0);
                                                 const totalCost = patient.totalAmount || 0;
                                                 const remaining = Math.max(0, totalCost - totalPaid);
@@ -1401,13 +836,13 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                             {[
                                 {
                                     label: t('total_income') || 'Total Income',
-                                    value: filteredTransactionsList.filter(t => t.type === 'income' && !t.returned).reduce((sum, t) => sum + t.amount, 0),
+                                    value: filteredTransactionsList.filter(t => t.type === 'income' && !t.returned && !t.isVoided).reduce((sum, t) => sum + t.amount, 0),
                                     color: 'text-emerald-600',
                                     bg: 'bg-emerald-50/50'
                                 },
                                 {
                                     label: t('total_expenses') || 'Total Expense',
-                                    value: filteredTransactionsList.filter(t => t.type === 'expense' && !t.returned).reduce((sum, t) => sum + t.amount, 0),
+                                    value: filteredTransactionsList.filter(t => t.type === 'expense' && !t.returned && !t.isVoided).reduce((sum, t) => sum + t.amount, 0),
                                     color: 'text-rose-600',
                                     bg: 'bg-rose-50/50'
                                 }
@@ -1428,30 +863,37 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                             key={tx.id}
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
-                                            className={`group flex items-center justify-between p-4 hover:bg-white hover:shadow-sm transition-all duration-200 ${tx.returned ? 'opacity-50' : ''}`}
+                                            className={`group flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-white hover:shadow-sm transition-all duration-200 gap-4 ${tx.returned ? 'opacity-50' : ''} ${tx.isVoided ? 'bg-gray-50 opacity-60' : ''}`}
                                         >
                                             {/* Icon & Details */}
-                                            <div className="flex items-center gap-4 min-w-0">
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${tx.type === 'income' ? 'bg-emerald-100/50 text-emerald-600 group-hover:bg-emerald-100' : 'bg-rose-100/50 text-rose-600 group-hover:bg-rose-100'
+                                            <div className="flex items-center gap-4 min-w-0 w-full sm:w-auto">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${tx.isVoided
+                                                    ? 'bg-gray-100 text-gray-400'
+                                                    : tx.type === 'income' ? 'bg-emerald-100/50 text-emerald-600 group-hover:bg-emerald-100' : 'bg-rose-100/50 text-rose-600 group-hover:bg-rose-100'
                                                     } ${tx.returned ? 'opacity-50' : ''}`}>
-                                                    {tx.type === 'income' ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
+                                                    {tx.isVoided ? <Trash2 className="w-5 h-5" /> : (tx.type === 'income' ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />)}
                                                 </div>
 
                                                 <div className="min-w-0 flex flex-col">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-bold text-slate-800 text-sm capitalize">{t(tx.category.toLowerCase()) || tx.category}</span>
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className={`font-bold text-sm capitalize ${tx.isVoided ? 'text-gray-500 line-through' : 'text-slate-800'}`}>{t(tx.category.toLowerCase()) || tx.category}</span>
                                                         {tx.returned && (
                                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-100 text-red-600 text-[10px] font-bold uppercase tracking-wider">
                                                                 RETURNED
                                                             </span>
                                                         )}
-                                                        <span className="text-slate-300 text-xs">•</span>
-                                                        <span className="text-slate-400 text-xs font-semibold">
+                                                        {tx.isVoided && (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-200 text-gray-500 text-[10px] font-bold uppercase tracking-wider">
+                                                                BEKOR QILINGAN
+                                                            </span>
+                                                        )}
+                                                        <span className="text-slate-300 text-xs hidden sm:inline">•</span>
+                                                        <span className="text-slate-400 text-xs font-semibold block sm:inline w-full sm:w-auto mt-0.5 sm:mt-0">
                                                             {format(new Date(tx.date), 'MMM dd, yyyy')}
                                                             {tx.time && <span> • {tx.time}</span>}
                                                         </span>
                                                     </div>
-                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                                         {tx.description && <span className="text-xs text-slate-500 font-medium truncate max-w-[200px]">{tx.description}</span>}
 
                                                         {tx.patientId && (() => {
@@ -1475,13 +917,12 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                                 </div>
                                             </div>
 
-                                            {/* Amount & Actions */}
-                                            <div className="flex items-center gap-6 pl-4">
-                                                <div className={`text-right font-black ${tx.amount === 0 ? 'text-slate-400' : `bg-clip-text text-transparent ${tx.type === 'income' ? 'bg-gradient-to-br from-emerald-600 to-emerald-400' : 'bg-gradient-to-br from-rose-600 to-rose-400'}`}`}>
+                                            <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pl-0 sm:pl-4 border-t sm:border-t-0 border-slate-50 pt-3 sm:pt-0 mt-2 sm:mt-0">
+                                                <div className={`text-right font-black ${tx.amount === 0 ? 'text-slate-400' : (tx.isVoided ? 'text-gray-400 line-through' : `bg-clip-text text-transparent ${tx.type === 'income' ? 'bg-gradient-to-br from-emerald-600 to-emerald-400' : 'bg-gradient-to-br from-rose-600 to-rose-400'}`)}`}>
                                                     {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
                                                 </div>
-                                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
-                                                    {!tx.returned && tx.amount !== 0 && (
+                                                <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {!tx.returned && !tx.isVoided && tx.amount !== 0 && (
                                                         <button
                                                             onClick={() => handleReturn(tx.id)}
                                                             className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all transform hover:scale-105 active:scale-95"
@@ -1491,11 +932,14 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                                         </button>
                                                     )}
                                                     <button
-                                                        onClick={() => handleDelete(tx.id)}
-                                                        className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all transform hover:scale-105 active:scale-95"
-                                                        title="Delete Transaction"
+                                                        onClick={() => tx.isVoided ? handleRestore(tx.id) : handleDelete(tx.id)}
+                                                        className={`p-2 rounded-lg transition-all transform hover:scale-105 active:scale-95 ${tx.isVoided
+                                                            ? 'text-slate-400 hover:text-blue-500 hover:bg-blue-50'
+                                                            : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
+                                                            }`}
+                                                        title={tx.isVoided ? "Restore Transaction" : "Delete Transaction"}
                                                     >
-                                                        <Trash2 className="w-5 h-5" />
+                                                        {tx.isVoided ? <RotateCcw className="w-5 h-5" /> : <Trash2 className="w-5 h-5" />}
                                                     </button>
                                                 </div>
                                             </div>
@@ -1549,16 +993,17 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                         </div>
                     </motion.div>
                 )}
-            </AnimatePresence >
+            </AnimatePresence>
 
             {/* Modal */}
-            < TransactionModal
+            <TransactionModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleSave}
                 staffList={staffList}
                 patientList={patientList}
                 initialPatientId={initialPatientId}
+                transactions={transactions}
             />
 
             {/* Return Transaction Modal */}
@@ -1576,6 +1021,6 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                 onConfirm={confirmDelete}
                 title={t('delete_transaction') || 'Delete Transaction?'}
             />
-        </div >
+        </div>
     );
 };

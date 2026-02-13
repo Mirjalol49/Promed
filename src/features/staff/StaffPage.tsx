@@ -9,8 +9,8 @@ import { getStaffPaymentHistory, addTransaction } from '../../lib/financeService
 import { useToast } from '../../contexts/ToastContext';
 import {
     Users, Plus, Search, Phone, Mail, DollarSign, Trash2, Edit2,
-    MoreVertical, Calendar, Briefcase, User, X, ChevronLeft, Activity,
-    Clock, Camera, PlusCircle, Loader2, Check, ArrowLeft
+    MoreVertical, Calendar, Briefcase, User, X, ChevronLeft, ChevronDown, Activity,
+    Clock, Camera, PlusCircle, Loader2, Check, ArrowLeft, Banknote
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -18,6 +18,8 @@ import { CustomSelect } from '../../components/ui/CustomSelect';
 import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
 import { ProBadge } from '../../components/ui/ProBadge';
 import { Portal } from '../../components/ui/Portal';
+import { CustomDatePicker } from '../../components/ui/CustomDatePicker';
+import { format } from 'date-fns';
 import Lottie from 'lottie-react';
 import emptyAnimation from '../../assets/images/mascots/empty.json';
 
@@ -52,6 +54,21 @@ const StaffModal = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
+    const [isRoleOpen, setIsRoleOpen] = useState(false);
+    const roleRef = useRef<HTMLDivElement>(null);
+
+    // Close role dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (roleRef.current && !roleRef.current.contains(event.target as Node)) {
+                setIsRoleOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         if (initialData) {
@@ -107,23 +124,26 @@ const StaffModal = ({
                     initial={{ opacity: 0, scale: 0.9, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-[0_30px_100px_rgba(0,0,0,0.15)] overflow-hidden relative z-10 border border-slate-100 flex flex-col md:flex-row min-h-[500px]"
+                    className="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-[0_30px_100px_rgba(0,0,0,0.15)] relative z-10 border border-slate-100 flex flex-col md:flex-row min-h-[500px] max-h-[90vh] overflow-y-auto md:overflow-hidden"
                 >
-                    {/* Close Button */}
-                    <button
-                        onClick={onClose}
-                        className="absolute top-6 right-6 p-2 bg-slate-100 hover:bg-slate-200 text-slate-400 rounded-full transition-colors z-20"
-                    >
-                        <X size={20} />
-                    </button>
+                    {/* Sticky Close Button (Overlay) */}
+                    <div className="sticky top-0 z-50 flex justify-end p-6 pointer-events-none h-0 overflow-visible">
+                        <button
+                            onClick={onClose}
+                            className="bg-slate-100/90 backdrop-blur-sm hover:bg-slate-200 text-slate-500 rounded-full p-2 transition-colors pointer-events-auto shadow-sm ring-1 ring-slate-200/50"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
 
                     {/* Left Side: Avatar & Basic Info */}
-                    <div className="w-full md:w-2/5 p-10 bg-slate-50/50 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-100">
-                        <div className="relative group mb-6">
+                    <div className="w-full md:w-2/5 p-6 md:p-10 bg-slate-50 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-100 relative rounded-t-[2.5rem] md:rounded-l-[2.5rem] md:rounded-tr-none shrink-0">
+                        <div className="relative group mb-8">
                             <motion.div
-                                whileHover={{ scale: 1.05 }}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
                                 onClick={() => fileInputRef.current?.click()}
-                                className="w-40 h-40 rounded-[3rem] bg-white border border-slate-200 flex items-center justify-center relative overflow-hidden cursor-pointer hover:border-blue-500 transition-all shadow-sm"
+                                className="w-40 h-40 rounded-[2.5rem] bg-white border-2 border-dashed border-slate-200 flex items-center justify-center relative overflow-hidden cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all shadow-sm group-hover:shadow-md"
                             >
                                 {(imageFile || initialData?.imageUrl) ? (
                                     <img
@@ -132,7 +152,9 @@ const StaffModal = ({
                                         alt="Staff"
                                     />
                                 ) : (
-                                    <User className="text-slate-200 w-16 h-16" />
+                                    <div className="flex flex-col items-center gap-2 text-slate-300 group-hover:text-blue-400 transition-colors">
+                                        <Camera size={32} strokeWidth={1.5} />
+                                    </div>
                                 )}
                                 <input
                                     ref={fileInputRef}
@@ -143,48 +165,38 @@ const StaffModal = ({
                                         if (e.target.files?.[0]) setImageFile(e.target.files[0]);
                                     }}
                                 />
-                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Plus className="text-white w-10 h-10" />
-                                </div>
                             </motion.div>
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg border-4 border-white hover:bg-blue-700 transition-colors"
+                                className="absolute -bottom-3 -right-3 w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 border-4 border-white hover:bg-blue-700 hover:scale-110 transition-all"
                             >
-                                <Plus size={20} />
+                                <Plus size={24} strokeWidth={3} />
                             </button>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-2 hover:text-blue-700 transition-colors"
-                        >
-                            {t('upload_photo')}
-                        </button>
-                        <h3 className="font-black text-2xl text-slate-900 tracking-tight text-center">
+                        <h3 className="font-black text-2xl text-slate-900 tracking-tight text-center mb-1">
                             {initialData ? t('edit_staff') : t('add_new_staff')}
                         </h3>
                     </div>
 
                     {/* Right Side: Detailed Fields */}
-                    <form onSubmit={handleSubmit} className="w-full md:w-3/5 p-10 flex flex-col justify-center">
+                    <form onSubmit={handleSubmit} className="w-full md:w-3/5 p-6 md:p-10 flex flex-col justify-center overflow-y-auto">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('first_name')}</label>
+                                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-1">{t('first_name')}</label>
                                 <input
                                     required
-                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all outline-none"
+                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 transition-all outline-none"
                                     value={formData.firstName}
                                     onChange={e => setFormData({ ...formData, firstName: e.target.value })}
                                     placeholder="Mirjalol"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('last_name')}</label>
+                                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-1">{t('last_name')}</label>
                                 <input
                                     required
-                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all outline-none"
+                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 transition-all outline-none"
                                     value={formData.lastName}
                                     onChange={e => setFormData({ ...formData, lastName: e.target.value })}
                                     placeholder="Shamsiddinov"
@@ -194,27 +206,52 @@ const StaffModal = ({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('role')}</label>
-                                <div className="relative">
-                                    <select
-                                        className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold appearance-none focus:border-blue-500 transition-all outline-none cursor-pointer"
-                                        value={formData.role}
-                                        onChange={e => setFormData({ ...formData, role: e.target.value as StaffRole })}
+                                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-1">{t('role')}</label>
+                                <div className="relative" ref={roleRef}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsRoleOpen(!isRoleOpen)}
+                                        className={`w-full bg-white border rounded-2xl py-3.5 px-5 text-slate-900 font-bold flex items-center justify-between outline-none transition-all ${isRoleOpen ? 'border-blue-400 ring-[3px] ring-blue-500/5' : 'border-slate-200 hover:border-slate-300'}`}
                                     >
-                                        {roles.map(r => (
-                                            <option key={r} value={r}>{t(`role_${r}`) || r.charAt(0).toUpperCase() + r.slice(1)}</option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
-                                        <MoreVertical size={16} />
-                                    </div>
+                                        <span className="flex items-center gap-2">
+                                            {t(`role_${formData.role}`) || formData.role?.charAt(0).toUpperCase() + formData.role?.slice(1)}
+                                        </span>
+                                        <ChevronDown size={18} className={`text-slate-400 transition-transform duration-200 ${isRoleOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {isRoleOpen && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                                                transition={{ duration: 0.15 }}
+                                                className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 shadow-[0_20px_60px_rgba(0,0,0,0.12)] z-50 overflow-hidden"
+                                            >
+                                                {roles.map((r) => (
+                                                    <button
+                                                        key={r}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setFormData({ ...formData, role: r });
+                                                            setIsRoleOpen(false);
+                                                        }}
+                                                        className={`w-full text-left px-5 py-3 font-bold text-sm transition-colors flex items-center justify-between ${formData.role === r ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                    >
+                                                        <span>{t(`role_${r}`) || r.charAt(0).toUpperCase() + r.slice(1)}</span>
+                                                        {formData.role === r && <Check size={16} />}
+                                                    </button>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('phone')}</label>
+                                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-1">{t('phone')}</label>
                                 <input
                                     required
-                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all outline-none"
+                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 transition-all outline-none"
                                     value={formData.phone}
                                     onChange={e => {
                                         let val = e.target.value;
@@ -248,13 +285,13 @@ const StaffModal = ({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div className={initialData ? "space-y-2" : "space-y-2 col-span-2"}>
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('salary')}</label>
+                                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-1">{t('salary')}</label>
                                 <div className="relative">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">UZS</div>
                                     <input
                                         type="text"
                                         inputMode="numeric"
-                                        className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 pl-12 pr-5 text-slate-900 font-bold focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all outline-none"
+                                        className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 pl-12 pr-5 text-slate-900 font-bold focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 transition-all outline-none"
                                         value={formData.salary ? new Intl.NumberFormat('uz-UZ').format(Number(formData.salary)) : ''}
                                         onChange={e => {
                                             const val = e.target.value.replace(/[^0-9]/g, '');
@@ -287,9 +324,9 @@ const StaffModal = ({
                         </div>
 
                         <div className="space-y-2 mb-8">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('notes')}</label>
+                            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-1">{t('notes')}</label>
                             <textarea
-                                className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all outline-none resize-none"
+                                className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 transition-all outline-none resize-none"
                                 rows={2}
                                 value={formData.notes || ''}
                                 onChange={e => setFormData({ ...formData, notes: e.target.value })}
@@ -302,7 +339,7 @@ const StaffModal = ({
                             whileTap={{ scale: 0.98 }}
                             type="submit"
                             disabled={loading}
-                            className="btn-glossy-blue !py-5 !rounded-full !text-sm !uppercase !tracking-widest disabled:opacity-70"
+                            className="btn-glossy-blue !py-5 !text-sm !uppercase !tracking-widest disabled:opacity-70"
                         >
                             {loading ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -310,6 +347,298 @@ const StaffModal = ({
                                 <>
                                     {initialData ? <Edit2 size={18} /> : <Plus size={18} />}
                                     {initialData ? t('update_staff') : t('save_staff')}
+                                </>
+                            )}
+                        </motion.button>
+                    </form>
+                </motion.div>
+            </div>
+        </Portal>
+    );
+};
+
+// --- Pay Salary Modal ---
+const PaySalaryModal = ({
+    isOpen,
+    onClose,
+    staffList,
+    accountId,
+    onSuccess
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    staffList: Staff[];
+    accountId: string;
+    onSuccess: () => void;
+}) => {
+    const { t } = useLanguage();
+    const [selectedStaffId, setSelectedStaffId] = useState('');
+    const [amount, setAmount] = useState('');
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [note, setNote] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    const activeStaff = staffList.filter(s => s.status === 'active');
+    const selectedStaff = staffList.find(s => s.id === selectedStaffId);
+
+    // Auto-fill amount when staff is selected
+    useEffect(() => {
+        if (selectedStaff && !amount) {
+            setAmount(String(selectedStaff.salary || ''));
+        }
+    }, [selectedStaffId]);
+
+    // Reset form on open
+    useEffect(() => {
+        if (isOpen) {
+            const autoSelect = activeStaff.length === 1 ? activeStaff[0].id : '';
+            setSelectedStaffId(autoSelect);
+            setAmount('');
+            setDate(new Date().toISOString().split('T')[0]);
+            setNote('');
+            setIsDropdownOpen(false);
+        }
+    }, [isOpen]);
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        if (isDropdownOpen) document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isDropdownOpen]);
+
+    if (!isOpen) return null;
+
+    const handleSelectStaff = (id: string) => {
+        setSelectedStaffId(id);
+        setAmount('');
+        setIsDropdownOpen(false);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedStaffId || !amount) return;
+        setLoading(true);
+        try {
+            const now = new Date();
+            const autoTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            await addTransaction({
+                amount: Number(amount),
+                currency: selectedStaff?.currency || 'UZS',
+                type: 'expense',
+                category: 'salary',
+                date,
+                time: autoTime,
+                description: note || `${t('salary_payment_desc') || 'Salary payment'} — ${selectedStaff?.fullName}`,
+                staffId: selectedStaffId,
+                accountId
+            });
+            onSuccess();
+            onClose();
+        } catch (err) {
+            console.error('Failed to pay salary:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Portal>
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
+                    className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="bg-white rounded-[2rem] w-full max-w-lg shadow-[0_30px_100px_rgba(0,0,0,0.15)] overflow-hidden relative z-10 border border-slate-100"
+                >
+                    {/* Header */}
+                    <div className="p-6 pb-0 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                                <Banknote size={20} className="text-emerald-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900">{t('pay_salary') || 'Pay Salary'}</h3>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-400 rounded-full transition-colors"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                        {/* Custom Staff Dropdown */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('select_staff') || 'Select Staff'}</label>
+                            <div className="relative" ref={dropdownRef}>
+                                {/* Trigger */}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                    className={`w-full bg-slate-50/50 border rounded-2xl py-3 px-4 flex items-center gap-3 transition-all outline-none cursor-pointer ${isDropdownOpen ? 'border-blue-400 shadow-[0_0_0_3px_rgba(59,130,246,0.06)] bg-white' : 'border-slate-200/80 hover:border-slate-300 hover:bg-white'}`}
+                                >
+                                    {selectedStaff ? (
+                                        <>
+                                            <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 ring-2 ring-white shadow-sm">
+                                                {selectedStaff.imageUrl ? (
+                                                    <img src={selectedStaff.imageUrl} className="w-full h-full object-cover" alt="" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50 text-sm">
+                                                        {selectedStaff.fullName.charAt(0)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 text-left min-w-0">
+                                                <p className="font-bold text-slate-800 text-sm truncate">{selectedStaff.fullName}</p>
+                                                <p className="text-[10px] text-slate-400 font-semibold">{t(`role_${selectedStaff.role}`) || selectedStaff.role} · {selectedStaff.salary?.toLocaleString()} {selectedStaff.currency}</p>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                                <User size={16} className="text-slate-400" />
+                                            </div>
+                                            <span className="text-sm font-semibold text-slate-400">{t('select_staff') || 'Select Staff'}...</span>
+                                        </>
+                                    )}
+                                    <motion.div
+                                        animate={{ rotate: isDropdownOpen ? 180 : 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="ml-auto text-slate-400 flex-shrink-0"
+                                    >
+                                        <ChevronLeft size={16} className="-rotate-90" />
+                                    </motion.div>
+                                </button>
+
+                                {/* Dropdown List */}
+                                <AnimatePresence>
+                                    {isDropdownOpen && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                                            transition={{ duration: 0.15, ease: 'easeOut' }}
+                                            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden z-50 max-h-[240px] overflow-y-auto"
+                                            style={{ scrollbarWidth: 'thin', scrollbarColor: '#e2e8f0 transparent' }}
+                                        >
+                                            {activeStaff.length === 0 ? (
+                                                <div className="p-6 text-center text-sm text-slate-400 font-semibold">{t('no_staff_found') || 'No staff members found'}</div>
+                                            ) : (
+                                                activeStaff.map((staff, idx) => {
+                                                    const isSelected = staff.id === selectedStaffId;
+                                                    return (
+                                                        <button
+                                                            key={staff.id}
+                                                            type="button"
+                                                            onClick={() => handleSelectStaff(staff.id)}
+                                                            className={`w-full flex items-center gap-3 px-4 py-3 transition-all text-left ${isSelected ? 'bg-blue-50/70' : 'hover:bg-slate-50'} ${idx > 0 ? 'border-t border-slate-100/70' : ''}`}
+                                                        >
+                                                            <div className={`w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ${isSelected ? 'ring-2 ring-blue-500' : 'ring-2 ring-white'}`}>
+                                                                {staff.imageUrl ? (
+                                                                    <img src={staff.imageUrl} className="w-full h-full object-cover" alt="" />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50">
+                                                                        {staff.fullName.charAt(0)}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className={`font-bold text-sm truncate ${isSelected ? 'text-blue-700' : 'text-slate-800'}`}>{staff.fullName}</p>
+                                                                <div className="flex items-center gap-2 mt-0.5">
+                                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t(`role_${staff.role}`) || staff.role}</span>
+                                                                    <span className="text-slate-200">·</span>
+                                                                    <span className="text-[10px] font-bold text-emerald-600">{staff.salary?.toLocaleString()} {staff.currency}</span>
+                                                                </div>
+                                                            </div>
+                                                            {isSelected && (
+                                                                <motion.div
+                                                                    initial={{ scale: 0 }}
+                                                                    animate={{ scale: 1 }}
+                                                                    className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0"
+                                                                >
+                                                                    <Check size={12} className="text-white stroke-[3]" />
+                                                                </motion.div>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })
+                                            )}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </div>
+
+                        {/* Amount */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('amount') || 'Amount'}</label>
+                            <div className="relative">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">UZS</div>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    required
+                                    className="w-full bg-slate-50/50 border border-slate-200/80 rounded-2xl py-3.5 pl-12 pr-5 text-slate-900 font-bold text-lg focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 focus:bg-white transition-all outline-none"
+                                    value={amount ? new Intl.NumberFormat('uz-UZ').format(Number(amount)) : ''}
+                                    onChange={e => {
+                                        const val = e.target.value.replace(/[^0-9]/g, '');
+                                        setAmount(val);
+                                    }}
+                                    placeholder={t('enter_amount') || 'Enter amount'}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Date (full width, custom picker) */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('date') || 'Date'}</label>
+                            <CustomDatePicker
+                                value={new Date(date)}
+                                onChange={(d) => setDate(format(d, 'yyyy-MM-dd'))}
+                                placeholder={t('select_date') || 'Select Date'}
+                            />
+                        </div>
+
+                        {/* Note */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('notes') || 'Note'}</label>
+                            <input
+                                type="text"
+                                value={note}
+                                onChange={e => setNote(e.target.value)}
+                                className="w-full bg-slate-50/50 border border-slate-200/80 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 placeholder:font-medium focus:border-blue-400 focus:ring-[3px] focus:ring-blue-500/5 focus:bg-white transition-all outline-none"
+                                placeholder={t('add_description') || 'Add a description...'}
+                            />
+                        </div>
+
+                        {/* Submit */}
+                        <motion.button
+                            whileHover={{ translateY: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                            type="submit"
+                            disabled={loading || !selectedStaffId || !amount}
+                            className="btn-premium-emerald w-full !py-4 text-sm uppercase tracking-widest flex items-center justify-center gap-2.5 shadow-lg"
+                        >
+                            {loading ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <>
+                                    <Banknote size={18} />
+                                    {t('pay_salary') || 'Pay Salary'}
                                 </>
                             )}
                         </motion.button>
@@ -640,25 +969,63 @@ const StaffDetail = ({
                 {/* Timeline (Transactions) */}
                 <div className="w-full">
                     <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
-                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                            <div className="flex items-center gap-3">
-                                <h3 className="font-bold text-lg text-slate-900">{t('payment_history') || 'Payment History'}</h3>
-                                <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">{payments.length}</span>
+                        <div className="border-b border-slate-100 bg-slate-50/50">
+                            <div className="p-6 pb-4 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <h3 className="font-bold text-lg text-slate-900">{t('payment_history') || 'Payment History'}</h3>
+                                    <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">{payments.length}</span>
+                                </div>
                             </div>
 
+                            {/* Month Filter Pills */}
                             {months.length > 0 && (
-                                <div className="w-56">
-                                    <CustomSelect
-                                        options={[
-                                            { value: 'all', label: t('all_time') || 'All Time' },
-                                            ...months.map(monthKey => ({
-                                                value: monthKey,
-                                                label: paymentsByMonth[monthKey].label
-                                            }))
-                                        ]}
-                                        value={selectedMonth}
-                                        onChange={(val) => setSelectedMonth(val)}
-                                    />
+                                <div className="px-6 pb-4 flex gap-2 overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none' }}>
+                                    <motion.button
+                                        type="button"
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => setSelectedMonth('all')}
+                                        className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 border-2 ${selectedMonth === 'all'
+                                            ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
+                                            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        <Calendar size={13} className={selectedMonth === 'all' ? 'text-blue-200' : 'text-slate-400'} />
+                                        {t('all_time') || 'All'}
+                                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${selectedMonth === 'all'
+                                            ? 'bg-white/20 text-white'
+                                            : 'bg-slate-100 text-slate-500'
+                                            }`}>
+                                            {payments.length}
+                                        </span>
+                                    </motion.button>
+
+                                    {months.map(monthKey => {
+                                        const isActive = selectedMonth === monthKey;
+                                        const monthData = paymentsByMonth[monthKey];
+                                        const date = new Date(monthKey + '-01');
+                                        const shortMonth = date.toLocaleDateString('en-US', { month: 'short' });
+                                        const year = date.getFullYear();
+                                        return (
+                                            <motion.button
+                                                key={monthKey}
+                                                type="button"
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => setSelectedMonth(monthKey)}
+                                                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 border-2 ${isActive
+                                                    ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
+                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                                    }`}
+                                            >
+                                                <span className="capitalize">{shortMonth} {year}</span>
+                                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${isActive
+                                                    ? 'bg-white/20 text-white'
+                                                    : 'bg-slate-100 text-slate-500'
+                                                    }`}>
+                                                    {monthData.payments.length}
+                                                </span>
+                                            </motion.button>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
@@ -737,9 +1104,11 @@ export const StaffPage = () => {
     const [staffList, setStaffList] = useState<Staff[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isPayModalOpen, setIsPayModalOpen] = useState(false);
     const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
     const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
     const [loading, setLoading] = useState(true);
+    const [staffPayments, setStaffPayments] = useState<Record<string, number>>({});
 
     useEffect(() => {
         if (!accountId) return;
@@ -749,6 +1118,30 @@ export const StaffPage = () => {
         });
         return () => unsub();
     }, [accountId]);
+
+    // Track monthly payments for each staff member
+    useEffect(() => {
+        if (staffList.length === 0) return;
+        const unsubscribers: (() => void)[] = [];
+        staffList.forEach(staff => {
+            const unsub = getStaffPaymentHistory(
+                staff.id,
+                (payments) => {
+                    const now = new Date();
+                    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                    const thisMonthTotal = payments
+                        .filter(p => {
+                            const d = new Date(p.date);
+                            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === currentMonthKey;
+                        })
+                        .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                    setStaffPayments(prev => ({ ...prev, [staff.id]: thisMonthTotal }));
+                }
+            );
+            unsubscribers.push(unsub);
+        });
+        return () => unsubscribers.forEach(u => u());
+    }, [staffList]);
 
     const handleSave = async (data: StaffFormData, imageFile?: File) => {
         try {
@@ -803,7 +1196,7 @@ export const StaffPage = () => {
     );
 
     return (
-        <div className="h-full flex flex-col p-6 max-w-7xl mx-auto space-y-6 relative z-10">
+        <div className="h-full flex flex-col p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6 relative z-10">
             {selectedStaff ? (
                 <StaffDetail
                     staff={selectedStaff}
@@ -828,17 +1221,30 @@ export const StaffPage = () => {
                                 {t('staff_management') || 'Staff Management'}
                             </motion.h1>
                         </div>
-                        <motion.button
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            whileHover={{ scale: 1.01, translateY: -1 }}
-                            whileTap={{ scale: 0.99 }}
-                            onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
-                            className="btn-glossy-blue !w-auto !py-3 !rounded-full px-6 flex items-center gap-2.5 transition-all duration-300 self-start md:self-auto"
-                        >
-                            <Plus size={18} className="stroke-[3]" />
-                            <span className="text-sm uppercase tracking-wider">{t('add_staff') || 'Add Staff'}</span>
-                        </motion.button>
+                        <div className="flex items-center gap-3">
+                            <motion.button
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                whileHover={{ scale: 1.01, translateY: -1 }}
+                                whileTap={{ scale: 0.99 }}
+                                onClick={() => setIsPayModalOpen(true)}
+                                className="!w-auto py-3 rounded-2xl px-6 flex items-center gap-2.5 transition-all duration-300 self-start md:self-auto bg-white border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 font-bold shadow-sm"
+                            >
+                                <Banknote size={18} className="stroke-[2.5]" />
+                                <span className="text-sm uppercase tracking-wider">{t('pay_salary') || 'Pay Salary'}</span>
+                            </motion.button>
+                            <motion.button
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                whileHover={{ scale: 1.01, translateY: -1 }}
+                                whileTap={{ scale: 0.99 }}
+                                onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
+                                className="btn-glossy-blue !w-auto !py-3 px-6 flex items-center gap-2.5 transition-all duration-300 self-start md:self-auto"
+                            >
+                                <Plus size={18} className="stroke-[3]" />
+                                <span className="text-sm uppercase tracking-wider">{t('add_staff') || 'Add Staff'}</span>
+                            </motion.button>
+                        </div>
                     </div>
 
                     {/* Premium White Search Bar */}
@@ -907,61 +1313,72 @@ export const StaffPage = () => {
                                 {filteredStaff.map(staff => (
                                     <motion.div
                                         key={staff.id}
-                                        initial={{ opacity: 0, y: 10 }}
+                                        initial={{ opacity: 0, y: 12 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95 }}
                                         layout
+                                        whileHover={{ y: -4 }}
                                         onClick={() => setSelectedStaff(staff)}
-                                        className="bg-white rounded-[2rem] p-6 border border-slate-100 hover:border-blue-100 hover:shadow-xl transition-all duration-300 cursor-pointer relative group overflow-hidden"
+                                        className="bg-white rounded-[2rem] border border-slate-100 hover:border-blue-200 hover:shadow-[0_20px_60px_rgba(59,130,246,0.08)] transition-all duration-300 cursor-pointer relative group overflow-hidden"
                                     >
-                                        {/* Hover Gradient Backlight */}
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-[100px] -mr-10 -mt-10 transition-all group-hover:bg-blue-500/10" />
+                                        {/* Top accent gradient */}
+                                        <div className="h-20 bg-gradient-to-br from-blue-100/70 via-blue-50 to-indigo-100/50 relative overflow-hidden">
+                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(59,130,246,0.12),transparent_60%)]" />
+                                            <div className="absolute -right-4 -top-4 w-16 h-16 bg-blue-400/10 rounded-full blur-sm" />
+                                            {/* Hover arrow */}
+                                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+                                                <div className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm text-blue-600 flex items-center justify-center shadow-sm border border-white/50">
+                                                    <ChevronLeft size={14} className="rotate-180 stroke-[2.5]" />
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                        <div className="flex items-start gap-5 relative z-10">
-                                            {/* Avatar */}
-                                            <div className="relative flex-shrink-0">
-                                                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-50 shadow-sm ring-4 ring-white">
+                                        {/* Avatar — overlaps the accent bar */}
+                                        <div className="flex justify-center -mt-10 relative z-10">
+                                            <div className="relative">
+                                                <div className="w-[76px] h-[76px] rounded-2xl overflow-hidden bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)] ring-[5px] ring-white">
                                                     {staff.imageUrl ? (
                                                         <img src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-blue-500 font-bold bg-blue-50 text-xl">
+                                                        <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-gradient-to-br from-blue-50 to-indigo-50 text-2xl">
                                                             {staff.fullName.charAt(0)}
                                                         </div>
                                                     )}
                                                 </div>
-                                                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-[3px] border-white flex items-center justify-center ${staff.status === 'active' ? 'bg-emerald-500' :
+                                                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-[3px] border-white flex items-center justify-center shadow-sm ${staff.status === 'active' ? 'bg-emerald-500' :
                                                     staff.status === 'on_leave' ? 'bg-amber-400' : 'bg-slate-300'
                                                     }`}>
                                                     {staff.status === 'active' && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
                                                 </div>
                                             </div>
-
-                                            {/* Info */}
-                                            <div className="flex-1 min-w-0 pt-1">
-                                                <h3 className="font-bold text-slate-900 text-lg leading-tight truncate group-hover:text-blue-600 transition-colors">
-                                                    {staff.fullName}
-                                                </h3>
-                                                <span className="inline-block mt-1.5 px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-lg">
-                                                    {t(`role_${staff.role}`) || staff.role}
-                                                </span>
-                                            </div>
                                         </div>
 
-                                        {/* Stats Grid */}
-                                        <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-50 relative z-10">
-                                            <div>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">{t('salary')}</p>
-                                                <p className="font-bold text-slate-700 text-base">{staff.salary?.toLocaleString()}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">{t('phone')}</p>
-                                                <p className="font-bold text-slate-700 text-sm truncate">{staff.phone}</p>
-                                            </div>
+                                        {/* Name + Role */}
+                                        <div className="text-center px-6 pt-3 pb-1">
+                                            <h3 className="font-bold text-slate-900 text-[17px] leading-tight truncate group-hover:text-blue-600 transition-colors duration-200">
+                                                {staff.fullName}
+                                            </h3>
+                                            <span className="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-[0.12em] rounded-lg border border-blue-200/60">
+                                                {t(`role_${staff.role}`) || staff.role}
+                                            </span>
                                         </div>
 
-                                        <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                                            <div className="w-8 h-8 rounded-full bg-slate-50 text-blue-600 flex items-center justify-center shadow-sm">
-                                                <ChevronLeft size={16} className="rotate-180" />
+                                        {/* Stat Chips */}
+                                        <div className="px-5 pt-4 pb-5">
+                                            <div className="flex gap-2">
+                                                {/* Salary Chip */}
+                                                <div className="flex-1 bg-slate-100 rounded-xl px-3.5 py-3 border border-slate-200">
+                                                    <p className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.15em] mb-1">{t('salary')}</p>
+                                                    <p className="font-extrabold text-slate-900 text-[15px] leading-none">
+                                                        {staff.salary?.toLocaleString()}
+                                                        <span className="text-[9px] text-slate-500 font-bold ml-1">UZS</span>
+                                                    </p>
+                                                </div>
+                                                {/* Phone Chip */}
+                                                <div className="flex-1 bg-slate-100 rounded-xl px-3.5 py-3 border border-slate-200">
+                                                    <p className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.15em] mb-1">{t('phone')}</p>
+                                                    <p className="font-bold text-slate-800 text-[13px] leading-none truncate">{staff.phone || '—'}</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </motion.div>
@@ -977,6 +1394,16 @@ export const StaffPage = () => {
                 onClose={() => { setIsModalOpen(false); setEditingStaff(null); }}
                 onSave={handleSave}
                 initialData={editingStaff}
+            />
+
+            <PaySalaryModal
+                isOpen={isPayModalOpen}
+                onClose={() => setIsPayModalOpen(false)}
+                staffList={staffList}
+                accountId={accountId || ''}
+                onSuccess={() => {
+                    success(t('salary_paid') || 'Salary Paid', t('salary_paid_msg') || 'Salary payment recorded successfully');
+                }}
             />
         </div>
     );

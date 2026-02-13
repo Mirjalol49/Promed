@@ -12,9 +12,10 @@ interface CustomDatePickerProps {
     label?: string;
     minimal?: boolean;
     placeholder?: string;
+    centered?: boolean;
 }
 
-export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, label, minimal = false, placeholder }) => {
+export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, label, minimal = false, placeholder, centered = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const containerRef = useRef<HTMLDivElement>(null);
@@ -23,7 +24,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
     const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number; width: number }>({ left: 0, width: 0 });
 
     useEffect(() => {
-        if (isOpen && containerRef.current) {
+        if (isOpen && containerRef.current && !centered) {
             const updatePosition = () => {
                 const rect = containerRef.current?.getBoundingClientRect();
                 if (rect) {
@@ -190,32 +191,49 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
     const dropdownContent = (
         <AnimatePresence>
             {isOpen && (
-                <motion.div
-                    id={portalId}
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    style={{
-                        position: 'fixed',
-                        top: coords.top,
-                        bottom: coords.bottom,
-                        left: coords.left,
-                        width: '320px', // Fixed width for calendar looks better usually, or use coords.width
-                        zIndex: 99999
-                    }}
-                    className="bg-white rounded-3xl shadow-2xl shadow-slate-200/50 border border-slate-300 overflow-hidden p-4"
-                >
-                    {renderHeader()}
-                    {renderDays()}
-                    {renderCells()}
-                </motion.div>
+                centered ? (
+                    <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/10 backdrop-blur-[1px]" onClick={() => setIsOpen(false)}>
+                        <motion.div
+                            id={portalId}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-3xl shadow-2xl shadow-blue-500/10 border border-slate-100 overflow-hidden p-6 w-[340px]"
+                        >
+                            {renderHeader()}
+                            {renderDays()}
+                            {renderCells()}
+                        </motion.div>
+                    </div>
+                ) : (
+                    <motion.div
+                        id={portalId}
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        style={{
+                            position: 'fixed',
+                            top: coords.top,
+                            bottom: coords.bottom,
+                            left: coords.left,
+                            width: '320px',
+                            zIndex: 99999
+                        }}
+                        className="bg-white rounded-3xl shadow-2xl shadow-slate-200/50 border border-slate-300 overflow-hidden p-4"
+                    >
+                        {renderHeader()}
+                        {renderDays()}
+                        {renderCells()}
+                    </motion.div>
+                )
             )}
         </AnimatePresence>
     );
 
     return (
-        <div className="relative" ref={containerRef}>
+        <div className={`relative ${minimal ? 'h-full' : ''}`} ref={containerRef}>
             {label && (
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">
                     {label}

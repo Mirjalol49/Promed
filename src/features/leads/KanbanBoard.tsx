@@ -216,7 +216,7 @@ export const KanbanBoard: React.FC = () => {
         return reminderDate >= today && reminderDate <= weekFromNow;
     };
 
-    const activeLeads = leads
+    const activeLeads = React.useMemo(() => leads
         .filter(l => l.status === activeTab)
         // Search filter
         .filter(l => {
@@ -238,7 +238,7 @@ export const KanbanBoard: React.FC = () => {
         .filter(l => {
             if (selectedSources.length === 0) return true;
             return selectedSources.includes(l.source);
-        });
+        }), [leads, activeTab, searchQuery, activeQuickFilter, selectedSources]);
 
     const toggleSourceFilter = (source: string) => {
         setSelectedSources(prev =>

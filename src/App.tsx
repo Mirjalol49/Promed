@@ -508,9 +508,12 @@ const App: React.FC = () => {
     };
   }, [accountId]); // Depends strictly on accountId for correct data isolation
 
-  // Preload images for smoother navigation
+  // Preload images for smoother navigation (Optimized: Only top 15 recent patients)
   const allImageUrls = useMemo(() => {
-    return patients.flatMap(p => [p.profileImage, p.beforeImage, ...(p.afterImages || []).map(img => img.url)]).filter(Boolean) as string[];
+    return patients
+      .slice(0, 15)
+      .flatMap(p => [p.profileImage, p.beforeImage, ...(p.afterImages || []).map(img => img.url)])
+      .filter(Boolean) as string[];
   }, [patients]);
   useImagePreloader(allImageUrls);
 

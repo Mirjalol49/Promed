@@ -97,13 +97,16 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                         <div className="grid grid-cols-2 gap-3 w-full">
                             <button
                                 onClick={onClose}
-                                className="h-12 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold rounded-xl transition-all active:scale-[0.98]"
+                                className="btn-premium-white h-12 text-base"
                             >
                                 {cancelText || t('cancel')}
                             </button>
                             <button
                                 onClick={onConfirm}
-                                className={`h-12 flex items-center justify-center space-x-2 rounded-xl transition-all active:scale-[0.98] ${variant === 'primary' ? 'btn-premium-blue' : `${style.button} text-white font-bold`}`}
+                                className={`h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98] 
+                                    ${variant === 'primary' ? 'btn-premium-blue' :
+                                        variant === 'danger' ? 'btn-premium-red' :
+                                            'btn-premium-orange'}`}
                             >
                                 <Icon size={18} className="relative z-10 opacity-90" />
                                 <span>{confirmText || t('confirm')}</span>

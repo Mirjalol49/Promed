@@ -138,7 +138,7 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                         <button
                             onClick={handleSave}
                             disabled={isLoading || !content.trim()}
-                            className="bg-promed-primary hover:bg-promed-primary/90 text-white px-6 py-2.5 rounded-xl font-medium shadow-lg shadow-promed-primary/30 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 ml-auto"
+                            className="btn-premium-blue ml-auto"
                         >
                             <Save size={18} />
                             <span>{t('save')}</span>

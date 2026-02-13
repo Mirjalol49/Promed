@@ -285,7 +285,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                         {lead.reminder?.date ? (
                             <button
                                 onClick={(e) => { e.stopPropagation(); onRemind(lead); }}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-200/50 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all group/remind"
+                                className="flex items-center gap-2 px-4 py-2 btn-premium-blue !text-xs !px-4 !py-2 !h-auto shadow-md shadow-blue-200/50 hover:scale-105 active:scale-95 transition-all group/remind"
                                 title={t('edit_reminder') || 'Edit Reminder'}
                             >
                                 <Clock size={14} className="group-hover/remind:rotate-12 transition-transform" />
@@ -319,7 +319,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                         <button
                             onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
                             title={t('edit')}
-                            className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all active:scale-90 shadow-sm"
+                            className="w-10 h-10 bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all active:scale-90 shadow-sm"
                         >
                             <Pencil size={18} />
                         </button>
@@ -328,7 +328,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
                             title={t('delete')}
-                            className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-all active:scale-90 shadow-sm"
+                            className="w-10 h-10 bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-all active:scale-90 shadow-sm"
                         >
                             <Trash size={18} />
                         </button>
@@ -339,7 +339,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                         <button
                             ref={buttonRef}
                             onClick={(e) => { e.stopPropagation(); toggleDropdown(); }}
-                            className={`h-10 px-4 rounded-full flex items-center gap-2 transition-all active:scale-95 shadow-sm border
+                            className={`h-10 px-4 rounded-2xl flex items-center gap-2 transition-all active:scale-95 shadow-sm border
                                 ${isDropdownOpen
                                     ? 'bg-slate-900 border-slate-900 text-white'
                                     : `bg-${COL_COLORS[lead.status]}-50 border-${COL_COLORS[lead.status]}-100 text-${COL_COLORS[lead.status]}-700 hover:bg-${COL_COLORS[lead.status]}-100`

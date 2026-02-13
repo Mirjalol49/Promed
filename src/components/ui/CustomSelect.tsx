@@ -16,9 +16,10 @@ interface CustomSelectProps {
     label?: string;
     renderOption?: (option: Option) => React.ReactNode;
     searchable?: boolean;
+    minimal?: boolean;
 }
 
-export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onChange, placeholder = 'Select...', label, renderOption, searchable = false }) => {
+export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onChange, placeholder = 'Select...', label, renderOption, searchable = false, minimal = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number; width: number }>({ left: 0, width: 0 });
     const [searchTerm, setSearchTerm] = useState('');
@@ -169,7 +170,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
     );
 
     return (
-        <div className="relative" ref={containerRef}>
+        <div className={`relative ${minimal ? 'h-full' : ''}`} ref={containerRef}>
             {label && (
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">
                     {label}
@@ -179,9 +180,12 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
-                    w-full h-[52px] bg-slate-50 border border-slate-300 rounded-2xl px-4 text-left flex items-center justify-between
+                    w-full px-4 text-left flex items-center justify-between
                     text-slate-700 font-bold transition-all duration-200 outline-none
-                    ${isOpen ? 'ring-4 ring-promed-primary/10 border-promed-primary bg-white' : 'hover:border-slate-400 hover:bg-white'}
+                    ${minimal
+                        ? 'bg-transparent border-none h-full'
+                        : `h-[52px] bg-slate-50 border border-slate-300 rounded-2xl ${isOpen ? 'ring-4 ring-promed-primary/10 border-promed-primary bg-white' : 'hover:border-slate-400 hover:bg-white'}`
+                    }
                 `}
             >
                 <div className="flex items-center gap-2 overflow-hidden">
