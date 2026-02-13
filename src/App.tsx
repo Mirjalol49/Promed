@@ -2,18 +2,16 @@ import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from
 import { DashboardLoader } from './components/ui/DashboardLoader';
 console.log("🛡️ PROMED SYSTEM BOOT: Version 1.25.0 - LockFix Loaded");
 
-const Dashboard = React.lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
+import { Dashboard } from './pages/Dashboard';
 const LoginScreen = React.lazy(() => import('./features/auth/LoginScreen').then(m => ({ default: m.LoginScreen })));
 const ResetPasswordScreen = React.lazy(() => import('./features/auth/ResetPasswordScreen').then(m => ({ default: m.ResetPasswordScreen })));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
-const PatientList = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientList })));
-const PatientDetail = React.lazy(() => import('./features/patients/PatientList').then(m => ({ default: m.PatientDetail })));
-const LeadsPage = React.lazy(() => import('./pages/LeadsPage').then(m => ({ default: m.LeadsPage })));
-const NotesPage = React.lazy(() => import('./features/notes/NotesPage').then(m => ({ default: m.NotesPage })));
-const MessagesPage = React.lazy(() => import('./features/messages/MessagesPage').then(m => ({ default: m.MessagesPage })));
-const StaffPage = React.lazy(() => import('./features/staff/StaffPage').then(m => ({ default: m.StaffPage })));
-const FinancePage = React.lazy(() => import('./features/finance/FinancePage').then(m => ({ default: m.FinancePage })));
-import { AddPatientForm } from './features/patients/PatientList';
+import { PatientList, PatientDetail, AddPatientForm } from './features/patients/PatientList';
+import { LeadsPage } from './pages/LeadsPage';
+import { NotesPage } from './features/notes/NotesPage';
+import { MessagesPage } from './features/messages/MessagesPage';
+import { StaffPage } from './features/staff/StaffPage';
+import { FinancePage } from './features/finance/FinancePage';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { EmergencySetup } from './pages/EmergencySetup'; // Added EmergencySetup
 import { BannedScreen } from './features/auth/BannedScreen';

@@ -371,6 +371,7 @@ export const translations = {
     my_notes: "My Notes",
     new_note: "New Note",
     no_notes_found: "No notes found",
+    no_patients_found: "No patients found",
     no_leads: "No leads",
     add_btn: "Add",
     get_login_code: "Get Login Code",
@@ -967,6 +968,7 @@ export const translations = {
     my_notes: "Eslatmalarim",
     new_note: "Yangi Eslatma",
     no_notes_found: "Eslatmalar topilmadi",
+    no_patients_found: "Bemorlar topilmadi",
 
     // Finance
     finance: "Moliya",
@@ -1516,6 +1518,7 @@ export const translations = {
     my_notes: "Мои заметки",
     new_note: "Новая заметка",
     no_notes_found: "Заметки не найдены",
+    no_patients_found: "Пациенты не найдены",
 
     // Staff
     staff_management: "Управление Персоналом",
@@ -1619,9 +1622,8 @@ export const translations = {
     all_types: "Все типы",
     income_only: "Только доходы",
     expense_only: "Только расходы",
-
-
-
+    tab_chat: "Чат",
+    tab_scheduled: "Запланировано",
 
   }
 };

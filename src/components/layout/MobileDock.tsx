@@ -38,68 +38,48 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
     ];
 
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden w-full px-4 max-w-[420px]">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full px-4 max-w-[600px] md:hidden pointer-events-none">
             {/* THE CONTAINER: Light Floating Dock */}
-            <div className="flex items-center justify-between px-2 py-3 rounded-[2rem] bg-white/90 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.12)] ring-1 ring-white/60 overflow-x-auto no-scrollbar">
+            <div className="pointer-events-auto bg-white/90 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.12)] ring-1 ring-white/60 rounded-[2rem] p-2">
+                <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+                    {dockItems.map((item) => {
+                        const isActive = currentPage === item.page;
 
-                {dockItems.map((item) => {
-                    const isActive = currentPage === item.page;
+                        return (
+                            <button
+                                key={item.page}
+                                onClick={() => onNavigate(item.page)}
+                                className={`
+                                    relative flex-1 min-w-[64px] h-[64px] flex flex-col items-center justify-center gap-1 rounded-2xl transition-all duration-300 outline-none
+                                    ${isActive ? 'bg-promed-primary text-white shadow-lg shadow-promed-primary/25 scale-105 z-10' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}
+                                `}
+                            >
+                                <item.icon
+                                    size={24}
+                                    strokeWidth={isActive ? 2.5 : 2}
+                                    className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-105'}`}
+                                />
+                                <span className={`text-[9px] font-bold tracking-tight ${isActive ? 'text-white/90' : 'text-slate-400'}`}>
+                                    {item.label}
+                                </span>
+                            </button>
+                        );
+                    })}
 
-                    return (
-                        <button
-                            key={item.page}
-                            id={item.id}
-                            onClick={() => onNavigate(item.page)}
-                            className="relative flex flex-col items-center justify-center min-w-[60px] gap-1 outline-none group"
-                        >
-                            {/* Icon Container with Active Squircle Background */}
-                            <div className={`
-                                relative p-2.5 rounded-2xl transition-all duration-300
-                                ${isActive ? 'gel-blue-style text-white shadow-xl scale-110 !border-none' : 'bg-transparent text-slate-500 group-hover:bg-slate-100'}
-                            `}>
-                                {/* Active Indicator Animation */}
-                                {isActive && (
-                                    <motion.div
-                                        layoutId="activeTabMobile"
-                                        className="absolute inset-0 gel-blue-style rounded-2xl z-0 !border-none shadow-none"
-                                        initial={false}
-                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                    />
-                                )}
-
-                                {/* Icon Itself */}
-                                <div className="relative z-10">
-                                    <item.icon
-                                        size={22}
-                                        strokeWidth={isActive ? 2.5 : 2}
-                                        className={`transition-transform duration-200 ${isActive ? 'scale-105' : 'group-hover:scale-105'}`}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Label */}
-                            <span className={`text-[10px] font-black tracking-tight transition-colors duration-300 ${isActive ? 'text-promed-primary' : 'text-slate-400 group-hover:text-slate-600'}`}>
-                                {item.label}
-                            </span>
-                        </button>
-                    );
-                })}
-
-                {/* Separator & Lock */}
-                {isLockEnabled && (
-                    <div className="flex items-center pl-2 ml-1 border-l border-slate-100">
-                        <button
-                            onClick={onLock}
-                            className="flex flex-col items-center justify-center min-w-[48px] gap-1 outline-none group"
-                        >
-                            <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-100 group-active:scale-95 transition-all">
-                                <Lock size={20} className="text-slate-400 group-hover:text-slate-600" />
-                            </div>
-                            <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider group-hover:text-slate-400">Lock</span>
-                        </button>
-                    </div>
-                )}
-
+                    {/* Lock Button */}
+                    {isLockEnabled && (
+                        <>
+                            <div className="w-px h-8 bg-slate-200 mx-1" />
+                            <button
+                                onClick={onLock}
+                                className="relative flex-none w-[64px] h-[64px] flex flex-col items-center justify-center gap-1 rounded-2xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all duration-300"
+                            >
+                                <Lock size={22} strokeWidth={2} />
+                                <span className="text-[9px] font-bold tracking-tight">Lock</span>
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );

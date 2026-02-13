@@ -340,126 +340,80 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                         className="space-y-6 relative z-10"
                     >
                         {/* 1. KEY STATS CARDS */}
-                        {!loading && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                                {/* Income Card */}
-                                <motion.div
-                                    variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                                    whileHover={{ translateY: -5 }}
-                                    className="relative rounded-[2rem] p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
-                                >
-                                    <div className="relative z-10">
-                                        <div className="flex items-start justify-between mb-6">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('income') || 'Kirim'}</span>
-                                                <Tooltip content={formatCurrency(stats.totalIncome)}>
-                                                    <div className="text-[2.5rem] font-black text-slate-900 tracking-tighter leading-none mt-1">
-                                                        +{formatCompactNumber(stats.totalIncome)}
-                                                    </div>
-                                                </Tooltip>
-                                            </div>
-                                            <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors duration-300">
-                                                <ArrowUpRight className="w-7 h-7 text-emerald-600 stroke-[2.5]" />
-                                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                            {/* Income Card */}
+                            <motion.div
+                                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                                whileHover={{ translateY: -5 }}
+                                className="relative rounded-[2rem] p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
+                            >
+                                <div className="relative z-10">
+                                    <div className="flex items-start justify-between mb-6">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('income') || 'Kirim'}</span>
+                                            <Tooltip content={formatCurrency(stats.totalIncome)}>
+                                                <div className="text-[2.5rem] font-black text-slate-900 tracking-tighter leading-none mt-1">
+                                                    +{formatCompactNumber(stats.totalIncome)}
+                                                </div>
+                                            </Tooltip>
                                         </div>
-
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between text-xs font-bold">
-                                                <span className="text-emerald-600">
-                                                    {stats.totalIncome > 0 ? Math.round((stats.totalIncome / (stats.totalIncome + stats.totalExpense)) * 100) : 0}% of volume
-                                                </span>
-                                            </div>
-                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${stats.totalIncome > 0 ? Math.min(100, (stats.totalIncome / (stats.totalIncome + stats.totalExpense)) * 100) : 0}%` }}
-                                                    transition={{ duration: 1, delay: 0.5 }}
-                                                    className="h-full bg-emerald-500 rounded-full"
-                                                />
-                                            </div>
+                                        <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors duration-300">
+                                            <ArrowUpRight className="w-7 h-7 text-emerald-600 stroke-[2.5]" />
                                         </div>
                                     </div>
-                                </motion.div>
 
-                                {/* Expense Card */}
-                                <motion.div
-                                    variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                                    whileHover={{ translateY: -5 }}
-                                    className="relative rounded-[2rem] p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
-                                >
-                                    <div className="relative z-10">
-                                        <div className="flex items-start justify-between mb-6">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('expense') || 'Xarajat'}</span>
-                                                <Tooltip content={formatCurrency(stats.totalExpense)}>
-                                                    <div className="text-[2.5rem] font-black text-slate-900 tracking-tighter leading-none mt-1">
-                                                        -{formatCompactNumber(stats.totalExpense)}
-                                                    </div>
-                                                </Tooltip>
-                                            </div>
-                                            <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center group-hover:bg-rose-100 transition-colors duration-300">
-                                                <ArrowDownRight className="w-7 h-7 text-rose-600 stroke-[2.5]" />
-                                            </div>
+                                </div>
+                            </motion.div>
+
+                            {/* Expense Card */}
+                            <motion.div
+                                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                                whileHover={{ translateY: -5 }}
+                                className="relative rounded-[2rem] p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
+                            >
+                                <div className="relative z-10">
+                                    <div className="flex items-start justify-between mb-6">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('expense') || 'Xarajat'}</span>
+                                            <Tooltip content={formatCurrency(stats.totalExpense)}>
+                                                <div className="text-[2.5rem] font-black text-slate-900 tracking-tighter leading-none mt-1">
+                                                    -{formatCompactNumber(stats.totalExpense)}
+                                                </div>
+                                            </Tooltip>
                                         </div>
-
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between text-xs font-bold">
-                                                <span className="text-rose-600">
-                                                    {stats.totalExpense > 0 ? Math.round((stats.totalExpense / (stats.totalIncome + stats.totalExpense)) * 100) : 0}% of volume
-                                                </span>
-                                            </div>
-                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${stats.totalExpense > 0 ? Math.min(100, (stats.totalExpense / (stats.totalIncome + stats.totalExpense)) * 100) : 0}%` }}
-                                                    transition={{ duration: 1, delay: 0.5 }}
-                                                    className="h-full bg-rose-500 rounded-full"
-                                                />
-                                            </div>
+                                        <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center group-hover:bg-rose-100 transition-colors duration-300">
+                                            <ArrowDownRight className="w-7 h-7 text-rose-600 stroke-[2.5]" />
                                         </div>
                                     </div>
-                                </motion.div>
 
-                                {/* Net Profit Card */}
-                                <motion.div
-                                    variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                                    whileHover={{ translateY: -5 }}
-                                    className="relative rounded-[2rem] p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
-                                >
-                                    <div className="relative z-10">
-                                        <div className="flex items-start justify-between mb-6">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('net_profit') || 'Sof foyda'}</span>
-                                                <Tooltip content={formatCurrency(stats.netProfit)}>
-                                                    <div className={`text-[2.5rem] font-black tracking-tighter leading-none mt-1 ${stats.netProfit >= 0 ? 'text-slate-900' : 'text-amber-500'}`}>
-                                                        {formatCompactNumber(stats.netProfit)}
-                                                    </div>
-                                                </Tooltip>
-                                            </div>
-                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors duration-300 ${stats.netProfit >= 0 ? 'bg-blue-50 group-hover:bg-blue-100' : 'bg-amber-50 group-hover:bg-amber-100'}`}>
-                                                <Wallet className={`w-7 h-7 stroke-[2.5] ${stats.netProfit >= 0 ? 'text-blue-600' : 'text-amber-600'}`} />
-                                            </div>
+                                </div>
+                            </motion.div>
+
+                            {/* Net Profit Card */}
+                            <motion.div
+                                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                                whileHover={{ translateY: -5 }}
+                                className="relative rounded-[2rem] p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
+                            >
+                                <div className="relative z-10">
+                                    <div className="flex items-start justify-between mb-6">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('net_profit') || 'Sof foyda'}</span>
+                                            <Tooltip content={formatCurrency(stats.netProfit)}>
+                                                <div className={`text-[2.5rem] font-black tracking-tighter leading-none mt-1 ${stats.netProfit >= 0 ? 'text-slate-900' : 'text-amber-500'}`}>
+                                                    {formatCompactNumber(stats.netProfit)}
+                                                </div>
+                                            </Tooltip>
                                         </div>
-
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between text-xs font-bold">
-                                                <span className={stats.netProfit >= 0 ? 'text-blue-600' : 'text-amber-600'}>
-                                                    {stats.totalIncome > 0 ? Math.round((stats.netProfit / stats.totalIncome) * 100) : 0}% margin
-                                                </span>
-                                            </div>
-                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${stats.totalIncome > 0 ? Math.min(100, Math.max(0, (stats.netProfit / stats.totalIncome) * 100)) : 0}%` }}
-                                                    transition={{ duration: 1, delay: 0.5 }}
-                                                    className={`h-full rounded-full ${stats.netProfit >= 0 ? 'bg-blue-500' : 'bg-amber-500'}`}
-                                                />
-                                            </div>
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors duration-300 ${stats.netProfit >= 0 ? 'bg-blue-50 group-hover:bg-blue-100' : 'bg-amber-50 group-hover:bg-amber-100'}`}>
+                                            <Wallet className={`w-7 h-7 stroke-[2.5] ${stats.netProfit >= 0 ? 'text-blue-600' : 'text-amber-600'}`} />
                                         </div>
                                     </div>
-                                </motion.div>
-                            </div>
-                        )}
+
+                                </div>
+                            </motion.div>
+                        </div>
+
 
 
                         <div className="flex flex-col">
@@ -1021,6 +975,6 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                 onConfirm={confirmDelete}
                 title={t('delete_transaction') || 'Delete Transaction?'}
             />
-        </div>
+        </div >
     );
 };
