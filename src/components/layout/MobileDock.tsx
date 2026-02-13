@@ -9,7 +9,8 @@ import {
     LayoutList,
     StickyNote,
     Briefcase,
-    Wallet
+    Wallet,
+    MessageSquare
 } from 'lucide-react';
 import { PageView } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -30,6 +31,7 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
         { page: 'DASHBOARD' as PageView, icon: LayoutDashboard, label: t('dashboard') },
         { page: 'PATIENTS' as PageView, icon: Users, label: t('patients'), id: 'add-patient-btn-mobile' },
         { page: 'LEADS' as PageView, icon: LayoutList, label: t('leads') },
+        { page: 'MESSAGES' as PageView, icon: MessageSquare, label: t('messages') },
         { page: 'NOTES' as PageView, icon: StickyNote, label: t('notes') },
         { page: 'STAFF' as PageView, icon: Briefcase, label: t('staff') },
         { page: 'FINANCE' as PageView, icon: Wallet, label: t('finance') },
@@ -38,7 +40,7 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
     ];
 
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full px-4 max-w-[600px] md:hidden pointer-events-none">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full px-4 max-w-[95%] sm:max-w-[800px] md:hidden pointer-events-none">
             {/* THE CONTAINER: Light Floating Dock */}
             <div className="pointer-events-auto bg-white/90 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.12)] ring-1 ring-white/60 rounded-[2rem] p-2">
                 <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
