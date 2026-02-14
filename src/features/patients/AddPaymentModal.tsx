@@ -82,8 +82,8 @@ const ProgressBar = ({ splits, total, currency }: { splits: Split[]; total: numb
 };
 
 // ── Avatar Helper ──
-const Avatar = ({ src, alt, fallback }: { src?: string; alt: string; fallback: React.ReactNode }) => (
-    <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center overflow-hidden border border-indigo-100 shadow-sm shrink-0">
+const Avatar = ({ src, alt, fallback, className }: { src?: string; alt: string; fallback: React.ReactNode; className?: string }) => (
+    <div className={`w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center overflow-hidden border border-indigo-100 shadow-sm shrink-0 ${className || ''}`}>
         {src ? (
             <ImageWithFallback src={src} alt={alt} className="w-full h-full object-cover" />
         ) : (

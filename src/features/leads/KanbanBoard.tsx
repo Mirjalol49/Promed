@@ -60,6 +60,7 @@ export const KanbanBoard: React.FC = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
     const [celebrationId, setCelebrationId] = useState<number | null>(null);
+    const [celebrationOrigin, setCelebrationOrigin] = useState<{ x: number, y: number } | undefined>(undefined);
 
     const { userId, isLoading: isAuthLoading } = useAccount();
 
@@ -100,7 +101,7 @@ export const KanbanBoard: React.FC = () => {
         }
     }, [leads, selectedLead?.id]); // Only depend on leads and the ID to avoid infinite loop
 
-    const handleStatusChange = async (id: string, newStatus: LeadStatus) => {
+    const handleStatusChange = async (id: string, newStatus: LeadStatus, origin?: { x: number, y: number }) => {
         // Optimistic Update
         const leadIndex = leads.findIndex(l => l.id === id);
         if (leadIndex === -1) return;
@@ -114,6 +115,12 @@ export const KanbanBoard: React.FC = () => {
         if (newStatus === 'BOOKED') {
             const newId = Date.now();
             console.log("Triggering celebration with ID:", newId);
+            if (origin) {
+                console.log("With origin:", origin);
+                setCelebrationOrigin(origin);
+            } else {
+                setCelebrationOrigin(undefined);
+            }
             setCelebrationId(newId);
         }
 
@@ -170,10 +177,10 @@ export const KanbanBoard: React.FC = () => {
 
         // Active styles map (explicit strings for JIT)
         switch (id) {
-            case 'CONTACTED': return "btn-premium-orange shadow-lg shadow-orange-500/20 ring-0 border-transparent";
-            case 'BOOKED': return "btn-premium-emerald shadow-lg shadow-emerald-500/20 ring-0 border-transparent";
-            case 'LOST': return "btn-premium-red shadow-lg shadow-red-500/20 ring-0 border-transparent";
-            case 'NEW': default: return "btn-premium-blue shadow-lg shadow-promed-primary/20 ring-0 border-transparent";
+            case 'CONTACTED': return "btn-premium-orange ring-0 border-transparent";
+            case 'BOOKED': return "btn-premium-emerald ring-0 border-transparent";
+            case 'LOST': return "btn-premium-red ring-0 border-transparent";
+            case 'NEW': default: return "btn-premium-blue ring-0 border-transparent";
         }
     };
 
@@ -376,7 +383,7 @@ export const KanbanBoard: React.FC = () => {
                 </div>
 
                 {/* Pipeline Tabs - Bottom Row */}
-                <div className="grid grid-cols-2 gap-2 md:flex md:space-x-2 md:overflow-x-auto md:no-scrollbar">
+                <div className="grid grid-cols-2 gap-2 md:flex md:space-x-2 md:overflow-x-auto md:no-scrollbar p-1 md:py-3 md:px-1">
                     {TAB_CONFIG.map(tab => {
                         const count = leads.filter(l => l.status === tab.id).length;
                         const isActive = activeTab === tab.id;
@@ -386,7 +393,7 @@ export const KanbanBoard: React.FC = () => {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`
-                                    group flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 border-none whitespace-nowrap w-full md:w-auto
+                                    group flex items-center justify-center gap-2 px-4 py-2.5 !rounded-full text-xs sm:text-sm font-bold transition-all duration-300 border-none whitespace-nowrap w-full md:w-auto
                                     ${getTabStyles(tab.id, isActive)}
                                 `}
                             >
@@ -405,7 +412,7 @@ export const KanbanBoard: React.FC = () => {
             </div>
 
             {/* List Area */}
-            <div className="flex-1 overflow-y-auto overflow-x-visible w-full px-4 pt-3">
+            <div className={`flex-1 overflow-x-visible w-full px-4 pt-3 ${activeLeads.length === 0 && !isLoading ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
                 {
                     isLoading ? (
                         <div className="flex items-center justify-center h-40" >
@@ -543,7 +550,11 @@ export const KanbanBoard: React.FC = () => {
                 <CelebrationOverlay
                     key={celebrationId}
                     isVisible={true}
-                    onComplete={() => setCelebrationId(null)}
+                    onComplete={() => {
+                        setCelebrationId(null);
+                        setCelebrationOrigin(undefined);
+                    }}
+                    origin={celebrationOrigin}
                 />
             )}
         </div >

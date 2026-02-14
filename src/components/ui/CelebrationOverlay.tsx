@@ -8,8 +8,15 @@ interface CelebrationOverlayProps {
     onComplete: () => void;
 }
 
+interface CelebrationOverlayProps {
+    isVisible?: boolean;
+    onComplete: () => void;
+    origin?: { x: number, y: number }; // Optional origin coordinates
+}
+
 export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
     onComplete,
+    origin
 }) => {
     useEffect(() => {
         // Fire immediately on mount. 
@@ -27,38 +34,49 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
             console.error("Audio setup failure:", e);
         }
 
-        // 2. Setup Confetti - Fireworks style from bottom center
+        // 2. Setup Confetti - Fireworks style
         // Apple-style color palette 
         const colors = ['#007AFF', '#FF3B30', '#FF9500', '#34C759', '#AF52DE'];
-        const count = 200;
+        const particleCount = 100; // Reduced count for "smaller" feel
+
+        // Use provided origin or default to bottom center
+        // Note: canvas-confetti expects 0-1 range. If exact pixel coords are passed, we might need to normalize,
+        // but typically for "button match" we might just want to guide it generally or use the canvas confetti 'origin' option carefully.
+        // If x/y are passed as 0-1 ratios:
+        const confettiOrigin = origin ? { x: origin.x, y: origin.y } : { y: 1, x: 0.5 };
+
+        console.log("Firing confetti from:", confettiOrigin);
+
         const defaults = {
-            origin: { y: 1, x: 0.5 }, // Bottom center
+            origin: confettiOrigin,
             zIndex: 99999,
             colors: colors,
             disableForReducedMotion: false,
-            gravity: 0.8,
-            ticks: 300
+            gravity: 1.2, // Higher gravity for faster fall
+            ticks: 200,
+            scalar: 0.8, // Smaller particles
+            shapes: ['circle'] as confetti.Shape[],
         };
 
         function fire(particleRatio: number, opts: confetti.Options) {
             confetti({
                 ...defaults,
                 ...opts,
-                particleCount: Math.floor(count * particleRatio)
+                particleCount: Math.floor(particleCount * particleRatio)
             });
         }
 
-        // 3. Fire Sequence - Fireworks shooting upward
-        fire(0.3, { spread: 40, startVelocity: 80, angle: 90 });
-        fire(0.25, { spread: 50, startVelocity: 90, angle: 90, decay: 0.9 });
-        fire(0.2, { spread: 70, startVelocity: 100, angle: 90, scalar: 1.2 });
-        fire(0.15, { spread: 90, startVelocity: 85, angle: 90, decay: 0.88 });
-        fire(0.1, { spread: 110, startVelocity: 75, angle: 90, scalar: 0.8 });
+        // 3. Fire Sequence - More "burst" like from the button
+        fire(0.25, { spread: 26, startVelocity: 55 });
+        fire(0.2, { spread: 60, startVelocity: 45 });
+        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+        fire(0.1, { spread: 120, startVelocity: 45 });
 
         // 4. Cleanup/Dismiss
         const timer = setTimeout(() => {
             onComplete();
-        }, 3000);
+        }, 2000);
 
         return () => {
             clearTimeout(timer);

@@ -61,7 +61,15 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, leads, co
             {/* Droppable Area */}
             <div className="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-4 pb-32">
                 {leads.map(lead => (
-                    <LeadCard key={lead.id} lead={lead} />
+                    <LeadCard
+                        key={lead.id}
+                        lead={lead}
+                        onStatusChange={() => { }}
+                        onEdit={() => { }}
+                        onDelete={() => { }}
+                        onRemind={() => { }}
+                        onSelect={() => { }}
+                    />
                 ))}
             </div>
         </div>

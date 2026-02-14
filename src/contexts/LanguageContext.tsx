@@ -7,12 +7,15 @@ export type Language = 'en' | 'uz' | 'ru';
 export const translations = {
   en: {
     loading: "Loading...",
+    loading_pleasewait: "Hold tight, good things are coming...",
     // Navigation
     management: "Management",
     files: "Files",
     my_files: "My Files",
     tasks_folder: "Tasks",
     notes_folder: "Notes",
+    step: "Step",
+    done: "Done",
     add_note_prompt: "Add a new note",
     search_files: "Search files...",
 
@@ -556,12 +559,15 @@ export const translations = {
   },
   uz: {
     loading: "Yuklanmoqda...",
+    loading_pleasewait: "Barchasi nazorat ostida, ozgina kuting...",
     // Navigation
     management: "Boshqaruv",
     files: "Fayllar",
     my_files: "Mening Fayllarim",
     tasks_folder: "Vazifalar",
     notes_folder: "Eslatmalar",
+    step: "Qadam",
+    done: "Bajarildi",
     add_note_prompt: "Yangi eslatma qo'shing",
     search_files: "Fayllarni qidirish...",
 
@@ -1129,6 +1135,7 @@ export const translations = {
   },
   ru: {
     loading: "Загрузка...",
+    loading_pleasewait: "Все под контролем, ожидайте...",
     // Navigation
     management: "Управление",
     files: "Файлы",

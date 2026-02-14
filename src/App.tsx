@@ -1105,7 +1105,7 @@ const App: React.FC = () => {
     // Keep-Alive Rendering Strategy for Dashboard and PatientList
     // Keep-Alive Rendering Strategy for Dashboard and PatientList
     return (
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {view === 'DASHBOARD' && (
           <PageTransition key="dashboard">
             <Dashboard

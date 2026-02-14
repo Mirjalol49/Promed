@@ -54,14 +54,14 @@ export const FolderCard: React.FC<FolderCardProps> = ({ type, count, onClick, pr
             border: 'border-white/10'
         },
         note: {
-            back: 'bg-blue-800',
-            tab: 'bg-blue-800',
-            front: 'bg-gradient-to-br from-blue-600 to-indigo-700',
-            iconBox: 'bg-white/10 border-white/10',
-            iconColor: 'text-blue-50',
+            back: 'bg-yellow-500',
+            tab: 'bg-yellow-500',
+            front: 'bg-gradient-to-br from-amber-400 to-yellow-500',
+            iconBox: 'bg-white/20 border-white/20', // Slightly more visible on yellow
+            iconColor: 'text-yellow-50',
             textColor: 'text-white',
-            subTextColor: 'text-blue-100/80',
-            border: 'border-white/10'
+            subTextColor: 'text-yellow-100/90',
+            border: 'border-white/20'
         }
     };
 

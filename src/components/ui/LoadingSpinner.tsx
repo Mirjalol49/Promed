@@ -1,5 +1,7 @@
-import React from 'react';
+import Lottie from 'lottie-react';
+import loadingAnimation from '../../assets/images/mascots/loading.json';
 import { Loader2 } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface LoadingSpinnerProps {
     size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -16,6 +18,8 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     message,
     fullScreen = false
 }) => {
+    const { t } = useLanguage();
+
     const sizeClasses = {
         sm: 'w-5 h-5',
         md: 'w-8 h-8',
@@ -24,23 +28,20 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     };
 
     const spinner = (
-        <div className="flex flex-col items-center justify-center gap-3">
+        <div className="flex flex-col items-center justify-center text-center">
             {/* Animated spinner */}
-            <div className="relative">
-                <Loader2
-                    className={`${sizeClasses[size]} text-promed.primary animate-spin`}
-                    strokeWidth={2.5}
+            <div className="w-32 h-32 md:w-40 md:h-40 relative">
+                <Lottie
+                    animationData={loadingAnimation}
+                    loop={true}
+                    autoplay={true}
                 />
-                {/* Pulsing background glow */}
-                <div className={`absolute inset-0 ${sizeClasses[size]} bg-promed.primary/20 rounded-full blur-xl animate-pulse`} />
             </div>
 
             {/* Optional message */}
-            {message && (
-                <p className="text-sm font-medium text-slate-600 animate-pulse">
-                    {message}
-                </p>
-            )}
+            <p className="text-sm md:text-base font-bold text-slate-500 tracking-tight mt-2 animate-pulse">
+                {message || t('loading_pleasewait') || 'Iltimos kuting...'}
+            </p>
         </div>
     );
 
@@ -59,7 +60,13 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
  * Inline loading state for buttons
  */
 export const ButtonLoader: React.FC = () => (
-    <Loader2 className="w-5 h-5 animate-spin" strokeWidth={2.5} />
+    <div className="w-10 h-10 -my-2">
+        <Lottie
+            animationData={loadingAnimation}
+            loop={true}
+            autoplay={true}
+        />
+    </div>
 );
 
 /**

@@ -1,18 +1,22 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import happyMascot from '../../assets/images/patients.png';
+import Lottie from 'lottie-react';
+import loadingAnimation from '../../assets/images/mascots/loading.json';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export const DashboardLoader: React.FC = () => {
     // SSR Check
     if (typeof window === 'undefined') return null;
+
+    const { t } = useLanguage();
 
     return createPortal(
         <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
-            className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm"
+            className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-white/95 backdrop-blur-md"
         >
             <div className="flex flex-col items-center">
                 <div className="relative">
@@ -20,33 +24,20 @@ export const DashboardLoader: React.FC = () => {
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.5, ease: "backOut" }}
-                        className="relative z-10"
+                        className="relative z-10 w-40 h-40 md:w-56 md:h-56"
                     >
-                        <img src={happyMascot} alt="Loading..." className="w-32 h-32 object-contain" />
+                        <Lottie
+                            animationData={loadingAnimation}
+                            loop={true}
+                            autoplay={true}
+                        />
                     </motion.div>
                 </div>
 
-                <div className="mt-6 flex flex-col items-center gap-4">
-                    <p className="text-promed-primary font-bold text-lg tracking-wide">
-                        Barchasi nazorat ostida...
+                <div className="mt-4 flex flex-col items-center gap-4">
+                    <p className="text-slate-500 font-bold text-lg tracking-tight animate-pulse">
+                        {t('loading_pleasewait') || 'Iltimos kuting...'}
                     </p>
-
-                    {/* Tiny Dots Spinner */}
-                    <div className="flex gap-1.5">
-                        {[0, 1, 2].map((i) => (
-                            <motion.div
-                                key={i}
-                                className="w-1.5 h-1.5 bg-promed-primary rounded-full"
-                                animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
-                                transition={{
-                                    duration: 1,
-                                    repeat: Infinity,
-                                    delay: i * 0.2,
-                                    ease: "easeInOut"
-                                }}
-                            />
-                        ))}
-                    </div>
                 </div>
             </div>
         </motion.div>,

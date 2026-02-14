@@ -17,6 +17,7 @@ import { db, storage } from '../../lib/firebase';
 import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, limitToLast, startAfter, endBefore, limit, getDocs, where, writeBatch, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 import { Play, Pause, Loader2 } from 'lucide-react';
+import { ButtonLoader } from '../../components/ui/LoadingSpinner';
 
 interface MessagesPageProps {
     patients?: Patient[];
@@ -1323,7 +1324,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                     title="Send Message (Hold for options)"
                                 >
                                     {isSending ? (
-                                        <div className="w-6 h-6 border-2 border-slate-200 border-t-promed-primary rounded-full animate-spin" />
+                                        <ButtonLoader />
                                     ) : editingMessageId ? (
                                         <Check size={26} className="ml-0.5 mt-0.5" />
                                     ) : (

@@ -18,9 +18,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`flex flex-col items-center justify-center text-center p-8 transition-all duration-700 ${fullHeight ? 'h-full min-h-[400px]' : ''}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`flex flex-col items-center justify-center text-center p-8 ${fullHeight ? 'h-full min-h-[400px]' : ''}`}
         >
             <div className="relative mb-6 group">
                 {/* Decorative Glow */}
@@ -46,7 +46,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             </div>
 
             <div className="max-w-md relative z-10">
-                <h3 className="text-lg md:text-xl font-bold text-slate-500 tracking-tight leading-tight mt-4">
+                <h3 className="text-lg md:text-xl font-bold text-slate-500 tracking-wide leading-tight mt-4">
                     {message}
                 </h3>
             </div>

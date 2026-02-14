@@ -281,8 +281,8 @@ export const NotesPage: React.FC = () => {
                 ) : activeFolder === 'todo' ? (
                     /* TIMELINE VIEW FOR TASKS */
                     <div className="max-w-4xl mx-auto py-8 relative min-h-[500px]">
-                        {/* Central dashed line base - visual guide */}
-                        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 border-l-2 border-dashed border-slate-200 -translate-x-1/2" />
+                        {/* Central dashed line base - visual guide - Hidden on mobile, visible on md+ */}
+                        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 border-l-2 border-dashed border-slate-200 -translate-x-1/2 hidden md:block" />
 
                         <div className="space-y-0 relative z-10">
                             <AnimatePresence mode="popLayout">
@@ -293,6 +293,10 @@ export const NotesPage: React.FC = () => {
                                         index={index}
                                         isLeft={index % 2 === 0}
                                         onEdit={handleEdit}
+                                        onDelete={(id) => {
+                                            setNoteToDelete(id);
+                                            setIsDeleteModalOpen(true);
+                                        }}
                                     />
                                 ))}
                             </AnimatePresence>

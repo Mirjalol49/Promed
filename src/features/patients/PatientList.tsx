@@ -66,7 +66,9 @@ import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
 
 import { useReliableUpload } from '../../hooks/useReliableUpload';
 import trashIcon from '../../assets/images/patients.png'; // Fallback for missing trash.png
-import happyIcon from '../../components/mascot/happy_mascot.png';
+import Lottie from 'lottie-react';
+import loadingAnimation from '../../assets/images/mascots/loading.json';
+import { ButtonLoader } from '../../components/ui/LoadingSpinner';
 
 // Fallback for missing date.png removed as unused
 import editIcon from '../../assets/images/patients.png'; // Fallback for missing edit.png
@@ -954,7 +956,7 @@ export const PatientDetail: React.FC<{
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-promed-primary/80 via-promed-primary/20 to-transparent p-4 pt-12 flex flex-col justify-end">
                         <p className="text-white text-sm font-bold tracking-wide drop-shadow-md">{img.label}</p>
                         <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider flex items-center gap-1">
-                          <Loader2 size={10} className="animate-spin" /> Saving...
+                          <div className="w-4 h-4"><Lottie animationData={loadingAnimation} loop={true} /></div> Saving...
                         </p>
                       </div>
                     </div>
@@ -1471,7 +1473,7 @@ export const AddPatientForm: React.FC<{
                     {isBeforeUploading && (
                       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-2xl border border-slate-100">
                         <div className="flex flex-col items-center gap-3">
-                          <Loader2 size={32} className="animate-spin text-promed-primary" />
+                          <div className="w-16 h-16"><Lottie animationData={loadingAnimation} loop={true} /></div>
                           <span className="text-xs font-bold uppercase tracking-widest text-slate-500">{t('uploading') || "Uploading..."}</span>
                         </div>
                       </div>
@@ -1654,7 +1656,7 @@ export const AddPatientForm: React.FC<{
                 className="w-full md:w-auto btn-premium-blue !px-8 !py-3.5 flex items-center justify-center gap-2"
               >
                 {isSubmitting || saving ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <ButtonLoader />
                 ) : (
                   <Save size={18} className="relative z-10" />
                 )}
@@ -1668,11 +1670,13 @@ export const AddPatientForm: React.FC<{
             <div className="absolute inset-0 z-[10000] bg-white/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300 rounded-3xl">
               <div className="relative mb-6">
                 <div className="absolute inset-0 bg-blue-400/20 blur-2xl rounded-full animate-pulse" />
-                <img
-                  src={happyIcon}
-                  alt="Saving"
-                  className="relative w-32 h-32 object-contain animate-bounce-gentle drop-shadow-2xl"
-                />
+                <div className="relative w-32 h-32 md:w-40 md:h-40">
+                  <Lottie
+                    animationData={loadingAnimation}
+                    loop={true}
+                    autoplay={true}
+                  />
+                </div>
               </div>
               <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-2">
                 {(isProfileUploading || isBeforeUploading) ? (t('uploading') || "Yuklanmoqda...") : (t('saving') || "Saqlanmoqda...")}

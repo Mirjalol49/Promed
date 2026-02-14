@@ -144,10 +144,10 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
             } else {
                 await deleteTransaction(deleteItem.data.id);
             }
-            success(t('transaction_deleted') || "O'chirildi");
+            success(t('transaction_deleted') || "O'chirildi", t('transaction_deleted_msg') || "Tranzaksiya muvaffaqiyatli o'chirildi");
         } catch (err) {
             console.error(err);
-            toastError(t('error_deleting') || "Xatolik");
+            toastError(t('error') || "Xatolik", t('error_deleting') || "O'chirishda xatolik yuz berdi");
         } finally {
             setDeleteItem(null);
         }
@@ -166,10 +166,10 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
             } else {
                 await restoreTransaction(item.data.id);
             }
-            success("Tranzaksiya tiklandi");
+            success(t('restored') || "Tiklandi", "Tranzaksiya muvaffaqiyatli tiklandi");
         } catch (err) {
             console.error(err);
-            toastError("Xatolik yuz berdi");
+            toastError(t('error') || "Xatolik", "Xatolik yuz berdi");
         }
     };
 

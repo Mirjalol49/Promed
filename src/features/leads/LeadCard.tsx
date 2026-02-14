@@ -28,7 +28,7 @@ import Lottie from 'lottie-react';
 
 interface LeadCardProps {
     lead: Lead;
-    onStatusChange: (id: string, newStatus: LeadStatus) => void;
+    onStatusChange: (id: string, newStatus: LeadStatus, origin?: { x: number, y: number }) => void;
     onEdit: (lead: Lead) => void;
     onDelete: (lead: Lead) => void;
     onRemind: (lead: Lead) => void;
@@ -136,7 +136,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
             // Dropdown width is fixed at approx 200px (w-48 is 192px)
             const width = 200;
             setDropdownPos({
-                top: rect.bottom + 8, // 8px gap
+                top: rect.top - 8, // Position above the button with 8px gap
                 left: rect.right - width,
                 width: width
             });
@@ -148,7 +148,17 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
 
     const handleStatusClick = (newStatus: LeadStatus) => {
         if (newStatus !== lead.status) {
-            onStatusChange(lead.id, newStatus);
+            // Get button position for confetti origin
+            if (newStatus === 'BOOKED' && buttonRef.current) {
+                const rect = buttonRef.current.getBoundingClientRect();
+                const origin = {
+                    x: (rect.left + rect.width / 2) / window.innerWidth,
+                    y: (rect.top + rect.height / 2) / window.innerHeight
+                };
+                onStatusChange(lead.id, newStatus, origin);
+            } else {
+                onStatusChange(lead.id, newStatus);
+            }
         }
         setIsDropdownOpen(false);
     };
@@ -360,18 +370,22 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                             <Portal lockScroll={false}>
                                 <div className="fixed inset-0 z-[9998]" onClick={() => setIsDropdownOpen(false)} />
                                 <div
-                                    className="fixed bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-1.5 min-w-[220px]"
+                                    className="fixed bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl z-[9999] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200 p-1.5 min-w-[220px]"
                                     style={{
-                                        top: dropdownPos.top - 50, // Slight offset for better alignment
-                                        left: dropdownPos.left - 150, // Shifted left to center better
+                                        top: dropdownPos.top - 200, // Move up by approx height of dropdown
+                                        left: dropdownPos.left,
                                     }}
                                 >
-                                    <div className="text-[10px] font-bold text-slate-400 px-3 py-2 uppercase tracking-wider mb-1">{t('set_lead_status') || 'Set Lead Status'}</div>
+                                    <div className="text-[10px] font-bold text-slate-400 px-3 py-2 uppercase tracking-wider mb-1 flex items-center justify-between">
+                                        <span>{t('set_lead_status') || 'Set Lead Status'}</span>
+                                        <ChevronDown size={14} className="text-slate-300" />
+                                    </div>
                                     <div className="space-y-1">
                                         {STATUS_OPTIONS.map(opt => {
                                             const isActive = opt.value === lead.status;
                                             const optColor = COL_COLORS[opt.value];
-                                            const OptIcon = COL_ICONS[opt.value];
+                                            const isOptionIcon = COL_ICONS[opt.value];
+                                            const OptIcon = isOptionIcon || User; // fallback if undefined
 
                                             // Mapping custom colors to tailwind classes carefully
                                             const colorClasses: Record<string, string> = {

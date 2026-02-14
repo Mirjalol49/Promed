@@ -8,7 +8,7 @@ import {
 import { format } from 'date-fns';
 import { uz, ru } from 'date-fns/locale';
 import Lottie from 'lottie-react';
-import fireAnimation from '../../assets/images/fire.json';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lead, LeadStatus, TimelineEvent } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
