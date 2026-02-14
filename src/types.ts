@@ -19,6 +19,7 @@ export interface PatientImage {
   url: string; // base64 or url
   label: string; // e.g. "1 Month", "10 Days"
   date: string; // upload date
+  type?: 'image' | 'video'; // Added to distinguish media type explicitly
 }
 
 export interface Patient {

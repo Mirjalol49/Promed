@@ -356,7 +356,18 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
             batch.commit().catch(e => console.error("Error marking seen", e));
         }
-    }, [messages, selectedPatientId, isVisible]);
+
+        // AUTO-SCROLL: If the latest message is from ME (doctor), scroll to bottom
+        // This handles the "When I send a message, it must scroll down" requirement
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg && lastMsg.sender === 'doctor' && !isScheduledView) {
+            // Use a small timeout to ensure DOM is ready (bubble rendered)
+            setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        }
+
+    }, [messages, selectedPatientId, isVisible, isScheduledView]);
 
     // NEW: Self-heal inconsistent sidebar times (Backfill lastMessageTimestamp)
     useEffect(() => {

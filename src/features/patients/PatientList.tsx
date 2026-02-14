@@ -24,6 +24,7 @@ import {
   PlusCircle,
   Edit2,
   Trash2,
+  Play,
   FileText,
   User,
   Hash,
@@ -49,7 +50,7 @@ import { TimePicker } from '../../components/ui/TimePicker';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Portal } from '../../components/ui/Portal';
 import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
-import { compressImage } from '../../lib/imageOptimizer';
+import { compressImage, compressVideo, isImageFile, isVideoFile, isVideoUrl } from '../../lib/imageOptimizer';
 import { patientSchema, safeValidate } from '../../lib/validation';
 import DeleteModal from '../../components/ui/DeleteModal';
 import { CustomSelect } from '../../components/ui/CustomSelect';
@@ -200,9 +201,10 @@ const InjectionModal: React.FC<{
 const PhotoLabelModal: React.FC<{
   isOpen: boolean;
   image: string | null;
+  isVideo?: boolean;
   onClose: () => void;
   onSave: (label: string) => void;
-}> = ({ isOpen, image, onClose, onSave }) => {
+}> = ({ isOpen, image, isVideo = false, onClose, onSave }) => {
   const { t } = useLanguage();
   const [value, setValue] = useState('');
   const [unit, setUnit] = useState('Months');
@@ -223,8 +225,12 @@ const PhotoLabelModal: React.FC<{
         <div className="bg-white rounded-2xl w-full max-w-md p-6 border border-slate-200 shadow-apple">
           <h3 className="text-xl font-bold mb-4 text-slate-800">{t('photo_label_title')}</h3>
           <div className="flex justify-center mb-6 bg-slate-50 rounded-xl p-2 border border-slate-200">
-            <div className="h-48 w-full max-w-[300px] mx-auto overflow-hidden rounded-lg  border border-slate-100">
-              <img src={image} alt="Preview" className="w-full h-full object-contain" />
+            <div className="h-48 w-full max-w-[300px] mx-auto overflow-hidden rounded-lg border border-slate-100 flex items-center justify-center bg-black/5">
+              {isVideo || isVideoUrl(image) ? (
+                <video src={image} className="w-full h-full object-contain" controls playsInline />
+              ) : (
+                <img src={image} alt="Preview" className="w-full h-full object-contain" />
+              )}
             </div>
           </div>
           <div className="space-y-4">
@@ -275,6 +281,18 @@ const PhotoLabelModal: React.FC<{
     </Portal>
   );
 };
+
+// --- Memoized Video Preview to prevent re-renders during form input ---
+const VideoPreview = React.memo(({ src }: { src: string }) => {
+  return (
+    <video
+      src={src}
+      className="w-full h-full object-contain bg-black/5"
+      controls
+      playsInline
+    />
+  );
+});
 
 // --- Patient List ---
 export const PatientList: React.FC<{
@@ -601,6 +619,7 @@ export const PatientDetail: React.FC<{
   const [isPhotoModalOpen, setPhotoModalOpen] = useState(false);
   const [tempPhoto, setTempPhoto] = useState<string | null>(null);
   const [tempFile, setTempFile] = useState<File | null>(null);
+  const [isTempVideo, setIsTempVideo] = useState(false); // Track if temp file is video
 
   const [photoToDeleteId, setPhotoToDeleteId] = useState<string | null>(null);
   const [injToDeleteId, setInjToDeleteId] = useState<string | null>(null);
@@ -608,7 +627,7 @@ export const PatientDetail: React.FC<{
   const [activeTab, setActiveTab] = useState<'general' | 'finance'>('general');
   const { accountId } = useAccount();
 
-  const [optimisticPhotos, setOptimisticPhotos] = useState<{ id: string, url: string, label: string }[]>([]);
+  const [optimisticPhotos, setOptimisticPhotos] = useState<{ id: string, url: string, label: string, type: 'video' | 'image' }[]>([]);
 
   // Sync optimistic photos with real data
   useEffect(() => {
@@ -631,18 +650,31 @@ export const PatientDetail: React.FC<{
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Compress image before preview
-      const compressedFile = await compressImage(file);
-      console.log('After photo compressed:',
-        `${(file.size / 1024).toFixed(0)} KB → ${(compressedFile.size / 1024).toFixed(0)} KB`);
+      try {
+        if (isVideoFile(file)) {
+          const processedVideo = await compressVideo(file);
+          setTempFile(processedVideo);
+          const objectUrl = URL.createObjectURL(processedVideo);
+          setTempPhoto(objectUrl);
+          setIsTempVideo(true);
+          setPhotoModalOpen(true);
+        } else {
+          const compressedFile = await compressImage(file);
+          console.log('After photo compressed:',
+            `${(file.size / 1024).toFixed(0)} KB → ${(compressedFile.size / 1024).toFixed(0)} KB`);
 
-      setTempFile(compressedFile);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setTempPhoto(reader.result as string);
-        setPhotoModalOpen(true);
-      };
-      reader.readAsDataURL(compressedFile);
+          setTempFile(compressedFile);
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setTempPhoto(reader.result as string);
+            setIsTempVideo(false);
+            setPhotoModalOpen(true);
+          };
+          reader.readAsDataURL(compressedFile);
+        }
+      } catch (err) {
+        console.error("Media processing failed", err);
+      }
     }
   };
 
@@ -650,7 +682,7 @@ export const PatientDetail: React.FC<{
     if (tempPhoto) {
       // Optimistic Add
       const tempId = `temp_${Date.now()}`;
-      setOptimisticPhotos(prev => [{ id: tempId, url: tempPhoto, label }, ...prev]);
+      setOptimisticPhotos(prev => [{ id: tempId, url: tempPhoto, label, type: isTempVideo ? 'video' : 'image' }, ...prev]);
 
       onAddAfterPhoto(patient.id, tempFile || tempPhoto, label);
     }
@@ -851,8 +883,31 @@ export const PatientDetail: React.FC<{
                 <div className="aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer relative group border border-slate-200" onClick={() => setSelectedImage(patient.beforeImage || null)}>
                   {patient.beforeImage ? (
                     <>
-                      <ImageWithFallback src={patient.beforeImage} optimisticId={`${patient.id}_before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+                      {isVideoUrl(patient.beforeImage) ? (
+                        <div className="relative w-full h-full flex items-center justify-center bg-black/5">
+                          <video
+                            src={patient.beforeImage}
+                            className="w-full h-full object-cover opacity-90"
+                            muted
+                            playsInline
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/30 transition-colors">
+                            <div className="w-14 h-14 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center border border-white/50 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                              <Play size={28} className="text-white fill-white ml-1" />
+                            </div>
+                          </div>
+                          <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-md p-1.5 rounded-lg border border-white/20">
+                            <AnimateIcon className="text-white">
+                              <Play size={14} fill="currentColor" />
+                            </AnimateIcon>
+                          </div>
+                        </div>
+                      ) : (
+                        <ImageWithFallback src={patient.beforeImage} optimisticId={`${patient.id}_before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/40 via-transparent to-transparent h-1/2 group-hover:from-black/60 transition-all duration-300 flex items-end justify-center pb-4 opacity-0 group-hover:opacity-100">
+                        <p className="text-white text-xs font-bold uppercase tracking-widest">{isVideoUrl(patient.beforeImage) ? t('play_video') || "Play Video" : t('view_photo') || "View Photo"}</p>
+                      </div>
                     </>
                   ) : (
                     <div className="flex items-center justify-center h-full text-slate-400">{t('no_image')}</div>
@@ -872,21 +927,30 @@ export const PatientDetail: React.FC<{
                 <div className="grid grid-cols-2 gap-3">
                   {/* Add Photo Card */}
                   <label className="cursor-pointer aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-300 bg-slate-50/50 group">
-                    <PlusCircle size={28} className="group-hover:scale-110 transition-transform mb-1.5 opacity-60 group-hover:opacity-100" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('add_photo')}</span>
-                    <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+                    <div className="flex flex-col items-center">
+                      <PlusCircle size={28} className="group-hover:scale-110 transition-transform mb-1 opacity-60 group-hover:opacity-100" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('add_media') || "Add Media"}</span>
+                    </div>
+                    <input type="file" className="hidden" accept="image/*,video/*" onChange={handleFileUpload} />
                   </label>
 
-                  {/* Optimistic Photos (Pending) */}
+                  {/* Optimistic Photos */}
                   {optimisticPhotos.map((img) => (
                     <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-promed-primary/30 shadow-sm animate-pulse">
-                      <ImageWithFallback
-                        src={img.url}
-                        optimisticId={img.id}
-                        className="w-full h-full object-cover object-center opacity-80"
-                        alt={img.label}
-                        fallbackType="image"
-                      />
+                      {img.type === 'video' ? (
+                        <div className="relative w-full h-full flex items-center justify-center bg-black/5">
+                          <video src={img.url} className="w-full h-full object-contain bg-black" controls playsInline />
+                        </div>
+                      ) : (
+                        <ImageWithFallback
+                          src={img.url}
+                          optimisticId={img.id}
+                          className="w-full h-full object-cover object-center opacity-80"
+                          alt={img.label}
+                          fallbackType="image"
+                        />
+                      )}
+
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-promed-primary/80 via-promed-primary/20 to-transparent p-4 pt-12 flex flex-col justify-end">
                         <p className="text-white text-sm font-bold tracking-wide drop-shadow-md">{img.label}</p>
                         <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider flex items-center gap-1">
@@ -898,13 +962,25 @@ export const PatientDetail: React.FC<{
 
                   {patient.afterImages.map((img, idx) => (
                     <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer group border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300" onClick={() => setSelectedImage(img.url)}>
-                      <ImageWithFallback
-                        src={img.url}
-                        optimisticId={img.id}
-                        className="w-full h-full object-cover object-center group-hover:scale-105 transition duration-700 ease-in-out"
-                        alt={img.label}
-                        fallbackType="image"
-                      />
+                      {img.type === 'video' || isVideoUrl(img.url) ? (
+                        <div className="relative w-full h-full flex items-center justify-center bg-black/5">
+                          <video
+                            src={img.url}
+                            className="w-full h-full object-contain bg-black"
+                            controls
+                            playsInline
+                            onClick={(e) => e.stopPropagation()} // Allow playing in grid without opening modal
+                          />
+                        </div>
+                      ) : (
+                        <ImageWithFallback
+                          src={img.url}
+                          optimisticId={img.id}
+                          className="w-full h-full object-cover object-center group-hover:scale-105 transition duration-700 ease-in-out"
+                          alt={img.label}
+                          fallbackType="image"
+                        />
+                      )}
 
                       {/* Delete Button (Hover) */}
                       <button
@@ -951,10 +1027,23 @@ export const PatientDetail: React.FC<{
         selectedImage && (
           <Portal>
             <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setSelectedImage(null)}>
-              <button className="absolute top-6 right-6 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition">
+              <button className="absolute top-6 right-6 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition z-[10000]">
                 <X size={36} />
               </button>
-              <img src={selectedImage} alt="Full view" className="max-w-full max-h-[90vh] rounded-xl scale-100 animate-in zoom-in-95 duration-300" />
+              <div className="max-w-full max-h-[90vh] rounded-xl overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-300 bg-black/20 relative" onClick={e => e.stopPropagation()}>
+                {(() => {
+                  const matchedImg = patient.afterImages.find(img => img.url === selectedImage);
+                  const isVideo = (matchedImg?.type === 'video') || isVideoUrl(selectedImage) || (patient.beforeImage === selectedImage && isVideoUrl(patient.beforeImage));
+
+                  return isVideo ? (
+                    <>
+                      <video src={selectedImage} controls className="max-w-full max-h-[90vh]" />
+                    </>
+                  ) : (
+                    <img src={selectedImage} alt="Full view" className="max-w-full max-h-[90vh]" />
+                  );
+                })()}
+              </div>
             </div>
           </Portal>
         )
@@ -972,6 +1061,7 @@ export const PatientDetail: React.FC<{
       <PhotoLabelModal
         isOpen={isPhotoModalOpen}
         image={tempPhoto}
+        isVideo={isTempVideo}
         onClose={() => setPhotoModalOpen(false)}
         onSave={handleSavePhoto}
       />
@@ -1095,24 +1185,24 @@ export const AddPatientForm: React.FC<{
       // 1. INSTANT: Create Blob and set State immediately
       const objectUrl = URL.createObjectURL(file);
       setPreview(objectUrl);
+      setFile(file); // Set file immediately so we can check type (video vs image) for UI rendering
       setLoading(true);
 
       // 2. THE FIX: Wrap the heavy lifting in a setTimeout
       // 50ms gives the browser plenty of time to paint the preview and start the overlay animation
       setTimeout(async () => {
         try {
-          // Compress image in background
-          const compressedFile = await compressImage(file);
-          console.log('Patient image compressed:',
-            `${(file.size / 1024).toFixed(0)} KB → ${(compressedFile.size / 1024).toFixed(0)} KB`);
-
-          setFile(compressedFile);
-
-          // We can update the preview with the compressed one if needed, 
-          // but usually the initial blob is fine until save.
-
+          if (isVideoFile(file)) {
+            const processedVideo = await compressVideo(file);
+            setFile(processedVideo);
+          } else {
+            const compressedFile = await compressImage(file);
+            console.log('Patient image compressed:',
+              `${(file.size / 1024).toFixed(0)} KB → ${(compressedFile.size / 1024).toFixed(0)} KB`);
+            setFile(compressedFile);
+          }
         } catch (error) {
-          console.error("Compression failed", error);
+          console.error("Processing failed", error);
         } finally {
           setLoading(false);
         }
@@ -1293,7 +1383,18 @@ export const AddPatientForm: React.FC<{
                     <label className="relative mb-4 cursor-pointer group/photo">
                       <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-100 ring-4 ring-slate-50 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 transition-all duration-500 relative">
                         {profileImage ? (
-                          <ImageWithFallback src={profileImage} alt="Profile" className="w-full h-full object-cover group-hover/photo:scale-110 transition duration-700" fallbackType="user" />
+                          (profileImageFile && isVideoFile(profileImageFile)) || (!profileImageFile && isVideoUrl(profileImage)) ? (
+                            <div className="relative w-full h-full bg-black/5">
+                              <video src={profileImage} className="w-full h-full object-cover" muted playsInline />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                                <div className="w-10 h-10 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center border border-white/50 shadow-lg">
+                                  <Play size={20} className="text-white fill-white ml-0.5" />
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <ImageWithFallback src={profileImage} alt="Profile" className="w-full h-full object-cover group-hover/photo:scale-110 transition duration-700" fallbackType="user" />
+                          )
                         ) : (
                           <div className="flex items-center justify-center h-full text-slate-300 group-hover/photo:bg-promed-primary/5 transition-colors duration-500">
                             <User size={64} strokeWidth={1.5} className="group-hover/photo:scale-110 transition-transform duration-500" />
@@ -1310,8 +1411,7 @@ export const AddPatientForm: React.FC<{
                         <Camera className="w-[18px] h-[18px] text-slate-400 group-hover/photo:text-white" />
                       </div>
 
-                      {/* UPLOAD OVERLAY */}
-
+                      {isProfileUploading && <ImageUploadingOverlay language={language as any} />}
 
                       <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setProfileImage, setProfileImageFile, setIsProfileUploading)} />
                     </label>
@@ -1319,34 +1419,63 @@ export const AddPatientForm: React.FC<{
                   </div>
 
                   {/* Before Photo Card */}
-                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 transition-all duration-300 group flex-1">
+                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 transition-all duration-300 group flex-1 relative">
                     <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wide">
                       <ImageIcon size={16} className="text-promed-primary" />
-                      {t('before_photo')}
+                      {t('before_media') || "Before Media"}
                     </h4>
 
-                    <label className="block w-full h-40 border-2 border-dashed border-slate-200 rounded-2xl overflow-hidden cursor-pointer hover:border-promed-primary/60 hover:bg-promed-primary/[0.02] transition-all relative group/upload duration-500">
-                      {beforeImage ? (
-                        <>
-                          <ImageWithFallback src={beforeImage} alt="Before" className="w-full h-full object-cover group-hover/upload:scale-110 transition duration-700" fallbackType="image" />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/upload:opacity-100 transition-opacity duration-300">
-                            <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full border border-white/30 text-white transform scale-90 group-hover/upload:scale-100 transition duration-300 flex items-center justify-center">
-                              <Camera className="w-6 h-6 text-white" />
-                            </div>
+                    {beforeImage ? (
+                      <div className="relative w-full h-40 rounded-2xl overflow-hidden bg-slate-50 border-2 border-slate-100 group">
+                        {(beforeImageFile && isVideoFile(beforeImageFile)) || (!beforeImageFile && isVideoUrl(beforeImage)) ? (
+                          <VideoPreview src={beforeImage} />
+                        ) : (
+                          <div className="w-full h-full relative group/img">
+                            <ImageWithFallback src={beforeImage} className="w-full h-full object-cover" alt="Before" />
+                            <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors pointer-events-none" />
                           </div>
-                        </>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3 group-hover/upload:text-promed-primary transition-colors duration-300">
-                          <div className="p-4 rounded-full bg-slate-50 group-hover/upload:bg-promed-primary/10 group-hover/upload:scale-110 transition-all duration-500">
-                            <Upload size={32} strokeWidth={1.5} className="group-hover/upload:-translate-y-1 transition-transform duration-300" />
-                          </div>
-                          <span className="text-sm font-bold tracking-tight">{t('upload_image')}</span>
-                        </div>
-                      )}
-                      {/* UPLOAD OVERLAY */}
+                        )}
 
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setBeforeImage, setBeforeImageFile, setIsBeforeUploading)} />
-                    </label>
+                        {/* Action Buttons Overlay */}
+                        <div className="absolute top-2 right-2 flex gap-2 z-10">
+                          <label className="p-2 bg-white/90 backdrop-blur-sm text-slate-700 rounded-xl hover:bg-white hover:text-promed-primary shadow-sm cursor-pointer transition-all hover:scale-105 border border-slate-200/50">
+                            <Edit2 size={16} />
+                            <input type="file" className="hidden" accept="image/*,video/*" onChange={(e) => handleImageUpload(e, setBeforeImage, setBeforeImageFile, setIsBeforeUploading)} />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => { setBeforeImage(''); setBeforeImageFile(null); }}
+                            className="p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl hover:bg-red-50 hover:border-red-100 shadow-sm transition-all hover:scale-105 border border-slate-200/50"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="block w-full h-40 border-2 border-dashed border-slate-200 rounded-2xl overflow-hidden cursor-pointer hover:border-promed-primary/60 hover:bg-promed-primary/[0.02] transition-all relative group/upload duration-500">
+                        <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-50 border-2 border-slate-100 relative group flex flex-col items-center justify-center text-slate-400 gap-2">
+                          <Camera className="w-10 h-10 opacity-20 group-hover/upload:scale-110 transition-transform duration-500" />
+                          <span className="text-xs font-bold uppercase tracking-widest group-hover/upload:text-promed-primary transition-colors">{t('upload_photo_video') || "Upload Media"}</span>
+
+                          <div className="absolute inset-0 bg-promed-primary/0 group-hover/upload:bg-promed-primary/5 transition-colors duration-500" />
+
+                          {/* Floating Plus Icon */}
+                          <div className="absolute bottom-3 right-3 p-2 bg-white rounded-full shadow-sm text-slate-400 group-hover/upload:bg-promed-primary group-hover/upload:text-white transition-all duration-300 transform translate-y-2 opacity-0 group-hover/upload:translate-y-0 group-hover/upload:opacity-100">
+                            <Plus size={16} />
+                          </div>
+                        </div>
+                        <input type="file" className="hidden" accept="image/*,video/*" onChange={(e) => handleImageUpload(e, setBeforeImage, setBeforeImageFile, setIsBeforeUploading)} />
+                      </label>
+                    )}
+
+                    {isBeforeUploading && (
+                      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-2xl border border-slate-100">
+                        <div className="flex flex-col items-center gap-3">
+                          <Loader2 size={32} className="animate-spin text-promed-primary" />
+                          <span className="text-xs font-bold uppercase tracking-widest text-slate-500">{t('uploading') || "Uploading..."}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

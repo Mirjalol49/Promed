@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AnimateIcon } from '../ui/AnimateIcon';
 import {
   LayoutDashboard,
@@ -23,7 +23,8 @@ import { NotificationBell } from './NotificationBell';
 import { useSystemAlert } from '../../contexts/SystemAlertContext';
 import lockIcon from '../../assets/images/lock.png';
 const logoImg = "/images/logo_graft.png";
-import { MobileDock } from './MobileDock';
+// MobileDock removed
+
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -60,6 +61,7 @@ const Layout: React.FC<LayoutProps> = ({
 }) => {
   const { role } = useAccount();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t } = useLanguage();
 
   const totalUnread = patients.reduce((acc, p) => acc + (p.unreadCount || 0), 0);
@@ -72,6 +74,7 @@ const Layout: React.FC<LayoutProps> = ({
         onClick={() => {
           onNavigate(page);
           setIsSidebarOpen(false);
+          setIsMobileMenuOpen(false);
         }}
         whileHover="hover"
         initial="idle"
@@ -135,8 +138,8 @@ const Layout: React.FC<LayoutProps> = ({
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900 font-sans">
 
-      {/* Sidebar (Desktop Only) */}
-      <aside className="hidden md:flex flex-col w-[260px] bg-white/80 backdrop-blur-2xl h-full border-r border-slate-200/60 z-40 relative shadow-[5px_0_30px_-10px_rgba(0,0,0,0.03)]">
+      {/* Sidebar (Desktop Only - lg and up) */}
+      <aside className="hidden lg:flex flex-col w-[260px] bg-white/80 backdrop-blur-2xl h-full border-r border-slate-200/60 z-40 relative shadow-[5px_0_30px_-10px_rgba(0,0,0,0.03)]">
         {/* Logo */}
         <div className="p-4 md:p-6 flex items-center justify-end md:justify-between">
           <div className="hidden md:flex items-center space-x-3 text-slate-900">
@@ -180,6 +183,7 @@ const Layout: React.FC<LayoutProps> = ({
             onClick={() => {
               onNavigate('SETTINGS');
               setIsSidebarOpen(false);
+              setIsMobileMenuOpen(false);
             }}
             className="flex items-center w-full space-x-3 group px-4 py-3 rounded-2xl hover:bg-promed-primary/5 transition duration-200 border border-transparent hover:border-promed-primary/10"
           >
@@ -199,24 +203,32 @@ const Layout: React.FC<LayoutProps> = ({
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-premium-card pb-24 md:pb-0"> {/* Added pb-24 for Dock space */}
+      <div className="flex-1 flex flex-col min-w-0 bg-premium-card pb-0"> {/* Removed bottom padding from mobile dock */}
         {/* Header */}
         <header className="sticky top-0 z-20 h-16 md:h-20">
           <div className="absolute inset-0 bg-white/80 backdrop-blur-xl shadow-premium border-b border-promed-primary/5" />
           <div className="relative z-10 h-full flex items-center justify-between px-4 md:px-10">
 
-            {/* Left Section: Logo (Mobile) or Title (Desktop) */}
-            <div className="flex items-center">
+            {/* Left Section: Burger (Mobile) & Title */}
+            <div className="flex items-center gap-4">
 
-              {/* Mobile Logo */}
-              <div className="flex items-center md:hidden gap-2">
+              {/* Mobile Burger Menu Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="lg:hidden p-2 -ml-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                <Menu size={24} />
+              </button>
+
+              {/* Logo (Mobile/Tablet) */}
+              <div className="flex items-center lg:hidden gap-2">
                 <div className="h-8 bg-transparent flex items-center justify-center">
                   <img src={logoImg} alt="Promed Logo" className="h-full w-auto object-contain" />
                 </div>
               </div>
 
               {/* Desktop Title */}
-              <h1 className="text-3xl font-bold text-slate-900 hidden md:block tracking-tight">
+              <h1 className="text-3xl font-bold text-slate-900 hidden lg:block tracking-tight">
                 {getPageTitle()}
               </h1>
             </div>
@@ -238,13 +250,92 @@ const Layout: React.FC<LayoutProps> = ({
         </main>
       </div>
 
-      {/* Mobile Bottom Dock */}
-      <MobileDock
-        currentPage={currentPage}
-        onNavigate={onNavigate}
-        onLock={onLock}
-        isLockEnabled={isLockEnabled}
-      />
+      {/* Mobile Navigation Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 lg:hidden"
+            />
+
+            {/* Slide-in Drawer */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              className="fixed inset-y-0 left-0 w-[280px] bg-white/95 backdrop-blur-2xl z-50 lg:hidden shadow-2xl flex flex-col"
+            >
+              {/* Drawer Header */}
+              <div className="p-6 flex items-center justify-between border-b border-slate-100">
+                <img src={logoImg} alt="Promed Logo" className="w-32 h-auto object-contain" />
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Drawer Nav */}
+              <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2 no-scrollbar">
+                <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />
+                <NavItem page="PATIENTS" icon={Users} label={t('patients')} id="add-patient-btn-mobile" />
+                <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />
+                <NavItem page="MESSAGES" icon={MessageSquare} label={t('messages')} badge={totalUnread} />
+                <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />
+                <NavItem page="STAFF" icon={Briefcase} label={t('staff')} />
+                <NavItem page="FINANCE" icon={Wallet} label={t('finance')} />
+
+                {role === 'admin' && (
+                  <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">
+                    <p className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{t('management')}</p>
+                    <NavItem page="ADMIN_DASHBOARD" icon={Shield} label={t('admin_panel')} />
+                  </div>
+                )}
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-2">
+                {isLockEnabled && (
+                  <button
+                    onClick={() => {
+                      onLock();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center space-x-3 text-slate-700 hover:bg-white hover:shadow-sm px-4 py-3 rounded-2xl font-medium transition active:scale-95 group border border-transparent hover:border-slate-200"
+                  >
+                    <Lock size={20} />
+                    <span className="text-base font-sans font-medium">{t('lock_app')}</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    onNavigate('SETTINGS');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex items-center w-full space-x-3 group px-4 py-3 rounded-2xl hover:bg-white hover:shadow-sm transition duration-200 border border-transparent hover:border-slate-200"
+                >
+                  <div className="relative">
+                    <ProfileAvatar src={userImage} alt="Profile" size={40} className="rounded-lg shadow-sm" optimisticId={`mobile_${userId}_profile`} />
+                  </div>
+                  <div className="text-left overflow-hidden flex-1">
+                    <p className="text-sm font-sans font-bold text-slate-900 truncate">{userName || t('dr_name')}</p>
+                    <p className="text-xs text-slate-500 truncate">{userEmail}</p>
+                  </div>
+                  <Settings size={18} className="text-slate-400" />
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

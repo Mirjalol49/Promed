@@ -301,9 +301,15 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                             {view === tab && (
                                 <motion.div
                                     layoutId="activeTab"
-                                    className="absolute inset-0 bg-promed-primary rounded-xl shadow-[0_4px_12px_rgba(0,51,255,0.3)]"
+                                    className="absolute inset-0 rounded-xl overflow-hidden"
+                                    style={{
+                                        background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
+                                        boxShadow: '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
+                                    }}
                                     transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
-                                />
+                                >
+                                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
+                                </motion.div>
                             )}
                             <span className="relative z-10 flex items-center gap-2">
                                 {tab === 'overview' ? <LayoutGrid className="w-4 h-4" /> : <FileText className="w-4 h-4" />}

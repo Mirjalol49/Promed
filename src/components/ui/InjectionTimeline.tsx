@@ -231,7 +231,7 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                             </motion.button>
                                                         ) : (
                                                             /* Future State Button/Label */
-                                                            <span className="text-xs font-bold text-slate-400 px-3 py-1 rounded-full border border-slate-200 bg-white">
+                                                            <span className="text-xs font-bold text-slate-400 px-3 py-1 rounded-xl border border-slate-200 bg-white">
                                                                 {t('status_scheduled')}
                                                             </span>
                                                         )}
@@ -245,7 +245,7 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                             onUpdateStatus(inj.id, InjectionStatus.SCHEDULED);
                                                         }}
                                                         className={`
-                                                        w-full md:w-auto text-center px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide border cursor-pointer hover:opacity-80 transition-opacity
+                                                        w-full md:w-auto text-center px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wide border cursor-pointer hover:opacity-80 transition-opacity
                                                         ${isDone ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                                                 isMissed ? 'bg-red-50 text-red-600 border-red-100' : ''}
                                                     `}>

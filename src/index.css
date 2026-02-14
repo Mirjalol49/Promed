@@ -157,30 +157,32 @@ select:focus {
 
 /* MODERN SATIN BLUE BUTTON (Apple Style) */
 .btn-glossy-blue {
-    @apply relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-white text-base font-bold transition-all duration-300;
+    @apply relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg text-white text-base font-bold transition-all duration-300 overflow-hidden;
 
-    /* Deep Satin Gradient */
-    background: linear-gradient(180deg, #0033FF 0%, #0011AA 100%);
+    /* Perfect Glassy Gradient */
+    background: linear-gradient(180deg, #4A85FF 0%, #0044FF 100%);
 
-    /* High depth gloss */
+    /* Premium Depth & Glow */
+    /* Premium Depth (No Neon) */
     box-shadow:
-        0 8px 16px -4px rgba(0, 30, 100, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
 }
 
 .btn-glossy-blue::before {
     content: '';
-    @apply absolute inset-x-0 top-0 h-[48%] pointer-events-none;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.05) 100%);
+    @apply absolute inset-x-0 top-0 h-[45%] pointer-events-none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
     border-radius: inherit;
+    z-index: 1;
 }
 
 .btn-glossy-blue:hover {
     filter: brightness(1.1);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     box-shadow:
-        0 12px 20px -3px rgba(0, 30, 100, 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
 .btn-glossy-blue:active {
@@ -265,27 +267,28 @@ select:focus {
 
     /* 3D Premium Blue Button (Global Primary) */
     .btn-premium-blue {
-        @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl text-white text-sm font-bold transition-all duration-300 border-none overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
-        background: linear-gradient(180deg, #0033FF 0%, #0011AA 100%);
+        @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-white text-sm font-bold transition-all duration-300 border-none overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
+        background: linear-gradient(180deg, #4A85FF 0%, #0044FF 100%);
         box-shadow:
-            0 8px 16px -4px rgba(0, 30, 100, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.4),
-            inset 0 -1px 1px rgba(0, 0, 0, 0.2);
+            0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            inset 0 1px 1px rgba(255, 255, 255, 0.4),
+            inset 0 -2px 1px rgba(0, 0, 0, 0.1);
     }
 
     .btn-premium-blue::before {
         content: '';
-        @apply absolute inset-x-0 top-0 h-[48%] pointer-events-none;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.05) 100%);
+        @apply absolute inset-x-0 top-0 h-[45%] pointer-events-none;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
         border-radius: inherit;
+        z-index: 1;
     }
 
     .btn-premium-blue:hover:not(:disabled) {
-        filter: brightness(1.15);
-        transform: translateY(-1.5px);
+        filter: brightness(1.1);
+        transform: translateY(-2px);
         box-shadow:
-            0 12px 20px -3px rgba(0, 30, 100, 0.5),
-            inset 0 1px 0 rgba(255, 255, 255, 0.45);
+            0 10px 15px -3px rgba(0, 0, 0, 0.1),
+            inset 0 1px 1px rgba(255, 255, 255, 0.5);
     }
 
     .btn-premium-blue:active:not(:disabled) {
@@ -301,12 +304,11 @@ select:focus {
 
     /* 3D Premium Orange Button (Contacted) */
     .btn-premium-orange {
-        @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl text-white text-sm font-bold font-sans tracking-wide transition-all duration-150 border overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
+        @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-white text-sm font-bold font-sans tracking-wide transition-all duration-150 border overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
         background: linear-gradient(180deg, hsl(24, 95%, 53%) 0%, hsl(24, 95%, 40%) 100%);
         border-color: hsl(24, 95%, 35%);
         box-shadow:
             inset 0 1px 0 rgba(255, 255, 255, 0.4),
-            inset 0 0 15px hsl(24, 95%, 60%, 0.5),
             0 2px 3px rgba(0, 0, 0, 0.15);
     }
 
@@ -337,12 +339,11 @@ select:focus {
 
     /* 3D Premium Emerald Button (Operation) */
     .btn-premium-emerald {
-        @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl text-white text-sm font-bold font-sans tracking-wide transition-all duration-150 border overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
+        @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-white text-sm font-bold font-sans tracking-wide transition-all duration-150 border overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
         background: linear-gradient(180deg, hsl(158, 90%, 32%) 0%, hsl(158, 90%, 22%) 100%);
         border-color: hsl(158, 90%, 15%);
         box-shadow:
             inset 0 1px 0 rgba(255, 255, 255, 0.4),
-            inset 0 0 15px hsl(158, 90%, 35%, 0.5),
             0 2px 3px rgba(0, 0, 0, 0.15);
     }
 
@@ -426,12 +427,11 @@ select:focus {
 
     /* 3D Premium Red Button */
     .btn-premium-red {
-        @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl text-white text-sm font-bold font-sans tracking-wide transition-all duration-150 border overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
+        @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-white text-sm font-bold font-sans tracking-wide transition-all duration-150 border overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
         background: linear-gradient(180deg, hsl(0, 84%, 60%) 0%, hsl(0, 84%, 40%) 100%);
         border-color: hsl(0, 84%, 35%);
         box-shadow:
             inset 0 1px 0 rgba(255, 255, 255, 0.4),
-            inset 0 0 15px hsl(0, 84%, 70%, 0.5),
             0 2px 3px rgba(0, 0, 0, 0.15);
     }
 
@@ -462,12 +462,12 @@ select:focus {
 
     /* 3D Premium Blue Square (Icons / Pagination) */
     .btn-premium-blue-sq {
-        @apply relative inline-flex items-center justify-center p-2.5 rounded-xl text-white text-sm font-bold font-sans transition-all duration-150 border overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
-        background: linear-gradient(180deg, #0033FF 0%, #0011AA 100%);
+        @apply relative inline-flex items-center justify-center p-2.5 rounded-lg text-white text-sm font-bold font-sans transition-all duration-150 border overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed;
+        background: linear-gradient(180deg, #4A85FF 0%, #0044FF 100%);
         border: none;
         box-shadow:
-            0 4px 10px rgba(0, 30, 200, 0.25),
-            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            inset 0 1px 1px rgba(255, 255, 255, 0.4);
     }
 
     .btn-premium-blue-sq::before {
@@ -492,7 +492,7 @@ select:focus {
 
     /* 3D Premium White (Secondary Actions) */
     .btn-premium-white {
-        @apply relative inline-flex items-center justify-center gap-2 p-2.5 rounded-2xl text-slate-700 text-sm font-bold font-sans transition-all duration-150 border border-slate-200 overflow-hidden bg-white hover:bg-slate-50 disabled:opacity-40;
+        @apply relative inline-flex items-center justify-center gap-2 p-2.5 rounded-lg text-slate-700 text-sm font-bold font-sans transition-all duration-150 border border-slate-200 overflow-hidden bg-white hover:bg-slate-50 disabled:opacity-40;
         box-shadow:
             inset 0 1px 0 rgba(255, 255, 255, 0.9),
             0 1px 2px rgba(0, 0, 0, 0.03);
@@ -505,6 +505,15 @@ select:focus {
             0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
+    /* Added gloss to premium white/secondary for consistency */
+    .btn-premium-white::before {
+        content: '';
+        @apply absolute inset-x-0 top-0 h-[45%] pointer-events-none opacity-50;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 100%);
+        border-radius: inherit;
+        z-index: 1;
+    }
+
     .btn-premium-white:active:not(:disabled) {
         @apply translate-y-0.5 scale-[0.98];
         box-shadow: none;
@@ -512,17 +521,17 @@ select:focus {
 
     /* High-End Auth Button (Login / Lock) */
     .btn-auth-premium {
-        @apply relative w-full inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-white text-lg font-black font-sans tracking-widest transition-all duration-300 border-none overflow-hidden disabled:opacity-50;
-        background: linear-gradient(180deg, #0033FF 0%, #0011AA 100%);
+        @apply relative w-full inline-flex items-center justify-center gap-3 px-8 py-4 rounded-lg text-white text-lg font-black font-sans tracking-widest transition-all duration-300 border-none overflow-hidden disabled:opacity-50;
+        background: linear-gradient(180deg, #4A85FF 0%, #0044FF 100%);
         box-shadow:
-            0 10px 20px -5px rgba(0, 30, 200, 0.4),
-            inset 0 1px 1px rgba(255, 255, 255, 0.4);
+            0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            inset 0 1px 1px rgba(255, 255, 255, 0.45);
     }
 
     .btn-auth-premium::before {
         content: '';
-        @apply absolute inset-x-0 top-0 h-[48%] pointer-events-none;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.05) 100%);
+        @apply absolute inset-x-0 top-0 h-[45%] pointer-events-none;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
         border-radius: inherit;
     }
 
@@ -540,7 +549,7 @@ select:focus {
     .btn-auth-premium:hover:not(:disabled) {
         @apply -translate-y-1 scale-[1.02];
         box-shadow:
-            0 20px 30px -10px rgba(0, 30, 200, 0.6),
+            0 10px 15px -3px rgba(0, 0, 0, 0.1),
             inset 0 1px 1px rgba(255, 255, 255, 0.5);
     }
 
@@ -558,26 +567,28 @@ select:focus {
     /* Core Gel Visual Style (Gradient, Shadow, Gloss) - Flexible for any element */
     .gel-blue-style {
         @apply relative border transition-all duration-300;
-        /* Glossy Deep Blue Gradient */
-        background: linear-gradient(180deg, #0033FF 0%, #0011AA 100%);
+        /* Unified Perfect Blue */
+        background: linear-gradient(180deg, #4A85FF 0%, #0044FF 100%);
         border: none;
-        /* High depth gloss to match btn-glossy-blue */
+        /* Refined shadow */
         box-shadow:
-            0 8px 16px -4px rgba(0, 30, 100, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.35);
+            0 4px 12px -2px rgba(0, 68, 255, 0.25),
+            inset 0 1px 1px rgba(255, 255, 255, 0.4),
+            inset 0 -1px 1px rgba(0, 0, 0, 0.1);
     }
 
     /* The "Gel Cap" Reflection */
     .gel-blue-style::before {
         content: '';
-        @apply absolute inset-x-0 top-0 h-[48%] pointer-events-none;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.05) 100%);
+        @apply absolute inset-x-0 top-0 h-[45%] pointer-events-none;
+        /* Bright Gloss */
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 100%);
         border-radius: inherit;
     }
 
     /* Standard Gel Button (Layout + Visuals) */
     .btn-gel-blue {
-        @apply gel-blue-style inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl text-white text-sm font-bold tracking-wide disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed overflow-hidden;
+        @apply gel-blue-style inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-white text-sm font-bold tracking-wide disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed overflow-hidden;
     }
 
 
@@ -675,10 +686,10 @@ select:focus {
 
 /* --- TELEGRAM STYLE PATTERN --- */
 .bg-telegram-pattern {
-    background-color: #8EBCBC;
-    /* Fallback */
-    background: #E6EBEF url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10h10v10H10V10zM50 50h10v10H50V50z' fill='%23B9C7D3' fill-opacity='0.15'/%3E%3C/svg%3E");
-    /* Simple geometric placeholder pattern for "doodle" feel */
+    background-color: #E6EBEF;
+    /* Clean, soft fallback */
+    background: #F0F4F8 url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10h10v10H10V10zM50 50h10v10H50V50z' fill='%23B9C7D3' fill-opacity='0.12'/%3E%3C/svg%3E");
+    /* Slightly lighter, cleaner pattern background */
 }
 
 /* Telegram Bubbles (Updated to Apple Blue/Gray) */
@@ -715,8 +726,8 @@ select:focus {
     right: -8px;
     width: 20px;
     height: 20px;
-    background: #0011AA;
-    /* Deep Blue base of the glossy bubble */
+    background: #2A6FFF;
+    /* Matches softened bottom of gradient */
     border-bottom-left-radius: 12px;
     z-index: -1;
     clip-path: polygon(0 100%, 100% 100%, 0 0);

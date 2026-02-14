@@ -58,12 +58,47 @@ export async function compressImage(file: File): Promise<File> {
     }
 }
 
-/**
- * Check if a file is an image
- */
+
 export function isImageFile(file: File): boolean {
     return file.type.startsWith('image/');
 }
+
+export function isVideoFile(file: File): boolean {
+    if (file.type.startsWith('video/')) return true;
+    const name = file.name.toLowerCase();
+    return name.endsWith('.mp4') || name.endsWith('.mov') || name.endsWith('.webm') || name.endsWith('.avi');
+}
+
+export function isVideoUrl(url: string | null | undefined): boolean {
+    if (!url) return false;
+    // Check for common video extensions or data URI
+    const lower = url.toLowerCase();
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.ogg') ||
+        lower.includes('video/'); // Data URIs
+}
+
+/**
+ * Compress video files.
+ * Note: Real in-browser video compression requires heavy libraries (ffmpeg.wasm).
+ * For now, we perform basic checks and return the file.
+ * In a production environment, this should ideally be handled by a backend service.
+ */
+export async function compressVideo(file: File): Promise<File> {
+    console.log(`🎥 Processing video: ${file.name} (${formatFileSize(file.size)})`);
+
+    // Basic size check - warn if too large (e.g., > 100MB)
+    if (file.size > 100 * 1024 * 1024) {
+        console.warn('⚠️ Video is larger than 100MB. Upload might be slow.');
+        // We could throw an error here if we want to enforce limits
+    }
+
+    // Return original until we have ffmpeg.wasm or a backend
+    return file;
+}
+
 
 /**
  * Format file size for display
@@ -77,3 +112,4 @@ export function formatFileSize(bytes: number): string {
 
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
+
