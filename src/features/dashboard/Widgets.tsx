@@ -450,133 +450,125 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
 };
 
 // --- Stat Card ---
+// --- Stat Card (Redesigned) ---
 interface StatCardProps {
   label: string;
   value: string | number;
   change?: string;
   icon?: any;
   iconImg?: string;
-  mascotImg?: string;
+  mascotImg?: string; // Kept for prop compatibility but unused visually
   colorClass: string;
   shadowColor: string;
   isLoading?: boolean;
-  imgClassName?: string;
+  subtext?: string;
+  trendLabel?: string;
+  tooltipText?: string;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
   label,
   value,
   change,
+  subtext,
+  trendLabel,
+  tooltipText,
   icon: Icon,
-  iconImg,
-  mascotImg,
+  // iconImg, // Unused in new design
+  // mascotImg, // Unused in new design
   colorClass,
-  shadowColor,
+  // shadowColor, // Unused in new design
   isLoading,
-  imgClassName
+  // imgClassName // Unused in new design
 }) => {
   const { t } = useLanguage();
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-[24px] shadow-sm p-6 h-[200px] flex flex-col justify-between border border-slate-100">
-        <div className="flex space-x-3">
-          <Skeleton className="w-12 h-12 rounded-2xl" />
-          <Skeleton className="h-5 w-24 self-center" />
+      <div className="bg-white rounded-[20px] p-6 h-[160px] flex flex-col justify-between border border-slate-200/60 shadow-sm">
+        <div className="flex justify-between items-start">
+          <Skeleton className="h-4 w-24 rounded-md" />
+          <Skeleton className="w-10 h-10 rounded-full" />
         </div>
-        <div className="space-y-3">
-          <Skeleton className="h-10 w-20" />
-          <Skeleton className="h-4 w-32" />
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-20 rounded-lg" />
+          <Skeleton className="h-3 w-16 rounded-md" />
         </div>
       </div>
     );
   }
 
-  const getGradient = (baseClass: string) => {
-    // Red / Operations - Rose to Dark Rose
+  const getSoftColors = (baseClass: string) => {
+    // Red / Operations
     if (baseClass.includes('rose') || baseClass.includes('red')) {
-      return 'linear-gradient(135deg, #f43f5e 0%, #be123c 100%)';
+      return { bg: 'bg-rose-50', text: 'text-rose-500', border: 'border-rose-100' };
     }
-    // Blue / Injections - Indigo to Dark Navy
+    // Blue / Injections
     if (baseClass.includes('blue') || baseClass.includes('primary')) {
-      return 'linear-gradient(135deg, #4f46e5 0%, #312e81 100%)';
+      return { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100' };
     }
-    // Green / Patients - Emerald to Dark Emerald
+    // Green / Patients
     if (baseClass.includes('emerald') || baseClass.includes('green') || baseClass.includes('hsl(160')) {
-      return 'linear-gradient(135deg, #10b981 0%, #064e3b 100%)';
+      return { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100' };
     }
-    // Default
-    return 'linear-gradient(135deg, hsl(243, 71%, 32%) 0%, hsl(243, 71%, 22%) 100%)';
+    // Purple / Other
+    if (baseClass.includes('purple') || baseClass.includes('indigo')) {
+      return { bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100' };
+    }
+    // Default (Fallthrough to slate/gray if needed, but lets default to Brand Blue)
+    return { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-100' };
   };
 
-  const gradient = getGradient(colorClass);
+  const colors = getSoftColors(colorClass);
 
   return (
-    <div className="group h-[200px] w-full cursor-pointer font-sans perspective-1000">
+    <div className="h-full w-full bg-white rounded-[20px] p-6 border border-slate-200/60 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.06)] hover:border-slate-300/80 transition-all duration-300 group cursor-default flex flex-col relative overflow-hidden">
 
-      {/* Container - Relative wrapper for absolute positioning */}
-      <div className="relative w-full h-full rounded-[24px] shadow-apple hover:shadow-2xl transition-all duration-300 active:scale-[0.98]">
-
-        {/* HEADER (The Slide Part) */}
-        {/* We place it at the top, full width. Height is controlled here. */}
-        <div
-          className="absolute top-0 left-0 right-0 h-[55%] rounded-t-[24px] z-0 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-y-2 overflow-hidden"
-          style={{ background: gradient }}
-        >
-          {/* Decorative Elements */}
-          <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/20 rounded-full blur-2xl pointer-events-none mix-blend-overlay" />
-
-          {/* Mascot / Icon Area */}
-          {/* Positioned to be clearly visible in the top 80px */}
-          <div className="absolute right-2 top-2 h-full flex items-start justify-end pr-2 pt-1">
-            {mascotImg ? (
-              <img
-                src={mascotImg}
-                alt="Mascot"
-                className={`h-[90%] w-auto object-contain drop-shadow-md transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 ${imgClassName || ''}`}
-              />
-            ) : (
-              <div className="text-white/30 p-2">
-                <Icon size={56} />
-              </div>
-            )}
+      {/* Tooltip Overlay */}
+      {tooltipText && (
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0 z-20">
+          <div className="bg-slate-900/90 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-xl border border-white/10 tracking-wide">
+            {tooltipText}
           </div>
         </div>
+      )}
 
-        {/* BODY (The Content Part) */}
-        {/* Starts at 85px to reveal enough header */}
-        <div className="absolute top-[90px] left-0 right-0 bottom-0 bg-white rounded-[24px] z-10 p-5 flex flex-col justify-between shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] border-x border-b border-slate-100 transition-all duration-300 group-hover:-translate-y-1">
-
-          {/* Top Row: Label + Menu */}
-          <div className="flex items-start justify-between">
-            <span className="text-[11px] font-black text-black uppercase tracking-widest leading-none mt-1">{label}</span>
-            <div className="flex gap-1 p-2 -mr-2 -mt-2 hover:bg-slate-50 rounded-full transition-colors cursor-pointer opacity-50 hover:opacity-100">
-              <div className="w-1 h-1 rounded-full bg-slate-400"></div>
-              <div className="w-1 h-1 rounded-full bg-slate-400"></div>
-              <div className="w-1 h-1 rounded-full bg-slate-400"></div>
-            </div>
-          </div>
-
-          {/* Middle: Value */}
-          <div className="mt-1">
-            <span className="text-[3.5rem] leading-none font-black text-slate-800 tracking-tighter">{value}</span>
-          </div>
-
-          {/* Bottom: Subtext */}
-          <div className="text-xs font-bold text-slate-400">
-            {change ? (
-              <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50/80 w-fit px-2 py-1 rounded-lg border border-emerald-100">
-                <Activity size={10} strokeWidth={3} />
-                +{change}
-                <span className="text-emerald-600/60 font-semibold text-[10px] uppercase tracking-wide">/ week</span>
-              </span>
-            ) : (
-              <span className="opacity-0">.</span>
-            )}
-          </div>
+      {/* Top Section: Icon & Label Grouped (Option A: Icon Left) */}
+      <div className="flex items-center gap-4 relative z-10">
+        {/* Icon Circle */}
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${colors.bg} ${colors.text} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-sm`}>
+          {Icon && <Icon size={24} strokeWidth={2.5} />}
         </div>
 
+        {/* Label and Value Grouped */}
+        <div className="flex flex-col">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest leading-tight mb-0.5">
+            {label}
+          </span>
+          <span className="text-[32px] md:text-[36px] leading-none font-black text-slate-900 tracking-tighter">
+            {value}
+          </span>
+        </div>
       </div>
+
+      {/* Bottom Row: Trend / Decorative - Pushed to bottom */}
+      <div className="mt-auto pt-4 flex items-center gap-2 relative z-10 min-h-[20px]">
+        {change ? (
+          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100/50">
+            <Activity size={12} strokeWidth={3} className="text-emerald-500" />
+            <span>{change}</span>
+            <span className="text-emerald-600/70 font-medium ml-0.5 text-[10px] uppercase">{trendLabel || 'this week'}</span>
+          </div>
+        ) : subtext ? (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200/60 text-slate-500 font-bold text-[10px] uppercase tracking-wide">
+            <Calendar size={12} strokeWidth={2.5} className="text-slate-400" />
+            <span>{subtext}</span>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Subtle Background Decoration (Bottom Right) */}
+      <div className={`absolute -bottom-6 -right-6 w-32 h-32 rounded-full opacity-[0.05] ${colors.text.replace('text-', 'bg-')} pointer-events-none blur-3xl group-hover:opacity-[0.08] transition-opacity duration-500`} />
     </div>
   );
 };

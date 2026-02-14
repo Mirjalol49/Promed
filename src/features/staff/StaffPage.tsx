@@ -331,7 +331,7 @@ const StaffModal = ({
                             ) : (
                                 <>
                                     {initialData ? <Edit2 size={18} /> : <Plus size={18} />}
-                                    {initialData ? t('update_staff') : t('save_staff')}
+                                    <span className="relative z-10">{initialData ? t('update_staff') : t('save_staff')}</span>
                                 </>
                             )}
                         </button>
@@ -348,13 +348,15 @@ const PaySalaryModal = ({
     onClose,
     staffList,
     accountId,
-    onSuccess
+    onSuccess,
+    initialStaffId
 }: {
     isOpen: boolean;
     onClose: () => void;
     staffList: Staff[];
     accountId: string;
     onSuccess: () => void;
+    initialStaffId?: string | null;
 }) => {
     const { t } = useLanguage();
     const [selectedStaffId, setSelectedStaffId] = useState('');
@@ -365,7 +367,21 @@ const PaySalaryModal = ({
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const activeStaff = staffList.filter(s => s.status === 'active');
+    const activeStaff = useMemo(() => staffList.filter(s => s.status === 'active'), [staffList]);
+
+    // Ensure selected staff is visible in dropdown even if inactive
+    const visibleOptions = useMemo(() => {
+        const options = [...activeStaff];
+        if (selectedStaffId) {
+            const selected = staffList.find(s => s.id === selectedStaffId);
+            // If selected staff is not in active list (e.g. on_leave), add to top
+            if (selected && !activeStaff.find(s => s.id === selected.id)) {
+                options.unshift(selected);
+            }
+        }
+        return options;
+    }, [activeStaff, selectedStaffId, staffList]);
+
     const selectedStaff = staffList.find(s => s.id === selectedStaffId);
 
     // Auto-fill amount when staff is selected
@@ -373,19 +389,27 @@ const PaySalaryModal = ({
         if (selectedStaff && !amount) {
             setAmount(String(selectedStaff.salary || ''));
         }
-    }, [selectedStaffId]);
+    }, [selectedStaffId]); // Keep this simple
 
     // Reset form on open
     useEffect(() => {
         if (isOpen) {
-            const autoSelect = activeStaff.length === 1 ? activeStaff[0].id : '';
+            const autoSelect = initialStaffId || (activeStaff.length === 1 ? activeStaff[0].id : '');
             setSelectedStaffId(autoSelect);
-            setAmount('');
+
+            // Pre-fill amount if selecting someone
+            if (initialStaffId) {
+                const s = staffList.find(x => x.id === initialStaffId);
+                setAmount(s?.salary ? String(s.salary) : '');
+            } else {
+                setAmount('');
+            }
+
             setDate(new Date().toISOString().split('T')[0]);
             setNote('');
             setIsDropdownOpen(false);
         }
-    }, [isOpen]);
+    }, [isOpen, initialStaffId]); // Added initialStaffId dependency
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -460,117 +484,153 @@ const PaySalaryModal = ({
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                        {/* Custom Staff Dropdown */}
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('select_staff') || 'Select Staff'}</label>
-                            <div className="relative" ref={dropdownRef}>
-                                {/* Trigger */}
-                                <button
-                                    type="button"
-                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                    className={`w-full bg-slate-50/50 border rounded-2xl py-3 px-4 flex items-center gap-3 transition-all outline-none cursor-pointer ${isDropdownOpen ? 'border-blue-400 shadow-[0_0_0_3px_rgba(59,130,246,0.06)] bg-white' : 'border-slate-200/80 hover:border-slate-300 hover:bg-white'}`}
-                                >
-                                    {selectedStaff ? (
-                                        <>
-                                            <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 ring-2 ring-white shadow-sm">
-                                                {selectedStaff.imageUrl ? (
-                                                    <img src={selectedStaff.imageUrl} className="w-full h-full object-cover" alt="" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50 text-sm">
-                                                        {selectedStaff.fullName.charAt(0)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="flex-1 text-left min-w-0">
-                                                <p className="font-bold text-slate-800 text-sm truncate">{selectedStaff.fullName}</p>
-                                                <p className="text-[10px] text-slate-400 font-semibold">{t(`role_${selectedStaff.role}`) || selectedStaff.role} · {selectedStaff.salary?.toLocaleString()} {selectedStaff.currency}</p>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-                                                <User size={16} className="text-slate-400" />
-                                            </div>
-                                            <span className="text-sm font-semibold text-slate-400">{t('select_staff') || 'Select Staff'}...</span>
-                                        </>
-                                    )}
-                                    <div
-                                        className={`ml-auto text-slate-400 flex-shrink-0 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
-                                    >
-                                        <ChevronLeft size={16} className="-rotate-90" />
-                                    </div>
-                                </button>
-
-                                {/* Dropdown List */}
-                                {isDropdownOpen && (
-                                    <div
-                                        className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden z-50 max-h-[240px] overflow-y-auto"
-                                        style={{ scrollbarWidth: 'thin', scrollbarColor: '#e2e8f0 transparent' }}
-                                    >
-                                        {activeStaff.length === 0 ? (
-                                            <div className="p-6 text-center text-sm text-slate-400 font-semibold">{t('no_staff_found') || 'No staff members found'}</div>
+                        {/* Staff Selection: Static if pre-selected, Dropdown otherwise */}
+                        {initialStaffId && selectedStaff ? (
+                            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-200/80 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-white shadow-sm ring-2 ring-white">
+                                        {selectedStaff.imageUrl ? (
+                                            <img src={selectedStaff.imageUrl} className="w-full h-full object-cover" alt="" />
                                         ) : (
-                                            activeStaff.map((staff, idx) => {
-                                                const isSelected = staff.id === selectedStaffId;
-                                                return (
-                                                    <button
-                                                        key={staff.id}
-                                                        type="button"
-                                                        onClick={() => handleSelectStaff(staff.id)}
-                                                        className={`w-full flex items-center gap-3 px-4 py-3 transition-all text-left ${isSelected ? 'bg-blue-50/70' : 'hover:bg-slate-50'} ${idx > 0 ? 'border-t border-slate-100/70' : ''}`}
-                                                    >
-                                                        <div className={`w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ${isSelected ? 'ring-2 ring-blue-500' : 'ring-2 ring-white'}`}>
-                                                            {staff.imageUrl ? (
-                                                                <img src={staff.imageUrl} className="w-full h-full object-cover" alt="" />
-                                                            ) : (
-                                                                <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50">
-                                                                    {staff.fullName.charAt(0)}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className={`font-bold text-sm truncate ${isSelected ? 'text-blue-700' : 'text-slate-800'}`}>{staff.fullName}</p>
-                                                            <div className="flex items-center gap-2 mt-0.5">
-                                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t(`role_${staff.role}`) || staff.role}</span>
-                                                                <span className="text-slate-200">·</span>
-                                                                <span className="text-[10px] font-bold text-emerald-600">{staff.salary?.toLocaleString()} {staff.currency}</span>
-                                                            </div>
-                                                        </div>
-                                                        {isSelected && (
-                                                            <div
-                                                                className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0"
-                                                            >
-                                                                <Check size={12} className="text-white stroke-[3]" />
-                                                            </div>
-                                                        )}
-                                                    </button>
-                                                );
-                                            })
+                                            <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50 text-lg">
+                                                {selectedStaff.fullName.charAt(0)}
+                                            </div>
                                         )}
                                     </div>
-                                )}
+                                    <div>
+                                        <p className="font-bold text-slate-900 text-lg">{selectedStaff.fullName}</p>
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t(`role_${selectedStaff.role}`) || selectedStaff.role}</p>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('select_staff') || 'Select Staff'}</label>
+                                <div className="relative" ref={dropdownRef}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                        className={`w-full bg-slate-50/50 border rounded-2xl py-3 px-4 flex items-center gap-3 transition-all outline-none cursor-pointer ${isDropdownOpen ? 'border-blue-400 shadow-[0_0_0_3px_rgba(59,130,246,0.06)] bg-white' : 'border-slate-200/80 hover:border-slate-300 hover:bg-white'}`}
+                                    >
+                                        {selectedStaff ? (
+                                            <>
+                                                <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 ring-2 ring-white shadow-sm">
+                                                    {selectedStaff.imageUrl ? (
+                                                        <img src={selectedStaff.imageUrl} className="w-full h-full object-cover" alt="" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50 text-sm">
+                                                            {selectedStaff.fullName.charAt(0)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 text-left min-w-0">
+                                                    <p className="font-bold text-slate-800 text-sm truncate">{selectedStaff.fullName}</p>
+                                                    <p className="text-[10px] text-slate-400 font-semibold">{t(`role_${selectedStaff.role}`) || selectedStaff.role} · {selectedStaff.salary?.toLocaleString()} {selectedStaff.currency}</p>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                                    <User size={16} className="text-slate-400" />
+                                                </div>
+                                                <span className="text-sm font-semibold text-slate-400">{t('select_staff') || 'Select Staff'}...</span>
+                                            </>
+                                        )}
+                                        <div
+                                            className={`ml-auto text-slate-400 flex-shrink-0 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                                        >
+                                            <ChevronLeft size={16} className="-rotate-90" />
+                                        </div>
+                                    </button>
 
-                        {/* Amount */}
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('amount') || 'Amount'}</label>
-                            <div className="relative">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">UZS</div>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    required
-                                    className="w-full bg-slate-50/50 border border-slate-200/80 rounded-2xl py-3.5 pl-12 pr-5 text-slate-900 font-bold text-lg focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 focus:bg-white transition-all outline-none"
-                                    value={amount ? new Intl.NumberFormat('uz-UZ').format(Number(amount)) : ''}
-                                    onChange={e => {
-                                        const val = e.target.value.replace(/[^0-9]/g, '');
-                                        setAmount(val);
-                                    }}
-                                    placeholder={t('enter_amount') || 'Enter amount'}
-                                />
+                                    {isDropdownOpen && (
+                                        <div
+                                            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden z-50 max-h-[240px] overflow-y-auto"
+                                            style={{ scrollbarWidth: 'thin', scrollbarColor: '#e2e8f0 transparent' }}
+                                        >
+                                            {visibleOptions.length === 0 ? (
+                                                <div className="p-6 text-center text-sm text-slate-400 font-semibold">{t('no_staff_found') || 'No staff members found'}</div>
+                                            ) : (
+                                                visibleOptions.map((staff, idx) => {
+                                                    const isSelected = staff.id === selectedStaffId;
+                                                    return (
+                                                        <button
+                                                            key={staff.id}
+                                                            type="button"
+                                                            onClick={() => handleSelectStaff(staff.id)}
+                                                            className={`w-full flex items-center gap-3 px-4 py-3 transition-all text-left ${isSelected ? 'bg-blue-50/70' : 'hover:bg-slate-50'} ${idx > 0 ? 'border-t border-slate-100/70' : ''}`}
+                                                        >
+                                                            <div className={`w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ${isSelected ? 'ring-2 ring-blue-500' : 'ring-2 ring-white'}`}>
+                                                                {staff.imageUrl ? (
+                                                                    <img src={staff.imageUrl} className="w-full h-full object-cover" alt="" />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50">
+                                                                        {staff.fullName.charAt(0)}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className={`font-bold text-sm truncate ${isSelected ? 'text-blue-700' : 'text-slate-800'}`}>{staff.fullName}</p>
+                                                                <div className="flex items-center gap-2 mt-0.5">
+                                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t(`role_${staff.role}`) || staff.role}</span>
+                                                                    <span className="text-slate-200">·</span>
+                                                                    <span className="text-[10px] font-bold text-emerald-600">{staff.salary?.toLocaleString()} {staff.currency}</span>
+                                                                </div>
+                                                            </div>
+                                                            {isSelected && (
+                                                                <div
+                                                                    className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0"
+                                                                >
+                                                                    <Check size={12} className="text-white stroke-[3]" />
+                                                                </div>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
+
+                        {/* Amount: Read-only display if pre-selected, Input otherwise */}
+                        {initialStaffId ? (
+                            <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/80 flex items-center justify-between group cursor-pointer" onClick={() => {
+                                // Optional: Allow edit on click if valid
+                                // For now, keep it read-only but focusable
+                            }}>
+                                <div>
+                                    <p className="text-[10px] font-black text-emerald-600/70 uppercase tracking-widest mb-0.5">{t('salary_amount') || 'Salary Amount'}</p>
+                                    <p className="text-2xl font-black text-emerald-700">
+                                        {new Intl.NumberFormat('uz-UZ').format(Number(amount))}
+                                        <span className="text-sm font-bold text-emerald-600/60 ml-1.5">{selectedStaff?.currency || 'UZS'}</span>
+                                    </p>
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                                    <Check size={20} className="text-emerald-600 stroke-[3]" />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('amount') || 'Amount'}</label>
+                                <div className="relative">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">UZS</div>
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        required
+                                        className="w-full bg-slate-50/50 border border-slate-200/80 rounded-2xl py-3.5 pl-12 pr-5 text-slate-900 font-bold text-lg focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 focus:bg-white transition-all outline-none"
+                                        value={amount ? new Intl.NumberFormat('uz-UZ').format(Number(amount)) : ''}
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                            setAmount(val);
+                                        }}
+                                        placeholder={t('enter_amount') || 'Enter amount'}
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         {/* Date (full width, custom picker) */}
                         <div className="space-y-2">
@@ -1069,7 +1129,9 @@ export const StaffPage = () => {
     const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
     const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
     const [loading, setLoading] = useState(true);
+    const [payModalStaffId, setPayModalStaffId] = useState<string | null>(null);
     const [staffPayments, setStaffPayments] = useState<Record<string, number>>({});
+    const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
     useEffect(() => {
         if (!accountId) return;
@@ -1181,13 +1243,7 @@ export const StaffPage = () => {
                             </h1>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => setIsPayModalOpen(true)}
-                                className="!w-auto py-3 rounded-2xl px-6 flex items-center gap-2.5 transition-all duration-300 self-start md:self-auto bg-white border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 font-bold shadow-sm hover:scale-[1.01] hover:-translate-y-px active:scale-99"
-                            >
-                                <Banknote size={18} className="stroke-[2.5]" />
-                                <span className="text-sm uppercase tracking-wider">{t('pay_salary') || 'Pay Salary'}</span>
-                            </button>
+
                             <button
                                 onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
                                 className="btn-glossy-blue !w-auto !py-3 px-6 flex items-center gap-2.5 transition-all duration-300 self-start md:self-auto hover:scale-[1.01] hover:-translate-y-px active:scale-99"
@@ -1236,112 +1292,143 @@ export const StaffPage = () => {
                     </div>
 
                     {/* Grid */}
-                    {loading ? (
+                    {loading ?
                         <div className="text-center py-20 text-slate-400">{t('loading') || 'Loading...'}</div>
-                    ) : filteredStaff.length === 0 ? (
-                        <div className="flex-1 flex items-center justify-center p-12">
-                            <EmptyState
-                                message={t('no_staff_found') || "No staff members found"}
-                                action={
-                                    <button
-                                        onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
-                                        className="btn-glossy-blue !py-4 !px-8 text-base font-bold shadow-lg hover:shadow-blue-500/25 hover:scale-105 active:scale-95 transition-all duration-200"
+                        : filteredStaff.length === 0 ?
+                            <div className="flex-1 flex items-center justify-center p-12">
+                                <EmptyState
+                                    message={t('no_staff_found') || "No staff members found"}
+                                    action={
+                                        <button
+                                            onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
+                                            className="btn-glossy-blue !py-4 !px-8 text-base font-bold shadow-lg hover:shadow-blue-500/25 hover:scale-105 active:scale-95 transition-all duration-200"
+                                        >
+                                            <Plus className="w-5 h-5 mr-2" strokeWidth={3} />
+                                            {t('add_first_staff') || "Add Your First Staff Member"}
+                                        </button>
+                                    }
+                                />
+                            </div>
+                            :
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                                {filteredStaff.map((staff) => (
+                                    <div
+                                        key={staff.id}
+                                        onClick={() => setSelectedStaff(staff)}
+                                        className="bg-white rounded-[2rem] border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative group overflow-visible cursor-pointer"
                                     >
-                                        <Plus className="w-5 h-5 mr-2" strokeWidth={3} />
-                                        {t('add_first_staff') || "Add Your First Staff Member"}
-                                    </button>
-                                }
-                            />
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-                            {filteredStaff.map(staff => (
-                                <div
-                                    key={staff.id}
-                                    onClick={() => setSelectedStaff(staff)}
-                                    className="bg-white rounded-[2rem] border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 cursor-pointer relative group overflow-hidden"
-                                >
-                                    {/* Top accent gradient */}
-                                    <div className="h-24 relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50/50">
-                                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,rgba(59,130,246,0.05),transparent_50%)]" />
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-[4rem] -mr-8 -mt-8" />
-                                    </div>
 
-                                    {/* Avatar — overlaps the accent bar */}
-                                    <div className="flex justify-center -mt-12 relative z-10">
-                                        <div className="relative">
-                                            <div className="w-[88px] h-[88px] rounded-[1.5rem] overflow-hidden bg-white shadow-lg ring-[4px] ring-white">
-                                                {staff.imageUrl ? (
-                                                    <img src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-gradient-to-br from-blue-50 to-indigo-50 text-3xl">
-                                                        {staff.fullName.charAt(0)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            {/* Status Indicator */}
-                                            <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-[3.5px] border-white flex items-center justify-center shadow-sm z-20 ${staff.status === 'active' ? 'bg-emerald-500' :
-                                                staff.status === 'on_leave' ? 'bg-amber-400' : 'bg-slate-300'
-                                                }`}>
-                                                {staff.status === 'active' && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                    {/* Name + Role */}
-                                    <div className="text-center px-6 pt-5 pb-6">
-                                        <h3 className="font-bold text-slate-900 text-lg leading-tight truncate group-hover:text-blue-600 transition-colors duration-200">
-                                            {staff.fullName}
-                                        </h3>
-                                        <div className="mt-3 flex justify-center">
-                                            <span className="inline-flex items-center justify-center px-4 py-1.5 bg-blue-50 text-blue-600 text-[11px] font-extrabold uppercase tracking-widest rounded-lg">
-                                                {t(`role_${staff.role}`) || staff.role}
-                                            </span>
-                                        </div>
-                                    </div>
+                                        {/* Top accent gradient - Simplified for accessibility */}
+                                        <div
+                                            onClick={() => setSelectedStaff(staff)}
+                                            className="h-24 relative overflow-hidden bg-slate-100 cursor-pointer rounded-t-[2rem]"
+                                        />
 
-                                    {/* Stat Chips */}
-                                    <div className="px-5 pb-6">
-                                        <div className="flex gap-3">
-                                            {/* Salary Chip */}
-                                            <div className="flex-1 bg-slate-50/80 rounded-2xl p-4 border border-slate-100/60">
-                                                <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1.5">{t('salary')}</p>
-                                                <div className="flex items-baseline gap-1">
-                                                    <p className="font-black text-slate-900 text-base leading-none">
-                                                        {staff.salary?.toLocaleString()}
-                                                    </p>
-                                                    <span className="text-[9px] text-slate-400 font-bold">UZS</span>
+                                        {/* Avatar */}
+                                        <div
+                                            onClick={() => setSelectedStaff(staff)}
+                                            className="flex justify-center -mt-12 relative z-10 cursor-pointer"
+                                        >
+                                            <div className="relative">
+                                                <div className="w-[88px] h-[88px] rounded-[1.5rem] overflow-hidden bg-white shadow-lg ring-[4px] ring-white">
+                                                    {staff.imageUrl ? (
+                                                        <img src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-gradient-to-br from-blue-50 to-indigo-50 text-3xl">
+                                                            {staff.fullName.charAt(0)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {/* Status Indicator with white border */}
+                                                <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-[3.5px] border-white flex items-center justify-center shadow-sm z-20 ${staff.status === 'active' ? 'bg-emerald-500' :
+                                                    staff.status === 'on_leave' ? 'bg-amber-400' : 'bg-slate-300'
+                                                    }`}>
+                                                    {staff.status === 'active' && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
                                                 </div>
                                             </div>
-                                            {/* Phone Chip */}
-                                            <div className="flex-1 bg-slate-50/80 rounded-2xl p-4 border border-slate-100/60">
-                                                <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1.5">{t('phone')}</p>
-                                                <p className="font-bold text-slate-700 text-[13px] leading-none truncate">{staff.phone || '—'}</p>
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="px-6 pt-4 pb-6">
+                                            {/* Name + Role */}
+                                            <div className="text-center mb-6" onClick={() => setSelectedStaff(staff)}>
+                                                <h3 className="font-bold text-slate-900 text-lg leading-tight truncate capitalize group-hover:text-blue-600 transition-colors duration-200 cursor-pointer">
+                                                    {staff.fullName}
+                                                </h3>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1.5">
+                                                    {t(`role_${staff.role}`) || staff.role}
+                                                </p>
+                                            </div>
+
+                                            {/* Clean Data Layout */}
+                                            {/* Data & Actions */}
+                                            <div className="space-y-4">
+                                                {/* Salary */}
+                                                <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-white text-emerald-600 flex items-center justify-center shadow-sm">
+                                                            <Banknote size={16} className="stroke-[2.5]" />
+                                                        </div>
+                                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('salary')}</span>
+                                                    </div>
+                                                    <div className="font-bold text-slate-900">
+                                                        {staff.salary?.toLocaleString()} <span className="text-[10px] text-slate-400 font-extrabold ml-0.5">UZS</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Phone (Full Width) */}
+                                                <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-white text-blue-600 flex items-center justify-center shadow-sm">
+                                                            <Phone size={16} className="stroke-[2.5]" />
+                                                        </div>
+                                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('phone')}</span>
+                                                    </div>
+                                                    <div className="font-bold text-slate-900 text-sm">
+                                                        {staff.phone || '—'}
+                                                    </div>
+                                                </div>
+
+                                                {/* Pay Button */}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setPayModalStaffId(staff.id);
+                                                        setIsPayModalOpen(true);
+                                                    }}
+                                                    className="btn-glossy-emerald uppercase"
+                                                >
+                                                    <Banknote size={18} className="stroke-[2.5]" />
+                                                    {t('pay_salary') || "Oylik To'lash"}
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                ))}
+                            </div>
+                    }
+
+
+                    <StaffModal
+                        isOpen={isModalOpen}
+                        onClose={() => { setIsModalOpen(false); setEditingStaff(null); }}
+                        onSave={handleSave}
+                        initialData={editingStaff}
+                    />
+
+                    <PaySalaryModal
+                        isOpen={isPayModalOpen}
+                        onClose={() => { setIsPayModalOpen(false); setPayModalStaffId(null); }}
+                        staffList={staffList}
+                        accountId={accountId || ''}
+                        onSuccess={() => {
+                            success(t('salary_paid') || 'Salary Paid', t('salary_paid_msg') || 'Salary payment recorded successfully');
+                        }}
+                        initialStaffId={payModalStaffId}
+                    />
                 </>
             )}
-            <StaffModal
-                isOpen={isModalOpen}
-                onClose={() => { setIsModalOpen(false); setEditingStaff(null); }}
-                onSave={handleSave}
-                initialData={editingStaff}
-            />
-
-            <PaySalaryModal
-                isOpen={isPayModalOpen}
-                onClose={() => setIsPayModalOpen(false)}
-                staffList={staffList}
-                accountId={accountId || ''}
-                onSuccess={() => {
-                    success(t('salary_paid') || 'Salary Paid', t('salary_paid_msg') || 'Salary payment recorded successfully');
-                }}
-            />
-        </div >
+        </div>
     );
 };

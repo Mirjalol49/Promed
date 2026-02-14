@@ -337,15 +337,15 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                     <div className="bg-gray-100 p-1.5 rounded-xl flex w-full mb-8">
                         <button
                             onClick={() => setType('income')}
-                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm ${type === 'income' ? 'bg-emerald-500 text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm ${type === 'income' ? 'btn-glossy-emerald' : 'text-gray-500 hover:text-gray-700'}`}
                         >
-                            {t('income') || 'Kirim'}
+                            <span className="relative z-10">{t('income') || 'Kirim'}</span>
                         </button>
                         <button
                             onClick={() => setType('expense')}
-                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm ${type === 'expense' ? 'bg-rose-500 text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm ${type === 'expense' ? 'btn-glossy-rose' : 'text-gray-500 hover:text-gray-700'}`}
                         >
-                            {t('expense') || 'Xarajat'}
+                            <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
                         </button>
                     </div>
 

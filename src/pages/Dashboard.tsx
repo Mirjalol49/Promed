@@ -7,6 +7,9 @@ import {
     Bell,
     Syringe,
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { uz, ru, enUS } from 'date-fns/locale';
+import { formatCompactNumber, formatCurrency } from '../lib/formatters';
 import { StatCard, InjectionAppointmentWidget } from '../features/dashboard/Widgets';
 import { DashboardScheduler } from '../features/dashboard/DashboardScheduler';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -25,6 +28,7 @@ interface DashboardProps {
         active: number;
         upcoming: number;
         newThisMonth: number;
+        monthlyRevenue: number;
     };
     onNewPatient: () => void;
     onUploadPhoto: () => void;
@@ -41,8 +45,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
     patients,
     isLoading
 }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { subscriptionStatus } = useAccount();
+
+    const localeMap = {
+        uz: uz,
+        ru: ru,
+        en: enUS
+    };
+    const currentLocale = localeMap[language as keyof typeof localeMap] || enUS;
+    const currentMonth = format(new Date(), 'MMMM', { locale: currentLocale });
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -50,6 +62,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const todaysOperationsCount = patients.filter(p =>
         p.operationDate && new Date(p.operationDate).toDateString() === new Date().toDateString()
     ).length;
+
+
 
     return (
         <div className="relative">
@@ -65,34 +79,50 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         </div>
                         {t('overview')}
                     </h3>
-                    <div id="stats-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div id="stats-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                        {/* 1. Revenue (Financials First) */}
+                        <StatCard
+                            label={t('total_revenue') || 'Jami Tushum'}
+                            value={formatCompactNumber(stats.monthlyRevenue || 0)}
+                            icon={Activity}
+                            colorClass="bg-indigo-600"
+                            shadowColor=""
+                            isLoading={isLoading}
+                            subtext={currentMonth.toUpperCase()}
+                            tooltipText={formatCurrency(stats.monthlyRevenue || 0, 'UZS')}
+                        />
+
+                        {/* 2. Operations (Core Business) */}
                         <StatCard
                             label={t('operation')}
                             value={todaysOperationsCount}
                             icon={Activity}
-                            mascotImg={operationIcon}
                             colorClass="bg-rose-500"
                             shadowColor=""
                             isLoading={isLoading}
+                            subtext={t('today') || 'BUGUN'}
                         />
+
+                        {/* 3. Injections (Volume Business) */}
                         <StatCard
                             label={t('injection')}
                             value={stats.upcoming}
                             icon={Syringe}
-                            mascotImg={injectionIcon}
-                            colorClass="bg-promed-primary"
+                            colorClass="bg-blue-600"
                             shadowColor=""
-                            imgClassName="translate-x-2 md:translate-x-4"
                             isLoading={isLoading}
+                            subtext={t('upcoming_patients') || 'KUTILAYOTGAN'}
                         />
+
+                        {/* 4. Growth (New Blood) */}
                         <StatCard
-                            label={t('patients')}
-                            value={stats.active}
+                            label={t('new_patients_stat') || 'Yangi Bemorlar'}
+                            value={stats.newThisMonth}
                             icon={Users}
-                            mascotImg={patientsIcon}
-                            colorClass="bg-[hsl(160,100%,30%)]"
+                            colorClass="bg-emerald-500"
                             shadowColor=""
                             isLoading={isLoading}
+                            subtext={currentMonth.toUpperCase()}
                         />
                     </div>
                 </div>

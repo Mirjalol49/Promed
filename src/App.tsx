@@ -19,7 +19,7 @@ import Layout from './components/layout/Layout';
 import { AdminRoute } from './components/layout/AdminRoute';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Users, UserPlus, Calendar, Activity, Bell, Shield, Smartphone, Lock, ArrowRight, LogOut, Eye, EyeOff } from 'lucide-react';
-import { Patient, PageView, InjectionStatus, PatientImage } from './types';
+import { Patient, PageView, InjectionStatus, PatientImage, Transaction } from './types';
 import { useLanguage } from './contexts/LanguageContext';
 import { useAccount } from './contexts/AccountContext';
 import { useToast } from './contexts/ToastContext';
@@ -36,7 +36,7 @@ import {
   COLUMNS,
 } from './lib/patientService';
 import { subscribeToUserProfile, updateUserProfile } from './lib/userService';
-import { addTransaction } from './lib/financeService';
+import { addTransaction, subscribeToTransactions, calculateStats } from './lib/financeService';
 import { uploadImage, uploadAvatar, setOptimisticImage, getOptimisticImage } from './lib/imageService';
 import { ProfileAvatar } from './components/layout/ProfileAvatar';
 import { useImagePreloader } from './lib/useImagePreloader';
@@ -234,6 +234,7 @@ const App: React.FC = () => {
   });
 
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -453,6 +454,7 @@ const App: React.FC = () => {
   useEffect(() => {
     let mounted = true;
     let patientSubscription: (() => void) | null = null;
+    let transactionSubscription: (() => void) | null = null;
 
     if (!accountId) {
       console.log("⏳ [Subscription] Waiting for accountId...");
@@ -467,29 +469,27 @@ const App: React.FC = () => {
       accountId,
       (updatedPatients) => {
         if (mounted) {
-          console.log("✅ [Subscription] Data received. Count:", updatedPatients.length);
+          console.log("✅ [Subscription] Patient Data received. Count:", updatedPatients.length);
           setPatients(prev => {
-            // 1. Filter out duplicates that arrived in the update
-            const incomingIds = new Set(updatedPatients.map(p => p.id));
+            // 1. Filter out duplicates that arrived in the update // No change
+            // 🔥 HARD DELETE PROTECTION: // No change
+            const filteredIncoming = updatedPatients; // Simplification for brevity in replacement, assuming original logic is preserved by careful target content selection or manual re-implementation if necessary.
+            // ACTUALLY, to avoid overwriting the complex logic, I should target specifically the insertion points.
+            // But since this tool replaces a block, I must be careful.
 
-            // 🔥 HARD DELETE PROTECTION: 
-            // 1. Filter out deleted patients
-            const filteredIncoming = updatedPatients
+            // Re-implementing the filter logic to be safe:
+            const filteredIncomingSafe = updatedPatients
               .filter(p => !pendingDeletes.has(p.id))
               .map(p => ({
                 ...p,
-                // 2. Filter out deleted injections within patients
                 injections: (p.injections || []).filter(inj => !pendingDeletes.has(inj.id)),
-                // 3. Filter out deleted photos within patients
                 afterImages: (p.afterImages || []).filter(img => !pendingDeletes.has(img.id))
               }));
 
-            // 2. Keep optimistic patients that haven't been "claimed" by a real ID yet
             const optimisticPatients = prev.filter(p =>
-              p.id.startsWith('temp-') && !filteredIncoming.find(up => up.phone === p.phone && up.fullName === p.fullName)
+              p.id.startsWith('temp-') && !filteredIncomingSafe.find(up => up.phone === p.phone && up.fullName === p.fullName)
             );
-
-            return [...optimisticPatients, ...filteredIncoming];
+            return [...optimisticPatients, ...filteredIncomingSafe];
           });
           setLoading(false);
         }
@@ -500,9 +500,20 @@ const App: React.FC = () => {
       }
     );
 
+    transactionSubscription = subscribeToTransactions(
+      accountId,
+      (txs) => {
+        if (mounted) {
+          console.log("✅ [Subscription] Transactions received. Count:", txs.length);
+          setTransactions(txs);
+        }
+      }
+    );
+
     return () => {
       mounted = false;
       if (patientSubscription) patientSubscription();
+      if (transactionSubscription) transactionSubscription();
     };
   }, [accountId]); // Depends strictly on accountId for correct data isolation
 
@@ -530,8 +541,17 @@ const App: React.FC = () => {
       return opDate.getMonth() === now.getMonth() && opDate.getFullYear() === now.getFullYear();
     }).length;
 
-    return { total, active, upcoming, newThisMonth: thisMonth };
-  }, [patients]);
+    // Calculate Monthly Revenue
+    const monthlyRevenue = transactions
+      .filter(t => {
+        if (!t.date || t.type !== 'income' || t.isVoided || t.returned) return false;
+        const tDate = new Date(t.date);
+        return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+      })
+      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+    return { total, active, upcoming, newThisMonth: thisMonth, monthlyRevenue };
+  }, [patients, transactions]);
 
   const filteredPatients = useMemo(() => {
     if (!searchQuery) return patients;
@@ -1113,7 +1133,8 @@ const App: React.FC = () => {
                 total: stats.total,
                 active: patients.length,
                 upcoming: (patients || []).flatMap(p => p.injections || []).filter(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date(new Date().setHours(0, 0, 0, 0))).length,
-                newThisMonth: stats.newThisMonth
+                newThisMonth: stats.newThisMonth,
+                monthlyRevenue: stats.monthlyRevenue
               }}
               onNewPatient={() => setView('ADD_PATIENT')}
               onUploadPhoto={() => console.log('Upload Photo Clicked')}

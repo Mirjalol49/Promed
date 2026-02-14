@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { format, isSameDay, isToday, addDays } from 'date-fns';
 import { uz, ru, enUS } from 'date-fns/locale';
+import Lottie from 'lottie-react';
+import dateAnimation from '../../assets/images/mascots/date.json';
 
 interface DashboardSchedulerProps {
     patients: Patient[];
@@ -162,29 +164,40 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                         <div>
                             <h2 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
                                 <span className="bg-promed-primary/10 p-2 rounded-xl text-promed-primary">
-                                    <User size={20} />
+                                    <Calendar size={20} />
                                 </span>
-                                {headerTitle}
+                                {t('schedule') || 'Jadval'}
                             </h2>
                         </div>
-                        <div className="flex items-center gap-3">
-                            {(!selectedDate || !isToday(selectedDate)) && (
-                                <button
-                                    onClick={() => setSelectedDate(new Date())}
-                                    className="btn-premium-blue !px-4 !py-1.5 !text-xs !rounded-lg hover:shadow-lg hover:shadow-indigo-500/20"
-                                >
-                                    {t('today') || "Today"}
-                                </button>
-                            )}
 
-                            {selectedDate && (
-                                <button
-                                    onClick={() => setSelectedDate(null)}
-                                    className="btn-premium-blue !px-4 !py-1.5 !text-xs !rounded-lg hover:shadow-lg hover:shadow-indigo-500/20"
-                                >
-                                    {t('see_all') || "Show All"}
-                                </button>
-                            )}
+                        {/* Segmented Control */}
+                        <div className="flex bg-slate-100/80 p-1 rounded-xl relative">
+                            {/* Bugun Tab */}
+                            <button
+                                onClick={() => setSelectedDate(new Date())}
+                                className={`relative z-10 px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-300 ${selectedDate && isToday(selectedDate)
+                                    ? 'bg-blue-600 text-white shadow-md'
+                                    : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                            >
+                                {t('today') || 'Bugun'}
+                            </button>
+
+                            {/* Kelgusi Tab */}
+                            <button
+                                onClick={() => setSelectedDate(null)}
+                                className={`relative z-10 px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-300 ${!selectedDate || (selectedDate && !isToday(selectedDate))
+                                    // Logic: If null (default upcoming) OR if a specific date is selected that is NOT today (e.g. tomorrow), 
+                                    // we might want to highlight this or just treat specific non-today dates as "not Bugun".
+                                    // For exact "Kelgusi" tab behavior (Show All List), strictly check !selectedDate.
+                                    // But if user selects tomorrow from calendar, this tab setup might be confusing. 
+                                    // Let's stick to the requested behavior: "Kelgusi" implies the "Upcoming List" view which corresponds to selectedDate === null.
+                                    ? (!selectedDate ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700')
+                                    : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                            >
+                                {t('upcoming') || 'Kelgusi'}
+                            </button>
                         </div>
                     </div>
 
@@ -266,7 +279,7 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                                         <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-3">
                                                             <span className={`
                                                                     hidden xl:flex px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider scale-95 origin-right
-                                                                    ${primaryEvent.type === 'Operation' ? 'bg-rose-50 text-rose-700' : 'bg-indigo-50 text-indigo-700'}
+                                                                    ${primaryEvent.type === 'Operation' ? 'bg-rose-50 text-rose-700' : 'bg-blue-50 text-blue-700'}
                                                                 `}>
                                                                 {t(primaryEvent.type.toLowerCase()) || primaryEvent.type}
                                                             </span>
@@ -276,7 +289,10 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                                                     e.stopPropagation();
                                                                     onViewPatient(patientId);
                                                                 }}
-                                                                className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-400 group-hover:bg-promed-primary group-hover:text-white transition-all duration-300"
+                                                                className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${primaryEvent.type === 'Operation'
+                                                                    ? 'bg-rose-50 text-rose-500 group-hover:bg-rose-500 group-hover:text-white'
+                                                                    : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
+                                                                    }`}
                                                             >
                                                                 <ChevronRight size={18} strokeWidth={2.5} className="md:w-5 md:h-5" />
                                                             </div>
@@ -293,9 +309,11 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                 })
                             ) : (
                                 <div
-                                    className="flex flex-col items-center justify-center h-[300px] text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/30"
+                                    className="flex flex-col items-center justify-center h-[300px] text-slate-400"
                                 >
-                                    <Calendar size={48} className="mb-4 text-slate-300" />
+                                    <div className="w-32 h-32 mb-2">
+                                        <Lottie animationData={dateAnimation} loop={true} />
+                                    </div>
                                     <p className="font-bold text-lg text-slate-500">{t('no_events_day') || 'No events for this day'}</p>
                                 </div>
                             )}

@@ -314,40 +314,40 @@ export const KanbanBoard: React.FC = () => {
                         <button
                             onClick={() => setActiveQuickFilter('today')}
                             className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeQuickFilter === 'today'
-                                ? 'bg-gradient-to-r from-promed-primary to-promed-dark text-white shadow-md shadow-promed-primary/30'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 border-transparent'
+                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                                 }`}
                         >
-                            <Calendar size={14} />
+                            <Calendar size={14} className={activeQuickFilter === 'today' ? 'text-white' : 'text-slate-500'} />
                             {t('filter_today_calls')}
                         </button>
 
                         <button
                             onClick={() => setActiveQuickFilter('week')}
                             className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeQuickFilter === 'week'
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md shadow-purple-500/30'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 border-transparent'
+                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                                 }`}
                         >
-                            <Clock size={14} />
+                            <Clock size={14} className={activeQuickFilter === 'week' ? 'text-white' : 'text-slate-500'} />
                             {t('filter_this_week')}
                         </button>
 
                         <button
                             onClick={() => setActiveQuickFilter('has_reminder')}
                             className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeQuickFilter === 'has_reminder'
-                                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md shadow-orange-500/30'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 border-transparent'
+                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                                 }`}
                         >
-                            <Bell size={14} />
+                            <Bell size={14} className={activeQuickFilter === 'has_reminder' ? 'text-white' : 'text-slate-500'} />
                             {t('filter_has_reminder')}
                         </button>
 
                         {hasActiveFilters && (
                             <button
                                 onClick={clearAllFilters}
-                                className="px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300"
+                                className="px-3 py-1.5 text-xs font-bold transition-all flex items-center gap-1.5 text-red-500 hover:text-red-600 hover:underline"
                             >
                                 <X size={14} />
                                 {t('filter_clear_all')}
@@ -372,8 +372,8 @@ export const KanbanBoard: React.FC = () => {
                                 key={key}
                                 onClick={() => toggleSourceFilter(key)}
                                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${selectedSources.includes(key)
-                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/30'
-                                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 border-transparent'
+                                    : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                                     }`}
                             >
                                 {label}

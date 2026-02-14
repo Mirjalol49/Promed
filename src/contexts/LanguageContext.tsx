@@ -8,6 +8,8 @@ export const translations = {
   en: {
     loading: "Loading...",
     loading_pleasewait: "Hold tight, good things are coming...",
+    no_chat_selected: "No chat selected",
+    select_patient_msg: "Select a patient from the left menu to view message history.",
     // Navigation
     management: "Management",
     files: "Files",
@@ -28,6 +30,7 @@ export const translations = {
     search: "Search...",
     dr_name: "Account Owner",
     total_patients: "Total Patients",
+    total_revenue: "Total Revenue",
     new_patients_stat: "New Patients",
     total_appointments: "Total Appointments",
     requests: "Requests",
@@ -85,6 +88,8 @@ export const translations = {
     add_new_patient: "Add New Patient",
     journey_of_recovery: "Journey of Recovery",
     today: "Today",
+    schedule: "Schedule",
+    upcoming: "Upcoming",
     years: "Years",
     no_image: "No Image",
     no_progress: "No progress photos yet.",
@@ -548,6 +553,7 @@ export const translations = {
     select_staff: "Select Staff",
     staff_member_label: "Staff",
     pay_salary: "Pay Salary",
+    pay_all_salaries: "Pay All Salaries",
     salary_paid: "Salary Paid",
     salary_paid_msg: "Salary payment recorded successfully",
     enter_amount: "Enter amount",
@@ -560,6 +566,8 @@ export const translations = {
   uz: {
     loading: "Yuklanmoqda...",
     loading_pleasewait: "Barchasi nazorat ostida, ozgina kuting...",
+    no_chat_selected: "Suhbat tanlanmagan",
+    select_patient_msg: "Xabarlar tarixini ko‘rish uchun chap menyudan bemorni tanlang.",
     // Navigation
     management: "Boshqaruv",
     files: "Fayllar",
@@ -580,6 +588,7 @@ export const translations = {
     search: "Qidirish...",
     dr_name: "Akaunt Egasi",
     total_patients: "Jami Bemorlar",
+    total_revenue: "Jami Tushum",
     new_patients_stat: "Yangi Bemorlar",
     total_appointments: "Jami Uchrashuvlar",
     requests: "So'rovlar",
@@ -637,6 +646,8 @@ export const translations = {
     add_new_patient: "Yangi Bemor Qo'shish",
     journey_of_recovery: "Tiklanish sayohati",
     today: "Bugun",
+    schedule: "Jadval",
+    upcoming: "Kelgusi",
     years: "Yosh",
     no_image: "Rasm yo'q",
     no_progress: "Hozircha jarayon rasmlari yo'q.",
@@ -1124,6 +1135,7 @@ export const translations = {
     select_staff: "Xodim tanlash",
     staff_member_label: "Xodim",
     pay_salary: "Oylik To'lash",
+    pay_all_salaries: "Barchasiga To'lash",
     salary_paid: "Oylik To'landi",
     salary_paid_msg: "Oylik muvaffaqiyatli belgilandi",
     enter_amount: "Miqdorni kiriting",
@@ -1136,6 +1148,8 @@ export const translations = {
   ru: {
     loading: "Загрузка...",
     loading_pleasewait: "Все под контролем, ожидайте...",
+    no_chat_selected: "Чат не выбран",
+    select_patient_msg: "Выберите пациента из левого меню, чтобы просмотреть историю сообщений.",
     // Navigation
     management: "Управление",
     files: "Файлы",
@@ -1532,6 +1546,7 @@ export const translations = {
 
     // Staff
     staff_management: "Управление Персоналом",
+    pay_all_salaries: "Выплатить всем",
     staff_subtitle: "Управление членами команды и ролями",
     add_staff: "Добавить Сотрудника",
     search_staff: "Поиск по имени или роли...",

@@ -97,7 +97,7 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
                     const dummyDate = new Date(2024, 0, 1 + i);
                     const dayName = format(dummyDate, 'EE', { locale: currentLocale });
                     return (
-                        <div key={day} className="text-center text-[11px] font-black text-promed-primary opacity-80 uppercase tracking-wider py-2">
+                        <div key={day} className="text-center text-[11px] font-black text-blue-600 opacity-80 uppercase tracking-wider py-2">
                             {dayName}
                         </div>
                     );
@@ -123,12 +123,12 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
                   w-10 h-10 rounded-xl flex flex-col items-center justify-center text-sm font-bold relative transition-all duration-300
                   ${!isCurrentMonth ? 'text-slate-300' : ''}
                   ${isSelected
-                                        ? (hasOperation ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30 scale-105 z-10' : 'bg-promed-primary text-white shadow-lg shadow-indigo-500/30 scale-105 z-10')
+                                        ? (hasOperation ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30 scale-105 z-10' : 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105 z-10')
                                         : (hasOperation && isCurrentMonth
                                             ? 'bg-rose-50 text-rose-600 font-extrabold shadow-sm ring-1 ring-rose-100 hover:bg-rose-100'
-                                            : 'text-slate-600 hover:bg-slate-50 hover:text-promed-primary')
+                                            : 'text-slate-600 hover:bg-slate-50 hover:text-blue-600')
                                     }
-                  ${isTodayDate && !isSelected && !hasOperation ? 'text-promed-primary ring-[1.5px] ring-promed-primary bg-promed-primary/5 font-black shadow-sm' : ''}
+                  ${isTodayDate && !isSelected && !hasOperation ? 'text-blue-600 ring-[1.5px] ring-blue-600 bg-blue-50 font-black shadow-sm' : ''}
                   ${isCurrentMonth && !isSelected && parseInt(format(day, 'd')) > 28 ? 'opacity-80' : ''}
                 `}
                             >
@@ -139,7 +139,7 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
                                     <div className="absolute bottom-1.5 flex gap-1 z-0">
                                         {/* Operation implies full card styling, so we don't need a dot for it anymore */}
                                         {hasInjection && (
-                                            <div className={`w-1.5 h-1.5 rounded-full ring-1 ring-white ${hasOperation ? 'bg-rose-200' : 'bg-promed-primary'}`} />
+                                            <div className={`w-1.5 h-1.5 rounded-full ring-1 ring-white ${hasOperation ? 'bg-rose-200' : 'bg-blue-600'}`} />
                                         )}
                                     </div>
                                 )}
@@ -156,14 +156,15 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
             </div>
 
             {/* Legend / Status - Solid High Contrast */}
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-4 border-t border-slate-100 pt-5">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500 shadow-md shadow-rose-200 ring-1 ring-rose-500">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                    <span className="text-[10px] md:text-[11px] font-bold text-white uppercase tracking-wide">{t('operation') || 'Operation'}</span>
+            {/* Legend / Status - Clean Dot Style */}
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-6 border-t border-slate-100 pt-5">
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-rose-500 ring-2 ring-rose-100" />
+                    <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">{t('operation') || 'Operation'}</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-promed-primary shadow-md shadow-indigo-200 ring-1 ring-promed-primary">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                    <span className="text-[10px] md:text-[11px] font-bold text-white uppercase tracking-wide">{t('injection') || 'Injection'}</span>
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-600 ring-2 ring-blue-100" />
+                    <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">{t('injection') || 'Injection'}</span>
                 </div>
             </div>
         </div>

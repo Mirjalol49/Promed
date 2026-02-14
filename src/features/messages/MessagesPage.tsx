@@ -18,6 +18,8 @@ import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, deleteD
 
 import { Play, Pause, Loader2 } from 'lucide-react';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
+import Lottie from 'lottie-react';
+import chatAnimation from '../../assets/images/mascots/chat.json';
 
 interface MessagesPageProps {
     patients?: Patient[];
@@ -146,6 +148,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     const messagesContentRef = useRef<HTMLDivElement>(null);
     const scrollMemory = useRef<Map<string, number>>(new Map());
     const justSwitchedRef = useRef(false);
+    const isUserSendingMessage = useRef(false); // Track user sending action
 
     // Moved scroll listener to onScroll prop for better React lifecycle integration
     const handleScroll = () => {
@@ -167,50 +170,50 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
 
     // Restore scroll after messages load or view switch
+    // Restore scroll after messages load or view switch
     useEffect(() => {
-        // Allow restore even if 0 messages? Maybe. But usually we need content.
-        // For Scheduled view, we might have 0 messages.
         if (!selectedPatientId || !messagesContentRef.current) return;
 
+        // Wait for messages to populate before restoring scroll (unless it's truly empty, handled below)
+        if (messages.length === 0 && !isScheduledView) return;
+
+        // If we just switched patients/views, attempt to restore position
         if (justSwitchedRef.current) {
-            // Restore saved position
             const key = `${selectedPatientId}_${isScheduledView ? 'sched' : 'chat'}`;
             const savedPos = scrollMemory.current.get(key);
 
             console.log(`📌 View switch (${isScheduledView ? 'Sched' : 'Chat'}) - saved position for ${selectedPatientId}:`, savedPos);
 
             if (savedPos !== undefined) {
-                // Has saved position - restore it
-                console.log(`📌 Restoring to ${savedPos}px`);
-
-                // RESTORE STRATEGY: 
-                // 1. Immediate try
-                if (messagesContentRef.current) messagesContentRef.current.scrollTop = savedPos;
-
-                // 2. Timeout try (for layout shifts)
-                setTimeout(() => {
-                    if (messagesContentRef.current) {
-                        messagesContentRef.current.scrollTop = savedPos;
-                        justSwitchedRef.current = false; // ✅ Enable saving ONLY after restore attempt
-                        console.log(`✅ Restored scroll finish`);
-                    }
-                }, 100);
-            } else {
-                // First time visiting or no saved pos
-                if (!isScheduledView) {
-                    // Chat: Scroll to bottom
-                    setTimeout(() => {
-                        messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+                // Restore saved position
+                if (messagesContentRef.current) {
+                    messagesContentRef.current.scrollTop = savedPos;
+                    // Double check in next frame ensures layout is stable
+                    requestAnimationFrame(() => {
+                        if (messagesContentRef.current) messagesContentRef.current.scrollTop = savedPos;
                         justSwitchedRef.current = false;
-                    }, 100);
+                    });
+                }
+            } else {
+                // First time visiting: Scroll to bottom for Chat, Top for Scheduled
+                if (!isScheduledView) {
+                    messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+                    justSwitchedRef.current = false;
                 } else {
-                    // Scheduled: Scroll to top
                     if (messagesContentRef.current) messagesContentRef.current.scrollTop = 0;
                     justSwitchedRef.current = false;
                 }
             }
         }
-    }, [messages, selectedPatientId, isScheduledView]); // justSwitchedRef check handles the logic flow
+        // If NOT switching views, check if we should auto-scroll due to USER sending a message
+        else if (isUserSendingMessage.current) {
+            const lastMsg = messages[messages.length - 1];
+            if (lastMsg && lastMsg.sender === 'doctor' && !isScheduledView) {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                isUserSendingMessage.current = false; // Reset flag
+            }
+        }
+    }, [messages, selectedPatientId, isScheduledView]);
 
     // Fetch Messages (with Pagination & Local Cache)
     useEffect(() => {
@@ -336,6 +339,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
 
     // NEW: Mark messages as SEEN in Firestore (Batched) - Only when page is visible
+    // NEW: Mark messages as SEEN in Firestore (Batched) - Only when page is visible
     useEffect(() => {
         if (!selectedPatientId || messages.length === 0) return;
 
@@ -358,17 +362,9 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             batch.commit().catch(e => console.error("Error marking seen", e));
         }
 
-        // AUTO-SCROLL: If the latest message is from ME (doctor), scroll to bottom
-        // This handles the "When I send a message, it must scroll down" requirement
-        const lastMsg = messages[messages.length - 1];
-        if (lastMsg && lastMsg.sender === 'doctor' && !isScheduledView) {
-            // Use a small timeout to ensure DOM is ready (bubble rendered)
-            setTimeout(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-        }
+        // Removed conflicting auto-scroll logic here. Now handled in the main restoration useEffect using isUserSendingMessage ref.
 
-    }, [messages, selectedPatientId, isVisible, isScheduledView]);
+    }, [messages, selectedPatientId, isVisible]);
 
     // NEW: Self-heal inconsistent sidebar times (Backfill lastMessageTimestamp)
     useEffect(() => {
@@ -420,6 +416,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
         }
 
         setIsSending(true);
+        isUserSendingMessage.current = true; // Set flag to trigger auto-scroll on update
         try {
             const now = new Date();
             const messageData: any = {
@@ -1335,11 +1332,16 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                         </div>
                     </>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50">
-                        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-slate-100">
-                            <User size={48} className="text-slate-300" />
+                    <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/50 p-6">
+                        <div className="w-[150px] md:w-[200px] opacity-80 mb-4 grayscale-[10%]">
+                            <Lottie animationData={chatAnimation} loop={true} />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-700 mb-2">{t('patient_list')}</h3>
+                        <h3 className="text-xl font-bold text-slate-700 mb-2 text-center">
+                            {t('no_chat_selected') || 'Suhbat tanlanmagan'}
+                        </h3>
+                        <p className="text-slate-400 text-sm max-w-xs text-center font-medium leading-relaxed">
+                            {t('select_patient_msg') || 'Xabarlar tarixini ko‘rish uchun chap menyudan bemorni tanlang.'}
+                        </p>
                     </div>
                 )}
             </div>

@@ -177,6 +177,12 @@ select:focus {
     z-index: 1;
 }
 
+.btn-glossy-blue:hover::before {
+    height: 50%;
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
 .btn-glossy-blue:hover {
     filter: brightness(1.1);
     transform: translateY(-2px);
@@ -192,7 +198,7 @@ select:focus {
         inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.btn-glossy-blue span {
+.btn-glossy-blue>* {
     @apply relative z-10;
 }
 
@@ -731,4 +737,94 @@ select:focus {
     border-bottom-left-radius: 12px;
     z-index: -1;
     clip-path: polygon(0 100%, 100% 100%, 0 0);
+}/* Emerald Glossy Button (Income) */
+.btn-glossy-emerald {
+    @apply relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg text-white text-base font-bold transition-all duration-300 overflow-hidden;
+
+    /* Emerald Gradient */
+    background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+
+    /* Premium Depth & Glow */
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.btn-glossy-emerald::before {
+    content: '';
+    @apply absolute inset-x-0 top-0 h-[45%] pointer-events-none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
+    border-radius: inherit;
+    z-index: 1;
+}
+
+.btn-glossy-emerald:hover::before {
+    height: 50%;
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.btn-glossy-emerald:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.btn-glossy-emerald:active {
+    transform: scale(0.98);
+    box-shadow:
+        0 4px 6px -1px rgba(6, 78, 59, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-glossy-emerald>* {
+    @apply relative z-10;
+}
+
+/* Rose Glossy Button (Expense) */
+.btn-glossy-rose {
+    @apply relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg text-white text-base font-bold transition-all duration-300 overflow-hidden;
+
+    /* Rose Gradient */
+    background: linear-gradient(180deg, #fb7185 0%, #e11d48 100%);
+
+    /* Premium Depth & Glow */
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.btn-glossy-rose::before {
+    content: '';
+    @apply absolute inset-x-0 top-0 h-[45%] pointer-events-none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
+    border-radius: inherit;
+    z-index: 1;
+}
+
+.btn-glossy-rose:hover::before {
+    height: 50%;
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.btn-glossy-rose:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.btn-glossy-rose:active {
+    transform: scale(0.98);
+    box-shadow:
+        0 4px 6px -1px rgba(136, 19, 55, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-glossy-rose>* {
+    @apply relative z-10;
 }

@@ -323,7 +323,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                         className="btn-glossy-blue !w-auto !py-3 px-6 flex items-center gap-2"
                     >
                         <Plus className="w-5 h-5 stroke-[3]" />
-                        {t('add_transaction') || 'Tranzaksiya'}
+                        <span className="relative z-10">{t('add_transaction') || 'Tranzaksiya'}</span>
                     </button>
                 </div>
             </div >
@@ -716,56 +716,66 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                 >
                     {/* --- FILTER TOOLBAR --- */}
                     <div className="p-4 md:p-6 border-b border-slate-200">
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4">
-                            {/* Search - Spans 4 columns */}
-                            {/* Category Filter - Spans 3 columns (reduced from 4) */}
-                            <div className="md:col-span-3 h-[52px]">
-                                <CustomSelect
-                                    value={txCategoryFilter}
-                                    onChange={(val) => setTxCategoryFilter(val)}
-                                    options={[
-                                        { value: 'all', label: t('all_categories') || 'All Categories' },
-                                        ...(txTypeFilter === 'all' || txTypeFilter === 'income' ? incomeCategories.map(c => ({ value: c, label: t(c.toLowerCase()) || c.charAt(0).toUpperCase() + c.slice(1) })) : []),
-                                        ...(txTypeFilter === 'all' || txTypeFilter === 'expense' ? expenseCategories.map(c => ({ value: c, label: t(c.toLowerCase()) || c.charAt(0).toUpperCase() + c.slice(1) })) : []),
-                                        { value: 'other', label: t('other') || 'Other' }
-                                    ]}
-                                    placeholder={t('filter_by_category') || "Filter by Category"}
-                                    searchable // Enable search inside the dropdown for convenience
-                                />
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
 
-                            {/* Date Range - Spans 6 columns (increased from 5) */}
-                            <div className="md:col-span-6 flex items-center gap-0 bg-slate-50 border border-slate-300 rounded-2xl p-1 h-[52px] hover:border-slate-400 transition-colors w-full overflow-hidden">
-                                <div className="flex-1 min-w-0">
-                                    <CustomDatePicker
-                                        value={startDate}
-                                        onChange={setStartDate}
-                                        minimal // Add a minimal prop to remove default styling if needed, or we just rely on the component
-                                    />
-                                </div>
-                                <div className="w-px h-6 bg-slate-300 shrink-0 mx-1" />
-                                <div className="flex-1 min-w-0">
-                                    <CustomDatePicker
-                                        value={endDate}
-                                        onChange={setEndDate}
-                                        minimal
+                            {/* Category Filter */}
+                            <div className="md:col-span-3 flex flex-col gap-1.5">
+                                <label className="text-xs font-medium text-gray-500 ml-1">Kategoriya</label>
+                                <div className="h-[52px]">
+                                    <CustomSelect
+                                        value={txCategoryFilter}
+                                        onChange={(val) => setTxCategoryFilter(val)}
+                                        options={[
+                                            { value: 'all', label: t('all_categories') || 'All Categories' },
+                                            ...(txTypeFilter === 'all' || txTypeFilter === 'income' ? incomeCategories.map(c => ({ value: c, label: t(c.toLowerCase()) || c.charAt(0).toUpperCase() + c.slice(1) })) : []),
+                                            ...(txTypeFilter === 'all' || txTypeFilter === 'expense' ? expenseCategories.map(c => ({ value: c, label: t(c.toLowerCase()) || c.charAt(0).toUpperCase() + c.slice(1) })) : []),
+                                            { value: 'other', label: t('other') || 'Other' }
+                                        ]}
+                                        placeholder={t('filter_by_category') || "Filter by Category"}
+                                        searchable
                                     />
                                 </div>
                             </div>
 
-                            {/* Type Filter - Spans 3 columns */}
-                            <div className="md:col-span-3 h-[52px]">
-                                <CustomSelect
-                                    value={txTypeFilter}
-                                    onChange={(val) => setTxTypeFilter(val as any)}
-                                    options={[
-                                        { value: 'all', label: t('all_types') || 'All Types' },
-                                        { value: 'income', label: t('income_only') || 'Income Only' },
-                                        { value: 'expense', label: t('expense_only') || 'Expense Only' }
-                                    ]}
-                                    placeholder={t('all_types') || "Type"}
-                                />
+                            {/* Date Range */}
+                            <div className="md:col-span-6 flex flex-col gap-1.5">
+                                <label className="text-xs font-medium text-gray-500 ml-1">Vaqt Oralig‘i</label>
+                                <div className="flex items-center gap-0 bg-slate-50 border border-slate-300 rounded-2xl p-1 h-[52px] hover:border-slate-400 transition-colors w-full overflow-hidden">
+                                    <div className="flex-1 min-w-0">
+                                        <CustomDatePicker
+                                            value={startDate}
+                                            onChange={setStartDate}
+                                            minimal
+                                        />
+                                    </div>
+                                    <div className="w-px h-6 bg-slate-300 shrink-0 mx-1" />
+                                    <div className="flex-1 min-w-0">
+                                        <CustomDatePicker
+                                            value={endDate}
+                                            onChange={setEndDate}
+                                            minimal
+                                        />
+                                    </div>
+                                </div>
                             </div>
+
+                            {/* Type Filter */}
+                            <div className="md:col-span-3 flex flex-col gap-1.5">
+                                <label className="text-xs font-medium text-gray-500 ml-1">O‘tkazma Turi</label>
+                                <div className="h-[52px]">
+                                    <CustomSelect
+                                        value={txTypeFilter}
+                                        onChange={(val) => setTxTypeFilter(val as any)}
+                                        options={[
+                                            { value: 'all', label: t('all_types') || 'All Types' },
+                                            { value: 'income', label: t('income_only') || 'Income Only' },
+                                            { value: 'expense', label: t('expense_only') || 'Expense Only' }
+                                        ]}
+                                        placeholder={t('all_types') || "Type"}
+                                    />
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 
