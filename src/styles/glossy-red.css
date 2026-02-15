@@ -1,0 +1,45 @@
+/* Red Glossy Button (Expense - Deep Red) */
+.btn-glossy-red {
+    @apply relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg text-white text-base font-bold transition-all duration-300 overflow-hidden;
+
+    /* Red Gradient */
+    background: linear-gradient(180deg, hsl(0, 84%, 60%) 0%, hsl(0, 84%, 45%) 100%);
+
+    /* Premium Depth & Glow */
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.btn-glossy-red::before {
+    content: '';
+    @apply absolute inset-x-0 top-0 h-[45%] pointer-events-none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
+    border-radius: inherit;
+    z-index: 1;
+}
+
+.btn-glossy-red:hover::before {
+    height: 50%;
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.btn-glossy-red:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.btn-glossy-red:active {
+    transform: scale(0.98);
+    box-shadow:
+        0 4px 6px -1px rgba(185, 28, 28, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-glossy-red>* {
+    @apply relative z-10;
+}

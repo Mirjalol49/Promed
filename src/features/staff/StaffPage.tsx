@@ -5,12 +5,12 @@ import { useAccount } from '../../contexts/AccountContext';
 import { Staff, StaffRole } from '../../types';
 import { subscribeToStaff, addStaff, updateStaff, deleteStaff } from '../../lib/staffService';
 import { uploadImage, setOptimisticImage, getOptimisticImage } from '../../lib/imageService';
-import { getStaffPaymentHistory, addTransaction } from '../../lib/financeService';
+import { getStaffPaymentHistory, addTransaction, deleteTransaction, restoreTransaction } from '../../lib/financeService';
 import { useToast } from '../../contexts/ToastContext';
 import {
     Users, Plus, Search, Phone, Mail, DollarSign, Trash2, Edit2,
     MoreVertical, Calendar, Briefcase, User, X, ChevronLeft, ChevronDown, Activity,
-    Clock, Camera, PlusCircle, Loader2, Check, ArrowLeft, Banknote, ChevronRight
+    Clock, Camera, PlusCircle, Loader2, Check, ArrowLeft, Banknote, ChevronRight, RotateCcw
 } from 'lucide-react';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
 
@@ -116,226 +116,250 @@ const StaffModal = ({
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                 <div
                     onClick={onClose}
-                    className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                    className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"
                 />
-                <div
-                    className="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-[0_30px_100px_rgba(0,0,0,0.15)] relative z-10 flex flex-col md:flex-row min-h-[500px] max-h-[90vh] overflow-y-auto md:overflow-hidden"
-                >
-                    {/* Sticky Close Button (Overlay) */}
-                    <div className="sticky top-0 z-50 flex justify-end p-6 pointer-events-none h-0 overflow-visible">
+
+                {/* Modal Container */}
+                <div className="bg-slate-200 rounded-3xl w-full max-w-2xl shadow-2xl relative z-10 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+
+                    {/* Header */}
+                    <div className="px-8 py-5 flex items-center justify-between bg-slate-200 sticky top-0 z-20 rounded-t-3xl border-b border-white/50">
+                        <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+                            {initialData ? t('edit_staff') : t('add_new_staff')}
+                        </h2>
                         <button
                             onClick={onClose}
-                            className="bg-slate-100/90 backdrop-blur-sm hover:bg-slate-200 text-slate-500 rounded-full p-2 transition-colors pointer-events-auto shadow-sm ring-1 ring-slate-200/50"
+                            className="bg-white/50 hover:bg-white text-slate-500 hover:text-slate-700 rounded-full p-2 transition-all"
                         >
                             <X size={20} />
                         </button>
                     </div>
 
-                    {/* Left Side: Avatar & Basic Info */}
-                    <div className="w-full md:w-2/5 p-6 md:p-10 bg-slate-50 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-100 relative rounded-t-[2.5rem] md:rounded-l-[2.5rem] md:rounded-tr-none shrink-0">
-                        <div className="relative group mb-8">
-                            <div
-                                onClick={() => fileInputRef.current?.click()}
-                                className="w-40 h-40 rounded-[2.5rem] bg-white border-2 border-dashed border-slate-200 flex items-center justify-center relative overflow-hidden cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all shadow-sm group-hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                {(imageFile || initialData?.imageUrl) ? (
-                                    <img
-                                        src={imageFile ? URL.createObjectURL(imageFile) : initialData?.imageUrl}
-                                        className="w-full h-full object-cover"
-                                        alt="Staff"
-                                    />
-                                ) : (
-                                    <div className="flex flex-col items-center gap-2 text-slate-300 group-hover:text-blue-400 transition-colors">
-                                        <Camera size={32} strokeWidth={1.5} />
+                    {/* Scrollable Content */}
+                    <div className="overflow-y-auto p-8 custom-scrollbar">
+                        <form id="staff-form" onSubmit={handleSubmit} className="space-y-8">
+
+                            {/* Photo Section - Centered */}
+                            <div className="flex flex-col items-center">
+                                <div className="relative group">
+                                    <div
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="w-32 h-32 rounded-full bg-white border-4 border-white shadow-lg ring-1 ring-slate-200 flex items-center justify-center relative overflow-hidden cursor-pointer group-hover:ring-blue-300 transition-all"
+                                    >
+                                        {(imageFile || initialData?.imageUrl) ? (
+                                            <img
+                                                src={imageFile ? URL.createObjectURL(imageFile) : initialData?.imageUrl}
+                                                className="w-full h-full object-cover"
+                                                alt="Staff"
+                                            />
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-1 text-slate-300 group-hover:text-blue-500 transition-colors">
+                                                <Camera size={32} strokeWidth={1.5} />
+                                            </div>
+                                        )}
+                                        {/* Overlay text on hover */}
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                        </div>
                                     </div>
-                                )}
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        if (e.target.files?.[0]) setImageFile(e.target.files[0]);
-                                    }}
-                                />
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="absolute -bottom-3 -right-3 w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 border-4 border-white hover:bg-blue-700 hover:scale-110 transition-all"
-                            >
-                                <Plus size={24} strokeWidth={3} />
-                            </button>
-                        </div>
-                        <h3 className="font-black text-2xl text-slate-900 tracking-tight text-center mb-1">
-                            {initialData ? t('edit_staff') : t('add_new_staff')}
-                        </h3>
-                    </div>
 
-                    {/* Right Side: Detailed Fields */}
-                    <form onSubmit={handleSubmit} className="w-full md:w-3/5 p-6 md:p-10 flex flex-col justify-center overflow-y-auto">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-1">{t('first_name')}</label>
-                                <input
-                                    required
-                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 transition-all outline-none"
-                                    value={formData.firstName}
-                                    onChange={e => setFormData({ ...formData, firstName: e.target.value })}
-                                    placeholder="Mirjalol"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-1">{t('last_name')}</label>
-                                <input
-                                    required
-                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 transition-all outline-none"
-                                    value={formData.lastName}
-                                    onChange={e => setFormData({ ...formData, lastName: e.target.value })}
-                                    placeholder="Shamsiddinov"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-1">{t('role')}</label>
-                                <div className="relative" ref={roleRef}>
                                     <button
                                         type="button"
-                                        onClick={() => setIsRoleOpen(!isRoleOpen)}
-                                        className={`w-full bg-white border rounded-2xl py-3.5 px-5 text-slate-900 font-bold flex items-center justify-between outline-none transition-all ${isRoleOpen ? 'border-blue-400 ring-[3px] ring-blue-500/5' : 'border-slate-200 hover:border-slate-300'}`}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="absolute bottom-1 right-1 w-9 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-md border-[3px] border-white transition-transform hover:scale-110 active:scale-95"
                                     >
-                                        <span className="flex items-center gap-2">
-                                            {t(`role_${formData.role}`) || formData.role?.charAt(0).toUpperCase() + formData.role?.slice(1)}
-                                        </span>
-                                        <ChevronDown size={18} className={`text-slate-400 transition-transform duration-200 ${isRoleOpen ? 'rotate-180' : ''}`} />
+                                        <Plus size={18} strokeWidth={3} />
                                     </button>
 
-                                    {isRoleOpen && (
-                                        <div
-                                            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 shadow-[0_20px_60px_rgba(0,0,0,0.12)] z-50 overflow-hidden"
-                                        >
-                                            {roles.map((r) => (
-                                                <button
-                                                    key={r}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setFormData({ ...formData, role: r });
-                                                        setIsRoleOpen(false);
-                                                    }}
-                                                    className={`w-full text-left px-5 py-3 font-bold text-sm transition-colors flex items-center justify-between ${formData.role === r ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'}`}
-                                                >
-                                                    <span>{t(`role_${r}`) || r.charAt(0).toUpperCase() + r.slice(1)}</span>
-                                                    {formData.role === r && <Check size={16} />}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-1">{t('phone')}</label>
-                                <input
-                                    required
-                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 transition-all outline-none"
-                                    value={formData.phone}
-                                    onChange={e => {
-                                        let val = e.target.value;
-                                        // Ensure it starts with +998
-                                        if (!val.startsWith('+998')) {
-                                            if (val.startsWith('998')) val = '+' + val;
-                                            else val = '+998' + val.replace(/\D/g, '');
-                                        }
-
-                                        // Strip everything except + and digits
-                                        const clean = val.replace(/[^\d+]/g, '');
-
-                                        // Format: +998XX XXX XX XX
-                                        let formatted = clean;
-                                        if (clean.length > 6) {
-                                            formatted = clean.slice(0, 6) + ' ' + clean.slice(6);
-                                        }
-                                        if (clean.length > 9) {
-                                            formatted = formatted.slice(0, 10) + ' ' + clean.slice(9);
-                                        }
-                                        if (clean.length > 11) {
-                                            formatted = formatted.slice(0, 13) + ' ' + clean.slice(11);
-                                        }
-
-                                        setFormData({ ...formData, phone: formatted.slice(0, 17) });
-                                    }}
-                                    placeholder="+998XX XXX XX XX"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div className={initialData ? "space-y-2" : "space-y-2 col-span-2"}>
-                                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-1">{t('salary')}</label>
-                                <div className="relative">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">UZS</div>
                                     <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 pl-12 pr-5 text-slate-900 font-bold focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 transition-all outline-none"
-                                        value={formData.salary ? new Intl.NumberFormat('uz-UZ').format(Number(formData.salary)) : ''}
-                                        onChange={e => {
-                                            const val = e.target.value.replace(/[^0-9]/g, '');
-                                            setFormData({ ...formData, salary: val ? Number(val) : 0 });
+                                        ref={fileInputRef}
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            if (e.target.files?.[0]) setImageFile(e.target.files[0]);
                                         }}
-                                        placeholder="0"
                                     />
                                 </div>
+                                <p className="mt-3 text-xs font-semibold text-slate-400">
+                                    {t('upload_photo') || 'Upload Photo'}
+                                </p>
                             </div>
 
-                            {initialData && (
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('status')}</label>
-                                    <div className="flex bg-slate-100/50 p-1 rounded-xl gap-1 h-[46px] items-center">
-                                        {['active', 'on_leave', 'terminated'].map((s) => (
-                                            <button
-                                                key={s}
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, status: s as any })}
-                                                className={`flex-1 h-full rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${formData.status === s
-                                                    ? 'bg-white shadow-sm text-blue-600'
-                                                    : 'text-slate-400 hover:text-slate-600'}`}
+                            {/* Form Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                                {/* First Name */}
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">{t('first_name')}</label>
+                                    <input
+                                        required
+                                        className="w-full bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl py-3 px-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-400"
+                                        value={formData.firstName}
+                                        onChange={e => setFormData({ ...formData, firstName: e.target.value })}
+                                        placeholder="Mirjalol"
+                                    />
+                                </div>
+                                {/* Last Name */}
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">{t('last_name')}</label>
+                                    <input
+                                        required
+                                        className="w-full bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl py-3 px-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-400"
+                                        value={formData.lastName}
+                                        onChange={e => setFormData({ ...formData, lastName: e.target.value })}
+                                        placeholder="Shamsiddinov"
+                                    />
+                                </div>
+
+                                {/* Role */}
+                                <div className="space-y-1.5 relative z-10">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">{t('role')}</label>
+                                    <div className="relative" ref={roleRef}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsRoleOpen(!isRoleOpen)}
+                                            className={`w-full bg-white shadow-sm border rounded-xl py-3 px-4 text-slate-900 font-bold flex items-center justify-between outline-none transition-all ${isRoleOpen ? 'bg-white border-blue-500 ring-4 ring-blue-500/10' : 'border-transparent hover:border-slate-200'}`}
+                                        >
+                                            <span className="flex items-center gap-2 capitalize">
+                                                {t(`role_${formData.role}`) || formData.role}
+                                            </span>
+                                            <ChevronDown size={18} className={`text-slate-400 transition-transform duration-200 ${isRoleOpen ? 'rotate-180' : ''}`} />
+                                        </button>
+
+                                        {isRoleOpen && (
+                                            <div
+                                                className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100"
                                             >
-                                                {t(`status_${s}`)?.split(' ')[0] || s.split('_')[0]}
-                                            </button>
-                                        ))}
+                                                {roles.map((r) => (
+                                                    <button
+                                                        key={r}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setFormData({ ...formData, role: r });
+                                                            setIsRoleOpen(false);
+                                                        }}
+                                                        className={`w-full text-left px-4 py-3 font-bold text-sm transition-colors flex items-center justify-between ${formData.role === r ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                    >
+                                                        <span className="capitalize">{t(`role_${r}`) || r}</span>
+                                                        {formData.role === r && <Check size={16} className="text-blue-600" />}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            )}
-                        </div>
 
-                        <div className="space-y-2 mb-8">
-                            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider ml-1">{t('notes')}</label>
-                            <textarea
-                                className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 transition-all outline-none resize-none"
-                                rows={2}
-                                value={formData.notes || ''}
-                                onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                placeholder="..."
-                            />
-                        </div>
+                                {/* Phone */}
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">{t('phone')}</label>
+                                    <input
+                                        required
+                                        className="w-full bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl py-3 px-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-400"
+                                        value={formData.phone}
+                                        onChange={e => {
+                                            let val = e.target.value;
+                                            if (!val.startsWith('+998')) {
+                                                if (val.startsWith('998')) val = '+' + val;
+                                                else val = '+998' + val.replace(/\D/g, '');
+                                            }
+                                            const clean = val.replace(/[^\d+]/g, '');
+                                            let formatted = clean;
+                                            if (clean.length > 6) formatted = clean.slice(0, 6) + ' ' + clean.slice(6);
+                                            if (clean.length > 9) formatted = formatted.slice(0, 10) + ' ' + clean.slice(9);
+                                            if (clean.length > 11) formatted = formatted.slice(0, 13) + ' ' + clean.slice(11);
+                                            setFormData({ ...formData, phone: formatted.slice(0, 17) });
+                                        }}
+                                        placeholder="+998XX XXX XX XX"
+                                    />
+                                </div>
 
+                                {/* Salary & Status Row */}
+                                <div className={initialData ? "space-y-1.5" : "space-y-1.5 col-span-2"}>
+                                    <label className="text-sm font-bold text-slate-700 ml-1">{t('salary')}</label>
+                                    <div className="relative">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">UZS</div>
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            className="w-full bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl py-3 pl-12 pr-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                                            value={formData.salary ? new Intl.NumberFormat('uz-UZ').format(Number(formData.salary)) : ''}
+                                            onChange={e => {
+                                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                                setFormData({ ...formData, salary: val ? Number(val) : 0 });
+                                            }}
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                </div>
+
+                                {initialData && (
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-bold text-slate-700 ml-1">{t('status')}</label>
+                                        <div className="flex bg-white shadow-sm p-1.5 rounded-xl border border-transparent gap-1.5 h-[52px]">
+                                            {['active', 'on_leave', 'terminated'].map((s) => {
+                                                const isActive = formData.status === s;
+                                                let activeClass = '';
+                                                if (isActive) {
+                                                    if (s === 'active') activeClass = 'bg-white text-emerald-600 shadow-sm ring-1 ring-emerald-500/20';
+                                                    else if (s === 'on_leave') activeClass = 'bg-white text-amber-600 shadow-sm ring-1 ring-amber-500/20';
+                                                    else activeClass = 'bg-white text-rose-600 shadow-sm ring-1 ring-rose-500/20';
+                                                } else {
+                                                    activeClass = 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50';
+                                                }
+
+                                                return (
+                                                    <button
+                                                        key={s}
+                                                        type="button"
+                                                        onClick={() => setFormData({ ...formData, status: s as any })}
+                                                        className={`flex-1 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${activeClass}`}
+                                                    >
+                                                        {t(`status_${s}`)?.split(' ')[0] || s}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Notes */}
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-bold text-slate-700 ml-1">{t('notes')}</label>
+                                <textarea
+                                    className="w-full bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl py-3 px-4 text-slate-900 font-medium placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none"
+                                    rows={3}
+                                    value={formData.notes || ''}
+                                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                    placeholder={t('notes_placeholder') || "Write some notes..."}
+                                />
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="p-6 border-t border-white/50 bg-slate-200 flex justify-end gap-3 rounded-b-3xl">
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={onClose}
+                            className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200/50 hover:text-slate-700 transition-colors"
+                        >
+                            {t('cancel')}
+                        </button>
+                        <button
+                            onClick={handleSubmit}
                             disabled={loading}
-                            className="btn-glossy-blue !py-5 !text-sm !uppercase !tracking-widest disabled:opacity-70 hover:-translate-y-0.5 active:scale-[0.98] transition-transform"
+                            className="btn-glossy-blue !w-auto !px-8 !py-3 !rounded-xl text-sm font-bold shadow-blue-500/20"
                         >
                             {loading ? (
                                 <ButtonLoader />
                             ) : (
-                                <>
-                                    {initialData ? <Edit2 size={18} /> : <Plus size={18} />}
-                                    <span className="relative z-10">{initialData ? t('update_staff') : t('save_staff')}</span>
-                                </>
+                                <span className="flex items-center gap-2">
+                                    {initialData ? <Edit2 size={16} /> : <Plus size={16} strokeWidth={3} />}
+                                    {initialData ? t('update_staff') : t('save_staff')}
+                                </span>
                             )}
                         </button>
-                    </form>
+                    </div>
                 </div>
             </div>
         </Portal>
@@ -658,7 +682,7 @@ const PaySalaryModal = ({
                         <button
                             type="submit"
                             disabled={loading || !selectedStaffId || !amount}
-                            className="btn-premium-emerald w-full !py-4 text-sm uppercase tracking-widest flex items-center justify-center gap-2.5 shadow-lg hover:-translate-y-0.5 active:scale-[0.98] transition-transform"
+                            className="btn-glossy-emerald w-full !py-4 text-base uppercase tracking-wide flex items-center justify-center gap-2.5 shadow-lg"
                         >
                             {loading ? (
                                 <ButtonLoader />
@@ -680,20 +704,24 @@ const StaffDetail = ({
     staff,
     onBack,
     onStatusChange,
-    onEdit
+    onEdit,
+    onPay
 }: {
     staff: Staff;
     onBack: () => void;
     onStatusChange?: (staffId: string, newStatus: string) => Promise<void>;
     onEdit: () => void;
+    onPay?: () => void;
 }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     // Removed tabs, single view logic
     const [payments, setPayments] = useState<any[]>([]);
     const [loadingPayments, setLoadingPayments] = useState(true);
     const [selectedMonth, setSelectedMonth] = useState<string>('all');
     const [showStatusMenu, setShowStatusMenu] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
+
+    const { success, error: toastError } = useToast();
 
     // Fetch payments
     useEffect(() => {
@@ -712,6 +740,27 @@ const StaffDetail = ({
         );
         return () => unsub();
     }, [staff?.id]);
+
+    const handleDeleteTransaction = async (paymentId: string) => {
+        if (!window.confirm(t('delete_confirmation') || 'Are you sure?')) return;
+        try {
+            await deleteTransaction(paymentId);
+            success(t('deleted') || 'Deleted', t('transaction_deleted') || 'Transaction deleted');
+        } catch (err: any) {
+            console.error(err);
+            toastError(t('error') || 'Error', err.message);
+        }
+    };
+
+    const handleRestoreTransaction = async (paymentId: string) => {
+        try {
+            await restoreTransaction(paymentId);
+            success(t('restored') || 'Restored', t('transaction_restored') || 'Transaction restored');
+        } catch (err: any) {
+            console.error(err);
+            toastError(t('error') || 'Error', err.message);
+        }
+    };
 
     const handleStatusChange = async (newStatus: string) => {
         if (!onStatusChange || !staff?.id || newStatus === staff.status) {
@@ -736,12 +785,15 @@ const StaffDetail = ({
     ];
     const currentStatus = statusOptions.find(s => s.value === staff.status) || statusOptions[0];
 
+    // Helper for capitalization
+    const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
     // Group payments by month
     const paymentsByMonth = useMemo(() => {
         return payments.reduce((acc, payment) => {
             const date = new Date(payment.date);
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            const monthLabel = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            const monthLabel = capitalize(date.toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US', { month: 'long', year: 'numeric' }));
 
             if (!acc[monthKey]) {
                 acc[monthKey] = {
@@ -752,11 +804,13 @@ const StaffDetail = ({
             }
 
             acc[monthKey].payments.push(payment);
-            acc[monthKey].total += Number(payment.amount) || 0;
+            if (!payment.isVoided) {
+                acc[monthKey].total += Number(payment.amount) || 0;
+            }
 
             return acc;
         }, {} as Record<string, { label: string; payments: any[]; total: number }>);
-    }, [payments]);
+    }, [payments, language]);
 
     const months = Object.keys(paymentsByMonth).sort().reverse();
     const filteredPayments = selectedMonth === 'all'
@@ -769,13 +823,13 @@ const StaffDetail = ({
     const paymentStats = useMemo(() => {
         const now = new Date();
         const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        const currentMonth = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const currentMonth = capitalize(now.toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US', { month: 'long', year: 'numeric' }));
 
-        // Filter payments for current month only
+        // Filter payments for current month only AND not voided
         const currentMonthPayments = payments.filter(p => {
             const paymentDate = new Date(p.date);
             const paymentMonthKey = `${paymentDate.getFullYear()}-${String(paymentDate.getMonth() + 1).padStart(2, '0')}`;
-            return paymentMonthKey === currentMonthKey;
+            return paymentMonthKey === currentMonthKey && !p.isVoided;
         });
 
         const totalPaidThisMonth = currentMonthPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
@@ -816,301 +870,276 @@ const StaffDetail = ({
             statusLabel,
             progressColor
         };
-    }, [payments, staff.salary, t]);
+    }, [payments, staff.salary, t, language]);
+
+    const monthOptions = useMemo(() => {
+        const uniqueMonths = [...months];
+        const opts = [
+            { value: 'all', label: t('all_time') || 'All Time' }
+        ];
+
+        uniqueMonths.forEach(m => {
+            try {
+                const date = new Date(m + '-01');
+                opts.push({
+                    value: m,
+                    label: capitalize(date.toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US', { month: 'long', year: 'numeric' }))
+                });
+            } catch (e) {
+                opts.push({ value: m, label: m });
+            }
+        });
+
+        return opts;
+    }, [months, t, language]);
 
     return (
-        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-            <button onClick={onBack} className="flex items-center space-x-2 text-slate-500 hover:text-blue-600 transition mb-2 font-bold hover:-translate-x-1 duration-200 px-1">
-                <ChevronLeft size={20} />
-                <span>{t('back_to_list') || 'Back to List'}</span>
-            </button>
+        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+            {/* Navigation */}
+            <div className="flex items-center justify-between">
+                <button
+                    onClick={onBack}
+                    className="flex items-center space-x-2 text-slate-500 hover:text-slate-800 transition mb-2 font-bold hover:-translate-x-1 duration-200 px-1"
+                >
+                    <ChevronLeft size={20} />
+                    <span>{t('back_to_list') || 'Back to List'}</span>
+                </button>
+            </div>
 
-            {/* Header Info */}
-            <div className="bg-white rounded-3xl p-4 md:p-8 border border-slate-200 flex flex-col md:flex-row gap-8 relative overflow-hidden shadow-sm">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-
-                <div className="flex-shrink-0 relative w-40 h-40">
-                    {staff.imageUrl ? (
-                        <div className="w-full h-full rounded-2xl overflow-hidden ring-4 ring-white border border-slate-100 relative">
-                            <img src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
-                        </div>
-                    ) : (
-                        <div className="w-full h-full rounded-2xl flex items-center justify-center bg-slate-50 text-blue-500 text-4xl font-bold ring-4 ring-white border border-slate-100">
-                            {staff.fullName.charAt(0)}
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex-1 space-y-6 z-10">
-                    <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-                        <div>
-                            <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                                {staff.fullName}
-                            </h2>
-                            <div className="flex flex-wrap items-center gap-6 text-slate-600 mt-3">
-                                <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                                    <Calendar className="w-4 h-4 text-slate-400" />
-                                    <span className="font-semibold text-sm">Joined: {new Date().getFullYear()}</span>
-                                </span>
-                                <span className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                                    <Phone className="w-4 h-4 text-slate-400" />
-                                    <span className="font-semibold text-sm">{staff.phone}</span>
-                                </span>
+            {/* Header Info - Professional Layered Design */}
+            <div className="bg-white rounded-[2rem] p-6 border border-slate-200/60 shadow-sm flex flex-col gap-8">
+                {/* 1. Top Row: Identity & Actions */}
+                <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-6">
+                    {/* Identity */}
+                    <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                        <div className="relative group">
+                            {staff.imageUrl ? (
+                                <img
+                                    src={staff.imageUrl}
+                                    alt={staff.fullName}
+                                    className="w-24 h-24 object-cover rounded-[1.5rem] border-4 border-white shadow-lg group-hover:scale-105 transition-transform duration-300 ring-1 ring-slate-100"
+                                />
+                            ) : (
+                                <div className="w-24 h-24 rounded-[1.5rem] flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600 text-3xl font-bold border-4 border-white shadow-lg ring-1 ring-slate-100">
+                                    {staff.fullName.charAt(0)}
+                                </div>
+                            )}
+                            <div className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-[3px] border-white flex items-center justify-center shadow-md ${staff.status === 'active' ? 'bg-emerald-500' :
+                                staff.status === 'on_leave' ? 'bg-amber-500' : 'bg-slate-400'
+                                }`}>
+                                {staff.status === 'active' && <div className="w-2 h-2 bg-white rounded-full animate-pulse" />}
                             </div>
                         </div>
 
-                        <div className="flex items-center space-x-3 flex-shrink-0">
-                            <button
-                                onClick={onEdit}
-                                className="h-10 px-5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl flex items-center gap-2 transition-colors shadow-sm"
-                            >
-                                <Edit2 size={18} />
-                                <span>{t('edit') || 'Edit'}</span>
-                            </button>
-                            <div className="relative">
-                                <button
-                                    onClick={() => setShowStatusMenu(!showStatusMenu)}
-                                    className={`h-10 px-5 rounded-xl font-bold border transition-colors flex items-center gap-2 ${currentStatus.bgColor} ${currentStatus.textColor} border-transparent`}
-                                >
-                                    <span className={`w-2 h-2 rounded-full ${currentStatus.color}`} />
-                                    {t(`status_${staff.status}`)?.split(' ')[0] || staff.status}
-                                </button>
-                                {showStatusMenu && (
-                                    <>
-                                        <div className="fixed inset-0 z-30" onClick={() => setShowStatusMenu(false)} />
-                                        <div
-                                            className="absolute top-full mt-2 right-0 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-40 min-w-[140px]"
-                                        >
-                                            {statusOptions.map(option => (
-                                                <button
-                                                    key={option.value}
-                                                    onClick={() => handleStatusChange(option.value)}
-                                                    className={`w-full px-4 py-2 text-left text-xs font-bold uppercase tracking-wide flex items-center gap-2 hover:bg-slate-50 transition-colors ${option.value === staff.status ? 'text-blue-600' : 'text-slate-600'}`}
-                                                >
-                                                    <div className={`w-2 h-2 rounded-full ${option.color}`} />
-                                                    {option.label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
+                        <div className="space-y-2">
+                            <h2 className="text-3xl font-bold text-slate-900 tracking-tight leading-none">
+                                {staff.fullName}
+                            </h2>
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50/50 text-blue-700 text-[11px] font-black uppercase tracking-widest border border-blue-100/50">
+                                    <User size={12} strokeWidth={2.5} />
+                                    {t(`role_${staff.role}`) || staff.role}
+                                </span>
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-black uppercase tracking-widest border ${staff.status === 'active' ? 'bg-emerald-50/50 text-emerald-700 border-emerald-100/50' :
+                                    staff.status === 'on_leave' ? 'bg-amber-50/50 text-amber-700 border-amber-100/50' :
+                                        'bg-slate-50 text-slate-600 border-slate-100'
+                                    }`}>
+                                    {t(staff.status === 'active' ? 'active' : staff.status) || staff.status}
+                                </span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm">
-                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('role') || 'ROLE'}</p>
-                            <p className="font-bold text-xl text-slate-800 capitalize">{t(`role_${staff.role}`) || staff.role}</p>
+                    {/* Actions */}
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                        <button
+                            onClick={onEdit}
+                            className="flex-1 md:flex-none h-12 px-6 bg-slate-200 border border-slate-300 hover:bg-slate-300 hover:border-slate-400 text-slate-900 font-bold rounded-2xl text-sm transition-all active:scale-[0.98]"
+                        >
+                            {t('edit') || 'Edit'}
+                        </button>
+                        {onPay && (
+                            <button
+                                onClick={onPay}
+                                className="btn-glossy-emerald flex-1 md:flex-none md:w-auto h-12 px-8 rounded-2xl uppercase tracking-wide shadow-lg shadow-emerald-500/20"
+                            >
+                                <Banknote size={18} className="stroke-[2.5]" />
+                                <span className="font-black text-xs md:text-sm">{t('pay_salary') || "Oylik To'lash"}</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* 2. Bottom Row: Stats/Metrics - Phone & Salary */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-200 rounded-2xl p-4 flex items-center justify-between group border border-slate-300 hover:border-slate-400 transition-colors">
+                        <div>
+                            <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">{t('phone') || 'Phone'}</p>
+                            <p className="text-lg font-bold text-slate-800 tracking-tight">
+                                {staff.phone.replace(/(\+998)(\d{2})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5')}
+                            </p>
                         </div>
-                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm">
-                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('status') || 'STATUS'}</p>
-                            <p className={`font-bold text-xl ${currentStatus.textColor} capitalize`}>{t(`status_${staff.status}`)?.split(' ')[0] || staff.status}</p>
+                        <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-slate-500 group-hover:text-blue-600 transition-colors ring-1 ring-slate-200">
+                            <Phone size={20} strokeWidth={2} />
                         </div>
-                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm">
-                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('salary') || 'SALARY'}</p>
-                            <p className="font-bold text-xl text-slate-800">{staff.salary?.toLocaleString()}</p>
+                    </div>
+
+                    <div className="bg-slate-200 rounded-2xl p-4 flex items-center justify-between group border border-slate-300 hover:border-slate-400 transition-colors">
+                        <div>
+                            <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">{t('salary') || 'Salary'}</p>
+                            <p className="text-2xl font-black text-slate-900 tracking-tight leading-none">
+                                {staff.salary?.toLocaleString()}
+                                <span className="text-sm font-bold text-slate-600 ml-1.5">{staff.currency}</span>
+                            </p>
                         </div>
-                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm">
-                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('currency') || 'CURRENCY'}</p>
-                            <p className="font-bold text-xl text-slate-800">{staff.currency}</p>
+                        <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-slate-500 group-hover:text-emerald-600 transition-colors ring-1 ring-slate-200">
+                            <Banknote size={20} strokeWidth={2} />
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Payment Summary - Only show if not fully paid */}
-            {!paymentStats.isFullyPaid && (
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div className={`bg-white rounded-3xl border-2 ${paymentStats.statusBorderColor} overflow-hidden shadow-lg`}>
-                        <div className={`p-6 ${paymentStats.statusColor} border-b-2 ${paymentStats.statusBorderColor}`}>
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
-                                <div className="flex items-center gap-2">
-                                    <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
-                                        <DollarSign className={`w-5 h-5 ${paymentStats.statusTextColor}`} />
-                                        {t('payment_progress') || 'Payment Progress'} · {paymentStats.currentMonth}
-                                    </h3>
-                                    {paymentStats.currentMonthPayments.length > 0 && (
-                                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                                            <Clock className="w-3.5 h-3.5" />
-                                            <span className="font-semibold">
-                                                {t('last_payment') || 'Last Payment'}: {new Date(paymentStats.currentMonthPayments[0].date).toLocaleDateString()} • {paymentStats.currentMonthPayments[0].time || '--:--'}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${paymentStats.statusColor} ${paymentStats.statusTextColor} border ${paymentStats.statusBorderColor} self-start md:self-auto`}>
-                                    {paymentStats.statusLabel}
-                                </span>
-                            </div>
+            {/* Timeline (High Density Ledger) */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between px-2">
+                    <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+                        {t('payment_history') || 'Payment History'}
+                        {payments.length > 0 && (
+                            <span className="bg-slate-100 text-slate-500 text-xs font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
+                                {payments.length}
+                            </span>
+                        )}
+                    </h3>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                <div className="bg-white rounded-2xl p-4 border border-slate-200">
-                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('total_paid') || 'Total Paid'}</p>
-                                    <p className="font-bold text-2xl text-emerald-600">
-                                        {paymentStats.totalPaidThisMonth.toLocaleString()}
-                                        <span className="text-xs text-slate-400 ml-1">UZS</span>
-                                    </p>
-                                </div>
-
-                                <div className="bg-white rounded-2xl p-4 border border-slate-200">
-                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('salary') || 'Expected'}</p>
-                                    <p className="font-bold text-2xl text-slate-800">
-                                        {staff.salary?.toLocaleString()}
-                                        <span className="text-xs text-slate-400 ml-1">UZS</span>
-                                    </p>
-                                </div>
-
-                                <div className="bg-white rounded-2xl p-4 border border-slate-200">
-                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">{t('remaining_balance') || 'Remaining'}</p>
-                                    <p className={`font-bold text-2xl ${paymentStats.statusTextColor}`}>
-                                        {paymentStats.remaining.toLocaleString()}
-                                        <span className="text-xs text-slate-400 ml-1">UZS</span>
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Progress Bar */}
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center text-xs font-bold">
-                                    <span className="text-slate-600">{paymentStats.percentagePaid}% {t('completed') || 'Completed'}</span>
-                                    <span className={paymentStats.statusTextColor}>{paymentStats.statusLabel}</span>
-                                </div>
-                                <div className="w-full h-3 bg-white rounded-full overflow-hidden border border-slate-200 shadow-inner">
-                                    <div
-                                        style={{ width: `${paymentStats.percentagePaid}%`, transition: 'width 1s ease-out' }}
-                                        className={`h-full ${paymentStats.progressColor} rounded-full`}
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                    {/* Month Filter Dropdown */}
+                    <div className="w-56 h-10 bg-white border border-slate-200 rounded-xl relative z-20">
+                        <CustomSelect
+                            options={monthOptions}
+                            value={selectedMonth}
+                            onChange={setSelectedMonth}
+                            minimal={true}
+                        />
                     </div>
                 </div>
-            )}
 
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                {/* Timeline (Transactions) */}
-                <div className="w-full">
-                    <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
-                        <div className="border-b border-slate-100 bg-slate-50/50">
-                            <div className="p-6 pb-4 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <h3 className="font-bold text-lg text-slate-900">{t('payment_history') || 'Payment History'}</h3>
-                                    <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">{payments.length}</span>
-                                </div>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    {loadingPayments ? (
+                        <div className="flex justify-center py-16">
+                            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                        </div>
+                    ) : sortedPayments.length === 0 ? (
+                        <div className="text-center py-16">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Banknote className="text-slate-300" size={32} />
                             </div>
-
-                            {/* Month Filter Pills */}
-                            {months.length > 0 && (
-                                <div className="px-6 pb-4 flex gap-2 overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none' }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedMonth('all')}
-                                        className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 border-2 active:scale-95 ${selectedMonth === 'all'
-                                            ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
-                                            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                                            }`}
-                                    >
-                                        <Calendar size={13} className={selectedMonth === 'all' ? 'text-blue-200' : 'text-slate-400'} />
-                                        {t('all_time') || 'All'}
-                                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${selectedMonth === 'all'
-                                            ? 'bg-white/20 text-white'
-                                            : 'bg-slate-100 text-slate-500'
-                                            }`}>
-                                            {payments.length}
-                                        </span>
-                                    </button>
-
-                                    {months.map(monthKey => {
-                                        const isActive = selectedMonth === monthKey;
-                                        const monthData = paymentsByMonth[monthKey];
-                                        const date = new Date(monthKey + '-01');
-                                        const shortMonth = date.toLocaleDateString('en-US', { month: 'short' });
-                                        const year = date.getFullYear();
-                                        return (
-                                            <button
-                                                key={monthKey}
-                                                type="button"
-                                                onClick={() => setSelectedMonth(monthKey)}
-                                                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 border-2 active:scale-95 ${isActive
-                                                    ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
-                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                                                    }`}
-                                            >
-                                                <span className="capitalize">{shortMonth} {year}</span>
-                                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${isActive
-                                                    ? 'bg-white/20 text-white'
-                                                    : 'bg-slate-100 text-slate-500'
-                                                    }`}>
-                                                    {monthData.payments.length}
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                            <p className="text-slate-500 font-medium">{t('no_payments_found') || 'No payments recorded yet'}</p>
                         </div>
+                    ) : (
+                        <div className="min-w-full">
+                            {months.map(monthKey => {
+                                const monthData = paymentsByMonth[monthKey];
+                                if (!monthData || monthData.payments.length === 0) return null;
+                                if (selectedMonth !== 'all' && selectedMonth !== monthKey) return null;
 
-                        <div className="p-6 md:p-8">
-                            {loadingPayments ? (
-                                <div className="flex justify-center py-12">
-                                    <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
-                                </div>
-                            ) : sortedPayments.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <div className="w-48 h-48 mx-auto mb-4">
-                                        <Lottie animationData={emptyAnimation} loop={true} />
-                                    </div>
-                                    <h3 className="text-slate-900 font-bold text-lg mb-2">{t('no_payments_found') || 'No payments found'}</h3>
-                                </div>
-                            ) : (
-                                <div className="relative pl-8 space-y-8 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
-                                    {sortedPayments.map((payment, idx) => (
-                                        <div key={payment.id} className="relative">
-                                            {/* Timeline Node */}
-                                            <div className="absolute -left-[29px] top-4 w-6 h-6 rounded-full bg-emerald-100 border-[3px] border-white ring-1 ring-emerald-200 flex items-center justify-center z-10">
-                                                <Check size={12} className="text-emerald-600 stroke-[3]" />
-                                            </div>
-
-                                            {/* Card Content */}
-                                            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 hover:border-blue-200 hover:shadow-md transition-all group">
-                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <h4 className="font-bold text-slate-900 text-lg">
-                                                                {t('payment') || 'Payment'} #{sortedPayments.length - idx}
-                                                            </h4>
-                                                            <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border border-emerald-200">
-                                                                {t('paid') || 'PAID'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <Calendar size={12} />
-                                                                {new Date(payment.date).toLocaleDateString()}
-                                                            </div>
-                                                            <div className="flex items-center gap-1.5">
-                                                                <Clock size={12} />
-                                                                {payment.time || new Date(payment.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center justify-between md:justify-end gap-6 bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm">
-                                                        <div>
-                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{t('amount') || 'Amount'}</p>
-                                                            <p className="text-lg font-bold text-slate-900">
-                                                                {Number(payment.amount).toLocaleString()} <span className="text-xs text-slate-500">{payment.currency}</span>
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                return (
+                                    <div key={monthKey}>
+                                        {/* Sticky Month Header - Clean & Distinct */}
+                                        <div className="sticky top-0 bg-slate-50/95 backdrop-blur-md px-6 py-2.5 border-b border-slate-200/60 z-10 flex items-center justify-between group">
+                                            <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600 transition-colors">
+                                                {monthData.label}
+                                            </h4>
+                                            <span className="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">{monthData.payments.length} {t('records') || 'records'}</span>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+
+                                        {/* Ledger List */}
+                                        <div className="space-y-2 px-6 pb-6">
+                                            {monthData.payments.map((payment, idx) => {
+                                                const isVoided = !!payment.isVoided;
+                                                return (
+                                                    <div
+                                                        key={payment.id}
+                                                        className={`rounded-2xl p-4 flex items-center justify-between transition-colors group cursor-default border ${isVoided
+                                                            ? 'bg-slate-100 border-slate-200 opacity-60'
+                                                            : 'bg-slate-200/60 border-slate-300/60 hover:bg-slate-200 hover:border-slate-400'
+                                                            }`}
+                                                    >
+                                                        {/* Left: Icon & Info */}
+                                                        <div className="flex items-center gap-4">
+                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm transition-transform duration-300 ${isVoided
+                                                                ? 'bg-slate-50 text-slate-400 border-slate-100'
+                                                                : 'bg-white text-emerald-600 border-slate-200 group-hover:scale-110'
+                                                                }`}>
+                                                                <Banknote size={18} className="stroke-[2.5]" />
+                                                            </div>
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <p className={`font-bold text-sm leading-none capitalize transition-colors ${isVoided
+                                                                    ? 'text-slate-400 line-through decoration-slate-300'
+                                                                    : 'text-slate-900 group-hover:text-blue-600'
+                                                                    }`}>
+                                                                    {payment.description.startsWith('[Split]')
+                                                                        ? `${t('split_from') || '[Split] '}${payment.description.replace('[Split]', '').trim()}`
+                                                                        : (t(payment.description) || payment.description)}
+                                                                </p>
+                                                                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                                                                    <span>{new Date(payment.date).toLocaleDateString()}</span>
+                                                                    <span className="w-1 h-1 rounded-full bg-slate-400" />
+                                                                    <span>{payment.time || '—'}</span>
+                                                                    {isVoided && (
+                                                                        <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-200 text-[9px] font-bold uppercase text-slate-500 tracking-wider">
+                                                                            {t('voided') || 'BEKOR QILINGAN'}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Right: Amount & Buttons */}
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="text-right flex flex-col items-end gap-1">
+                                                                <p className={`font-bold text-base tabular-nums leading-none ${isVoided ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-900'
+                                                                    }`}>
+                                                                    {Number(payment.amount).toLocaleString()}
+                                                                    <span className={`text-[10px] font-extrabold ml-1 uppercase ${isVoided ? 'text-slate-300 no-underline' : 'text-slate-500'
+                                                                        }`}>{payment.currency}</span>
+                                                                </p>
+                                                                <div className={`flex items-center gap-1.5 transition-opacity ${isVoided ? 'opacity-50' : 'opacity-80 group-hover:opacity-100'
+                                                                    }`}>
+                                                                    <div className={`w-1.5 h-1.5 rounded-full ${isVoided ? 'bg-slate-400' : 'bg-emerald-500'}`}></div>
+                                                                    <span className={`text-[9px] font-bold uppercase tracking-wider ${isVoided ? 'text-slate-400' : 'text-emerald-700'
+                                                                        }`}>
+                                                                        {t('paid') || 'Paid'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Delete/Restore Buttons */}
+                                                            {isVoided ? (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleRestoreTransaction(payment.id); }}
+                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors bg-white border border-slate-200 shadow-sm"
+                                                                    title={t('restore') || 'Restore'}
+                                                                >
+                                                                    <RotateCcw size={16} strokeWidth={2.5} />
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleDeleteTransaction(payment.id); }}
+                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-500 hover:bg-white hover:border-rose-200 border border-transparent transition-all shadow-none hover:shadow-sm opacity-0 group-hover:opacity-100"
+                                                                    title={t('delete') || 'Delete'}
+                                                                >
+                                                                    <Trash2 size={16} strokeWidth={2.5} />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -1230,6 +1259,7 @@ export const StaffPage = () => {
                         success(t('status_updated_title') || 'Status Updated', t('status_updated_msg') || 'Staff status changed');
                     }}
                     onEdit={() => { setEditingStaff(selectedStaff); setIsModalOpen(true); }}
+                    onPay={() => { setPayModalStaffId(selectedStaff.id); setIsPayModalOpen(true); }}
                 />
             ) : (
                 <>
@@ -1410,25 +1440,26 @@ export const StaffPage = () => {
                     }
 
 
-                    <StaffModal
-                        isOpen={isModalOpen}
-                        onClose={() => { setIsModalOpen(false); setEditingStaff(null); }}
-                        onSave={handleSave}
-                        initialData={editingStaff}
-                    />
-
-                    <PaySalaryModal
-                        isOpen={isPayModalOpen}
-                        onClose={() => { setIsPayModalOpen(false); setPayModalStaffId(null); }}
-                        staffList={staffList}
-                        accountId={accountId || ''}
-                        onSuccess={() => {
-                            success(t('salary_paid') || 'Salary Paid', t('salary_paid_msg') || 'Salary payment recorded successfully');
-                        }}
-                        initialStaffId={payModalStaffId}
-                    />
                 </>
             )}
+
+            <StaffModal
+                isOpen={isModalOpen}
+                onClose={() => { setIsModalOpen(false); setEditingStaff(null); }}
+                onSave={handleSave}
+                initialData={editingStaff}
+            />
+
+            <PaySalaryModal
+                isOpen={isPayModalOpen}
+                onClose={() => { setIsPayModalOpen(false); setPayModalStaffId(null); }}
+                staffList={staffList}
+                accountId={accountId || ''}
+                onSuccess={() => {
+                    success(t('salary_paid') || 'Salary Paid', t('salary_paid_msg') || 'Salary payment recorded successfully');
+                }}
+                initialStaffId={payModalStaffId}
+            />
         </div>
     );
 };

@@ -343,7 +343,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                         </button>
                         <button
                             onClick={() => setType('expense')}
-                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm ${type === 'expense' ? 'btn-glossy-rose' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm ${type === 'expense' ? 'btn-glossy-red' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
                         </button>
@@ -573,7 +573,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                                 disabled={loading || !formData.amount || (type === 'income' && formData.category !== 'other' && !formData.patientId) || (type === 'expense' && formData.category === 'salary' && !formData.staffId)}
                                 className={`
                                     w-full !py-4 text-base uppercase tracking-wide shadow-lg
-                                    ${type === 'income' ? 'btn-premium-emerald' : 'btn-premium-red'}
+                                    ${type === 'income' ? 'btn-glossy-emerald' : 'btn-glossy-red'}
                                 `}
                             >
                                 {loading ? (t('saving') || 'Saving...') : (type === 'income' ? (t('confirm_income') || 'Kirimni Tasdiqlash') : (t('confirm_expense') || 'Chiqimni Tasdiqlash'))}

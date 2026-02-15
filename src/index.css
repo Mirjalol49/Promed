@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 @import './styles/magic-rainbow.css';
 @import './styles/liquid-glass.css';
+@import './styles/glossy-red.css';
 
 @tailwind base;
 @tailwind components;
@@ -737,12 +738,14 @@ select:focus {
     border-bottom-left-radius: 12px;
     z-index: -1;
     clip-path: polygon(0 100%, 100% 100%, 0 0);
-}/* Emerald Glossy Button (Income) */
+}
+
+/* Emerald Glossy Button (Income) */
 .btn-glossy-emerald {
     @apply relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg text-white text-base font-bold transition-all duration-300 overflow-hidden;
 
-    /* Emerald Gradient */
-    background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+    /* Emerald Gradient - Darker */
+    background: linear-gradient(180deg, #10b981 0%, #047857 100%);
 
     /* Premium Depth & Glow */
     box-shadow:

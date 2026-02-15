@@ -558,6 +558,9 @@ export const translations = {
     salary_paid_msg: "Salary payment recorded successfully",
     enter_amount: "Enter amount",
     salary_payment_desc: "Salary payment",
+    salary_payment: "Salary Payment",
+    records: "records",
+    split_from: "[Split] ",
 
 
 
@@ -1098,6 +1101,9 @@ export const translations = {
     no_messages_yet: "Hozircha xabarlar yo'q",
     load_more: "Yana yuklash",
     scheduled_for: "Rejalashtirilgan",
+    salary_payment: "Oylik to'lov",
+    records: "ta yozuv",
+    split_from: "[Bo'linma] ",
     no_scheduled_messages: "Rejalashtirilgan xabarlar yo'q",
     tab_chat: "Suhbat",
     tab_scheduled: "Rejalashtirilgan",
@@ -1649,6 +1655,9 @@ export const translations = {
     expense_only: "Только расходы",
     tab_chat: "Чат",
     tab_scheduled: "Запланировано",
+    salary_payment: "Выплата зарплаты",
+    records: "записей",
+    split_from: "[Сплит] ",
 
   }
 };
