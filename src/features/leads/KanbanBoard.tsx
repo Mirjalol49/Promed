@@ -37,6 +37,8 @@ import { EmptyState } from '../../components/ui/EmptyState';
 
 
 
+import { LeadCardSkeleton } from '../../components/ui/Skeletons';
+
 type QuickFilter = 'all' | 'today' | 'week' | 'has_reminder';
 
 export const KanbanBoard: React.FC = () => {
@@ -62,22 +64,31 @@ export const KanbanBoard: React.FC = () => {
     const [celebrationId, setCelebrationId] = useState<number | null>(null);
     const [celebrationOrigin, setCelebrationOrigin] = useState<{ x: number, y: number } | undefined>(undefined);
 
-    const { userId, isLoading: isAuthLoading } = useAccount();
+    const { userId, accountId, role, isLoading: isAuthLoading } = useAccount();
+    const isViewer = role === 'viewer';
 
-    // Initial Fetch (Real-time Subscription)
+    // One-time migration: backfill account_id on existing leads (admin/doctor only)
+    useEffect(() => {
+        if (!userId || !accountId || isAuthLoading) return;
+        if (role === 'admin' || role === 'doctor') {
+            leadService.migrateLeadsToAccountId(userId, accountId);
+        }
+    }, [userId, accountId, role, isAuthLoading]);
+
+    // Initial Fetch (Real-time Subscription) — uses accountId for multi-user sync
     useEffect(() => {
         // 1. Wait for Auth to initialize
         if (isAuthLoading) return;
 
         // 2. If Auth done but no User (should be handled by ProtectedRoute, but safe-guard here)
-        if (!userId) {
+        if (!accountId) {
             setIsLoading(false);
             return;
         }
 
-        // 3. User present -> Subscribe
+        // 3. User present -> Subscribe using accountId (enables call operators, nurses, viewers to see same data)
         const unsubscribe = leadService.subscribeToLeads(
-            userId,
+            accountId,
             (data) => {
                 setLeads(data);
                 setIsLoading(false);
@@ -88,7 +99,7 @@ export const KanbanBoard: React.FC = () => {
             }
         );
         return () => unsubscribe();
-    }, [userId, isAuthLoading]);
+    }, [accountId, isAuthLoading]);
 
     // Keep selectedLead in sync with latest lead data (for ANY changes)
     useEffect(() => {
@@ -102,6 +113,8 @@ export const KanbanBoard: React.FC = () => {
     }, [leads, selectedLead?.id]); // Only depend on leads and the ID to avoid infinite loop
 
     const handleStatusChange = async (id: string, newStatus: LeadStatus, origin?: { x: number, y: number }) => {
+        if (isViewer) return;
+
         // Optimistic Update
         const leadIndex = leads.findIndex(l => l.id === id);
         if (leadIndex === -1) return;
@@ -133,17 +146,20 @@ export const KanbanBoard: React.FC = () => {
     };
 
     const handleEdit = (lead: Lead) => {
+        if (isViewer) return;
         setLeadToEdit(lead);
         setAddModalOpen(true);
         // Keep detail modal open - edit modal will appear on top
     };
 
     const handleDelete = (lead: Lead) => {
+        if (isViewer) return;
         setLeadToDelete(lead);
         setIsDeleteModalOpen(true);
     };
 
     const handleConfirmDelete = async () => {
+        if (isViewer) return;
         if (leadToDelete) {
             try {
                 await leadService.deleteLead(leadToDelete.id);
@@ -288,16 +304,18 @@ export const KanbanBoard: React.FC = () => {
                             </div>
 
                             {/* Add Button */}
-                            <button
-                                onClick={() => {
-                                    setLeadToEdit(null);
-                                    setAddModalOpen(true);
-                                }}
-                                className="btn-premium-blue shadow-lg shadow-promed-primary/20 flex items-center justify-center gap-2 px-6 py-3 flex-shrink-0 whitespace-nowrap w-full md:w-auto"
-                            >
-                                <PlusCircle size={18} className="relative z-10" />
-                                <span className="font-bold">{t('add_btn')}</span>
-                            </button>
+                            {!isViewer && (
+                                <button
+                                    onClick={() => {
+                                        setLeadToEdit(null);
+                                        setAddModalOpen(true);
+                                    }}
+                                    className="btn-premium-blue shadow-lg shadow-promed-primary/20 flex items-center justify-center gap-2 px-6 py-3 flex-shrink-0 whitespace-nowrap w-full md:w-auto"
+                                >
+                                    <PlusCircle size={18} className="relative z-10" />
+                                    <span className="font-bold">{t('add_btn')}</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -415,8 +433,8 @@ export const KanbanBoard: React.FC = () => {
             <div className={`flex-1 overflow-x-visible w-full px-4 pt-3 ${activeLeads.length === 0 && !isLoading ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
                 {
                     isLoading ? (
-                        <div className="flex items-center justify-center h-40" >
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-40 pt-4 overflow-visible">
+                            <LeadCardSkeleton />
                         </div>
                     ) : activeLeads.length === 0 ? (
                         <div className="h-full">
@@ -439,6 +457,7 @@ export const KanbanBoard: React.FC = () => {
                                     }}
                                     onSelect={(lead) => setSelectedLead(lead)}
                                     layoutId={`lead-card-${lead.id}`}
+                                    isViewer={isViewer}
                                 />
                             ))}
                         </div>
@@ -541,6 +560,7 @@ export const KanbanBoard: React.FC = () => {
                         onEdit={handleEdit}
                         onDelete={handleDelete}
                         onStatusChange={handleStatusChange}
+                        isViewer={isViewer}
                     />
                 )}
             </AnimatePresence>

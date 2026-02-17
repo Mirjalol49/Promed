@@ -16,7 +16,7 @@ import happyIcon from '../../components/mascot/happy_mascot.png';
 
 
 interface LoginScreenProps {
-  onLogin: (accountId: string, userId: string, name: string, email: string, password?: string) => void;
+  onLogin: (accountId: string, userId: string, name: string, email: string, password?: string, role?: string) => void;
 }
 
 const languages: { code: Language; name: string; flag: string }[] = [
@@ -337,12 +337,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
     playUnlock();
     setTimeout(() => {
+      // Determines the correct Account ID
+      // If the user is a sub-user (viewer/seller), they MUST use the accountId from their profile.
+      // If they are a main doctor/admin, their accountId is usually based on their email/uid.
+      const targetAccountId = profileData.accountId || ('account_' + (user.email || user.uid));
+      const targetRole = profileData.role || 'doctor';
+
       onLogin(
-        'account_' + (user.email || user.uid),
+        targetAccountId,
         user.uid,
         profileData.fullName || user.displayName || 'User',
         profileData.email || user.email || '',
-        loginMode === 'email' ? pinCode.join('') : '' // Use pinCode.join('')
+        loginMode === 'email' ? pinCode.join('') : '', // Use pinCode.join('')
+        targetRole
       );
     }, 100);
   };

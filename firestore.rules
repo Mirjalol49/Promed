@@ -1,29 +1,133 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 💡 OPEN ACCESS FOR DEBUGGING
-    match /system_alerts/{alertId} {
-      allow read, write: if true;
+
+    // --- HELPER FUNCTIONS ---
+
+    function getRole() {
+      let doc = get(/databases/$(database)/documents/profiles/$(request.auth.uid));
+      let role = (doc != null && "role" in doc.data) ? doc.data.role : null;
+      
+      let legacyDoc = get(/databases/$(database)/documents/profiles/$("account_" + request.auth.uid));
+      let legacyRole = (legacyDoc != null && "role" in legacyDoc.data) ? legacyDoc.data.role : null;
+
+      return role != null ? role : (legacyRole != null ? legacyRole : 'viewer');
     }
-    match /notifications/{notificationId} {
-      allow read, write: if true;
+
+    function getUserAccountId() {
+       let doc = get(/databases/$(database)/documents/profiles/$(request.auth.uid));
+       let accountId = (doc != null && "account_id" in doc.data) ? doc.data.account_id : (doc != null && "accountId" in doc.data ? doc.data.accountId : null);
+       
+       let legacyDoc = get(/databases/$(database)/documents/profiles/$("account_" + request.auth.uid));
+       let legacyAccountId = (legacyDoc != null && "account_id" in legacyDoc.data) ? legacyDoc.data.account_id : (legacyDoc != null && "accountId" in legacyDoc.data ? legacyDoc.data.accountId : null);
+
+       return accountId != null ? accountId : (legacyAccountId != null ? legacyAccountId : request.auth.uid);
     }
-    match /patients/{patientId} {
-      allow read, write: if true;
+
+    function isAuthenticated() {
+      return request.auth != null;
     }
-    match /profiles/{userId} {
-      allow read, write: if true;
-    }
-    match /users/{userId} {
-      allow read, write: if true;
-    }
-    match /outbound_messages/{msgId} {
-      allow read, write: if true;
+
+    function isAdminOrDoctor() {
+      let role = getRole();
+      return role == 'admin' || role == 'doctor';
     }
     
-    // Default fallback
+    // Check if resource belongs to user's account
+    function belongsToAccount(resource) {
+       let docAccountId = "account_id" in resource.data ? resource.data.account_id : ("accountId" in resource.data ? resource.data.accountId : null);
+       let docUserId = "userId" in resource.data ? resource.data.userId : ("user_id" in resource.data ? resource.data.user_id : null);
+       
+       let userAcc = getUserAccountId();
+       
+       // Allow if docAccountId OR docUserId matches user's accountId/UID
+       // This supports legacy leads that only have 'userId'
+       return (docAccountId != null && (docAccountId == userAcc || docAccountId == request.auth.uid || docAccountId == ("account_" + request.auth.uid))) 
+           || (docUserId != null && (docUserId == userAcc || docUserId == request.auth.uid || docUserId == ("account_" + request.auth.uid)));
+    }
+    
+    function writesToAccount(requestData) {
+       let docAccountId = "account_id" in requestData ? requestData.account_id : ("accountId" in requestData ? requestData.accountId : null);
+       let userAcc = getUserAccountId();
+       return docAccountId == userAcc || docAccountId == request.auth.uid || docAccountId == ("account_" + request.auth.uid);
+    }
+
+    // Role Checks
+    function canViewPatients() {
+      let role = getRole();
+      return isAdminOrDoctor() || role == 'nurse' || role == 'viewer' || role == 'staff';
+    }
+
+    function canEditPatients() {
+      let role = getRole();
+      return isAdminOrDoctor() || role == 'nurse';
+    }
+
+    function canViewLeads() {
+      let role = getRole();
+      return isAdminOrDoctor() || role == 'seller' || role == 'viewer';
+    }
+
+    function canEditLeads() {
+      let role = getRole();
+      return isAdminOrDoctor() || role == 'seller';
+    }
+
+    function canViewFinance() {
+      let role = getRole();
+      return isAdminOrDoctor() || role == 'viewer' || role == 'nurse';
+    }
+    
+    function canEditFinance() {
+      let role = getRole();
+      return isAdminOrDoctor() || role == 'nurse';
+    }
+
+    // --- COLLECTION RULES ---
+
+    // System Alerts: Global read for authenticated users
+    match /system_alerts/{alertId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrDoctor();
+    }
+
+    // User Notifications: Access by userId
+    match /notifications/{notificationId} {
+      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
+    }
+
+    // Profiles
+    match /profiles/{userId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if isAuthenticated() && (request.auth.uid == userId || isAdminOrDoctor());
+    }
+
+    // Patients
+    match /patients/{patientId} {
+      allow read: if isAuthenticated() && canViewPatients() && (resource == null || belongsToAccount(resource));
+      allow write: if isAuthenticated() && canEditPatients() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));
+    }
+
+    // Leads (Clients)
+    match /leads/{leadId} {
+      allow read: if isAuthenticated() && canViewLeads() && (resource == null || belongsToAccount(resource));
+      allow write: if isAuthenticated() && canEditLeads() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));
+    }
+
+    // Finance
+    match /transactions/{txId} {
+      allow read: if isAuthenticated() && canViewFinance() && (resource == null || belongsToAccount(resource));
+      allow write: if isAuthenticated() && canEditFinance() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));
+    }
+
+    // Staff
+    match /staff/{staffId} {
+      allow read: if isAuthenticated() && (isAdminOrDoctor() || getRole() == 'viewer' || getRole() == 'nurse') && (resource == null || belongsToAccount(resource));
+      allow write: if isAuthenticated() && isAdminOrDoctor() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));
+    }
+    
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }

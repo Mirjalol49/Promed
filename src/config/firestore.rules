@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- HELPER FUNCTIONS ---
+
+    // Get the user's role from their profile document
+    function getRole() {
+      return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role;
+    }
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user is Owner/Admin/Doctor (Full Access)
+    function isAdminOrDoctor() {
+      let role = getRole();
+      return role == 'admin' || role == 'doctor';
+    }
+
+    // --- SCOPE HELPERS (Matching src/config/permissions.ts) ---
+
+    function canViewPatients() {
+      let role = getRole();
+      return isAdminOrDoctor() || role == 'nurse' || role == 'viewer' || role == 'staff';
+    }
+
+    function canEditPatients() {
+      let role = getRole();
+      return isAdminOrDoctor() || role == 'nurse';
+    }
+
+    function canViewLeads() {
+      let role = getRole();
+      return isAdminOrDoctor() || role == 'seller' || role == 'viewer';
+    }
+
+    function canEditLeads() {
+      let role = getRole();
+      return isAdminOrDoctor() || role == 'seller';
+    }
+
+    function canViewFinance() {
+      let role = getRole();
+      return isAdminOrDoctor() || role == 'viewer';
+    }
+    
+    // Viewer CANNOT edit finance
+    function canEditFinance() {
+      return isAdminOrDoctor();
+    }
+
+    // --- COLLECTION RULES ---
+
+    // Profiles: Users can read their own profile, Admins can read all
+    match /profiles/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrDoctor());
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isAdminOrDoctor());
+    }
+
+    // Patients: Controlled access
+    match /patients/{patientId} {
+      allow read: if isAuthenticated() && canViewPatients();
+      allow write: if isAuthenticated() && canEditPatients();
+    }
+
+    // Leads (Clients): Controlled access
+    match /leads/{leadId} {
+      allow read: if isAuthenticated() && canViewLeads();
+      allow write: if isAuthenticated() && canEditLeads();
+    }
+
+    // Finance/Transactions
+    match /transactions/{txId} {
+      allow read: if isAuthenticated() && canViewFinance();
+      allow write: if isAuthenticated() && canEditFinance();
+    }
+
+    // Staff
+    match /staff/{staffId} {
+      allow read: if isAuthenticated() && (isAdminOrDoctor() || getRole() == 'viewer');
+      allow write: if isAuthenticated() && isAdminOrDoctor();
+    }
+    
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

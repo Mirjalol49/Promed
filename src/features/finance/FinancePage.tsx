@@ -43,7 +43,8 @@ const expenseCategories: TransactionCategory[] = ['salary', 'tax'];
 
 export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) => void }) => {
     const { t, language } = useLanguage();
-    const { accountId } = useAccount();
+    const { accountId, role } = useAccount();
+    const isViewer = role === 'viewer';
     const { success, error: toastError } = useToast();
 
     // Tab State: 'overview' vs 'patients' vs 'transactions'
@@ -318,13 +319,15 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                 </div >
 
                 <div className="flex items-center gap-3 self-end md:self-auto">
-                    <button
-                        onClick={() => { setInitialPatientId(undefined); setIsModalOpen(true); }}
-                        className="btn-glossy-blue !w-auto !py-3 px-6 flex items-center gap-2"
-                    >
-                        <Plus className="w-5 h-5 stroke-[3]" />
-                        <span className="relative z-10">{t('add_transaction') || 'Tranzaksiya'}</span>
-                    </button>
+                    {!isViewer && (
+                        <button
+                            onClick={() => { setInitialPatientId(undefined); setIsModalOpen(true); }}
+                            className="btn-glossy-blue !w-auto !py-3 px-6 flex items-center gap-2"
+                        >
+                            <Plus className="w-5 h-5 stroke-[3]" />
+                            <span className="relative z-10">{t('add_transaction') || 'Tranzaksiya'}</span>
+                        </button>
+                    )}
                 </div>
             </div >
 
@@ -576,8 +579,10 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                             key={patient.id}
                                             className="bg-white/80 backdrop-blur-xl rounded-3xl p-4 shadow-sm border border-white/60 hover:shadow-md transition-all duration-300 group cursor-pointer flex flex-col items-center text-center relative overflow-hidden h-[260px]"
                                             onClick={() => {
-                                                setInitialPatientId(patient.id);
-                                                setIsModalOpen(true);
+                                                if (!isViewer) {
+                                                    setInitialPatientId(patient.id);
+                                                    setIsModalOpen(true);
+                                                }
                                             }}
                                         >
                                             {/* Status Badge - Top Right */}
@@ -868,7 +873,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                                 {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
                                             </div>
                                             <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {!tx.returned && !tx.isVoided && tx.amount !== 0 && (
+                                                {!isViewer && !tx.returned && !tx.isVoided && tx.amount !== 0 && (
                                                     <button
                                                         onClick={() => handleReturn(tx.id)}
                                                         className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all transform hover:scale-105 active:scale-95"
@@ -877,16 +882,18 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                                         <RotateCcw className="w-5 h-5" />
                                                     </button>
                                                 )}
-                                                <button
-                                                    onClick={() => tx.isVoided ? handleRestore(tx.id) : handleDelete(tx.id)}
-                                                    className={`p-2 rounded-lg transition-all transform hover:scale-105 active:scale-95 ${tx.isVoided
-                                                        ? 'text-slate-400 hover:text-blue-500 hover:bg-blue-50'
-                                                        : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
-                                                        }`}
-                                                    title={tx.isVoided ? "Restore Transaction" : "Delete Transaction"}
-                                                >
-                                                    {tx.isVoided ? <RotateCcw className="w-5 h-5" /> : <Trash2 className="w-5 h-5" />}
-                                                </button>
+                                                {!isViewer && (
+                                                    <button
+                                                        onClick={() => tx.isVoided ? handleRestore(tx.id) : handleDelete(tx.id)}
+                                                        className={`p-2 rounded-lg transition-all transform hover:scale-105 active:scale-95 ${tx.isVoided
+                                                            ? 'text-slate-400 hover:text-blue-500 hover:bg-blue-50'
+                                                            : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
+                                                            }`}
+                                                        title={tx.isVoided ? "Restore Transaction" : "Delete Transaction"}
+                                                    >
+                                                        {tx.isVoided ? <RotateCcw className="w-5 h-5" /> : <Trash2 className="w-5 h-5" />}
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

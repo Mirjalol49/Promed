@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 
 interface PageTransitionProps {
@@ -6,10 +6,12 @@ interface PageTransitionProps {
     className?: string;
 }
 
-export const PageTransition: React.FC<PageTransitionProps> = ({ children, className = '' }) => {
+export const PageTransition = forwardRef<HTMLDivElement, PageTransitionProps>(({ children, className = '' }, ref) => {
     return (
-        <div className={`w-full ${className}`}>
+        <div ref={ref} className={`w-full ${className}`}>
             {children}
         </div>
     );
-};
+});
+
+PageTransition.displayName = 'PageTransition';

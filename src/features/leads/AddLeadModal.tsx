@@ -18,7 +18,7 @@ interface AddLeadModalProps {
 
 export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onSuccess, leadToEdit }) => {
     const { t } = useLanguage();
-    const { userId } = useAccount();
+    const { userId, accountId } = useAccount();
     const { error: showError } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState<Partial<Lead>>({
@@ -106,13 +106,13 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                 id = leadToEdit.id;
             } else {
                 console.log("Creating new lead");
-                if (!userId) {
-                    if (!userId) {
-                        showError("Xatolik", "Foydalanuvchi ID topilmadi. Iltimos qayta kiring.", upsetIcon);
+                if (!accountId) {
+                    if (!accountId) {
+                        showError("Xatolik", "Hisob ID topilmadi. Iltimos qayta kiring.", upsetIcon);
                         return;
                     }
                 }
-                id = await leadService.createLead(cleanData as Omit<Lead, 'id' | 'status' | 'created_at' | 'updated_at'>, userId);
+                id = await leadService.createLead(cleanData as Omit<Lead, 'id' | 'status' | 'created_at' | 'updated_at'>, accountId, userId);
             }
             console.log("Operation successful, ID:", id);
             onSuccess(id);

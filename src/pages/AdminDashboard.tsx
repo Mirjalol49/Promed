@@ -23,6 +23,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { createSystemUser } from '../lib/adminService';
 import { auth } from '../lib/firebase';
+import { AdminRegistrySkeleton } from '../components/ui/Skeletons';
 
 export const AdminDashboard: React.FC = () => {
     const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -391,14 +392,7 @@ export const AdminDashboard: React.FC = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
                                     {loading ? (
-                                        <tr>
-                                            <td colSpan={4} className="px-8 py-20 text-center">
-                                                <div className="flex flex-col items-center gap-4">
-                                                    <div className="w-12 h-12 border-4 border-promed-bg border-t-promed-primary rounded-full animate-spin" />
-                                                    <p className="text-promed-muted font-bold uppercase tracking-widest text-[10px] animate-pulse">Establishing secure link...</p>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                        <AdminRegistrySkeleton />
                                     ) : filteredProfiles.length === 0 ? (
                                         <tr>
                                             <td colSpan={4} className="px-8 py-20 text-center">

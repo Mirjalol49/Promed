@@ -5,8 +5,8 @@ interface AccountContextType {
   userId: string;
   accountName: string;
   userEmail: string;
-  role: 'admin' | 'doctor' | 'staff';
-  setAccount: (id: string, userId: string, name: string, email: string, role?: 'admin' | 'doctor' | 'staff', verified?: boolean, image?: string) => void;
+  role: 'admin' | 'doctor' | 'staff' | 'viewer' | 'seller' | 'nurse';
+  setAccount: (id: string, userId: string, name: string, email: string, role?: 'admin' | 'doctor' | 'staff' | 'viewer' | 'seller' | 'nurse', verified?: boolean, image?: string) => void;
   isLoggedIn: boolean;
   isLoading: boolean;
   isVerified: boolean;
@@ -27,7 +27,7 @@ interface StoredAccount {
   userId: string;
   name: string;
   email: string;
-  role: 'admin' | 'doctor' | 'staff';
+  role: 'admin' | 'doctor' | 'staff' | 'viewer' | 'seller' | 'nurse';
   image?: string;
   createdAt?: string;
 }
@@ -38,7 +38,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [accountName, setAccountName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userImage, setUserImage] = useState<string>('');
-  const [role, setRole] = useState<'admin' | 'doctor' | 'staff'>('doctor');
+  const [role, setRole] = useState<'admin' | 'doctor' | 'staff' | 'viewer' | 'seller' | 'nurse'>('doctor');
   const [subscriptionStatus, setSubscriptionStatus] = useState<'trial' | 'active' | 'frozen'>('trial');
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [createdAt, setCreatedAt] = useState<string | null>(null);
@@ -67,7 +67,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
     setIsLoading(false);
   }, []);
 
-  const setAccount = (id: string, userId: string, name: string, email: string, userRole: 'admin' | 'doctor' | 'staff' = 'doctor', verified: boolean = false, image: string = '', createdAtDate: string = '') => {
+  const setAccount = (id: string, userId: string, name: string, email: string, userRole: 'admin' | 'doctor' | 'staff' | 'viewer' | 'seller' | 'nurse' = 'doctor', verified: boolean = false, image: string = '', createdAtDate: string = '') => {
     setAccountId(id);
     setUserId(userId);
     setAccountName(name);

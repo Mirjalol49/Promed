@@ -36,10 +36,11 @@ interface LeadDetailProps {
     onEdit: (lead: Lead) => void;
     onDelete: (lead: Lead) => void;
     onStatusChange: (id: string, newStatus: LeadStatus) => void;
+    isViewer?: boolean;
 }
 
 export const LeadDetail: React.FC<LeadDetailProps> = ({
-    lead, onClose, onEdit, onDelete, onStatusChange
+    lead, onClose, onEdit, onDelete, onStatusChange, isViewer
 }) => {
     const { t, language } = useLanguage();
     const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
@@ -295,42 +296,46 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
                         {/* Action Buttons */}
                         <div className="flex items-center gap-1">
-                            <button
-                                ref={reminderButtonRef}
-                                onClick={() => {
-                                    setReminderEditingId(null);
-                                    setReminderInitialState({
-                                        date: lead.reminder?.date ? new Date(lead.reminder.date) : undefined,
-                                        reason: lead.reminder?.note
-                                    });
-                                    setIsReminderOpen(true);
-                                }}
-                                className={`p-2.5 rounded-lg transition-colors ${hasReminder(lead)
-                                    ? isOverdue(lead)
-                                        ? 'text-red-600 bg-red-50 hover:bg-red-100'
-                                        : 'text-purple-600 bg-purple-50 hover:bg-purple-100'
-                                    : 'text-slate-500 hover:text-purple-600 hover:bg-purple-50'
-                                    }`}
-                                title="Set Reminder"
-                            >
-                                <Clock size={20} />
-                            </button>
-                            <button
-                                onClick={() => onEdit(lead)}
-                                className="p-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                                title="Edit"
-                            >
-                                <Edit2 size={20} />
-                            </button>
-                            <button
-                                onClick={() => onDelete(lead)}
-                                className="p-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete"
-                            >
-                                <Trash2 size={20} />
-                            </button>
+                            {!isViewer && (
+                                <>
+                                    <button
+                                        ref={reminderButtonRef}
+                                        onClick={() => {
+                                            setReminderEditingId(null);
+                                            setReminderInitialState({
+                                                date: lead.reminder?.date ? new Date(lead.reminder.date) : undefined,
+                                                reason: lead.reminder?.note
+                                            });
+                                            setIsReminderOpen(true);
+                                        }}
+                                        className={`p-2.5 rounded-lg transition-colors ${hasReminder(lead)
+                                            ? isOverdue(lead)
+                                                ? 'text-red-600 bg-red-50 hover:bg-red-100'
+                                                : 'text-purple-600 bg-purple-50 hover:bg-purple-100'
+                                            : 'text-slate-500 hover:text-purple-600 hover:bg-purple-50'
+                                            }`}
+                                        title="Set Reminder"
+                                    >
+                                        <Clock size={20} />
+                                    </button>
+                                    <button
+                                        onClick={() => onEdit(lead)}
+                                        className="p-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                        title="Edit"
+                                    >
+                                        <Edit2 size={20} />
+                                    </button>
+                                    <button
+                                        onClick={() => onDelete(lead)}
+                                        className="p-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Delete"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
 
-                            <div className="w-px h-8 bg-slate-200 mx-2" />
+                                    <div className="w-px h-8 bg-slate-200 mx-2" />
+                                </>
+                            )}
 
                             <button
                                 onClick={onClose}
@@ -352,14 +357,15 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">{t('status')}</label>
                                 <div className="relative">
                                     <button
-                                        onClick={() => setIsStatusOpen(!isStatusOpen)}
-                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-colors shadow-sm ${statusColors.color} ${isStatusOpen ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-300 hover:border-slate-400'}`}
+                                        onClick={() => !isViewer && setIsStatusOpen(!isStatusOpen)}
+                                        disabled={isViewer}
+                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-colors shadow-sm ${statusColors.color} ${isStatusOpen ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-300 hover:border-slate-400'} ${isViewer ? 'opacity-90 cursor-default' : ''}`}
                                     >
                                         <div className="flex items-center gap-2">
                                             <div className={`w-2 h-2 rounded-full ${statusColors.bg.replace('100', '500')}`} />
                                             <span className="font-semibold text-sm">{getStatusLabel(lead.status)}</span>
                                         </div>
-                                        <ChevronDown size={16} className={`transition-transform ${isStatusOpen ? 'rotate-180' : ''}`} />
+                                        {!isViewer && <ChevronDown size={16} className={`transition-transform ${isStatusOpen ? 'rotate-180' : ''}`} />}
                                     </button>
 
                                     <AnimatePresence>
@@ -592,62 +598,64 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                 </div>
                             </div>
 
-                            {/* Add Note Input */}
-                            <div className="bg-white border-t border-slate-100">
-                                {editingEventId && (
-                                    <div className="flex items-center justify-between px-4 py-2 bg-blue-50 border-b border-blue-100 animate-in slide-in-from-bottom-2">
-                                        <div className="flex items-center gap-2 text-blue-700">
-                                            <Edit2 size={14} />
-                                            <span className="text-xs font-bold uppercase tracking-wide">Editing message...</span>
+                            {/* Add Note Input - Hidden for Viewer */}
+                            {!isViewer && (
+                                <div className="bg-white border-t border-slate-100">
+                                    {editingEventId && (
+                                        <div className="flex items-center justify-between px-4 py-2 bg-blue-50 border-b border-blue-100 animate-in slide-in-from-bottom-2">
+                                            <div className="flex items-center gap-2 text-blue-700">
+                                                <Edit2 size={14} />
+                                                <span className="text-xs font-bold uppercase tracking-wide">Editing message...</span>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    setEditingEventId(null);
+                                                    setNewNote('');
+                                                }}
+                                                className="p-1 hover:bg-blue-100 rounded-full text-blue-600 transition-colors"
+                                            >
+                                                <X size={14} />
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                setEditingEventId(null);
-                                                setNewNote('');
-                                            }}
-                                            className="p-1 hover:bg-blue-100 rounded-full text-blue-600 transition-colors"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-                                )}
-                                <div className="p-4">
-                                    <form onSubmit={handleAddNote} className="flex gap-3 items-end">
-                                        <textarea
-                                            ref={textareaRef}
-                                            value={newNote}
-                                            onChange={(e) => {
-                                                setNewNote(e.target.value);
-                                                // Auto-resize up to max, then scroll
-                                                e.target.style.height = 'auto';
-                                                const newHeight = Math.min(e.target.scrollHeight, 150);
-                                                e.target.style.height = newHeight + 'px';
-                                                // Enable scroll when at max height
-                                                e.target.style.overflowY = e.target.scrollHeight > 150 ? 'auto' : 'hidden';
-                                            }}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && !e.shiftKey) {
-                                                    e.preventDefault();
-                                                    if (newNote.trim()) {
-                                                        handleAddNote(e as unknown as React.FormEvent);
+                                    )}
+                                    <div className="p-4">
+                                        <form onSubmit={handleAddNote} className="flex gap-3 items-end">
+                                            <textarea
+                                                ref={textareaRef}
+                                                value={newNote}
+                                                onChange={(e) => {
+                                                    setNewNote(e.target.value);
+                                                    // Auto-resize up to max, then scroll
+                                                    e.target.style.height = 'auto';
+                                                    const newHeight = Math.min(e.target.scrollHeight, 150);
+                                                    e.target.style.height = newHeight + 'px';
+                                                    // Enable scroll when at max height
+                                                    e.target.style.overflowY = e.target.scrollHeight > 150 ? 'auto' : 'hidden';
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        if (newNote.trim()) {
+                                                            handleAddNote(e as unknown as React.FormEvent);
+                                                        }
                                                     }
-                                                }
-                                            }}
-                                            placeholder={editingEventId ? "Edit note..." : t('add_note_placeholder')}
-                                            rows={1}
-                                            className={`flex-1 px-4 py-3 bg-white border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none min-h-[48px] max-h-[150px] placeholder:text-slate-500 font-medium ${editingEventId ? 'border-blue-500 focus:ring-blue-500/20 shadow-sm' : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-500'}`}
-                                            style={{ height: '48px', overflowY: 'hidden' }}
-                                        />
-                                        <button
-                                            type="submit"
-                                            disabled={!newNote.trim()}
-                                            className={`px-5 py-3 text-white rounded-2xl disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 h-[48px] flex items-center justify-center ${editingEventId ? 'bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20' : 'btn-premium-blue'}`}
-                                        >
-                                            {editingEventId ? <Check size={18} /> : <Send size={18} />}
-                                        </button>
-                                    </form>
+                                                }}
+                                                placeholder={editingEventId ? "Edit note..." : t('add_note_placeholder')}
+                                                rows={1}
+                                                className={`flex-1 px-4 py-3 bg-white border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none min-h-[48px] max-h-[150px] placeholder:text-slate-500 font-medium ${editingEventId ? 'border-blue-500 focus:ring-blue-500/20 shadow-sm' : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-500'}`}
+                                                style={{ height: '48px', overflowY: 'hidden' }}
+                                            />
+                                            <button
+                                                type="submit"
+                                                disabled={!newNote.trim()}
+                                                className={`px-5 py-3 text-white rounded-2xl disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 h-[48px] flex items-center justify-center ${editingEventId ? 'bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20' : 'btn-premium-blue'}`}
+                                            >
+                                                {editingEventId ? <Check size={18} /> : <Send size={18} />}
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
 
@@ -677,48 +685,51 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                     {t('copy') || 'Copy'}
                                 </button>
 
-                                <div className="my-1.5 h-px bg-slate-100 w-full" />
+                                {!isViewer && (
+                                    <>
+                                        <div className="my-1.5 h-px bg-slate-100 w-full" />
 
-                                <button
-                                    onClick={() => {
-                                        if (contextMenu.type === 'reminder') {
-                                            setReminderEditingId(contextMenu.eventId);
-                                            setReminderInitialState({
-                                                date: contextMenu.date,
-                                                reason: contextMenu.content?.split(': ').pop()
-                                            });
-                                            setIsReminderOpen(true);
-                                        } else {
-                                            setEditingEventId(contextMenu.eventId);
-                                            setNewNote(contextMenu.content || '');
-                                            setTimeout(() => {
-                                                textareaRef.current?.focus();
-                                                // Move cursor to end
-                                                if (textareaRef.current) {
-                                                    textareaRef.current.selectionStart = textareaRef.current.value.length;
-                                                    textareaRef.current.selectionEnd = textareaRef.current.value.length;
+                                        <button
+                                            onClick={() => {
+                                                if (contextMenu.type === 'reminder') {
+                                                    setReminderEditingId(contextMenu.eventId);
+                                                    setReminderInitialState({
+                                                        date: contextMenu.date,
+                                                        reason: contextMenu.content?.split(': ').pop()
+                                                    });
+                                                    setIsReminderOpen(true);
+                                                } else {
+                                                    setEditingEventId(contextMenu.eventId);
+                                                    setNewNote(contextMenu.content || '');
+                                                    setTimeout(() => {
+                                                        textareaRef.current?.focus();
+                                                        // Move cursor to end
+                                                        if (textareaRef.current) {
+                                                            textareaRef.current.selectionStart = textareaRef.current.value.length;
+                                                            textareaRef.current.selectionEnd = textareaRef.current.value.length;
+                                                        }
+                                                    }, 50);
                                                 }
-                                            }, 50);
-                                        }
-                                        setContextMenu(null);
-                                    }} // Context Menu Edit Button Logic Updated
-                                    className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-slate-700 hover:bg-slate-50 rounded-xl transition-colors w-full text-left"
-                                >
-                                    <Edit2 size={18} className="text-slate-400" />
-                                    {t('edit') || 'Edit'}
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        if (window.confirm('Delete this item?')) {
-                                            handleDeleteNote(contextMenu.eventId);
-                                        }
-                                        setContextMenu(null);
-                                    }}
-                                    className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full text-left"
-                                >
-                                    <Trash2 size={18} />
-                                    {t('delete') || 'Delete'}
-                                </button>
+                                                setContextMenu(null);
+                                            }} // Context Menu Edit Button Logic Updated
+                                            className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-slate-700 hover:bg-slate-50 rounded-xl transition-colors w-full text-left"
+                                        >
+                                            <Edit2 size={18} className="text-slate-400" />
+                                            {t('edit') || 'Edit'}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (window.confirm('Delete this item?')) {
+                                                    handleDeleteNote(contextMenu.eventId);
+                                                }
+                                                setContextMenu(null);
+                                            }}
+                                            className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full text-left"
+                                        >
+                                            {t('delete') || 'Delete'}
+                                        </button>
+                                    </>
+                                )}
                             </motion.div>
                         )}
                     </AnimatePresence>

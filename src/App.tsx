@@ -12,6 +12,7 @@ import { NotesPage } from './features/notes/NotesPage';
 import { MessagesPage } from './features/messages/MessagesPage';
 import { StaffPage } from './features/staff/StaffPage';
 import { FinancePage } from './features/finance/FinancePage';
+import { RolesPage } from './pages/RolesPage';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { EmergencySetup } from './pages/EmergencySetup'; // Added EmergencySetup
 import { BannedScreen } from './features/auth/BannedScreen';
@@ -47,6 +48,8 @@ import { PinInput } from './components/ui/PinInput';
 import { useReminderNotifications } from './hooks/useReminderNotifications';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from './components/ui/PageTransition';
+import { useRBAC } from './hooks/useRBAC';
+import { SCOPES } from './config/permissions';
 
 import { auth, db } from './lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
@@ -214,7 +217,8 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
 import { useAuth } from './contexts/AuthContext';
 
 const App: React.FC = () => {
-  const { accountId, userId, accountName, userEmail, userImage, setAccount, isLoggedIn, logout } = useAccount();
+  const { accountId, userId, role, isLoading: accountLoading, accountName, userEmail, userImage, setAccount, isLoggedIn, logout } = useAccount();
+  const { can } = useRBAC();
   const { loading: authLoading, user: authUser, signOut } = useAuth();
   const { playLock } = useAppSounds();
 
@@ -331,6 +335,7 @@ const App: React.FC = () => {
     else if (view === 'MESSAGES') path = '/messages';
     else if (view === 'STAFF') path = '/staff';
     else if (view === 'FINANCE') path = '/finance';
+    else if (view === 'ROLES') path = '/roles';
 
     if (window.location.pathname !== path) {
       window.history.pushState({}, '', path);
@@ -354,8 +359,56 @@ const App: React.FC = () => {
       setView('STAFF');
     } else if (path === '/finance') {
       setView('FINANCE');
+    } else if (path === '/roles') {
+      setView('ROLES');
     }
   }, []); // Run ONCE on mount
+
+  // --- Role Enforcer (RBAC) ---
+  useEffect(() => {
+    if (accountLoading) return;
+
+    // Define required permission for each view
+    const viewPermissions: Record<PageView, string> = {
+      'DASHBOARD': SCOPES.canViewDashboard,
+      'PATIENTS': SCOPES.canViewPatients,
+      'PATIENT_DETAIL': SCOPES.canViewPatients,
+      'ADD_PATIENT': SCOPES.canEditPatients,
+      'EDIT_PATIENT': SCOPES.canEditPatients,
+      'LEADS': SCOPES.canViewLeads,
+      'MESSAGES': SCOPES.canViewMessages,
+      'NOTES': SCOPES.canViewNotes,
+      'STAFF': SCOPES.canViewStaff,
+      'FINANCE': SCOPES.canViewFinance,
+      'SETTINGS': SCOPES.canViewSettings,
+      'ROLES': SCOPES.canViewRoles,
+      'ADMIN_DASHBOARD': SCOPES.canViewAdmin,
+      'SUPER_ADMIN': SCOPES.canViewAdmin
+    };
+
+    const requiredScope = viewPermissions[view];
+
+    // If view requires a scope and user doesn't have it
+    if (requiredScope && !can(requiredScope as any)) {
+      console.warn(`⛔ Access Denied: Role '${role}' cannot view '${view}'`);
+
+      // Redirect to safe default
+      if (can(SCOPES.canViewDashboard)) {
+        setView('DASHBOARD');
+        window.history.replaceState({}, '', '/');
+      } else if (can(SCOPES.canViewPatients)) {
+        setView('PATIENTS');
+        window.history.replaceState({}, '', '/patients');
+      } else if (can(SCOPES.canViewLeads)) {
+        setView('LEADS');
+        window.history.replaceState({}, '', '/leads');
+      } else {
+        // Fallback for weird edge cases
+        setView('SETTINGS');
+        window.history.replaceState({}, '', '/settings');
+      }
+    }
+  }, [role, view, accountLoading, can]);
 
   useEffect(() => {
     if (authUser) {
@@ -372,7 +425,22 @@ const App: React.FC = () => {
 
       // Only set account if userId isn't already set
       if (!userId) {
-        setAccount(sessionUserId, sessionUserId, accountName || '', authUser.email || '', 'doctor', false);
+        // Restore full account from localStorage (preserves accountId, role, image for sub-users)
+        const storedData = localStorage.getItem('graft_account');
+        if (storedData) {
+          const parsed = JSON.parse(storedData);
+          setAccount(
+            parsed.id || sessionUserId,       // accountId — critical for sub-users (nurse, call operator)
+            sessionUserId,                      // userId — always the Firebase UID
+            parsed.name || accountName || '',
+            parsed.email || authUser.email || '',
+            parsed.role || 'doctor',
+            false,
+            parsed.image || ''
+          );
+        } else {
+          setAccount(sessionUserId, sessionUserId, accountName || '', authUser.email || '', 'doctor', false);
+        }
       }
     }
   }, [authUser, userId, accountName, setAccount]);
@@ -386,28 +454,30 @@ const App: React.FC = () => {
       (profile) => {
         console.log("✓ Profile data received:", profile);
         if (profile) {
-          // 🔥 FIX: ALWAYS prioritize the account_id from the database profile
+          // 🔥 STABILIZED LOGIC:
+          // 1. Trust DB Profile (Single Source of Truth)
+          // 2. Fallback to Current Session (if DB empty)
+          // 3. Fallback to UserId (Absolute last resort)
+
           const databaseAccountId = profile.accountId;
-          const currentAccountId = accountId;
-          const fallbackAccountId = profile.email ? `account_${profile.email}` : userId;
+          let finalAccountId = databaseAccountId || accountId;
 
-          const finalAccountId = databaseAccountId || currentAccountId || fallbackAccountId;
-
-          // 🔥 AUTOMATIC SYNC: If DB is missing the accountId, push it now!
-          // But only if we have a stable fallback that isn't just the userId
-          if (!databaseAccountId && fallbackAccountId && fallbackAccountId !== userId) {
-            console.log("🛠️ Auto-Syncing Account ID to Database Profile:", fallbackAccountId);
-            updateUserProfile(userId, { accountId: fallbackAccountId }).catch(e => console.error("Auto-sync error:", e));
+          // Auto-Heal: If DB is empty, save what we are using (so we don't guess next time)
+          if (!databaseAccountId && finalAccountId) {
+            console.log("🛠️ Healing Profile: Syncing Account ID to DB:", finalAccountId);
+            // Verify it's not a garbage ID before saving?
+            // Trusting currentAccountId is usually safe if LoginScreen is correct.
+            updateUserProfile(userId, { accountId: finalAccountId }).catch(e => console.error("Auto-sync error:", e));
           }
 
-          console.log("🛡️ PROMED SECURITY SYNC:", {
+          console.log("🛡️ PROMED SECURITY SYNC (STABLE):", {
             profileRole: profile.role,
             dbAccount: databaseAccountId,
-            stateAccount: currentAccountId,
+            sessionAccount: accountId,
             finalAccount: finalAccountId
           });
 
-          setAccount(finalAccountId, userId, profile.name || accountName || '', userEmail, profile.role || 'doctor', true, profile.profileImage); // Now VERIFIED
+          setAccount(finalAccountId || userId, userId, profile.fullName || accountName || '', userEmail, profile.role || 'doctor', true, profile.profileImage); // Now VERIFIED
           if (profile.lockEnabled !== undefined) {
             console.log("  • Lock Enabled:", profile.lockEnabled);
             setIsLockEnabled(profile.lockEnabled);
@@ -573,9 +643,9 @@ const App: React.FC = () => {
     setView('PATIENT_DETAIL');
   }, []);
 
-  const handleLogin = async (id: string, userId: string, name: string, email: string, password?: string) => {
-    console.log("🔑 [Universal Login] handleLogin triggered:", { userId, email, hasPassword: !!password });
-    setAccount(id, userId, name, email, 'doctor', true);
+  const handleLogin = async (id: string, userId: string, name: string, email: string, password?: string, role: string = 'doctor') => {
+    console.log("🔑 [Universal Login] handleLogin triggered:", { userId, email, role, hasPassword: !!password });
+    setAccount(id, userId, name, email, role as any, true);
     setIsLocked(false);
 
     // 🔥 AUTO-SYNC PIN ON LOGIN
@@ -1142,6 +1212,12 @@ const App: React.FC = () => {
               patients={patients}
               isLoading={showSkeleton}
             />
+          </PageTransition>
+        )}
+
+        {view === 'ROLES' && (
+          <PageTransition key="roles">
+            <RolesPage />
           </PageTransition>
         )}
 

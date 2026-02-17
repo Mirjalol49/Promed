@@ -46,7 +46,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     isLoading
 }) => {
     const { t, language } = useLanguage();
-    const { subscriptionStatus } = useAccount();
+    const { subscriptionStatus, role } = useAccount();
 
     const localeMap = {
         uz: uz,
@@ -80,17 +80,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         {t('overview')}
                     </h3>
                     <div id="stats-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                        {/* 1. Revenue (Financials First) */}
-                        <StatCard
-                            label={t('total_revenue') || 'Jami Tushum'}
-                            value={formatCompactNumber(stats.monthlyRevenue || 0)}
-                            icon={Activity}
-                            colorClass="bg-indigo-600"
-                            shadowColor=""
-                            isLoading={isLoading}
-                            subtext={currentMonth.toUpperCase()}
-                            tooltipText={formatCurrency(stats.monthlyRevenue || 0, 'UZS')}
-                        />
+                        {/* 1. Revenue (Financials First) - HIDDEN FOR NURSE */}
+                        {role !== 'nurse' && (
+                            <StatCard
+                                label={t('total_revenue') || 'Jami Tushum'}
+                                value={formatCompactNumber(stats.monthlyRevenue || 0)}
+                                icon={Activity}
+                                colorClass="bg-indigo-600"
+                                shadowColor=""
+                                isLoading={isLoading}
+                                subtext={currentMonth.toUpperCase()}
+                                tooltipText={formatCurrency(stats.monthlyRevenue || 0, 'UZS')}
+                            />
+                        )}
 
                         {/* 2. Operations (Core Business) */}
                         <StatCard

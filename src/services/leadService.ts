@@ -19,14 +19,14 @@ import { Lead, LeadStatus, TimelineEvent } from '../types';
 const LEADS_COLLECTION = 'leads';
 
 export const leadService = {
-    // Subscribe to leads (Real-time)
-    subscribeToLeads(userId: string, callback: (leads: Lead[]) => void, onError?: (error: any) => void): Unsubscribe {
-        if (!userId) return () => { };
+    // Subscribe to leads (Real-time) — uses accountId to sync data across all sub-users (nurse, call operator, viewer)
+    subscribeToLeads(accountId: string, callback: (leads: Lead[]) => void, onError?: (error: any) => void): Unsubscribe {
+        if (!accountId) return () => { };
 
-        // REMOVED orderBy to prevent "Missing Index" hang for new accounts
+        // Query by account_id (matches patients pattern) for multi-user data sync
         const q = query(
             collection(db, LEADS_COLLECTION),
-            where('userId', '==', userId)
+            where('account_id', '==', accountId)
         );
 
         return onSnapshot(q, (snapshot) => {
@@ -50,13 +50,41 @@ export const leadService = {
         });
     },
 
-    // Fetch all leads (One-time)
-    async getAllLeads(userId: string): Promise<Lead[]> {
-        if (!userId) return [];
+    // Migration: Backfill account_id on existing leads that only have userId
+    async migrateLeadsToAccountId(userId: string, accountId: string): Promise<void> {
+        if (!userId || !accountId) return;
         try {
+            // Find leads with old userId field but no account_id
             const q = query(
                 collection(db, LEADS_COLLECTION),
                 where('userId', '==', userId)
+            );
+            const snapshot = await getDocs(q);
+            const batch: Promise<void>[] = [];
+            snapshot.docs.forEach(docSnap => {
+                const data = docSnap.data();
+                if (!data.account_id) {
+                    batch.push(
+                        updateDoc(doc(db, LEADS_COLLECTION, docSnap.id), { account_id: accountId })
+                    );
+                }
+            });
+            if (batch.length > 0) {
+                await Promise.all(batch);
+                console.log(`✅ Migrated ${batch.length} leads to account_id: ${accountId}`);
+            }
+        } catch (error) {
+            console.error("Error migrating leads:", error);
+        }
+    },
+
+    // Fetch all leads (One-time) — uses accountId for multi-user sync
+    async getAllLeads(accountId: string): Promise<Lead[]> {
+        if (!accountId) return [];
+        try {
+            const q = query(
+                collection(db, LEADS_COLLECTION),
+                where('account_id', '==', accountId)
             );
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => ({
@@ -69,13 +97,15 @@ export const leadService = {
         }
     },
 
-    // Create a new lead
-    async createLead(leadData: Partial<Lead>, userId: string): Promise<string> {
-        if (!userId) throw new Error("User ID is required");
+    // Create a new lead — bound to accountId for multi-user sync
+    async createLead(leadData: Partial<Lead>, accountId: string, createdByUserId?: string): Promise<string> {
+        if (!accountId) throw new Error("Account ID is required");
         try {
             const newLead = {
                 ...leadData,
-                userId: userId, // Bind to user
+                account_id: accountId, // Bind to account (multi-user sync)
+                userId: accountId, // Backward compatibility
+                created_by: createdByUserId || accountId, // Track who created it
                 status: 'NEW' as LeadStatus, // Default status
                 currency: 'USD',
                 created_at: serverTimestamp(),

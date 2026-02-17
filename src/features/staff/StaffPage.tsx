@@ -23,6 +23,8 @@ import { CustomDatePicker } from '../../components/ui/CustomDatePicker';
 import { format } from 'date-fns';
 import Lottie from 'lottie-react';
 import emptyAnimation from '../../assets/images/mascots/empty.json';
+import { StaffSkeleton } from '../../components/ui/Skeletons';
+import DeleteModal from '../../components/ui/DeleteModal';
 
 // --- Add/Edit Staff Modal ---
 interface StaffFormData extends Partial<Staff> {
@@ -705,13 +707,15 @@ const StaffDetail = ({
     onBack,
     onStatusChange,
     onEdit,
-    onPay
+    onPay,
+    onDelete
 }: {
     staff: Staff;
     onBack: () => void;
     onStatusChange?: (staffId: string, newStatus: string) => Promise<void>;
-    onEdit: () => void;
+    onEdit?: () => void;
     onPay?: () => void;
+    onDelete?: () => void;
 }) => {
     const { t, language } = useLanguage();
     // Removed tabs, single view logic
@@ -952,12 +956,23 @@ const StaffDetail = ({
 
                     {/* Actions */}
                     <div className="flex items-center gap-3 w-full md:w-auto">
-                        <button
-                            onClick={onEdit}
-                            className="flex-1 md:flex-none h-12 px-6 bg-slate-200 border border-slate-300 hover:bg-slate-300 hover:border-slate-400 text-slate-900 font-bold rounded-2xl text-sm transition-all active:scale-[0.98]"
-                        >
-                            {t('edit') || 'Edit'}
-                        </button>
+                        {onDelete && (
+                            <button
+                                onClick={onDelete}
+                                className="w-12 h-12 flex items-center justify-center bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 rounded-2xl transition-all shadow-sm"
+                                title={t('delete_staff') || 'Delete Staff'}
+                            >
+                                <Trash2 size={20} strokeWidth={2} />
+                            </button>
+                        )}
+                        {onEdit && (
+                            <button
+                                onClick={onEdit}
+                                className="flex-1 md:flex-none h-12 px-6 bg-slate-200 border border-slate-300 hover:bg-slate-300 hover:border-slate-400 text-slate-900 font-bold rounded-2xl text-sm transition-all active:scale-[0.98]"
+                            >
+                                {t('edit') || 'Edit'}
+                            </button>
+                        )}
                         {onPay && (
                             <button
                                 onClick={onPay}
@@ -1148,7 +1163,8 @@ const StaffDetail = ({
 
 export const StaffPage = () => {
     const { t } = useLanguage();
-    const { accountId } = useAccount();
+    const { accountId, role } = useAccount();
+    const isViewer = role === 'viewer';
     const { success, error: toastError } = useToast();
 
     const [staffList, setStaffList] = useState<Staff[]>([]);
@@ -1161,6 +1177,7 @@ export const StaffPage = () => {
     const [payModalStaffId, setPayModalStaffId] = useState<string | null>(null);
     const [staffPayments, setStaffPayments] = useState<Record<string, number>>({});
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
+    const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
 
     useEffect(() => {
         if (!accountId) return;
@@ -1231,14 +1248,22 @@ export const StaffPage = () => {
         }
     };
 
-    const handleDelete = async (staff: Staff) => {
-        if (window.confirm(t('delete_confirmation') || 'Are you sure you want to delete this staff member?')) {
-            try {
-                await deleteStaff(staff.id, staff.imageUrl);
-                success(t('deleted') || 'Deleted', t('staff_deleted') || 'Staff member removed');
-            } catch (err: any) {
-                toastError(t('error'), err.message);
+    const handleDelete = (staff: Staff) => {
+        setStaffToDelete(staff);
+    };
+
+    const confirmDelete = async () => {
+        if (!staffToDelete) return;
+        try {
+            await deleteStaff(staffToDelete.id, staffToDelete.imageUrl);
+            success(t('deleted') || 'Deleted', t('staff_deleted') || 'Staff member removed');
+            if (selectedStaff?.id === staffToDelete.id) {
+                setSelectedStaff(null);
             }
+        } catch (err: any) {
+            toastError(t('error'), err.message);
+        } finally {
+            setStaffToDelete(null);
         }
     };
 
@@ -1258,8 +1283,9 @@ export const StaffPage = () => {
                         setSelectedStaff(prev => prev ? { ...prev, status: newStatus as any } : null);
                         success(t('status_updated_title') || 'Status Updated', t('status_updated_msg') || 'Staff status changed');
                     }}
-                    onEdit={() => { setEditingStaff(selectedStaff); setIsModalOpen(true); }}
-                    onPay={() => { setPayModalStaffId(selectedStaff.id); setIsPayModalOpen(true); }}
+                    onEdit={!isViewer ? () => { setEditingStaff(selectedStaff); setIsModalOpen(true); } : undefined}
+                    onPay={!isViewer ? () => { setPayModalStaffId(selectedStaff.id); setIsPayModalOpen(true); } : undefined}
+                    onDelete={!isViewer ? () => handleDelete(selectedStaff) : undefined}
                 />
             ) : (
                 <>
@@ -1274,13 +1300,15 @@ export const StaffPage = () => {
                         </div>
                         <div className="flex items-center gap-3">
 
-                            <button
-                                onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
-                                className="btn-glossy-blue !w-auto !py-3 px-6 flex items-center gap-2.5 transition-all duration-300 self-start md:self-auto hover:scale-[1.01] hover:-translate-y-px active:scale-99"
-                            >
-                                <Plus size={18} className="stroke-[3]" />
-                                <span className="text-sm uppercase tracking-wider">{t('add_staff') || 'Add Staff'}</span>
-                            </button>
+                            {!isViewer && (
+                                <button
+                                    onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
+                                    className="btn-glossy-blue !w-auto !py-3 px-6 flex items-center gap-2.5 transition-all duration-300 self-start md:self-auto hover:scale-[1.01] hover:-translate-y-px active:scale-99"
+                                >
+                                    <Plus size={18} className="stroke-[3]" />
+                                    <span className="text-sm uppercase tracking-wider">{t('add_staff') || 'Add Staff'}</span>
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -1323,19 +1351,21 @@ export const StaffPage = () => {
 
                     {/* Grid */}
                     {loading ?
-                        <div className="text-center py-20 text-slate-400">{t('loading') || 'Loading...'}</div>
+                        <StaffSkeleton />
                         : filteredStaff.length === 0 ?
                             <div className="flex-1 flex items-center justify-center p-12">
                                 <EmptyState
                                     message={t('no_staff_found') || "No staff members found"}
                                     action={
-                                        <button
-                                            onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
-                                            className="btn-glossy-blue !py-4 !px-8 text-base font-bold shadow-lg hover:shadow-blue-500/25 hover:scale-105 active:scale-95 transition-all duration-200"
-                                        >
-                                            <Plus className="w-5 h-5 mr-2" strokeWidth={3} />
-                                            {t('add_first_staff') || "Add Your First Staff Member"}
-                                        </button>
+                                        !isViewer ? (
+                                            <button
+                                                onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
+                                                className="btn-glossy-blue !py-4 !px-8 text-base font-bold shadow-lg hover:shadow-blue-500/25 hover:scale-105 active:scale-95 transition-all duration-200"
+                                            >
+                                                <Plus className="w-5 h-5 mr-2" strokeWidth={3} />
+                                                {t('add_first_staff') || "Add Your First Staff Member"}
+                                            </button>
+                                        ) : undefined
                                     }
                                 />
                             </div>
@@ -1421,17 +1451,20 @@ export const StaffPage = () => {
                                                 </div>
 
                                                 {/* Pay Button */}
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setPayModalStaffId(staff.id);
-                                                        setIsPayModalOpen(true);
-                                                    }}
-                                                    className="btn-glossy-emerald uppercase"
-                                                >
-                                                    <Banknote size={18} className="stroke-[2.5]" />
-                                                    {t('pay_salary') || "Oylik To'lash"}
-                                                </button>
+                                                {/* Pay Button - Hidden for Viewer */}
+                                                {!isViewer && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setPayModalStaffId(staff.id);
+                                                            setIsPayModalOpen(true);
+                                                        }}
+                                                        className="btn-glossy-emerald uppercase"
+                                                    >
+                                                        <Banknote size={18} className="stroke-[2.5]" />
+                                                        {t('pay_salary') || "Oylik To'lash"}
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -1459,6 +1492,13 @@ export const StaffPage = () => {
                     success(t('salary_paid') || 'Salary Paid', t('salary_paid_msg') || 'Salary payment recorded successfully');
                 }}
                 initialStaffId={payModalStaffId}
+            />
+
+            <DeleteModal
+                isOpen={!!staffToDelete}
+                onClose={() => setStaffToDelete(null)}
+                onConfirm={confirmDelete}
+                title={t('staff_delete_popup_title') || 'Delete Staff Member?'}
             />
         </div>
     );

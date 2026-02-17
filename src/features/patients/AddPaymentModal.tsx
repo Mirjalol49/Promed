@@ -11,6 +11,7 @@ import { CustomDatePicker } from '../../components/ui/CustomDatePicker';
 import { Portal } from '../../components/ui/Portal';
 import { formatWithSpaces, formatCurrency } from '../../lib/formatters';
 import { format } from 'date-fns';
+import { enUS, ru, uz } from 'date-fns/locale';
 import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
 
 interface AddPaymentModalProps {
@@ -33,6 +34,7 @@ interface Split {
 
 // ── Progress Bar ──
 const ProgressBar = ({ splits, total, currency }: { splits: Split[]; total: number; currency: string }) => {
+    const { t } = useLanguage();
     const allocated = splits.reduce((sum, s) => sum + (s.amount || 0), 0);
     const clinicAmount = Math.max(0, total - allocated);
     const clinicPct = total > 0 ? Math.round((clinicAmount / total) * 100) : 0;
@@ -41,7 +43,7 @@ const ProgressBar = ({ splits, total, currency }: { splits: Split[]; total: numb
     return (
         <div className="mb-4 space-y-3">
             <div className="flex justify-between items-center text-sm font-bold text-gray-800">
-                <span className="text-lg">Taqsimot</span>
+                <span className="text-lg">{t('distribution') || 'Taqsimot'}</span>
                 <span className="text-gray-400 font-normal">100%</span>
             </div>
             <div className="flex gap-4 text-xs font-semibold overflow-x-auto pb-1 no-scrollbar">
@@ -93,8 +95,11 @@ const Avatar = ({ src, alt, fallback, className }: { src?: string; alt: string; 
 );
 
 export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClose, patient, accountId }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { success, error: toastError } = useToast();
+
+    const localeMap = { en: enUS, ru, uz };
+    const currentLocale = localeMap[language as keyof typeof localeMap] || enUS;
 
     // ── Mode toggle ──
     const [mode, setMode] = useState<'income' | 'expense'>('income');
@@ -300,12 +305,18 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                         {mode === 'expense' ? (
                             <div className="w-full flex flex-col overflow-y-auto bg-white p-6 relative no-scrollbar">
                                 <div className="flex justify-center mb-8">
-                                    <div className="bg-gray-100 p-1 rounded-full flex relative shadow-inner">
-                                        <button onClick={() => setMode('income')} className="px-6 py-2 rounded-full text-sm font-bold text-gray-400 hover:text-gray-600 transition-all">
-                                            {t('income') || 'Kirim'}
+                                    <div className="bg-gray-100 p-1.5 rounded-xl flex w-full relative shadow-inner mb-8">
+                                        <button
+                                            onClick={() => setMode('income')}
+                                            className="flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm text-gray-500 hover:text-gray-700 hover:bg-white/50"
+                                        >
+                                            <span className="relative z-10">{t('income') || 'Kirim'}</span>
                                         </button>
-                                        <button onClick={() => setMode('expense')} className="px-6 py-2 rounded-full text-sm font-bold bg-white text-rose-600 shadow-sm transition-all">
-                                            {t('expense') || 'Xarajat'}
+                                        <button
+                                            onClick={() => setMode('expense')}
+                                            className="flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm btn-glossy-red"
+                                        >
+                                            <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -341,7 +352,8 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                         <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 shrink-0"><Calendar size={18} /></div>
                                         <div className="flex-1">
                                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('date') || 'Sana'}</div>
-                                            <div className="font-bold text-gray-900">{format(date, 'dd MMMM yyyy')}</div>
+
+                                            <div className="font-bold text-gray-900">{format(date, 'dd MMMM yyyy', { locale: currentLocale })}</div>
                                         </div>
                                         <div className="absolute inset-0 opacity-0"><CustomDatePicker value={date} onChange={setDate} centered /></div>
                                     </div>
@@ -368,12 +380,18 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                             <>
                                 <div className="w-full md:w-[35%] bg-blue-50/20 p-8 flex flex-col border-b md:border-b-0 md:border-r border-blue-100/50 relative shrink-0">
                                     <div className="flex justify-center mb-10">
-                                        <div className="bg-white p-1 rounded-full flex relative shadow-sm border border-gray-100">
-                                            <button onClick={() => setMode('income')} className="px-6 py-2 rounded-full text-sm font-bold bg-blue-50 text-emerald-600 shadow-sm transition-all ring-1 ring-black/5">
-                                                {t('income') || 'Kirim'}
+                                        <div className="bg-slate-100 p-1.5 rounded-xl flex w-full relative shadow-inner border border-slate-200/60 mb-6">
+                                            <button
+                                                onClick={() => setMode('income')}
+                                                className="flex-1 py-2.5 text-sm font-bold rounded-lg transition-all shadow-sm btn-glossy-emerald"
+                                            >
+                                                <span className="relative z-10">{t('income') || 'Kirim'}</span>
                                             </button>
-                                            <button onClick={() => setMode('expense')} className="px-6 py-2 rounded-full text-sm font-bold text-gray-400 hover:text-gray-600 transition-all">
-                                                {t('expense') || 'Xarajat'}
+                                            <button
+                                                onClick={() => setMode('expense')}
+                                                className="flex-1 py-2.5 text-sm font-bold rounded-lg transition-all shadow-sm text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                                            >
+                                                <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
                                             </button>
                                         </div>
                                     </div>
@@ -393,32 +411,32 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                         />
                                         <div className="text-xs font-bold text-gray-300 uppercase tracking-widest mt-3">UZS</div>
                                     </div>
-                                    <div className="bg-white rounded-2xl border border-blue-100 shadow-sm overflow-hidden">
-                                        <div className="p-3.5 border-b border-gray-50 flex items-center gap-3.5 hover:bg-gray-50 transition-colors">
-                                            <div className="w-9 h-9 rounded-full overflow-hidden bg-emerald-50 flex items-center justify-center shrink-0">
-                                                {patient.profileImage ? <ImageWithFallback src={patient.profileImage} alt={patient.fullName} className="w-full h-full object-cover" /> : <User size={16} className="text-emerald-500" />}
+                                    <div className="bg-white rounded-[1.25rem] border border-blue-100/60 shadow-[0_4px_20px_-4px_rgba(59,130,246,0.05)] overflow-hidden">
+                                        <div className="p-4 border-b border-gray-50 flex items-center gap-4 hover:bg-gray-50/50 transition-colors">
+                                            <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center shrink-0 border border-slate-100">
+                                                {patient.profileImage ? <ImageWithFallback src={patient.profileImage} alt={patient.fullName} className="w-full h-full object-cover" /> : <User size={18} className="text-slate-400" />}
                                             </div>
-                                            <div className="flex-1">
-                                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('patient') || 'Bemor'}</div>
-                                                <div className="font-bold text-gray-900 text-sm">{patient.fullName}</div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{t('patient') || 'Bemor'}</div>
+                                                <div className="font-extrabold text-slate-900 text-sm truncate">{patient.fullName}</div>
                                             </div>
                                         </div>
-                                        <div className="p-3.5 border-b border-gray-50 flex items-center justify-between gap-3.5 relative group hover:bg-gray-50 transition-colors cursor-pointer">
-                                            <div className="flex items-center gap-3.5">
-                                                <div className="w-9 h-9 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 shrink-0"><Search size={16} /></div>
-                                                <div>
-                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('category') || 'Kategoriya'}</div>
-                                                    <div className="font-bold text-gray-900 text-sm capitalize">{t(category) || category}</div>
+                                        <div className="p-4 border-b border-gray-50 flex items-center justify-between gap-4 relative group hover:bg-gray-50/50 transition-colors cursor-pointer">
+                                            <div className="flex items-center gap-4 min-w-0">
+                                                <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 shrink-0 border border-purple-100"><Search size={18} /></div>
+                                                <div className="min-w-0">
+                                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{t('category') || 'Kategoriya'}</div>
+                                                    <div className="font-extrabold text-slate-900 text-sm capitalize truncate">{t(category) || category}</div>
                                                 </div>
                                             </div>
-                                            <ChevronDown size={16} className="text-gray-300" />
+                                            <ChevronDown size={18} className="text-slate-300" />
                                             <div className="absolute inset-0 opacity-0"><CustomSelect options={incomeCategoryOptions} value={category} onChange={(val) => setCategory(val as TransactionCategory)} minimal /></div>
                                         </div>
-                                        <div className="p-3.5 flex items-center gap-3.5 relative group hover:bg-gray-50 transition-colors cursor-pointer">
-                                            <div className="w-9 h-9 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 shrink-0"><Calendar size={16} /></div>
-                                            <div className="flex-1">
-                                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('date') || 'Sana'}</div>
-                                                <div className="font-bold text-gray-900 text-sm">{format(date, 'dd MMMM yyyy')}</div>
+                                        <div className="p-4 flex items-center gap-4 relative group hover:bg-gray-50/50 transition-colors cursor-pointer">
+                                            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0 border border-orange-100"><Calendar size={18} /></div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{t('date') || 'Sana'}</div>
+                                                <div className="font-extrabold text-slate-900 text-sm">{format(date, 'dd MMMM yyyy', { locale: currentLocale })}</div>
                                             </div>
                                             <div className="absolute inset-0 opacity-0"><CustomDatePicker value={date} onChange={setDate} centered /></div>
                                         </div>
@@ -436,35 +454,71 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                                 {splits.map((split, i) => {
                                                     const staff = staffList.find(s => s.id === split.staffId);
                                                     return (
-                                                        <motion.div key={i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="group flex items-center gap-4 p-3 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-                                                            {split.isTax ? <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center border border-amber-100 shrink-0 text-amber-500"><Percent size={18} /></div> : <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 shrink-0">{staff?.imageUrl ? <ImageWithFallback src={staff.imageUrl} alt="staff" className="w-full h-full object-cover" /> : <User size={18} className="text-gray-400" />}</div>}
+                                                        <motion.div key={i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="group flex items-center gap-4 p-4 rounded-xl bg-white border border-slate-300 shadow-sm hover:border-slate-400 hover:shadow-md transition-all duration-200">
+
+                                                            {split.isTax ? (
+                                                                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200 shrink-0 text-slate-500"><Percent size={18} /></div>
+                                                            ) : (
+                                                                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
+                                                                    {staff?.imageUrl ? <ImageWithFallback src={staff.imageUrl} alt="staff" className="w-full h-full object-cover" /> : <User size={18} className="text-slate-400" />}
+                                                                </div>
+                                                            )}
+
                                                             <div className="flex-1 min-w-0">
-                                                                <div className="font-bold text-gray-900 text-sm truncate">{split.note || (split.isTax ? (t('tax_exp') || 'Tax/Expense') : 'Staff')}</div>
-                                                                <div className="text-[11px] text-gray-400 font-medium">{split.isTax ? (t('tax') || 'Tax') : (staff?.role || 'staff')}</div>
+                                                                <div className="font-bold text-slate-900 text-sm truncate">{split.note || (split.isTax ? (t('tax_exp') || 'Tax/Expense') : 'Staff')}</div>
+                                                                <div className="text-xs text-slate-500 font-medium mt-0.5">{split.isTax ? (t('tax') || 'Tax') : (staff?.role || 'staff')}</div>
                                                             </div>
-                                                            <div className="flex items-center gap-2">
+
+                                                            <div className="flex items-center gap-3">
                                                                 {split.isTax ? (
-                                                                    <div className="w-20 bg-amber-50 rounded-xl px-2 py-1.5 flex items-center border border-transparent focus-within:border-amber-300 transition-colors">
-                                                                        <input type="number" value={split.rawValue || ''} onChange={e => updateSplit(i, 'rawValue', Number(e.target.value))} className="w-full bg-transparent text-right text-sm font-bold text-gray-800 outline-none placeholder-gray-300" placeholder="0" />
-                                                                        <span className="text-xs font-black text-amber-500 ml-1">%</span>
+                                                                    <div className="w-24 bg-slate-200 rounded-lg px-3 py-2 flex items-center border border-slate-300 focus-within:border-slate-400 focus-within:bg-white transition-all duration-200">
+                                                                        <input
+                                                                            type="number"
+                                                                            value={split.rawValue || ''}
+                                                                            onChange={e => updateSplit(i, 'rawValue', Number(e.target.value))}
+                                                                            className="w-full bg-transparent text-right text-sm font-bold text-slate-900 outline-none placeholder-slate-400"
+                                                                            placeholder="0"
+                                                                        />
+                                                                        <span className="text-xs font-bold text-slate-500 ml-1.5">%</span>
                                                                     </div>
                                                                 ) : (
-                                                                    <div className="w-32 bg-gray-50 rounded-xl px-3 py-1.5 flex items-center border border-transparent focus-within:border-blue-300 transition-colors">
-                                                                        <input type="text" inputMode="numeric" value={split.amount ? new Intl.NumberFormat('en-US').format(split.amount) : ''} onChange={e => { const val = e.target.value.replace(/[^0-9]/g, ''); updateSplit(i, 'amount', val ? Number(val) : 0); }} className="w-full bg-transparent text-right text-sm font-bold text-gray-800 outline-none placeholder-gray-300" placeholder="0" />
-                                                                        <span className="text-[10px] font-bold text-gray-400 uppercase ml-1">so'm</span>
+                                                                    <div className="w-40 bg-slate-200 rounded-lg px-3 py-2 flex items-center border border-slate-300 focus-within:border-slate-400 focus-within:bg-white transition-all duration-200">
+                                                                        <input
+                                                                            type="text"
+                                                                            inputMode="numeric"
+                                                                            value={split.amount ? new Intl.NumberFormat('en-US').format(split.amount) : ''}
+                                                                            onChange={e => { const val = e.target.value.replace(/[^0-9]/g, ''); updateSplit(i, 'amount', val ? Number(val) : 0); }}
+                                                                            className="w-full bg-transparent text-right text-sm font-bold text-slate-900 outline-none placeholder-slate-400 font-mono"
+                                                                            placeholder="0"
+                                                                        />
+                                                                        <span className="text-[11px] font-bold text-slate-400 uppercase ml-2">UZS</span>
                                                                     </div>
                                                                 )}
-                                                                <button onClick={() => removeSplit(i)} className="w-8 h-8 flex items-center justify-center rounded-full text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button>
+
+                                                                <button
+                                                                    onClick={() => removeSplit(i)}
+                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                                >
+                                                                    <Trash2 size={16} />
+                                                                </button>
                                                             </div>
                                                         </motion.div>
                                                     );
                                                 })}
                                             </AnimatePresence>
-                                            <div className="flex items-center gap-4 p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                                                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-slate-200 shrink-0 text-slate-400"><Building2 size={16} /></div>
-                                                <div className="flex-1"><div className="font-bold text-slate-700 text-sm">Klinika (Qoldiq)</div></div>
+
+                                            {/* Clinic Residual Row (Professional) */}
+                                            <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                                <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center border border-slate-200 shrink-0 text-slate-400">
+                                                    <Building2 size={18} />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-bold text-slate-700 text-sm">{t('clinic_remainder') || 'Klinika (Qoldiq)'}</div>
+                                                </div>
                                                 <div className="text-right">
-                                                    <div className={`text-lg font-black ${isOverBudget ? 'text-red-500' : 'text-slate-800'}`}>{new Intl.NumberFormat('en-US').format(Math.abs(remainder))} <span className="text-xs text-slate-400">so'm</span></div>
+                                                    <div className={`text-base font-mono font-bold ${isOverBudget ? 'text-rose-600' : 'text-slate-900'}`}>
+                                                        {new Intl.NumberFormat('en-US').format(Math.abs(remainder))} <span className="text-[10px] text-slate-400 uppercase tracking-wide">UZS</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -473,14 +527,14 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                     <div className="p-4 border-t border-gray-50 bg-white relative z-20">
                                         {!isStaffPickerOpen ? (
                                             <div className="flex gap-3">
-                                                <button onClick={() => addSplit(false)} className="flex-1 py-3 flex items-center justify-center gap-2 text-blue-600 font-bold bg-blue-50 hover:bg-blue-100 rounded-xl transition-all text-sm"><User size={16} /><span>+ {t('staff') || 'Xodimlar'}</span></button>
-                                                <button onClick={() => addSplit(true)} className="flex-1 py-3 flex items-center justify-center gap-2 text-gray-600 font-bold bg-gray-50 hover:bg-gray-100 rounded-xl transition-all text-sm"><Percent size={16} /><span>+ {t('tax_exp') || 'Tax/Expense'}</span></button>
+                                                <button onClick={() => addSplit(false)} className="flex-1 py-3.5 flex items-center justify-center gap-2 text-white font-bold bg-gradient-to-b from-blue-500 to-blue-600 shadow-sm hover:shadow-md hover:from-blue-400 hover:to-blue-600 border border-transparent rounded-xl transition-all text-sm group active:scale-95"><User size={18} className="group-hover:scale-110 transition-transform" /><span>+ {t('staff') || 'Xodimlar'}</span></button>
+                                                <button onClick={() => addSplit(true)} className="flex-1 py-3.5 flex items-center justify-center gap-2 text-white font-bold bg-gradient-to-b from-rose-500 to-rose-600 shadow-sm hover:shadow-md hover:from-rose-400 hover:to-rose-600 border border-transparent rounded-xl transition-all text-sm group active:scale-95"><Percent size={18} className="group-hover:scale-110 transition-transform" /><span>+ {t('tax_exp') || 'Tax/Expense'}</span></button>
                                             </div>
                                         ) : (
                                             <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-blue-100 shadow-2xl shadow-blue-500/10 rounded-2xl p-3 z-50 animate-in fade-in slide-in-from-bottom-2">
                                                 <div className="flex items-center gap-2 mb-2 p-1 border-b border-gray-50">
                                                     <Search size={16} className="text-blue-500 ml-1" />
-                                                    <input autoFocus type="text" value={staffSearch} onChange={e => setStaffSearch(e.target.value)} className="flex-1 bg-transparent px-2 py-1 text-sm font-bold text-gray-900 outline-none placeholder-gray-300" placeholder="Search staff..." />
+                                                    <input autoFocus type="text" value={staffSearch} onChange={e => setStaffSearch(e.target.value)} className="flex-1 bg-transparent px-2 py-1 text-sm font-bold text-gray-900 outline-none placeholder-gray-300" placeholder={t('search_staff') || "Search staff..."} />
                                                     <button onClick={() => setIsStaffPickerOpen(false)} className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors"><X size={16} /></button>
                                                 </div>
                                                 <div className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar">

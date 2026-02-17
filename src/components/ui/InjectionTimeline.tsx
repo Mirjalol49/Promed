@@ -15,6 +15,7 @@ interface InjectionTimelineProps {
     onEditInjection: (injection: Injection) => void;
     onDeleteInjection: (id: string, e: React.MouseEvent) => void;
     onUpdateStatus: (id: string, status: InjectionStatus) => void;
+    readOnly?: boolean;
 }
 
 export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
@@ -22,7 +23,8 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
     onAddInjection,
     onEditInjection,
     onDeleteInjection,
-    onUpdateStatus
+    onUpdateStatus,
+    readOnly = false
 }) => {
     const { t } = useLanguage();
     const { activeToast } = useToast();
@@ -68,13 +70,15 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
 
                     </div>
 
-                    <button
-                        onClick={onAddInjection}
-                        className="btn-premium-blue !px-4 !py-2 text-xs shadow-lg shadow-promed-primary/20 hover:shadow-promed-primary/40 hover:-translate-y-0.5 transition-all"
-                    >
-                        <Plus size={16} className="relative z-10" />
-                        <span>{t('add_injection')}</span>
-                    </button>
+                    {!readOnly && (
+                        <button
+                            onClick={onAddInjection}
+                            className="btn-premium-blue !px-4 !py-2 text-xs shadow-lg shadow-promed-primary/20 hover:shadow-promed-primary/40 hover:-translate-y-0.5 transition-all"
+                        >
+                            <Plus size={16} className="relative z-10" />
+                            <span>{t('add_injection')}</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* 2. Timeline Content */}
@@ -165,22 +169,25 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                     </h4>
 
                                                     {/* ACTIONS (Edit & Delete) */}
-                                                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); onEditInjection(inj); }}
-                                                            className="p-1.5 text-slate-400 hover:text-promed-primary hover:bg-slate-100 rounded-lg transition-colors"
-                                                            title={t('edit')}
-                                                        >
-                                                            <Edit2 size={14} />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); onDeleteInjection(inj.id, e); }}
-                                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-slate-100 rounded-lg transition-colors"
-                                                            title={t('delete')}
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                    </div>
+                                                    {/* ACTIONS (Edit & Delete) */}
+                                                    {!readOnly && (
+                                                        <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); onEditInjection(inj); }}
+                                                                className="p-1.5 text-slate-400 hover:text-promed-primary hover:bg-slate-100 rounded-lg transition-colors"
+                                                                title={t('edit')}
+                                                            >
+                                                                <Edit2 size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); onDeleteInjection(inj.id, e); }}
+                                                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-slate-100 rounded-lg transition-colors"
+                                                                title={t('delete')}
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 <div className="flex flex-col items-start gap-1 mt-1">
@@ -231,6 +238,7 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                             </motion.button>
                                                         ) : (
                                                             /* Future State Button/Label */
+                                                            /* Future State Button/Label */
                                                             <span className="text-xs font-bold text-slate-400 px-3 py-1 rounded-xl border border-slate-200 bg-white">
                                                                 {t('status_scheduled')}
                                                             </span>
@@ -238,14 +246,15 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                     </div>
                                                 ) : (
                                                     <motion.span
-                                                        whileHover={{ scale: 1.05 }}
-                                                        whileTap={{ scale: 0.95 }}
+                                                        whileHover={!readOnly ? { scale: 1.05 } : {}}
+                                                        whileTap={!readOnly ? { scale: 0.95 } : {}}
                                                         onClick={(e) => {
+                                                            if (readOnly) return;
                                                             e.stopPropagation();
                                                             onUpdateStatus(inj.id, InjectionStatus.SCHEDULED);
                                                         }}
                                                         className={`
-                                                        w-full md:w-auto text-center px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wide border cursor-pointer hover:opacity-80 transition-opacity
+                                                        w-full md:w-auto text-center px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wide border ${!readOnly ? 'cursor-pointer hover:opacity-80 transition-opacity' : 'cursor-default opacity-80'}
                                                         ${isDone ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                                                 isMissed ? 'bg-red-50 text-red-600 border-red-100' : ''}
                                                     `}>

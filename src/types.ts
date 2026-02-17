@@ -62,7 +62,7 @@ export interface Profile {
   fullName?: string;
   email?: string;
   profileImage?: string;
-  role: 'admin' | 'doctor' | 'staff';
+  role: 'admin' | 'doctor' | 'staff' | 'viewer' | 'seller' | 'nurse';
   status: 'active' | 'frozen' | 'banned';
   subscription_status: 'trial' | 'active' | 'frozen';
   subscription_end?: string;
@@ -75,7 +75,7 @@ export interface Profile {
   phoneNumber?: string;
 }
 
-export type PageView = 'DASHBOARD' | 'PATIENTS' | 'PATIENT_DETAIL' | 'SETTINGS' | 'ADD_PATIENT' | 'EDIT_PATIENT' | 'ADMIN_DASHBOARD' | 'SUPER_ADMIN' | 'LEADS' | 'NOTES' | 'MESSAGES' | 'STAFF' | 'FINANCE';
+export type PageView = 'DASHBOARD' | 'PATIENTS' | 'PATIENT_DETAIL' | 'SETTINGS' | 'ADD_PATIENT' | 'EDIT_PATIENT' | 'ADMIN_DASHBOARD' | 'SUPER_ADMIN' | 'LEADS' | 'NOTES' | 'MESSAGES' | 'STAFF' | 'FINANCE' | 'ROLES';
 
 export type LeadSource = 'Instagram' | 'Telegram' | 'Walk-in' | 'Referral';
 export type LeadStatus = 'NEW' | 'CONTACTED' | 'PHOTOS_SENT' | 'PRICE_GIVEN' | 'BOOKED' | 'LOST';

@@ -41,6 +41,8 @@ interface PatientFinanceStatsProps {
     accountId: string;
 }
 
+import { useAccount } from '../../contexts/AccountContext';
+
 interface GroupedTransaction {
     income: Transaction;
     splits: Transaction[];
@@ -56,7 +58,7 @@ type TimelineItem =
 // ── Color palette for split items ──
 const SPLIT_COLORS = [
     { bg: 'bg-violet-500', light: 'bg-violet-50', border: 'border-violet-100', text: 'text-violet-600', ring: 'ring-violet-100' },
-    { bg: 'bg-blue-500', light: 'bg-blue-50', border: 'border-blue-100', text: 'text-blue-600', ring: 'ring-blue-100' },
+    { bg: 'bg-blue-500', light: 'bg-[#ddedf8]', border: 'border-blue-100', text: 'text-blue-600', ring: 'ring-blue-100' },
     { bg: 'bg-pink-500', light: 'bg-pink-50', border: 'border-pink-100', text: 'text-pink-600', ring: 'ring-pink-100' },
     { bg: 'bg-orange-500', light: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-600', ring: 'ring-orange-100' },
     { bg: 'bg-cyan-500', light: 'bg-cyan-50', border: 'border-cyan-100', text: 'text-cyan-600', ring: 'ring-cyan-100' },
@@ -65,6 +67,8 @@ const SPLIT_COLORS = [
 export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patient, accountId }) => {
     const { t, language } = useLanguage();
     const { success, error: toastError } = useToast();
+    const { role } = useAccount();
+    const isViewer = role === 'viewer';
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [staffList, setStaffList] = useState<Staff[]>([]);
     const [loading, setLoading] = useState(true);
@@ -303,14 +307,16 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                         </div>
                     )}
                 </div>
-                <button
-                    onClick={() => setIsAddingPayment(!isAddingPayment)}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all ${isAddingPayment ? 'bg-slate-100 text-slate-600' : 'btn-premium-emerald hover:scale-105 active:scale-95'}`}
-                >
-                    {isAddingPayment ? t('cancel') : (
-                        <><Plus size={18} strokeWidth={3} />{t('add_payment')}</>
-                    )}
-                </button>
+                {!isViewer && (
+                    <button
+                        onClick={() => setIsAddingPayment(!isAddingPayment)}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all ${isAddingPayment ? 'bg-slate-100 text-slate-600' : 'btn-premium-emerald hover:scale-105 active:scale-95'}`}
+                    >
+                        {isAddingPayment ? t('cancel') : (
+                            <><Plus size={18} strokeWidth={3} />{t('add_payment')}</>
+                        )}
+                    </button>
+                )}
             </div>
 
             <AddPaymentModal
@@ -321,9 +327,9 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
             />
 
             {/* ── Transaction History ── */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-premium overflow-hidden">
+            <div className="flex flex-col gap-5">
                 {/* Header */}
-                <div className="px-8 py-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div className="bg-white rounded-[2rem] px-6 md:px-8 py-5 border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
                     <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
                         <div className="p-2 bg-promed-light rounded-xl">
                             <Wallet className="text-promed-primary w-5 h-5" />
@@ -445,7 +451,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                 </div>
 
                 {/* ── Transaction List ── */}
-                <div className="max-h-[700px] overflow-y-auto no-scrollbar">
+                <div className="max-h-[700px] overflow-y-auto no-scrollbar pr-1 -mr-1">
                     {timeline.length > 0 ? (
                         <div>
                             {timeline.map((item, itemIdx) => {
@@ -458,13 +464,12 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                     return (
                                         <div
                                             key={exp.id}
-                                            className={`group relative px-6 md:px-8 py-5 flex items-center gap-5 transition-all duration-200 ${isVoided ? 'bg-gray-50/80 opacity-75' : 'hover:bg-rose-50/30'} ${itemIdx > 0 ? 'border-t border-slate-100' : ''}`}
+                                            className={`group relative px-6 md:px-8 py-5 flex items-center gap-5 transition-all duration-200 mx-4 md:mx-6 mb-3 rounded-2xl border border-slate-200 bg-slate-100 hover:bg-white hover:shadow-md ${isVoided ? 'opacity-75' : ''}`}
                                         >
-                                            {/* Date */}
-                                            <div className="hidden md:flex flex-col items-center justify-center w-16 h-16 bg-gradient-to-br from-rose-50 to-white rounded-2xl border border-rose-100 shadow-sm shrink-0">
-                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider leading-none">{getMonthShort(exp.date)}</span>
-                                                <span className="text-2xl font-black text-slate-800 leading-none mt-0.5">{format(new Date(exp.date), 'dd')}</span>
-                                                <span className="text-[9px] font-bold text-rose-400 leading-none mt-0.5">{exp.time || '--:--'}</span>
+                                            <div className="hidden md:flex flex-col items-center justify-center w-[4.5rem] h-[4.5rem] bg-slate-200 rounded-2xl border border-slate-300/50 shadow-inner shrink-0 group-hover:scale-105 transition-all duration-300">
+                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-0.5">{getMonthShort(exp.date)}</span>
+                                                <span className="text-[1.75rem] font-black text-slate-800 leading-none">{format(new Date(exp.date), 'dd')}</span>
+                                                <span className="text-[10px] font-bold text-rose-500 leading-none mt-1 bg-white/60 px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm">{exp.time || '--:--'}</span>
                                             </div>
 
                                             {/* Info */}
@@ -496,30 +501,32 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                 </div>
                                             </div>
 
-                                            {isVoided ? (
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleRestore(item); }}
-                                                    className="flex p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
-                                                    title="Tranzaksiyani tiklash"
-                                                >
-                                                    <RotateCcw size={18} strokeWidth={2.5} />
-                                                </button>
-                                            ) : (
-                                                <>
+                                            {!isViewer && (
+                                                isVoided ? (
                                                     <button
-                                                        onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
-                                                        className="hidden md:flex p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                                        title={t('delete') || "O'chirish"}
+                                                        onClick={(e) => { e.stopPropagation(); handleRestore(item); }}
+                                                        className="flex p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
+                                                        title="Tranzaksiyani tiklash"
                                                     >
-                                                        <Trash2 size={18} strokeWidth={2.5} />
+                                                        <RotateCcw size={18} strokeWidth={2.5} />
                                                     </button>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
-                                                        className="md:hidden flex p-2 text-slate-300 active:text-rose-500"
-                                                    >
-                                                        <Trash2 size={18} strokeWidth={2.5} />
-                                                    </button>
-                                                </>
+                                                ) : (
+                                                    <>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
+                                                            className="hidden md:flex p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                                            title={t('delete') || "O'chirish"}
+                                                        >
+                                                            <Trash2 size={18} strokeWidth={2.5} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
+                                                            className="md:hidden flex p-2 text-slate-300 active:text-rose-500"
+                                                        >
+                                                            <Trash2 size={18} strokeWidth={2.5} />
+                                                        </button>
+                                                    </>
+                                                )
                                             )}
                                         </div>
                                     );
@@ -538,14 +545,13 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                     <div key={income.id}>
                                         {/* ── Main Transaction Row ── */}
                                         <div
-                                            className={`group relative px-6 md:px-8 py-5 flex items-center gap-5 transition-all duration-200 ${isVoided ? 'bg-gray-50/80 opacity-75' : (hasSplits ? 'cursor-pointer hover:bg-slate-50/70' : 'hover:bg-slate-50/40')} ${isExpanded ? 'bg-slate-50/50' : ''} ${itemIdx > 0 ? 'border-t border-slate-100' : ''}`}
+                                            className={`group relative px-6 md:px-8 py-5 flex items-center gap-5 transition-all duration-200 mx-4 md:mx-6 mb-3 rounded-2xl border border-slate-200 bg-slate-100 hover:bg-white hover:shadow-md ${isVoided ? 'opacity-75' : (hasSplits ? 'cursor-pointer' : '')} ${isExpanded ? 'ring-2 ring-blue-100 bg-white shadow-md' : ''}`}
                                             onClick={() => !isVoided && hasSplits && toggleExpand(income.id)}
                                         >
-                                            {/* Date */}
-                                            <div className="hidden md:flex flex-col items-center justify-center w-16 h-16 bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-100 shadow-sm shrink-0">
-                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider leading-none">{getMonthShort(income.date)}</span>
-                                                <span className="text-2xl font-black text-slate-800 leading-none mt-0.5">{format(new Date(income.date), 'dd')}</span>
-                                                <span className="text-[9px] font-bold text-emerald-500 leading-none mt-0.5">{income.time || '--:--'}</span>
+                                            <div className="hidden md:flex flex-col items-center justify-center w-[4.5rem] h-[4.5rem] bg-slate-200 rounded-2xl border border-slate-300/50 shadow-inner shrink-0 group-hover:scale-105 transition-all duration-300">
+                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-0.5">{getMonthShort(income.date)}</span>
+                                                <span className="text-[1.75rem] font-black text-slate-800 leading-none">{format(new Date(income.date), 'dd')}</span>
+                                                <span className="text-[10px] font-bold text-blue-600 leading-none mt-1 bg-white/80 px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm">{income.time || '--:--'}</span>
                                             </div>
 
                                             {/* Info */}
@@ -570,12 +576,12 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                                 {t(income.category)}
                                                             </span>
 
-                                                            {/* Split Badges */}
+                                                            {/* Split Badges - Simplified to just an indicator if splits exist, or a more subtle list */}
                                                             {hasSplits && (
                                                                 <div className="flex items-center gap-1">
                                                                     {splits.some(s => s.category === 'salary') && (
-                                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[9px] font-bold border border-blue-100">
-                                                                            <Users size={8} />
+                                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#ddedf8] text-blue-600 text-[9px] font-bold border border-blue-100 uppercase tracking-wide">
+                                                                            <Users size={10} />
                                                                             {t('salary_split') || 'Ish haqi'}
                                                                         </span>
                                                                     )}
@@ -588,10 +594,64 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                 </div>
                                             </div>
 
+                                            {hasSplits && (
+                                                <div className="hidden md:flex ml-auto items-center gap-3">
+                                                    {splits.slice(0, 4).map((s, i) => {
+                                                        const staff = getStaffForSplit(s);
+                                                        const isTax = s.category === 'tax';
+
+                                                        // Smart Name Resolution
+                                                        let displayName = '';
+                                                        if (isTax) {
+                                                            displayName = t('tax') || 'Soliq';
+                                                        } else if (staff) {
+                                                            displayName = staff.fullName.split(' ')[0];
+                                                        } else {
+                                                            // Fallback: Try to parse name from description for deleted staff
+                                                            // Format usually "[Split] Name"
+                                                            const rawName = s.description?.replace('[Split] ', '').trim();
+                                                            displayName = rawName ? rawName.split(' ')[0] : (t('unknown') || '???');
+                                                        }
+
+                                                        return (
+                                                            <div key={i} className="flex flex-col items-center gap-1 min-w-[40px]">
+                                                                {/* Avatar / Icon */}
+                                                                <div className={`w-8 h-8 rounded-full ring-2 ring-white shadow-sm overflow-hidden flex items-center justify-center ${isTax ? SPLIT_COLORS[0].light + ' ' + SPLIT_COLORS[0].text
+                                                                    : !staff ? SPLIT_COLORS[(i) % SPLIT_COLORS.length].light + ' ' + SPLIT_COLORS[(i) % SPLIT_COLORS.length].text
+                                                                        : 'bg-slate-100'
+                                                                    }`}>
+                                                                    {isTax ? (
+                                                                        <Percent size={14} strokeWidth={3} />
+                                                                    ) : staff?.imageUrl ? (
+                                                                        <ImageWithFallback src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <span className="text-[9px] font-black">
+                                                                            {displayName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?'}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {/* Name */}
+                                                                <span className={`text-[9px] font-bold max-w-[50px] truncate text-center leading-none ${!staff && !isTax ? 'text-slate-400 italic' : 'text-slate-500'}`}>
+                                                                    {displayName}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    {splits.length > 4 && (
+                                                        <div className="flex flex-col items-center gap-1">
+                                                            <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                                                +{splits.length - 4}
+                                                            </div>
+                                                            <span className="h-2"></span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
                                             {/* Amount */}
-                                            <div className="text-right shrink-0">
-                                                <div className={`text-xl font-black tabular-nums ${isVoided ? 'text-slate-400 line-through decoration-slate-400' : 'text-emerald-500'}`}>
-                                                    +{formatWithSpaces(income.amount)} <span className={`text-xs font-bold ml-0.5 ${isVoided ? 'text-slate-300 no-underline' : 'text-emerald-300'}`}>UZS</span>
+                                            <div className="text-right shrink-0 min-w-[120px]">
+                                                <div className={`text-xl font-black tabular-nums tracking-tight ${isVoided ? 'text-slate-400 line-through decoration-slate-400' : 'text-emerald-500'}`}>
+                                                    +{formatWithSpaces(income.amount)} <span className={`text-xs font-bold ml-0.5 uppercase ${isVoided ? 'text-slate-300 no-underline' : 'text-emerald-300'}`}>UZS</span>
                                                 </div>
                                             </div>
 
@@ -600,36 +660,38 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                 <motion.div
                                                     animate={{ rotate: isExpanded ? 180 : 0 }}
                                                     transition={{ duration: 0.2 }}
-                                                    className="w-8 h-8 rounded-xl gel-blue-style flex items-center justify-center shrink-0 shadow-lg shadow-promed-primary/20"
+                                                    className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center shrink-0 text-slate-500 group-hover:bg-blue-500 group-hover:text-white transition-colors"
                                                 >
-                                                    <ChevronDown size={16} className="text-white" />
+                                                    <ChevronDown size={18} strokeWidth={2.5} />
                                                 </motion.div>
                                             )}
 
-                                            {isVoided ? (
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleRestore(item); }}
-                                                    className="flex p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
-                                                    title="Tranzaksiyani tiklash"
-                                                >
-                                                    <RotateCcw size={18} strokeWidth={2.5} />
-                                                </button>
-                                            ) : (
-                                                <>
+                                            {!isViewer && (
+                                                isVoided ? (
                                                     <button
-                                                        onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
-                                                        className="hidden md:flex p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                                        title={t('delete') || "O'chirish"}
+                                                        onClick={(e) => { e.stopPropagation(); handleRestore(item); }}
+                                                        className="flex p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
+                                                        title="Tranzaksiyani tiklash"
                                                     >
-                                                        <Trash2 size={18} strokeWidth={2.5} />
+                                                        <RotateCcw size={18} strokeWidth={2.5} />
                                                     </button>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
-                                                        className="md:hidden flex p-2 text-slate-300 active:text-rose-500"
-                                                    >
-                                                        <Trash2 size={18} strokeWidth={2.5} />
-                                                    </button>
-                                                </>
+                                                ) : (
+                                                    <>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
+                                                            className="hidden md:flex p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                                            title={t('delete') || "O'chirish"}
+                                                        >
+                                                            <Trash2 size={18} strokeWidth={2.5} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
+                                                            className="md:hidden flex p-2 text-slate-300 active:text-rose-500"
+                                                        >
+                                                            <Trash2 size={18} strokeWidth={2.5} />
+                                                        </button>
+                                                    </>
+                                                )
                                             )}
 
 
@@ -646,8 +708,8 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                     transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                                                     className="overflow-hidden"
                                                 >
-                                                    <div className="px-6 md:px-8 pb-6">
-                                                        <div className="rounded-2xl border border-slate-100 bg-gradient-to-b from-slate-50/80 to-white overflow-hidden shadow-sm">
+                                                    <div className="px-5 pb-5">
+                                                        <div className="rounded-2xl bg-slate-50/80 border border-slate-100 overflow-hidden">
 
                                                             {/* ── Visual Distribution Header ── */}
                                                             <div className="p-5 pb-4">
@@ -705,74 +767,90 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                                     return (
                                                                         <motion.div
                                                                             key={s.id || idx}
-                                                                            initial={{ opacity: 0, x: -10 }}
-                                                                            animate={{ opacity: 1, x: 0 }}
+                                                                            initial={{ opacity: 0, y: 10 }}
+                                                                            animate={{ opacity: 1, y: 0 }}
                                                                             transition={{ delay: 0.1 + idx * 0.05 }}
-                                                                            className="flex items-center gap-3.5 p-3.5 bg-white rounded-xl border border-slate-100 hover:border-slate-200 transition-colors"
+                                                                            className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group/card"
                                                                         >
                                                                             {/* Avatar / Icon */}
                                                                             {isTax ? (
-                                                                                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center ring-1 ring-amber-100 shrink-0">
-                                                                                    <Percent size={16} className="text-amber-500" />
+                                                                                <div className={`w-12 h-12 rounded-2xl ${colors.light} flex items-center justify-center ring-1 ${colors.ring} shrink-0 group-hover/card:scale-105 transition-transform`}>
+                                                                                    <Percent size={20} className={colors.text} strokeWidth={2.5} />
                                                                                 </div>
                                                                             ) : staff?.imageUrl ? (
-                                                                                <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white shadow-sm shrink-0">
+                                                                                <div className="w-12 h-12 rounded-2xl overflow-hidden ring-2 ring-slate-50 shadow-sm shrink-0 group-hover/card:scale-105 transition-transform">
                                                                                     <ImageWithFallback src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
                                                                                 </div>
                                                                             ) : (
-                                                                                <div className={`w-10 h-10 rounded-xl ${colors.light} flex items-center justify-center ring-1 ${colors.ring} shrink-0`}>
-                                                                                    <User size={16} className={colors.text} />
+                                                                                <div className={`w-12 h-12 rounded-2xl ${colors.light} flex items-center justify-center ring-1 ${colors.ring} shrink-0 group-hover/card:scale-105 transition-transform`}>
+                                                                                    <span className={`text-sm font-black ${colors.text}`}>
+                                                                                        {(label || '').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '??'}
+                                                                                    </span>
                                                                                 </div>
                                                                             )}
 
                                                                             {/* Name & Role */}
                                                                             <div className="flex-1 min-w-0">
-                                                                                <div className="font-bold text-slate-800 text-[13px] truncate">{label || (isTax ? t('tax') : 'Staff')}</div>
-                                                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                                                                    {isTax ? (t('tax') || 'Soliq') : (staff?.role || t('salary') || 'Ish haqi')} • {pct}%
+                                                                                <div className="font-black text-slate-800 text-sm truncate mb-0.5">{label || (isTax ? t('tax') : 'Staff')}</div>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider bg-slate-100 px-1.5 py-0.5 rounded-md">
+                                                                                        {isTax ? (t('tax') || 'Soliq') : (staff?.role || t('salary') || 'Ish haqi')}
+                                                                                    </span>
+                                                                                    <span className={`text-[10px] font-semibold ${colors.text} bg-white px-1.5 py-0.5 rounded-md shadow-sm ring-1 ${colors.ring}`}>
+                                                                                        {pct}%
+                                                                                    </span>
                                                                                 </div>
                                                                             </div>
 
                                                                             {/* Amount */}
                                                                             <div className="text-right shrink-0">
-                                                                                <div className={`font-black text-sm tabular-nums ${colors.text}`}>
+                                                                                <div className={`text-lg font-black tabular-nums tracking-tight ${colors.text} flex items-baseline justify-end gap-1`}>
                                                                                     {formatWithSpaces(s.amount)}
+                                                                                    <span className="text-[10px] uppercase font-bold text-slate-400">UZS</span>
                                                                                 </div>
-                                                                                <div className="text-[9px] font-bold text-slate-300 uppercase">so'm</div>
                                                                             </div>
                                                                         </motion.div>
                                                                     );
                                                                 })}
 
                                                                 {/* ── Clinic Remainder Card ── */}
+                                                                {/* ── Clinic Remainder Card ── */}
                                                                 <motion.div
-                                                                    initial={{ opacity: 0, x: -10 }}
-                                                                    animate={{ opacity: 1, x: 0 }}
+                                                                    initial={{ opacity: 0, y: 10 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
                                                                     transition={{ delay: 0.1 + splits.length * 0.05 }}
-                                                                    className="flex items-center gap-3.5 p-3.5 bg-gradient-to-r from-emerald-50 to-emerald-50/30 rounded-xl border border-emerald-100"
+                                                                    className="flex items-center gap-4 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/60 shadow-sm hover:shadow-md transition-all duration-300 group/card"
                                                                 >
-                                                                    <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center ring-1 ring-emerald-200 shrink-0">
-                                                                        <Building2 size={16} className="text-emerald-600" />
+                                                                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center ring-1 ring-emerald-100 shadow-sm shrink-0">
+                                                                        <Building2 size={20} className="text-emerald-500" strokeWidth={2.5} />
                                                                     </div>
                                                                     <div className="flex-1 min-w-0">
-                                                                        <div className="font-bold text-emerald-700 text-[13px]">Klinika</div>
-                                                                        <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
-                                                                            {t('net_income') || 'Sof daromad'} • {clinicPercent}%
+                                                                        <div className="font-black text-emerald-900 text-sm mb-0.5">Klinika</div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-100/50 px-1.5 py-0.5 rounded-md">
+                                                                                {t('net_income') || 'Sof daromad'}
+                                                                            </span>
+                                                                            <span className="text-[10px] font-black text-emerald-600 bg-white px-1.5 py-0.5 rounded-md shadow-sm ring-1 ring-emerald-100">
+                                                                                {clinicPercent}%
+                                                                            </span>
                                                                         </div>
                                                                     </div>
                                                                     <div className="text-right shrink-0">
-                                                                        <div className="font-black text-sm text-emerald-600 tabular-nums">
+                                                                        <div className="text-lg font-black text-emerald-600 tabular-nums tracking-tight flex items-baseline justify-end gap-1">
                                                                             {formatWithSpaces(clinicAmount)}
+                                                                            <span className="text-[10px] uppercase font-bold text-emerald-400">UZS</span>
                                                                         </div>
-                                                                        <div className="text-[9px] font-bold text-emerald-300 uppercase">so'm</div>
                                                                     </div>
                                                                 </motion.div>
                                                             </div>
 
                                                             {/* ── Summary Footer ── */}
-                                                            <div className="mx-4 mb-4 mt-1 flex items-center justify-between px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('total') || 'Jami'}</span>
-                                                                <span className="text-sm font-black text-slate-700 tabular-nums">{formatWithSpaces(income.amount)} <span className="text-slate-300 text-[10px]">UZS</span></span>
+                                                            <div className="mx-4 mb-4 mt-2 flex items-center justify-between px-6 py-5 bg-slate-50 rounded-2xl border border-slate-100/80">
+                                                                <span className="text-base font-black text-slate-800 uppercase tracking-widest pl-14">{t('total') || 'JAMI'}</span>
+                                                                <div className="flex items-baseline gap-1">
+                                                                    <span className="text-2xl font-black text-slate-900 tabular-nums tracking-tight">{formatWithSpaces(income.amount)}</span>
+                                                                    <span className="text-xs font-bold text-slate-400 uppercase">UZS</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>

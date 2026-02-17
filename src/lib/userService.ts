@@ -26,7 +26,7 @@ const mapProfile = (id: string, data: any): any => ({
   phone: data.phone,
   email: data.email,
   fullName: data.full_name || data.fullName,
-  accountId: data.account_id,
+  accountId: data.account_id || data.accountId,
   // PRIORITIZE avatar_url, fallback to profile_image (legacy)
   profileImage: data.avatar_url || data.profile_image,
   disabled: data.is_disabled,
@@ -55,6 +55,7 @@ export const updateUserProfile = async (
     subscriptionStatus?: string,
     subscriptionEnd?: string,
     accountId?: string,
+    account_id?: string, // Primary snake_case for correct linkage
     autoFreezeEnabled?: boolean
   }
 ): Promise<void> => {

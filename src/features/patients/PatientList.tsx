@@ -58,6 +58,8 @@ import { ImageUploadingOverlay } from '../../components/ui/ImageUploadingOverlay
 import { InjectionTimeline } from '../../components/ui/InjectionTimeline';
 import { AnimateIcon } from '../../components/ui/AnimateIcon';
 import { PatientFinanceStats } from './PatientFinanceStats';
+import { useRBAC } from '../../hooks/useRBAC';
+import { SCOPES } from '../../config/permissions';
 import { useAccount } from '../../contexts/AccountContext';
 
 
@@ -69,6 +71,7 @@ import trashIcon from '../../assets/images/patients.png'; // Fallback for missin
 import Lottie from 'lottie-react';
 import loadingAnimation from '../../assets/images/mascots/loading.json';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
+import { PatientListSkeleton } from '../../components/ui/Skeletons';
 
 // Fallback for missing date.png removed as unused
 import editIcon from '../../assets/images/patients.png'; // Fallback for missing edit.png
@@ -306,6 +309,8 @@ export const PatientList: React.FC<{
   isLoading?: boolean;
 }> = ({ patients, onSelect, searchQuery, onSearch, onAddPatient, isLoading }) => {
   const { language, t } = useLanguage();
+  const { can } = useRBAC();
+  const canEdit = can(SCOPES.canEditPatients);
   const localeString = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
   const translateStatus = useStatusTranslation();
 
@@ -364,6 +369,10 @@ export const PatientList: React.FC<{
     return pages;
   };
 
+  if (isLoading) {
+    return <PatientListSkeleton />;
+  }
+
   return (
     <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-premium">
       {/* List Header */}
@@ -381,13 +390,15 @@ export const PatientList: React.FC<{
             />
           </div>
           {/* Add Button */}
-          <button
-            onClick={onAddPatient}
-            className="btn-premium-blue flex items-center justify-center w-full md:w-auto gap-2 px-5 py-2.5 whitespace-nowrap shadow-lg shadow-promed-primary/20"
-          >
-            <PlusCircle size={18} className="relative z-10" />
-            <span className="relative z-10 font-bold">{t('add_new_patient')}</span>
-          </button>
+          {canEdit && (
+            <button
+              onClick={onAddPatient}
+              className="btn-premium-blue flex items-center justify-center w-full md:w-auto gap-2 px-5 py-2.5 whitespace-nowrap shadow-lg shadow-promed-primary/20"
+            >
+              <PlusCircle size={18} className="relative z-10" />
+              <span className="relative z-10 font-bold">{t('add_new_patient')}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -626,7 +637,11 @@ export const PatientDetail: React.FC<{
   const [photoToDeleteId, setPhotoToDeleteId] = useState<string | null>(null);
   const [injToDeleteId, setInjToDeleteId] = useState<string | null>(null);
 
+
+
   const [activeTab, setActiveTab] = useState<'general' | 'finance'>('general');
+  const { can } = useRBAC();
+  const canEdit = can(SCOPES.canEditPatients);
   const { accountId } = useAccount();
 
   const [optimisticPhotos, setOptimisticPhotos] = useState<{ id: string, url: string, label: string, type: 'video' | 'image' }[]>([]);
@@ -792,22 +807,24 @@ export const PatientDetail: React.FC<{
             </div>
 
             {/* Edit & Delete Buttons */}
-            <div className="flex items-center space-x-3 flex-shrink-0">
-              <button
-                onClick={onEditPatient}
-                className="btn-premium-white !px-5 !py-2.5"
-              >
-                <Pencil className="w-5 h-5 relative z-10" />
-                <span className="relative z-10">{t('edit_patient')}</span>
-              </button>
-              <button
-                onClick={onDeletePatient}
-                className="btn-premium-white !px-5 !py-2.5 !text-red-600 !border-red-200 hover:!bg-red-50 group/del"
-              >
-                <Trash2 className="w-5 h-5 relative z-10 group-hover/del:scale-110 transition-transform" />
-                <span className="relative z-10">{t('delete')}</span>
-              </button>
-            </div>
+            {canEdit && (
+              <div className="flex items-center space-x-3 flex-shrink-0">
+                <button
+                  onClick={onEditPatient}
+                  className="btn-premium-white !px-5 !py-2.5"
+                >
+                  <Pencil className="w-5 h-5 relative z-10" />
+                  <span className="relative z-10">{t('edit_patient')}</span>
+                </button>
+                <button
+                  onClick={onDeletePatient}
+                  className="btn-premium-white !px-5 !py-2.5 !text-red-600 !border-red-200 hover:!bg-red-50 group/del"
+                >
+                  <Trash2 className="w-5 h-5 relative z-10 group-hover/del:scale-110 transition-transform" />
+                  <span className="relative z-10">{t('delete')}</span>
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -928,13 +945,15 @@ export const PatientDetail: React.FC<{
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {/* Add Photo Card */}
-                  <label className="cursor-pointer aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-300 bg-slate-50/50 group">
-                    <div className="flex flex-col items-center">
-                      <PlusCircle size={28} className="group-hover:scale-110 transition-transform mb-1 opacity-60 group-hover:opacity-100" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('add_media') || "Add Media"}</span>
-                    </div>
-                    <input type="file" className="hidden" accept="image/*,video/*" onChange={handleFileUpload} />
-                  </label>
+                  {canEdit && (
+                    <label className="cursor-pointer aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-300 bg-slate-50/50 group">
+                      <div className="flex flex-col items-center">
+                        <PlusCircle size={28} className="group-hover:scale-110 transition-transform mb-1 opacity-60 group-hover:opacity-100" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('add_media') || "Add Media"}</span>
+                      </div>
+                      <input type="file" className="hidden" accept="image/*,video/*" onChange={handleFileUpload} />
+                    </label>
+                  )}
 
                   {/* Optimistic Photos */}
                   {optimisticPhotos.map((img) => (
@@ -985,15 +1004,17 @@ export const PatientDetail: React.FC<{
                       )}
 
                       {/* Delete Button (Hover) */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteAfterPhotoClick(img.id);
-                        }}
-                        className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 shadow-sm z-20 hover:scale-110"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteAfterPhotoClick(img.id);
+                          }}
+                          className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 shadow-sm z-20 hover:scale-110"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
 
                       {/* Gradient & Label */}
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 pt-12 flex flex-col justify-end">
@@ -1013,6 +1034,7 @@ export const PatientDetail: React.FC<{
                 onEditInjection={(inj) => openEditInjection(inj)}
                 onDeleteInjection={(id, e) => handleDeleteClick(e, id)}
                 onUpdateStatus={(id, status) => onUpdateInjection(patient.id, id, status)}
+                readOnly={!canEdit}
               />
             </div>
           </div>

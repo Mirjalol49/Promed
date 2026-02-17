@@ -7,10 +7,7 @@ import {
     Send,
     User,
     Users,
-    AlertTriangle,
     Phone,
-    ArrowRightCircle,
-    MoreHorizontal,
     Sparkles,
     Banknote,
     Stethoscope,
@@ -18,13 +15,14 @@ import {
     ChevronDown,
     Check,
     Pencil,
-    Trash,
-    Clock
+    Trash2,
+    Clock,
+    Calendar,
+    MapPin
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Portal } from '../../components/ui/Portal';
-import Lottie from 'lottie-react';
 
 interface LeadCardProps {
     lead: Lead;
@@ -34,27 +32,50 @@ interface LeadCardProps {
     onRemind: (lead: Lead) => void;
     onSelect: (lead: Lead) => void;
     layoutId?: string;
+    isViewer?: boolean;
 }
 
-const SourceIcon = ({ source }: { source: Lead['source'] }) => {
-    switch (source) {
-        case 'Instagram': return <Instagram size={14} className="" />;
-        case 'Telegram': return <Send size={14} className="" />;
-        case 'Walk-in': return <User size={14} className="" />;
-        case 'Referral': return <Users size={14} className="" />;
-        default: return <User size={14} className="" />;
-    }
+// ── Initials + Color Generator ──
+const getInitials = (name: string): string => {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
 };
 
+const AVATAR_PALETTE = [
+    { bg: 'bg-blue-100', text: 'text-blue-700', ring: 'ring-blue-200' },
+    { bg: 'bg-violet-100', text: 'text-violet-700', ring: 'ring-violet-200' },
+    { bg: 'bg-emerald-100', text: 'text-emerald-700', ring: 'ring-emerald-200' },
+    { bg: 'bg-amber-100', text: 'text-amber-700', ring: 'ring-amber-200' },
+    { bg: 'bg-rose-100', text: 'text-rose-700', ring: 'ring-rose-200' },
+    { bg: 'bg-cyan-100', text: 'text-cyan-700', ring: 'ring-cyan-200' },
+    { bg: 'bg-indigo-100', text: 'text-indigo-700', ring: 'ring-indigo-200' },
+    { bg: 'bg-teal-100', text: 'text-teal-700', ring: 'ring-teal-200' },
+];
 
+const getAvatarColor = (name: string) => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+};
 
-const COL_COLORS: Record<LeadStatus, string> = {
-    'NEW': 'blue',
-    'CONTACTED': 'orange',
-    'PHOTOS_SENT': 'purple',
-    'PRICE_GIVEN': 'orange',
-    'BOOKED': 'emerald',
-    'LOST': 'red'
+// ── Source Config ──
+const SOURCE_CONFIG: Record<string, { icon: React.ElementType; label?: string; bg: string; text: string; iconColor: string }> = {
+    'Instagram': { icon: Instagram, bg: 'bg-gradient-to-br from-pink-50 to-purple-50', text: 'text-pink-700', iconColor: 'text-pink-500' },
+    'Telegram': { icon: Send, bg: 'bg-sky-50', text: 'text-sky-700', iconColor: 'text-sky-500' },
+    'Walk-in': { icon: MapPin, bg: 'bg-amber-50', text: 'text-amber-700', iconColor: 'text-amber-500' },
+    'Referral': { icon: Users, bg: 'bg-emerald-50', text: 'text-emerald-700', iconColor: 'text-emerald-500' },
+};
+
+// ── Status Colors & Icons ──
+const STATUS_STYLE: Record<LeadStatus, { bg: string; text: string; dot: string; iconColor: string }> = {
+    'NEW': { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500', iconColor: 'text-blue-500' },
+    'CONTACTED': { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-500', iconColor: 'text-orange-500' },
+    'PHOTOS_SENT': { bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-purple-500', iconColor: 'text-purple-500' },
+    'PRICE_GIVEN': { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500', iconColor: 'text-amber-500' },
+    'BOOKED': { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', iconColor: 'text-emerald-500' },
+    'LOST': { bg: 'bg-rose-50', text: 'text-rose-600', dot: 'bg-rose-500', iconColor: 'text-rose-500' },
 };
 
 const COL_ICONS: Record<LeadStatus, React.ElementType> = {
@@ -66,44 +87,29 @@ const COL_ICONS: Record<LeadStatus, React.ElementType> = {
     'LOST': Archive
 };
 
-export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit, onDelete, onRemind, onSelect, layoutId }) => {
+export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit, onDelete, onRemind, onSelect, layoutId, isViewer }) => {
     const { t, language } = useLanguage();
     const isStale = leadService.checkStale(lead);
 
-    // Check if reminder is overdue
+    // ── Overdue Logic ──
     const checkIsOverdue = React.useCallback((): boolean => {
         if (!lead.reminder?.date) return false;
-        try {
-            return new Date(lead.reminder.date) < new Date();
-        } catch { return false; }
+        try { return new Date(lead.reminder.date) < new Date(); } catch { return false; }
     }, [lead.reminder?.date]);
 
     const [isOverdue, setIsOverdue] = React.useState(checkIsOverdue());
 
-    // Update overdue status every second if there is a reminder
     React.useEffect(() => {
-        if (!lead.reminder?.date) {
-            setIsOverdue(false);
-            return;
-        }
-
-        // Initial check
+        if (!lead.reminder?.date) { setIsOverdue(false); return; }
         setIsOverdue(checkIsOverdue());
-
         const interval = setInterval(() => {
             const nowOverdue = checkIsOverdue();
-            setIsOverdue(prev => {
-                // Only update state if it changes to avoid unnecessary re-renders
-                if (prev !== nowOverdue) return nowOverdue;
-                return prev;
-            });
+            setIsOverdue(prev => prev !== nowOverdue ? nowOverdue : prev);
         }, 1000);
-
         return () => clearInterval(interval);
     }, [lead.reminder?.date, checkIsOverdue]);
 
     const locale = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
-
     const hasActiveReminder = !!lead.reminder?.date;
 
     const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
@@ -113,33 +119,24 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
         { value: 'LOST', label: t('status_lost') },
     ];
 
-    // Portal Dropdown State
+    // ── Portal Dropdown ──
     const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
-    const [dropdownPos, setDropdownPos] = React.useState({ top: 0, left: 0, width: 200 });
+    const [dropdownPos, setDropdownPos] = React.useState({ top: 0, left: 0, width: 220 });
     const buttonRef = React.useRef<HTMLButtonElement>(null);
 
-    // Close on resize/scroll to avoid floating dropdowns detached from button
     React.useEffect(() => {
         const handleResize = () => setIsDropdownOpen(false);
         window.addEventListener('resize', handleResize);
-        window.addEventListener('scroll', handleResize, true); // Capture phase to catch all scrolls
-        return () => {
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('scroll', handleResize, true);
-        };
+        window.addEventListener('scroll', handleResize, true);
+        return () => { window.removeEventListener('resize', handleResize); window.removeEventListener('scroll', handleResize, true); };
     }, []);
 
     const toggleDropdown = () => {
+        if (isViewer) return;
         if (!isDropdownOpen && buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect();
-            // Align right edge of dropdown with right edge of button
-            // Dropdown width is fixed at approx 200px (w-48 is 192px)
-            const width = 200;
-            setDropdownPos({
-                top: rect.top - 8, // Position above the button with 8px gap
-                left: rect.right - width,
-                width: width
-            });
+            const width = 220;
+            setDropdownPos({ top: rect.top - 8, left: rect.right - width, width });
             setIsDropdownOpen(true);
         } else {
             setIsDropdownOpen(false);
@@ -147,15 +144,14 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
     };
 
     const handleStatusClick = (newStatus: LeadStatus) => {
+        if (isViewer) return;
         if (newStatus !== lead.status) {
-            // Get button position for confetti origin
             if (newStatus === 'BOOKED' && buttonRef.current) {
                 const rect = buttonRef.current.getBoundingClientRect();
-                const origin = {
+                onStatusChange(lead.id, newStatus, {
                     x: (rect.left + rect.width / 2) / window.innerWidth,
                     y: (rect.top + rect.height / 2) / window.innerHeight
-                };
-                onStatusChange(lead.id, newStatus, origin);
+                });
             } else {
                 onStatusChange(lead.id, newStatus);
             }
@@ -163,10 +159,13 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
         setIsDropdownOpen(false);
     };
 
+    // ── Resolved Styles ──
+    const avatarStyle = getAvatarColor(lead.full_name);
+    const initials = getInitials(lead.full_name);
+    const statusStyle = STATUS_STYLE[lead.status] || STATUS_STYLE['NEW'];
     const StatusIcon = COL_ICONS[lead.status] || User;
-    const statusColor = COL_COLORS[lead.status] || 'slate';
-
-
+    const sourceConf = SOURCE_CONFIG[lead.source] || SOURCE_CONFIG['Walk-in'];
+    const SourceIconComp = sourceConf.icon;
 
     const getSourceLabel = (source: string) => {
         switch (source) {
@@ -176,258 +175,242 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
         }
     };
 
-    const getStatusHeaderColor = (status: string) => {
-        const color = COL_COLORS[status as LeadStatus] || 'slate';
-        switch (color) {
-            case 'blue': return 'bg-blue-500';
-            case 'orange': return 'bg-orange-500';
-            case 'purple': return 'bg-purple-500';
-            case 'emerald': return 'bg-emerald-500';
-            case 'red': return 'bg-rose-500';
-            default: return 'bg-slate-500';
-        }
+    const formatAddedDate = (seconds: number): string => {
+        const date = new Date(seconds * 1000);
+        const day = date.getDate();
+        const monthNames: Record<string, string[]> = {
+            uz: ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'],
+            ru: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+            en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        };
+        const months = monthNames[language] || monthNames.en;
+        return `${day} ${months[date.getMonth()]}`;
     };
 
-    const getStatusLabel = (status: string) => {
-        return STATUS_OPTIONS.find(opt => opt.value === status)?.label || status;
-    };
+    const addedDate = lead.created_at?.seconds
+        ? formatAddedDate(lead.created_at.seconds)
+        : t('just_now');
 
     return (
         <motion.div
-            layoutId={layoutId} // Shared layout ID for seamless expansion
+            layoutId={layoutId}
             onClick={() => onSelect(lead)}
             animate={isOverdue ? {
                 boxShadow: [
-                    '0 0 0 0px rgba(244, 63, 94, 0)',
-                    '0 0 0 4px rgba(244, 63, 94, 0.2)',
-                    '0 0 0 8px rgba(244, 63, 94, 0)'
+                    '0 1px 3px 0 rgba(244,63,94,0.05)',
+                    '0 1px 3px 0 rgba(244,63,94,0.15), 0 0 0 3px rgba(244,63,94,0.08)',
+                    '0 1px 3px 0 rgba(244,63,94,0.05)'
                 ],
-                borderColor: ['#e2e8f0', '#fda4af', '#e2e8f0'],
-                transition: {
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                }
+                transition: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' }
             } : {
-                boxShadow: '0 0 0 0px rgba(244, 63, 94, 0)',
-                borderColor: '#e2e8f0',
-                transition: { duration: 0.5 }
+                boxShadow: '0 2px 8px -2px rgba(0,0,0,0.08), 0 4px 16px -4px rgba(0,0,0,0.05)',
+                transition: { duration: 0.3 }
             }}
             className={`
-            bg-white rounded-[2rem] border mb-4 relative group cursor-pointer transition-all hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 z-0 hover:z-10
-            ${(isStale && !isOverdue && !hasActiveReminder) ? 'ring-2 ring-rose-500' : ''}
-            ${!isStale && !isOverdue ? 'border-slate-200' : ''}
-            ${isOverdue ? 'z-20' : ''}
-        `}>
-            {/* Premium Floating Reminder Indicator */}
+                bg-white rounded-2xl border mb-4 relative group cursor-pointer
+                transition-all duration-300 ease-out
+                shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(0,0,0,0.05)]
+                hover:-translate-y-1 hover:shadow-[0_8px_30px_-6px_rgba(0,0,0,0.12),0_12px_40px_-8px_rgba(0,0,0,0.06)] hover:border-slate-200
+                ${isOverdue ? 'border-rose-200' : isStale && !hasActiveReminder ? 'border-rose-300 ring-1 ring-rose-100' : 'border-slate-100/80'}
+            `}
+        >
+            {/* ── Floating Reminder Indicator ── */}
             {(isOverdue || hasActiveReminder) && (
-                <div className="absolute -top-1 -right-1 z-30">
-                    <motion.div
-                        initial={{ scale: 0, rotate: -20 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        className="relative"
-                    >
-                        {/* Outer Pulse Glow (for Overdue) */}
+                <div className="absolute -top-2 -right-2 z-30">
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 15 }}>
                         {isOverdue && (
                             <motion.div
-                                animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
+                                animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
                                 transition={{ duration: 2, repeat: Infinity }}
-                                className="absolute inset-0 rounded-full bg-rose-500 blur-md"
+                                className="absolute inset-0 rounded-full bg-rose-400 blur-sm"
                             />
                         )}
-
-                        {/* Main Indicator Circle */}
                         <div className={`
-                            w-9 h-9 rounded-full flex items-center justify-center shadow-lg border-2 backdrop-blur-md transition-all duration-300
+                            w-8 h-8 rounded-full flex items-center justify-center shadow-md border-2 transition-all
                             ${isOverdue
-                                ? 'bg-rose-500 border-white text-white shadow-rose-500/40'
-                                : 'bg-white/90 border-blue-100 text-blue-600 shadow-blue-500/10'}
+                                ? 'bg-rose-500 border-white text-white shadow-rose-400/30'
+                                : 'bg-white border-blue-100 text-blue-500 shadow-blue-100/50'}
                         `}>
-                            <Clock size={18} strokeWidth={3} className={isOverdue ? "animate-pulse" : ""} />
+                            <Clock size={15} strokeWidth={2.5} className={isOverdue ? 'animate-pulse' : ''} />
                         </div>
                     </motion.div>
                 </div>
             )}
 
-            {/* Status Header - Absolute Positioned */}
-            <div className={`absolute top-0 inset-x-0 h-10 rounded-t-[2rem] flex items-center justify-center font-extrabold text-white text-[11px] tracking-[0.2em] uppercase z-10 ${getStatusHeaderColor(lead.status)}`}>
-                {getStatusLabel(lead.status)}
-            </div>
+            {/* ── Card Content ── */}
+            <div className="p-5">
 
-            {/* Main Content Area - Padded top for header */}
-            <div className="pt-14 px-5 pb-5">
-                {/* Dashed Content Box - Clean White aesthetic */}
-                <div className="border-[2px] border-dashed border-slate-200 rounded-[1.5rem] p-5 mb-4 relative bg-white transition-colors">
-                    <div className="flex justify-between items-start mb-3">
-                        <h4 className="font-bold text-lg text-slate-900 leading-tight">{lead.full_name}</h4>
+                {/* ── Header: Avatar + Name + Status Badge ── */}
+                <div className="flex items-start gap-3.5 mb-4">
+                    {/* Avatar */}
+                    <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ${avatarStyle.ring} ${avatarStyle.bg}`}>
+                        <span className={`text-sm font-bold ${avatarStyle.text}`}>{initials}</span>
                     </div>
 
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
-                            <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm text-slate-500">
-                                <SourceIcon source={lead.source} />
-                            </div>
-                            <span>{getSourceLabel(lead.source)}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
-                            <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm text-slate-500">
-                                <Phone size={14} />
-                            </div>
-                            <span className="tabular-nums tracking-wide text-slate-700">{lead.phone_number}</span>
-                        </div>
-                    </div>
-
-                    {/* Badges / Estimates or Time */}
-                    <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-dashed border-slate-200">
-                        {lead.graft_estimate && (
-                            <div className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-[11px] font-bold border border-blue-100 shadow-sm">
-                                {lead.graft_estimate} grafts
-                            </div>
-                        )}
-                        {lead.price_quote && (
-                            <div className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[11px] font-bold border border-emerald-100 shadow-sm">
-                                {lead.currency} {lead.price_quote.toLocaleString()}
-                            </div>
-                        )}
-
-                        {/* Show Scheduled/Created Time */}
-                        {/* Interactive Reminder / Added Date Pill */}
-                        {lead.reminder?.date ? (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onRemind(lead); }}
-                                className="flex items-center gap-2 px-4 py-2 btn-premium-blue !text-xs !px-4 !py-2 !h-auto shadow-md shadow-blue-200/50 hover:scale-105 active:scale-95 transition-all group/remind"
-                                title={t('edit_reminder') || 'Edit Reminder'}
-                            >
-                                <Clock size={14} className="group-hover/remind:rotate-12 transition-transform" />
-                                <span className="tracking-wide">
-                                    {new Date(lead.reminder.date).toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                            </button>
-                        ) : (
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-500 rounded-lg text-[11px] font-bold border border-slate-200">
-                                <Clock size={14} className="opacity-40" />
-                                <div className="flex items-center whitespace-nowrap">
-                                    <span className="opacity-60 text-[10px] uppercase tracking-wider font-semibold mr-1">{t('added') || 'Added'}</span>
-                                    <span>
-                                        {lead.created_at?.seconds
-                                            ? new Date(lead.created_at.seconds * 1000).toLocaleDateString(locale, { month: 'short', day: 'numeric' })
-                                            : t('just_now')
-                                        }
-                                    </span>
-                                </div>
-                            </div>
-                        )}
+                    {/* Name + Date */}
+                    <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-[15px] text-slate-900 leading-snug truncate">{lead.full_name}</h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                            <Calendar size={10} className="opacity-60" />
+                            {addedDate}
+                        </p>
                     </div>
                 </div>
 
-                {/* Footer Actions - Matching the reference exactly */}
-                {/* Footer Actions - Clean, Consolidated UI */}
-                <div className="flex items-center justify-between gap-3 px-1 pt-2">
-                    {/* Management Actions (Left - Minimalist Icons) */}
-                    <div className="flex items-center gap-2">
-                        {/* Edit Button */}
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
-                            title={t('edit')}
-                            className="w-10 h-10 bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all active:scale-90 shadow-sm"
-                        >
-                            <Pencil size={18} />
-                        </button>
-
-                        {/* Delete Button */}
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
-                            title={t('delete')}
-                            className="w-10 h-10 bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-all active:scale-90 shadow-sm"
-                        >
-                            <Trash size={18} />
-                        </button>
+                {/* ── Body: Source + Phone ── */}
+                <div className="space-y-2.5 mb-4">
+                    {/* Source */}
+                    <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${sourceConf.bg}`}>
+                            <SourceIconComp size={15} className={sourceConf.iconColor} />
+                        </div>
+                        <span className={`text-[13px] font-semibold ${sourceConf.text}`}>{getSourceLabel(lead.source)}</span>
                     </div>
 
-                    {/* Consolidated Status Dropdown (Right) */}
+                    {/* Phone */}
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-blue-50">
+                            <Phone size={15} className="text-blue-500" />
+                        </div>
+                        <span className="text-[13px] font-semibold text-slate-700 tabular-nums tracking-wide">{lead.phone_number}</span>
+                    </div>
+                </div>
+
+                {/* ── Badges (Estimates / Reminder) ── */}
+                {(lead.graft_estimate || lead.price_quote || lead.reminder?.date) && (
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                        {lead.graft_estimate && (
+                            <span className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[11px] font-bold">
+                                {lead.graft_estimate} grafts
+                            </span>
+                        )}
+                        {lead.price_quote && (
+                            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[11px] font-bold">
+                                {lead.currency} {lead.price_quote.toLocaleString()}
+                            </span>
+                        )}
+                        {lead.reminder?.date && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); if (!isViewer) onRemind(lead); }}
+                                disabled={isViewer}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all
+                                    ${isOverdue
+                                        ? 'bg-rose-50 text-rose-600 hover:bg-rose-100'
+                                        : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}
+                                    ${isViewer ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                                `}
+                            >
+                                <Clock size={12} />
+                                {(() => {
+                                    const d = new Date(lead.reminder.date);
+                                    const monthNames: Record<string, string[]> = {
+                                        uz: ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'],
+                                        ru: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+                                        en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                                    };
+                                    const months = monthNames[language] || monthNames.en;
+                                    return `${d.getDate()} ${months[d.getMonth()]}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                                })()}
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* ── Footer: Actions ── */}
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100/80">
+                    {/* Secondary Actions — hidden until card hover */}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        {!isViewer && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
+                                title={t('edit')}
+                                className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 active:scale-90"
+                            >
+                                <Pencil size={15} />
+                            </button>
+                        )}
+                        {!isViewer && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
+                                title={t('delete')}
+                                className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 active:scale-90"
+                            >
+                                <Trash2 size={15} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Primary Action: Status Dropdown */}
                     <div className="relative">
                         <button
                             ref={buttonRef}
                             onClick={(e) => { e.stopPropagation(); toggleDropdown(); }}
-                            className={`h-10 px-4 rounded-2xl flex items-center gap-2 transition-all active:scale-95 shadow-sm border
+                            disabled={isViewer}
+                            className={`h-8 px-3.5 rounded-xl flex items-center gap-1.5 transition-all duration-200 text-[11px] font-bold uppercase tracking-wider
                                 ${isDropdownOpen
-                                    ? 'bg-slate-900 border-slate-900 text-white'
-                                    : `bg-${COL_COLORS[lead.status]}-50 border-${COL_COLORS[lead.status]}-100 text-${COL_COLORS[lead.status]}-700 hover:bg-${COL_COLORS[lead.status]}-100`
-                                }`}
+                                    ? 'bg-slate-800 text-white shadow-lg'
+                                    : `${lead.status === 'NEW' ? 'btn-premium-blue' :
+                                        lead.status === 'CONTACTED' ? 'btn-premium-orange' :
+                                            lead.status === 'BOOKED' ? 'btn-premium-emerald' :
+                                                lead.status === 'LOST' ? 'btn-premium-red' :
+                                                    'btn-premium-blue'
+                                    } text-white shadow-md ${!isViewer ? 'hover:shadow-lg hover:scale-[1.02]' : 'cursor-default opacity-80'}`
+                                }
+                                ${!isViewer ? 'active:scale-95' : ''}
+                            `}
                         >
-                            {isDropdownOpen ? (
-                                <ChevronDown size={16} className="rotate-180 transition-transform" />
-                            ) : (
-                                React.createElement(COL_ICONS[lead.status], { size: 16 })
-                            )}
-                            <span className="text-[10px] font-extrabold uppercase tracking-wider">
-                                {STATUS_OPTIONS.find(opt => opt.value === lead.status)?.label || lead.status}
-                            </span>
+                            {isDropdownOpen
+                                ? <ChevronDown size={13} className="rotate-180 transition-transform" />
+                                : <StatusIcon size={13} />
+                            }
+                            <span>{STATUS_OPTIONS.find(o => o.value === lead.status)?.label || lead.status}</span>
+                            {!isViewer && !isDropdownOpen && <ChevronDown size={12} className="opacity-60 -mr-0.5" />}
                         </button>
 
                         {/* Dropdown Portal */}
-                        {isDropdownOpen && (
+                        {isDropdownOpen && !isViewer && (
                             <Portal lockScroll={false}>
                                 <div className="fixed inset-0 z-[9998]" onClick={() => setIsDropdownOpen(false)} />
-                                <div
-                                    className="fixed bg-white border border-slate-200 rounded-[1.5rem] shadow-2xl z-[9999] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200 p-1.5 min-w-[220px]"
-                                    style={{
-                                        top: dropdownPos.top - 200, // Move up by approx height of dropdown
-                                        left: dropdownPos.left,
-                                    }}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="fixed bg-white border border-slate-150 rounded-2xl shadow-xl shadow-slate-200/50 z-[9999] overflow-hidden p-1.5 min-w-[210px]"
+                                    style={{ top: dropdownPos.top - 200, left: dropdownPos.left }}
                                 >
-                                    <div className="text-[10px] font-bold text-slate-400 px-3 py-2 uppercase tracking-wider mb-1 flex items-center justify-between">
-                                        <span>{t('set_lead_status') || 'Set Lead Status'}</span>
-                                        <ChevronDown size={14} className="text-slate-300" />
+                                    <div className="text-[10px] font-semibold text-slate-400 px-3 py-1.5 uppercase tracking-wider">
+                                        {t('set_lead_status') || 'Set Status'}
                                     </div>
-                                    <div className="space-y-1">
+                                    <div className="space-y-0.5">
                                         {STATUS_OPTIONS.map(opt => {
                                             const isActive = opt.value === lead.status;
-                                            const optColor = COL_COLORS[opt.value];
-                                            const isOptionIcon = COL_ICONS[opt.value];
-                                            const OptIcon = isOptionIcon || User; // fallback if undefined
-
-                                            // Mapping custom colors to tailwind classes carefully
-                                            const colorClasses: Record<string, string> = {
-                                                blue: 'text-blue-600 bg-blue-100/50 border-blue-200',
-                                                orange: 'text-orange-600 bg-orange-100/50 border-orange-200',
-                                                purple: 'text-purple-600 bg-purple-100/50 border-purple-200',
-                                                emerald: 'text-emerald-600 bg-emerald-100/50 border-emerald-200',
-                                                red: 'text-rose-600 bg-rose-100/50 border-rose-200',
-                                            };
-                                            const activeColorClass = colorClasses[optColor] || 'text-slate-600 bg-slate-100/50 border-slate-200';
-                                            const iconColorClass = optColor === 'blue' ? 'text-blue-500' :
-                                                optColor === 'orange' ? 'text-orange-500' :
-                                                    optColor === 'purple' ? 'text-purple-500' :
-                                                        optColor === 'emerald' ? 'text-emerald-500' :
-                                                            optColor === 'red' ? 'text-rose-500' : 'text-slate-500';
+                                            const optStyle = STATUS_STYLE[opt.value] || STATUS_STYLE['NEW'];
+                                            const OptIcon = COL_ICONS[opt.value] || User;
 
                                             return (
                                                 <button
                                                     key={opt.value}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleStatusClick(opt.value);
-                                                    }}
+                                                    onClick={(e) => { e.stopPropagation(); handleStatusClick(opt.value); }}
                                                     className={`
-                                                        w-full flex items-center gap-3 px-3 py-2 text-xs font-bold rounded-xl transition-all border border-transparent
-                                                        ${isActive ? `shadow-sm ${activeColorClass}` : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+                                                        w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all
+                                                        ${isActive ? `${optStyle.bg} ${optStyle.text} shadow-sm` : 'text-slate-600 hover:bg-slate-50'}
                                                     `}
                                                 >
-                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? 'bg-white shadow-sm' : 'bg-slate-50'} transition-colors`}>
-                                                        <OptIcon size={16} className={iconColorClass} />
+                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isActive ? 'bg-white shadow-sm' : 'bg-slate-50'} transition-colors`}>
+                                                        <OptIcon size={14} className={optStyle.iconColor} />
                                                     </div>
                                                     <span className="flex-1 text-left">{opt.label}</span>
                                                     {isActive && (
-                                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center ${isActive ? iconColorClass.replace('text', 'bg') : 'bg-blue-600'}`}>
-                                                            <Check size={10} className="text-white" strokeWidth={4} />
+                                                        <div className={`w-4.5 h-4.5 rounded-full flex items-center justify-center ${optStyle.dot}`}>
+                                                            <Check size={9} className="text-white" strokeWidth={3.5} />
                                                         </div>
                                                     )}
                                                 </button>
                                             );
                                         })}
                                     </div>
-                                </div>
+                                </motion.div>
                             </Portal>
                         )}
                     </div>

@@ -6,7 +6,7 @@ import { Lead } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export const useReminderNotifications = () => {
-    const { userId } = useAccount();
+    const { accountId } = useAccount();
     const { playNotification } = useAppSounds();
     const { t } = useLanguage();
 
@@ -14,12 +14,12 @@ export const useReminderNotifications = () => {
     const processedReminders = useRef<Set<string>>(new Set());
     const [leads, setLeads] = useState<Lead[]>([]);
 
-    // Subscribe to leads
+    // Subscribe to leads — uses accountId for multi-user sync
     useEffect(() => {
-        if (!userId) return;
+        if (!accountId) return;
 
         const unsubscribe = leadService.subscribeToLeads(
-            userId,
+            accountId,
             (updatedLeads) => {
                 setLeads(updatedLeads);
             },
@@ -27,7 +27,7 @@ export const useReminderNotifications = () => {
         );
 
         return () => unsubscribe();
-    }, [userId]);
+    }, [accountId]);
 
     // Check for due reminders
     useEffect(() => {

@@ -13,7 +13,8 @@ import {
   StickyNote,
   MessageSquare,
   Briefcase,
-  Wallet
+  Wallet,
+  UserCog
 } from 'lucide-react';
 import { Patient, PageView } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -21,6 +22,8 @@ import { ProfileAvatar } from './ProfileAvatar';
 import { useAccount } from '../../contexts/AccountContext';
 import { NotificationBell } from './NotificationBell';
 import { useSystemAlert } from '../../contexts/SystemAlertContext';
+import { useRBAC } from '../../hooks/useRBAC';
+import { SCOPES } from '../../config/permissions';
 import lockIcon from '../../assets/images/lock.png';
 const logoImg = "/images/logo_graft.png";
 // MobileDock removed
@@ -59,7 +62,7 @@ const Layout: React.FC<LayoutProps> = ({
   onUpdateProfile,
   patients = []
 }) => {
-  const { role } = useAccount();
+  const { role, can } = useRBAC();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t } = useLanguage();
@@ -130,6 +133,7 @@ const Layout: React.FC<LayoutProps> = ({
       case 'LEADS': return t('leads');
       case 'STAFF': return t('staff') || 'Staff';
       case 'FINANCE': return t('finance') || 'Finance';
+      case 'ROLES': return t('roles_management') || 'Roles Management';
       default: return '';
     }
   };
@@ -150,18 +154,19 @@ const Layout: React.FC<LayoutProps> = ({
 
         {/* Navigation */}
         <nav className="flex-1 mt-2 px-4 overflow-y-auto no-scrollbar space-y-2 text-slate-900">
-          <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />
-          <NavItem page="PATIENTS" icon={Users} label={t('patients')} id="add-patient-btn" />
-          <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />
-          <NavItem page="MESSAGES" icon={MessageSquare} label={t('messages')} badge={totalUnread} />
-          <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />
-          <NavItem page="STAFF" icon={Briefcase} label={t('staff')} />
-          <NavItem page="FINANCE" icon={Wallet} label={t('finance')} />
+          {(can(SCOPES.canViewDashboard) || role === 'nurse') && <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />}
+          {can(SCOPES.canViewPatients) && <NavItem page="PATIENTS" icon={Users} label={t('patients')} id="add-patient-btn" />}
+          {can(SCOPES.canViewLeads) && <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />}
+          {can(SCOPES.canViewMessages) && <NavItem page="MESSAGES" icon={MessageSquare} label={t('messages')} badge={totalUnread} />}
+          {can(SCOPES.canViewNotes) && <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />}
+          {can(SCOPES.canViewStaff) && <NavItem page="STAFF" icon={Briefcase} label={t('staff')} />}
+          {can(SCOPES.canViewFinance) && role !== 'nurse' && <NavItem page="FINANCE" icon={Wallet} label={t('finance')} />}
 
-          {role === 'admin' && (
+          {(can(SCOPES.canViewRoles) || can(SCOPES.canViewAdmin)) && (
             <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">
               <p className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{t('management')}</p>
-              <NavItem page="ADMIN_DASHBOARD" icon={Shield} label={t('admin_panel')} />
+              {can(SCOPES.canViewRoles) && <NavItem page="ROLES" icon={UserCog} label={t('roles') || 'Roles'} />}
+
             </div>
           )}
         </nav>
@@ -284,18 +289,19 @@ const Layout: React.FC<LayoutProps> = ({
 
               {/* Drawer Nav */}
               <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2 no-scrollbar">
-                <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />
-                <NavItem page="PATIENTS" icon={Users} label={t('patients')} id="add-patient-btn-mobile" />
-                <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />
-                <NavItem page="MESSAGES" icon={MessageSquare} label={t('messages')} badge={totalUnread} />
-                <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />
-                <NavItem page="STAFF" icon={Briefcase} label={t('staff')} />
-                <NavItem page="FINANCE" icon={Wallet} label={t('finance')} />
+                {can(SCOPES.canViewDashboard) && <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />}
+                {can(SCOPES.canViewPatients) && <NavItem page="PATIENTS" icon={Users} label={t('patients')} id="add-patient-btn-mobile" />}
+                {can(SCOPES.canViewLeads) && <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />}
+                {can(SCOPES.canViewMessages) && <NavItem page="MESSAGES" icon={MessageSquare} label={t('messages')} badge={totalUnread} />}
+                {can(SCOPES.canViewNotes) && <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />}
+                {can(SCOPES.canViewStaff) && <NavItem page="STAFF" icon={Briefcase} label={t('staff')} />}
+                {can(SCOPES.canViewFinance) && role !== 'nurse' && <NavItem page="FINANCE" icon={Wallet} label={t('finance')} />}
 
-                {role === 'admin' && (
+                {(can(SCOPES.canViewRoles) || can(SCOPES.canViewAdmin)) && (
                   <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">
                     <p className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{t('management')}</p>
-                    <NavItem page="ADMIN_DASHBOARD" icon={Shield} label={t('admin_panel')} />
+                    {can(SCOPES.canViewRoles) && <NavItem page="ROLES" icon={UserCog} label={t('roles') || 'Roles'} />}
+
                   </div>
                 )}
               </div>
