@@ -9,8 +9,11 @@ import {
   deleteDoc,
   doc,
   getDoc,
-  getDocs
+  getDocs,
+  arrayUnion
 } from 'firebase/firestore';
+import { ref, listAll, getDownloadURL } from 'firebase/storage';
+import { storage } from './firebase';
 import { Patient, Injection, PatientImage } from '../types';
 import { deleteStorageFiles, extractPathFromUrl } from './imageService';
 
@@ -236,13 +239,14 @@ export const updatePatientInjections = async (
 export const addPatientAfterImage = async (
   patientId: string,
   image: PatientImage,
-  currentImages: PatientImage[],
-  accountId: string
+  _currentImages: PatientImage[], // Ignored to prevent race conditions & blob saving
+  _accountId: string
 ): Promise<void> => {
-  const newImages = [image, ...currentImages];
   const docRef = doc(db, "patients", patientId);
+  // 🔥 SMART FIX: Use atomic arrayUnion to safely append the NEW valid image.
+  // This ignores any stale/blob data in the UI state, preventing corruption.
   await updateDoc(docRef, {
-    after_images: newImages,
+    after_images: arrayUnion(image),
     updated_at: new Date().toISOString()
   });
 };
@@ -250,22 +254,27 @@ export const addPatientAfterImage = async (
 export const deletePatientAfterImage = async (
   patientId: string,
   photoId: string,
-  currentImages: PatientImage[]
+  _currentImages: PatientImage[]
 ): Promise<void> => {
-  const imageToDelete = currentImages.find(img => img.id === photoId);
-  const newImages = currentImages.filter(img => img.id !== photoId);
-
-  // 1. Update DB
   const docRef = doc(db, "patients", patientId);
+
+  // 1. Fetch FRESH data from DB to ensure we don't save UI blobs
+  const snap = await getDoc(docRef);
+  if (!snap.exists()) return;
+
+  const freshImages: PatientImage[] = snap.data().after_images || [];
+  const imageToDelete = freshImages.find(img => img.id === photoId);
+  const newImages = freshImages.filter(img => img.id !== photoId);
+
+  // 2. Update DB with CLEAN data
   await updateDoc(docRef, {
     after_images: newImages,
     updated_at: new Date().toISOString()
   });
 
-  // 2. Cleanup Storage (Background)
+  // 3. Cleanup Storage (Background)
   if (imageToDelete) {
     try {
-      // Import extractPathFromUrl from imageService if needed
       const { extractPathFromUrl, deleteStorageFiles } = await import('./imageService');
       const path = extractPathFromUrl(imageToDelete.url);
       if (path) {
@@ -274,5 +283,59 @@ export const deletePatientAfterImage = async (
     } catch (e) {
       console.warn("Error deleting image file:", e);
     }
+  }
+};
+
+
+export const recoverPatientImages = async (patientId: string, currentImages: PatientImage[]): Promise<number> => {
+  try {
+    const imagesRef = ref(storage, `patients/${patientId}/after_images`);
+    const res = await listAll(imagesRef);
+
+    // Create Set of known paths for O(1) lookup
+    const { extractPathFromUrl } = await import('./imageService');
+    const dbPaths = new Set(currentImages.map(img => extractPathFromUrl(img.url)).filter(Boolean));
+
+    const lostItems: PatientImage[] = [];
+
+    for (const itemRef of res.items) {
+      const fullPath = itemRef.fullPath;
+
+      // If this storage item is NOT in our DB list, it's an orphan/lost item
+      if (!dbPaths.has(fullPath)) {
+        const url = await getDownloadURL(itemRef);
+        const name = itemRef.name;
+        let timestamp = Date.now();
+
+        // Try to recover timestamp from filename (img-123456789)
+        if (name.startsWith('img-')) {
+          const tsPart = name.split('-')[1];
+          const parsed = parseInt(tsPart);
+          if (!isNaN(parsed)) timestamp = parsed;
+        }
+
+        lostItems.push({
+          id: name, // Reuse filename as ID
+          url: url,
+          label: "Recovered",
+          date: new Date(timestamp).toISOString()
+        });
+      }
+    }
+
+    if (lostItems.length > 0) {
+      console.log(`♻️ Recovering ${lostItems.length} lost images for ${patientId}...`);
+      const docRef = doc(db, "patients", patientId);
+      await updateDoc(docRef, {
+        after_images: arrayUnion(...lostItems),
+        updated_at: new Date().toISOString()
+      });
+      return lostItems.length;
+    }
+    return 0;
+  } catch (e: any) {
+    if (e.code === 'storage/object-not-found') return 0; // Normal if folder empty
+    console.warn("Recovery check failed:", e);
+    return 0;
   }
 };

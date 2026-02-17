@@ -660,6 +660,19 @@ export const PatientDetail: React.FC<{
     }
   }, [patient.afterImages, optimisticPhotos]);
 
+  // --- Auto-Recover Lost Images (Smart Recovery) ---
+  useEffect(() => {
+    if (patient?.id) {
+      // Non-blocking check for orphaned storage files
+      const timer = setTimeout(() => {
+        import('../../lib/patientService').then(({ recoverPatientImages }) => {
+          recoverPatientImages(patient.id, patient.afterImages || []);
+        });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [patient.id]);
+
   const { language, t } = useLanguage();
   const localeString = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
   const translateStatus = useStatusTranslation();
@@ -981,7 +994,8 @@ export const PatientDetail: React.FC<{
                     </div>
                   ))}
 
-                  {patient.afterImages.map((img, idx) => (
+                  {/* Sort by date descending (Newest First) */}
+                  {[...patient.afterImages].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((img, idx) => (
                     <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer group border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300" onClick={() => setSelectedImage(img.url)}>
                       {img.type === 'video' || isVideoUrl(img.url) ? (
                         <div className="relative w-full h-full flex items-center justify-center bg-black/5">

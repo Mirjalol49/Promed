@@ -41,6 +41,7 @@ import { addTransaction, subscribeToTransactions, calculateStats } from './lib/f
 import { uploadImage, uploadAvatar, setOptimisticImage, getOptimisticImage } from './lib/imageService';
 import { ProfileAvatar } from './components/layout/ProfileAvatar';
 import { useImagePreloader } from './lib/useImagePreloader';
+import { isVideoFile } from './lib/imageOptimizer';
 import ToastContainer from './components/ui/ToastContainer';
 import DeleteModal from './components/ui/DeleteModal';
 import { Trash2 } from 'lucide-react';
@@ -1083,9 +1084,10 @@ const App: React.FC = () => {
   };
 
   const handleAddAfterPhoto = async (patientId: string, photoOrFile: string | File, label: string) => {
+    // 1. Generate stable ID outside try block for rollback access
+    const stablePhotoId = `img-${Date.now()}`;
+
     try {
-      // 1. Generate stable ID and optimistic URL
-      const stablePhotoId = `img-${Date.now()}`;
       const optimisticUrl = typeof photoOrFile === 'string' ? photoOrFile : URL.createObjectURL(photoOrFile);
 
       // 2. Fetch latest list from current closure to calculate update
@@ -1129,18 +1131,28 @@ const App: React.FC = () => {
       }
 
       // 5. Final DB Sync
+      const type = (photoOrFile instanceof File && isVideoFile(photoOrFile)) ? 'video' : 'image';
+
       const finalImage: PatientImage = {
         id: stablePhotoId,
         url: finalPhotoUrl,
         label,
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        type
       };
 
       // We use the images list from our initial 'targetPatient' check to ensure we don't duplicate
       await addPatientAfterImage(patientId, finalImage, targetPatient.afterImages, accountId || '');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ handleAddAfterPhoto error:', error);
+      showError(t('toast_error_title'), `Save Failed: ${error.message}`);
+
+      // Rollback Optimistic Update to prevent ghost images
+      setPatients(prev => prev.map(p => {
+        if (p.id !== patientId) return p;
+        return { ...p, afterImages: (p.afterImages || []).filter(img => img.id !== stablePhotoId) };
+      }));
     }
   };
 
