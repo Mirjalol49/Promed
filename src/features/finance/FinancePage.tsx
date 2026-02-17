@@ -295,7 +295,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                             key={tab}
                             onClick={() => setView(tab)}
                             className={`
-                                relative px-8 py-3 rounded-xl text-sm font-bold transition-colors duration-300 z-10 flex items-center gap-2.5
+                                relative px-4 md:px-8 py-3 rounded-xl text-sm font-bold transition-colors duration-300 z-10 flex items-center gap-2.5 whitespace-nowrap
                                 ${view === tab ? 'text-white' : 'text-slate-500 hover:text-slate-700'}
                             `}
                         >
@@ -424,31 +424,31 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                         <p className="text-sm text-slate-400 font-medium mt-0.5">{t('income_statistics') || 'Income and expense statistics'}</p>
                                     </div>
                                 </div>
-                                {/* Date Range Picker for Analytics */}
-                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-slate-50/50 p-2 rounded-2xl border border-slate-200/50 md:bg-white/50 md:border-white/60 md:shadow-sm">
-                                    {/* Date Inputs */}
-                                    <div className="flex items-center gap-2 flex-1">
+                                {/* Date Range and Filters */}
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                                    {/* Date Range Box */}
+                                    <div className="flex items-center gap-0 bg-slate-50 border border-slate-200 rounded-2xl p-1 h-[52px] shadow-sm flex-1 sm:flex-none sm:w-[320px]">
                                         <div className="flex-1 min-w-0">
                                             <CustomDatePicker
                                                 value={startDate}
                                                 onChange={(date) => setStartDate(date)}
                                                 placeholder={t('start_date') || 'Start Date'}
+                                                minimal
                                             />
                                         </div>
-                                        <span className="text-slate-300 font-bold shrink-0">-</span>
+                                        <div className="w-px h-6 bg-slate-300 shrink-0 mx-1" />
                                         <div className="flex-1 min-w-0">
                                             <CustomDatePicker
                                                 value={endDate}
                                                 onChange={(date) => setEndDate(date)}
                                                 placeholder={t('end_date') || 'End Date'}
+                                                minimal
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="w-px h-6 bg-slate-300 hidden sm:block mx-1" />
-
                                     {/* Quick Filters */}
-                                    <div className="flex bg-white sm:bg-slate-100/50 p-1 rounded-xl border border-slate-200/50 shrink-0 overflow-x-auto">
+                                    <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 shrink-0 overflow-x-auto">
                                         {(['week', 'month', 'all'] as const).map((f) => {
                                             const labelKey = f === 'week' ? 'weekly' : f === 'month' ? 'monthly' : 'filter_all';
                                             return (
@@ -456,8 +456,8 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                                     key={f}
                                                     onClick={() => handleDateFilterChange(f)}
                                                     className={`
-                                                                px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all capitalize duration-300 whitespace-nowrap flex-1 sm:flex-none text-center
-                                                                ${dateFilter === f ? 'bg-white shadow-sm text-slate-800 scale-100 ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}
+                                                                px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all capitalize duration-300 whitespace-nowrap flex-1 sm:flex-none text-center
+                                                                ${dateFilter === f ? 'bg-white shadow-sm text-slate-900 scale-100 ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50'}
                                                             `}
                                                 >
                                                     {t(labelKey) || (f === 'all' ? 'All' : f)}

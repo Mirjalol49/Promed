@@ -243,23 +243,23 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
-                    w-full text-left flex items-center gap-3 transition-all duration-200 outline-none group
+                    w-full text-left flex items-center gap-2 md:gap-3 transition-all duration-200 outline-none group
                     ${minimal
-                        ? 'bg-transparent border-none px-3 h-full'
-                        : `bg-slate-50 border border-slate-300 rounded-2xl py-3.5 px-4 ${isOpen ? 'ring-4 ring-promed-primary/10 border-promed-primary bg-white' : 'hover:border-slate-400 hover:bg-white'}`
+                        ? 'bg-transparent border-none px-2 md:px-3 h-full'
+                        : `bg-slate-50 border border-slate-300 rounded-2xl py-3.5 px-3 md:px-4 ${isOpen ? 'ring-4 ring-promed-primary/10 border-promed-primary bg-white' : 'hover:border-slate-400 hover:bg-white'}`
                     }
                     text-slate-700 font-bold
                 `}
             >
-                <CalendarIcon className={`w-5 h-5 text-slate-400 transition-colors ${isOpen ? 'text-promed-primary' : 'group-hover:text-slate-600'}`} />
-                <span className="flex-1 whitespace-nowrap">
-                    {value ? format(value, 'dd MMMM yyyy', { locale }) : (placeholder || 'Select Date')}
+                <CalendarIcon className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-colors ${isOpen ? 'text-promed-primary' : 'group-hover:text-slate-600'}`} />
+                <span className="flex-1 whitespace-nowrap truncate text-xs sm:text-sm">
+                    {value ? format(value, 'dd MMM yyyy', { locale }) : (placeholder || 'Select Date')}
                 </span>
-                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-promed-primary' : ''}`} />
+                <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-promed-primary' : ''}`} />
             </button>
 
             {/* Render Portal */}
             {typeof document !== 'undefined' && createPortal(dropdownContent, document.body)}
-        </div>
+        </div >
     );
 };

@@ -162,7 +162,7 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
 
                     <div className="flex justify-between items-center mb-6 flex-shrink-0 z-20 relative">
                         <div>
-                            <h2 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                            <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
                                 <span className="bg-promed-primary/10 p-2 rounded-xl text-promed-primary">
                                     <Calendar size={20} />
                                 </span>
@@ -309,12 +309,14 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                 })
                             ) : (
                                 <div
-                                    className="flex flex-col items-center justify-center h-[300px] text-slate-400"
+                                    className="flex flex-col items-center justify-center h-[300px] text-slate-400 px-6 text-center"
                                 >
                                     <div className="w-32 h-32 mb-2">
                                         <Lottie animationData={dateAnimation} loop={true} />
                                     </div>
-                                    <p className="font-bold text-lg text-slate-500">{t('no_events_day') || 'No events for this day'}</p>
+                                    <p className="font-bold text-base md:text-lg text-slate-500 leading-snug max-w-[240px] md:max-w-none mx-auto">
+                                        {t('no_events_day') || 'No events for this day'}
+                                    </p>
                                 </div>
                             )}
 

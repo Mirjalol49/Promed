@@ -613,12 +613,12 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
                             {/* Add Note Input - Sticky at Bottom */}
                             {!isViewer && (
-                                <div className="bg-white border-t border-slate-100 sticky bottom-0 z-20 pb-safe md:pb-0">
+                                <div className="bg-white border-t border-slate-100 sticky bottom-0 z-20 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
                                     {editingEventId && (
-                                        <div className="flex items-center justify-between px-3 py-1.5 md:px-4 md:py-2 bg-blue-50 border-b border-blue-100 animate-in slide-in-from-bottom-2">
+                                        <div className="flex items-center justify-between px-4 py-2 bg-blue-50 border-b border-blue-100 animate-in slide-in-from-bottom-2">
                                             <div className="flex items-center gap-2 text-blue-700">
-                                                <Edit2 size={12} className="md:w-[14px] md:h-[14px]" />
-                                                <span className="text-[10px] md:text-xs font-bold uppercase tracking-wide">Editing message...</span>
+                                                <Edit2 size={14} />
+                                                <span className="text-xs font-bold uppercase tracking-wide">Editing message...</span>
                                             </div>
                                             <button
                                                 onClick={() => {
@@ -627,22 +627,20 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                 }}
                                                 className="p-1 hover:bg-blue-100 rounded-full text-blue-600 transition-colors"
                                             >
-                                                <X size={14} />
+                                                <X size={16} />
                                             </button>
                                         </div>
                                     )}
-                                    <div className="p-3 md:p-4">
+                                    <div className="p-3 md:p-4 pb-6 md:pb-4">
                                         <form onSubmit={handleAddNote} className="flex gap-2 md:gap-3 items-end">
                                             <textarea
                                                 ref={textareaRef}
                                                 value={newNote}
                                                 onChange={(e) => {
                                                     setNewNote(e.target.value);
-                                                    // Auto-resize up to max, then scroll
                                                     e.target.style.height = 'auto';
                                                     const newHeight = Math.min(e.target.scrollHeight, 150);
                                                     e.target.style.height = newHeight + 'px';
-                                                    // Enable scroll when at max height
                                                     e.target.style.overflowY = e.target.scrollHeight > 150 ? 'auto' : 'hidden';
                                                 }}
                                                 onKeyDown={(e) => {
@@ -655,15 +653,15 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                 }}
                                                 placeholder={editingEventId ? "Edit note..." : t('add_note_placeholder')}
                                                 rows={1}
-                                                className={`flex-1 px-3 py-2.5 md:px-4 md:py-3 bg-white border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none min-h-[44px] md:min-h-[48px] max-h-[150px] placeholder:text-slate-500 font-medium ${editingEventId ? 'border-blue-500 focus:ring-blue-500/20 shadow-sm' : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-500'}`}
-                                                style={{ height: window.innerWidth < 768 ? '44px' : '48px', overflowY: 'hidden' }}
+                                                className={`flex-1 px-4 py-3 bg-slate-50 border-0 rounded-2xl text-slate-800 text-sm focus:bg-white focus:ring-2 transition-all resize-none min-h-[48px] max-h-[150px] placeholder:text-slate-400 font-medium ${editingEventId ? 'focus:ring-emerald-500/20' : 'focus:ring-blue-500/20'}`}
+                                                style={{ height: '48px', overflowY: 'hidden' }}
                                             />
                                             <button
                                                 type="submit"
                                                 disabled={!newNote.trim()}
-                                                className={`w-11 h-11 md:w-auto md:h-[48px] md:px-5 flex items-center justify-center text-white rounded-xl md:rounded-2xl disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 ${editingEventId ? 'bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20' : 'btn-premium-blue'}`}
+                                                className={`w-12 h-12 md:w-auto md:h-[48px] md:px-6 flex items-center justify-center text-white rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shrink-0 ${editingEventId ? 'bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 active:scale-95'}`}
                                             >
-                                                {editingEventId ? <Check size={18} /> : <Send size={18} className="ml-0.5 md:ml-0" />}
+                                                {editingEventId ? <Check size={20} strokeWidth={2.5} /> : <Send size={20} strokeWidth={2.5} className="ml-0.5 md:ml-0" />}
                                             </button>
                                         </form>
                                     </div>
