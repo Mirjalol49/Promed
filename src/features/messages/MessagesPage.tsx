@@ -223,16 +223,23 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             return;
         }
 
-        // 1. Try Local Cache
+        // 1. Try Local Cache (but don't rely on it exclusively)
         const cached = localStorage.getItem(`msgs_${selectedPatientId}`);
         if (cached) {
             try {
-                setMessages(JSON.parse(cached));
-            } catch (e) { console.error("Cache parse error", e); }
+                const cachedMsgs = JSON.parse(cached);
+                setMessages(cachedMsgs);
+                console.log(`📦 Loaded ${cachedMsgs.length} messages from cache for patient ${selectedPatientId}`);
+            } catch (e) {
+                console.error("Cache parse error", e);
+                localStorage.removeItem(`msgs_${selectedPatientId}`); // Clear corrupted cache
+            }
         }
 
         // 2. Initial Realtime Listener (Limit to 30)
         setIsLoading(true);
+        console.log(`🔄 Setting up real-time listener for patient ${selectedPatientId}...`);
+
         const q = query(
             collection(db, 'patients', selectedPatientId, 'messages'),
             orderBy('createdAt', 'desc'),
@@ -240,13 +247,20 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            console.log(`📨 Snapshot received: ${snapshot.docs.length} messages (from ${snapshot.metadata.fromCache ? 'CACHE' : 'SERVER'})`);
+
             const msgs = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             })).reverse() as Message[];
 
             setMessages(msgs);
-            localStorage.setItem(`msgs_${selectedPatientId}`, JSON.stringify(msgs)); // Fixed key
+
+            // Update cache with fresh data from server
+            if (!snapshot.metadata.fromCache) {
+                localStorage.setItem(`msgs_${selectedPatientId}`, JSON.stringify(msgs));
+                console.log(`💾 Cached ${msgs.length} messages to localStorage`);
+            }
 
             if (snapshot.docs.length > 0) {
                 setOldestDoc(snapshot.docs[snapshot.docs.length - 1]);
@@ -256,7 +270,9 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             }
             setIsLoading(false); // Data loaded
         }, (error) => {
-            console.error("Snapshot error:", error);
+            console.error("❌ Snapshot listener error:", error);
+            console.error("Error code:", error.code);
+            console.error("Error message:", error.message);
             setIsLoading(false);
         });
 
@@ -268,6 +284,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
         });
 
         return () => {
+            console.log(`🔌 Unsubscribing from patient ${selectedPatientId} listeners`);
             unsubscribe();
             unsubTyping();
         };
@@ -425,6 +442,11 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
         setIsSending(true);
         isUserSendingMessage.current = true; // Set flag to trigger auto-scroll on update
+
+        console.log(`📤 Sending message to patient ${selectedPatient.id} (${selectedPatient.fullName}):`);
+        console.log(`   Text: "${messageInput.trim()}"`);
+        console.log(`   Scheduled: ${scheduledDateArg ? scheduledDateArg.toISOString() : 'No'}`);
+
         try {
             const now = new Date();
             const messageData: any = {
@@ -449,10 +471,13 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                     sender: replyingToMessage.sender,
                     displayName: replyingToMessage.sender === 'doctor' ? 'Doctor' : selectedPatient.fullName
                 };
+                console.log(`   Replying to message: ${replyingToMessage.id}`);
             }
 
             // 1. Add to Patient's subcollection (Persistence)
+            console.log(`   Writing to: patients/${selectedPatient.id}/messages`);
             const docRef = await addDoc(collection(db, 'patients', selectedPatient.id, 'messages'), messageData);
+            console.log(`   ✅ Message written to Firestore with ID: ${docRef.id}`);
 
             // 2. Update 'lastActive', 'unreadCount', and 'lastMessage'
             // Only update lastMessage if NOT scheduled (or maybe denote it?)
@@ -462,6 +487,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                     lastMessageTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
                     lastMessageTimestamp: now.toISOString()
                 });
+                console.log(`   ✅ Updated patient lastMessage field`);
             }
 
             // 3. Add to Outbound Queue (for Bot)
@@ -506,13 +532,15 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                 textareaRef.current.style.height = 'auto'; // Reset height
             }
 
+            console.log(`✅ Message send complete. Waiting for real-time snapshot update...`);
+
             // If scheduled, show success toast? (REMOVED per request)
             // if (scheduledDateArg) {
             //    showToastSuccess(t('success'), `Message scheduled for ${scheduledDateArg.toLocaleString()}`);
             // }
 
         } catch (error) {
-            console.error("Failed to send message:", error);
+            console.error("❌ Failed to send message:", error);
             showToastError(t('toast_error_title'), "Failed to send message.");
         } finally {
             setIsSending(false);

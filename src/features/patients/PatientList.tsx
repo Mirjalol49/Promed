@@ -1377,15 +1377,15 @@ export const AddPatientForm: React.FC<{
 
   return (
     <Portal>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={onCancel}>
+      <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center p-0 md:p-4 lg:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={onCancel}>
         <div
-          className="bg-white w-full max-w-5xl rounded-3xl flex flex-col max-h-[90vh] overflow-hidden transform scale-100 transition-all border border-slate-100"
+          className="bg-white w-full max-w-5xl rounded-t-3xl md:rounded-3xl flex flex-col max-h-[95vh] md:max-h-[90vh] overflow-hidden transform scale-100 transition-all border-t md:border border-slate-100 shadow-2xl"
           onClick={e => e.stopPropagation()}
         >
           {/* Premium Header */}
-          <div className="px-4 md:px-8 py-4 md:py-6 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-20">
+          <div className="px-4 sm:px-6 md:px-8 py-4 md:py-6 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-20">
             <div>
-              <h3 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2 md:gap-3">
                 {initialData ? t('edit_patient_title') : t('new_patient_reg')}
               </h3>
 
@@ -1393,20 +1393,20 @@ export const AddPatientForm: React.FC<{
             <div className="flex items-center gap-2">
               {/* ✨ Magic Auto-Fill Button (Dev Tool) */}
 
-              <button onClick={onCancel} className="text-slate-400 hover:text-slate-800 hover:bg-slate-100 p-2.5 rounded-full transition duration-200">
-                <X size={24} />
+              <button onClick={onCancel} className="text-slate-400 hover:text-slate-800 hover:bg-slate-100 p-2 md:p-2.5 rounded-full transition duration-200">
+                <X size={20} className="sm:w-6 sm:h-6" />
               </button>
             </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto bg-premium-card">
-            <form id="patient-form" onSubmit={handleSubmit} className="p-4 pb-10 md:p-8" onKeyDown={(e) => {
+          <div className="flex-1 overflow-y-auto bg-premium-card overscroll-contain">
+            <form id="patient-form" onSubmit={handleSubmit} className="p-4 pb-10 sm:p-6 md:p-8" onKeyDown={(e) => {
               if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
                 e.preventDefault();
               }
             }}>
-              <div className="flex flex-col lg:flex-row gap-8">
+              <div className="flex flex-col lg:flex-row gap-6 md:gap-8">
 
                 {/* Left Column: Photos & Visuals */}
                 <div className="w-full lg:w-1/3 flex flex-col gap-6">
@@ -1457,14 +1457,15 @@ export const AddPatientForm: React.FC<{
                   </div>
 
                   {/* Before Photo Card */}
-                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 transition-all duration-300 group flex-1 relative">
+                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 transition-all duration-300 group flex-1 relative overflow-hidden">
+                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-promed-primary to-teal-400"></div>
                     <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wide">
                       <ImageIcon size={16} className="text-promed-primary" />
-                      {t('before_media') || "Before Media"}
+                      {t('before_media')}
                     </h4>
 
                     {beforeImage ? (
-                      <div className="relative w-full h-40 rounded-2xl overflow-hidden bg-slate-50 border-2 border-slate-100 group">
+                      <div className="relative w-full h-44 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group">
                         {(beforeImageFile && isVideoFile(beforeImageFile)) || (!beforeImageFile && isVideoUrl(beforeImage)) ? (
                           <VideoPreview src={beforeImage} />
                         ) : (
@@ -1475,42 +1476,44 @@ export const AddPatientForm: React.FC<{
                         )}
 
                         {/* Action Buttons Overlay */}
-                        <div className="absolute top-2 right-2 flex gap-2 z-10">
-                          <label className="p-2 bg-white/90 backdrop-blur-sm text-slate-700 rounded-xl hover:bg-white hover:text-promed-primary shadow-sm cursor-pointer transition-all hover:scale-105 border border-slate-200/50">
-                            <Edit2 size={16} />
+                        <div className="absolute top-3 right-3 flex gap-2 z-10">
+                          <label className="p-2 bg-white/90 backdrop-blur-md text-slate-700 rounded-lg hover:bg-white hover:text-promed-primary shadow-lg cursor-pointer transition-all hover:scale-110 border border-slate-200">
+                            <Edit2 size={14} />
                             <input type="file" className="hidden" accept="image/*,video/*" onChange={(e) => handleImageUpload(e, setBeforeImage, setBeforeImageFile, setIsBeforeUploading)} />
                           </label>
                           <button
                             type="button"
                             onClick={() => { setBeforeImage(''); setBeforeImageFile(null); }}
-                            className="p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl hover:bg-red-50 hover:border-red-100 shadow-sm transition-all hover:scale-105 border border-slate-200/50"
+                            className="p-2 bg-white/90 backdrop-blur-md text-red-500 rounded-lg hover:bg-red-50 hover:text-red-600 shadow-lg transition-all hover:scale-110 border border-slate-200"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <label className="block w-full h-40 border-2 border-dashed border-slate-200 rounded-2xl overflow-hidden cursor-pointer hover:border-promed-primary/60 hover:bg-promed-primary/[0.02] transition-all relative group/upload duration-500">
-                        <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-50 border-2 border-slate-100 relative group flex flex-col items-center justify-center text-slate-400 gap-2">
-                          <Camera className="w-10 h-10 opacity-20 group-hover/upload:scale-110 transition-transform duration-500" />
-                          <span className="text-xs font-bold uppercase tracking-widest group-hover/upload:text-promed-primary transition-colors">{t('upload_photo_video') || "Upload Media"}</span>
-
-                          <div className="absolute inset-0 bg-promed-primary/0 group-hover/upload:bg-promed-primary/5 transition-colors duration-500" />
-
-                          {/* Floating Plus Icon */}
-                          <div className="absolute bottom-3 right-3 p-2 bg-white rounded-full shadow-sm text-slate-400 group-hover/upload:bg-promed-primary group-hover/upload:text-white transition-all duration-300 transform translate-y-2 opacity-0 group-hover/upload:translate-y-0 group-hover/upload:opacity-100">
-                            <Plus size={16} />
+                      <label className="block w-full h-44 border-2 border-dashed border-slate-200 rounded-2xl overflow-hidden cursor-pointer bg-slate-50 hover:bg-white hover:border-promed-primary/40 transition-all duration-300 relative group/upload shadow-sm hover:shadow-md">
+                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-3 px-4 text-center">
+                          <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center group-hover/upload:scale-110 group-hover/upload:text-promed-primary ring-1 ring-slate-100 transition-all duration-500">
+                            <Camera className="w-7 h-7" />
                           </div>
+                          <div className="space-y-1">
+                            <span className="block text-xs font-bold uppercase tracking-wider group-hover/upload:text-promed-primary transition-colors">
+                              {t('upload_photo_video')}
+                            </span>
+                          </div>
+
+                          {/* Subtle Inner Glow on Hover */}
+                          <div className="absolute inset-0 bg-promed-primary/0 group-hover/upload:bg-promed-primary/[0.01] transition-colors duration-500 pointer-events-none" />
                         </div>
                         <input type="file" className="hidden" accept="image/*,video/*" onChange={(e) => handleImageUpload(e, setBeforeImage, setBeforeImageFile, setIsBeforeUploading)} />
                       </label>
                     )}
 
                     {isBeforeUploading && (
-                      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-2xl border border-slate-100">
+                      <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-20">
                         <div className="flex flex-col items-center gap-3">
                           <div className="w-16 h-16"><Lottie animationData={loadingAnimation} loop={true} /></div>
-                          <span className="text-xs font-bold uppercase tracking-widest text-slate-500">{t('uploading') || "Uploading..."}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 animate-pulse">{t('uploading') || "Uploading..."}</span>
                         </div>
                       </div>
                     )}
@@ -1659,9 +1662,9 @@ export const AddPatientForm: React.FC<{
                         </div>
                       </div>
                     </div>
-                  </div>
-                  {/* Finance Specs */}
+                    {/* Finance Specs */}
 
+                  </div>
                 </div>
               </div>
 
@@ -1725,7 +1728,7 @@ export const AddPatientForm: React.FC<{
             </div>
           )}
         </div>
-      </div >
-    </Portal >
+      </div>
+    </Portal>
   );
 };

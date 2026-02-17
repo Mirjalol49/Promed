@@ -476,7 +476,11 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                             <div className="flex-1 w-full md:w-auto min-w-0">
                                                 <div className="flex justify-between items-start gap-4 mb-2 md:mb-1.5">
                                                     <div className={`font-medium text-slate-600 text-sm md:text-base leading-snug line-clamp-2 md:line-clamp-none ${isVoided ? 'line-through decoration-slate-400 text-slate-400' : ''}`}>
-                                                        {exp.description || (t('expense') || 'Xarajat')}
+                                                        {exp.description ? (
+                                                            exp.description.startsWith('[Split]')
+                                                                ? `${t('split_from') || '[Split] '}${exp.description.replace('[Split]', '').trim()}`
+                                                                : exp.description
+                                                        ) : (t('expense') || 'Xarajat')}
                                                     </div>
 
                                                     {/* Mobile Amount */}

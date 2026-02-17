@@ -120,7 +120,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
 
     // ── Portal Dropdown ──
     const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
-    const [dropdownPos, setDropdownPos] = React.useState({ top: 0, left: 0, width: 220 });
+    const [dropdownPos, setDropdownPos] = React.useState<{ top?: number; bottom?: number; left: number; width: number }>({ top: 0, left: 0, width: 220 });
     const buttonRef = React.useRef<HTMLButtonElement>(null);
 
     React.useEffect(() => {
@@ -134,8 +134,17 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
         if (isViewer) return;
         if (!isDropdownOpen && buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect();
-            const width = 220;
-            setDropdownPos({ top: rect.top - 8, left: rect.right - width, width });
+            const width = 240;
+            // Smart positioning: Check if enough space below
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const showAbove = spaceBelow < 300; // If less than 300px below, show above
+
+            setDropdownPos({
+                top: showAbove ? undefined : rect.bottom + 8,
+                bottom: showAbove ? window.innerHeight - rect.top + 8 : undefined,
+                left: rect.right - width,
+                width
+            });
             setIsDropdownOpen(true);
         } else {
             setIsDropdownOpen(false);
@@ -371,19 +380,25 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                         {/* Dropdown Portal */}
                         {isDropdownOpen && !isViewer && (
                             <Portal lockScroll={false}>
-                                <div className="fixed inset-0 z-[9998]" onClick={() => setIsDropdownOpen(false)} />
+                                <div className="fixed inset-0 z-[9998]" onClick={() => setIsDropdownOpen(false)} aria-hidden="true" />
                                 <motion.div
-                                    initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                                    initial={{ opacity: 0, y: dropdownPos.bottom ? 8 : -8, scale: 0.96 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                                    transition={{ duration: 0.15 }}
-                                    className="fixed bg-white border border-slate-150 rounded-2xl shadow-xl shadow-slate-200/50 z-[9999] overflow-hidden p-1.5 min-w-[210px]"
-                                    style={{ top: dropdownPos.top - 200, left: dropdownPos.left }}
+                                    exit={{ opacity: 0, scale: 0.96 }}
+                                    transition={{ duration: 0.15, ease: "easeOut" }}
+                                    className="fixed bg-white/95 backdrop-blur-md border border-slate-200/60 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] z-[9999] overflow-hidden p-2 min-w-[240px]"
+                                    style={{
+                                        left: dropdownPos.left,
+                                        top: dropdownPos.top,
+                                        bottom: dropdownPos.bottom
+                                    }}
+                                    role="menu"
+                                    aria-label={t('change_status')}
                                 >
-                                    <div className="text-[10px] font-semibold text-slate-400 px-3 py-1.5 uppercase tracking-wider">
+                                    <div className="text-[10px] font-bold text-slate-400/80 px-3 py-2 uppercase tracking-widest text-center border-b border-slate-100 mb-1 select-none">
                                         {t('set_lead_status') || 'Set Status'}
                                     </div>
-                                    <div className="space-y-0.5">
+                                    <div className="flex flex-col gap-1">
                                         {STATUS_OPTIONS.map(opt => {
                                             const isActive = opt.value === lead.status;
                                             const optStyle = STATUS_STYLE[opt.value] || STATUS_STYLE['NEW'];
@@ -392,19 +407,30 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                                             return (
                                                 <button
                                                     key={opt.value}
+                                                    role="menuitem"
                                                     onClick={(e) => { e.stopPropagation(); handleStatusClick(opt.value); }}
                                                     className={`
-                                                        w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all
-                                                        ${isActive ? `${optStyle.bg} ${optStyle.text} shadow-sm` : 'text-slate-600 hover:bg-slate-50'}
+                                                        w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group relative overflow-hidden
+                                                        ${isActive
+                                                            ? `${optStyle.bg} ring-1 ring-inset ${optStyle.text.replace('text-', 'ring-').replace('700', '200')}`
+                                                            : 'hover:bg-slate-50 text-slate-600 hover:text-slate-900'}
                                                     `}
                                                 >
-                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isActive ? 'bg-white shadow-sm' : 'bg-slate-50'} transition-colors`}>
-                                                        <OptIcon size={14} className={optStyle.iconColor} />
+                                                    <div className="flex items-center gap-3 relative z-10">
+                                                        <div className={`
+                                                            w-8 h-8 rounded-full flex items-center justify-center transition-colors
+                                                            ${isActive ? 'bg-white/80' : 'bg-slate-100 group-hover:bg-white group-hover:shadow-sm'}
+                                                        `}>
+                                                            <OptIcon size={15} className={optStyle.iconColor} />
+                                                        </div>
+                                                        <span className={`text-[13px] font-bold ${isActive ? optStyle.text : ''}`}>
+                                                            {opt.label}
+                                                        </span>
                                                     </div>
-                                                    <span className="flex-1 text-left">{opt.label}</span>
+
                                                     {isActive && (
-                                                        <div className={`w-4.5 h-4.5 rounded-full flex items-center justify-center ${optStyle.dot}`}>
-                                                            <Check size={9} className="text-white" strokeWidth={3.5} />
+                                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center ${optStyle.dot} shadow-sm relative z-10`}>
+                                                            <Check size={10} className="text-white" strokeWidth={4} />
                                                         </div>
                                                     )}
                                                 </button>

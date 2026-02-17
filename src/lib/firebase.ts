@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, initializeFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 
@@ -20,8 +20,19 @@ export const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-// Initialize Firestore (Standard initialization)
+// Initialize Firestore with offline persistence
 export const db = getFirestore(app);
+
+// Enable offline persistence for better cross-device sync
+enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code === 'failed-precondition') {
+        console.warn('⚠️ Firestore persistence failed: Multiple tabs open');
+    } else if (err.code === 'unimplemented') {
+        console.warn('⚠️ Firestore persistence not supported in this browser');
+    } else {
+        console.error('❌ Firestore persistence error:', err);
+    }
+});
 
 // Debug Logging - Confirm Connection
 console.log("🔥 Firebase Init: Project =", firebaseConfig.projectId);

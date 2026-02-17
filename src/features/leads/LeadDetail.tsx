@@ -47,6 +47,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     const [newNote, setNewNote] = useState('');
     const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
     const [isStatusOpen, setIsStatusOpen] = useState(false);
+    const [statusDropdownPos, setStatusDropdownPos] = useState<'above' | 'below'>('below');
     const [isReminderOpen, setIsReminderOpen] = useState(false);
     const [showToast, setShowToast] = useState<string | null>(null);
     const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -361,9 +362,17 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                     <label className="hidden md:block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">{t('status')}</label>
                                     <div className="relative">
                                         <button
-                                            onClick={() => !isViewer && setIsStatusOpen(!isStatusOpen)}
+                                            onClick={() => {
+                                                if (isViewer) return;
+                                                if (!isStatusOpen && statusRef.current) {
+                                                    const rect = statusRef.current.getBoundingClientRect();
+                                                    const spaceBelow = window.innerHeight - rect.bottom;
+                                                    setStatusDropdownPos(spaceBelow < 250 ? 'above' : 'below');
+                                                }
+                                                setIsStatusOpen(!isStatusOpen);
+                                            }}
                                             disabled={isViewer}
-                                            className={`w-full flex items-center justify-between px-3 py-2 md:px-4 md:py-3 rounded-xl md:rounded-2xl border transition-colors shadow-sm ${statusColors.color} ${isStatusOpen ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-300 hover:border-slate-400'} ${isViewer ? 'opacity-90 cursor-default' : ''}`}
+                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-200 shadow-sm ${statusColors.color} ${isStatusOpen ? 'border-blue-400 ring-2 ring-blue-400/20 bg-white' : 'border-slate-200 hover:border-slate-300 bg-white/80'} ${isViewer ? 'opacity-90 cursor-default' : 'cursor-pointer'}`}
                                         >
                                             <div className="flex items-center gap-2">
                                                 <div className={`w-2 h-2 rounded-full ${statusColors.bg.replace('100', '500')}`} />
@@ -373,28 +382,54 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                         </button>
 
                                         <AnimatePresence>
-                                            {isStatusOpen && (
+                                            {isStatusOpen && !isViewer && (
                                                 <motion.div
-                                                    initial={{ opacity: 0, y: -8 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: -8 }}
-                                                    className="fixed md:absolute top-auto md:top-full left-4 right-4 md:left-0 md:right-0 mt-2 bg-white border border-slate-300 rounded-xl shadow-2xl z-[60] overflow-hidden max-h-[300px] overflow-y-auto"
-                                                    style={{ bottom: window.innerWidth < 768 ? '20px' : 'auto' }}
+                                                    initial={{ opacity: 0, y: statusDropdownPos === 'above' ? 8 : -8, scale: 0.96 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.96 }}
+                                                    transition={{ duration: 0.15, ease: "easeOut" }}
+                                                    className={`absolute left-0 right-0 bg-white/95 backdrop-blur-md border border-slate-200/60 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] z-[60] overflow-hidden p-2 ${statusDropdownPos === 'above' ? 'bottom-full mb-2' : 'top-full mt-2'}`}
+                                                    role="menu"
+                                                    aria-label={t('change_status')}
                                                 >
-                                                    {VISIBLE_STATUSES.map((key) => {
-                                                        const colors = STATUS_COLORS[key];
-                                                        return (
-                                                            <button
-                                                                key={key}
-                                                                onClick={() => handleStatusChange(key)}
-                                                                className={`w-full flex items-center gap-2 px-4 py-3 text-sm font-medium hover:bg-slate-50 transition-colors ${key === lead.status ? 'bg-slate-100' : ''} ${colors.color}`}
-                                                            >
-                                                                <div className={`w-2 h-2 rounded-full ${colors.bg.replace('100', '500')}`} />
-                                                                <span>{getStatusLabel(key)}</span>
-                                                                {key === lead.status && <Check size={14} className="ml-auto" />}
-                                                            </button>
-                                                        );
-                                                    })}
+                                                    <div className="text-[10px] font-bold text-slate-400/80 px-3 py-2 uppercase tracking-widest text-center border-b border-slate-100 mb-1 select-none">
+                                                        {t('set_lead_status') || 'Statusni O\'zgartirish'}
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                        {VISIBLE_STATUSES.map((key) => {
+                                                            const colors = STATUS_COLORS[key];
+                                                            const isActive = key === lead.status;
+                                                            return (
+                                                                <button
+                                                                    key={key}
+                                                                    role="menuitem"
+                                                                    onClick={() => handleStatusChange(key)}
+                                                                    className={`
+                                                                        w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group relative overflow-hidden
+                                                                        ${isActive
+                                                                            ? `${colors.bg} ring-1 ring-inset ${colors.color.replace('text-', 'ring-').replace('700', '200')}`
+                                                                            : 'hover:bg-slate-50 text-slate-600 hover:text-slate-900'}
+                                                                    `}
+                                                                >
+                                                                    <div className="flex items-center gap-3 relative z-10">
+                                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isActive ? 'bg-white/80' : 'bg-slate-100 group-hover:bg-white group-hover:shadow-sm'
+                                                                            }`}>
+                                                                            <div className={`w-2.5 h-2.5 rounded-full ${colors.bg.replace('100', '500')}`} />
+                                                                        </div>
+                                                                        <span className={`text-sm font-bold ${isActive ? colors.color : ''}`}>
+                                                                            {getStatusLabel(key)}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    {isActive && (
+                                                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center ${colors.bg.replace('100', '500')} shadow-sm relative z-10`}>
+                                                                            <Check size={10} className="text-white" strokeWidth={4} />
+                                                                        </div>
+                                                                    )}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>

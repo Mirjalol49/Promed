@@ -870,7 +870,14 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                                    {tx.description && <span className="text-xs text-slate-500 font-medium truncate max-w-[200px]">{tx.description}</span>}
+                                                    {tx.description && (
+                                                        <span className="text-xs text-slate-500 font-medium truncate max-w-[200px]">
+                                                            {tx.description.startsWith('[Split]')
+                                                                ? `${t('split_from') || '[Split] '}${tx.description.replace('[Split]', '').trim()}`
+                                                                : tx.description
+                                                            }
+                                                        </span>
+                                                    )}
 
                                                     {tx.patientId && (() => {
                                                         const patient = patientList.find(p => p.id === tx.patientId);

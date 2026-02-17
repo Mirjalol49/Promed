@@ -22,13 +22,32 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
     const { language } = useLanguage();
     const locale = language === 'uz' ? uz : language === 'ru' ? ru : enUS;
     const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number; width: number }>({ left: 0, width: 0 });
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Detect mobile viewport
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    // Prevent body scroll on mobile when picker is open
+    useEffect(() => {
+        if (isOpen && isMobile) {
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = '';
+            };
+        }
+    }, [isOpen, isMobile]);
 
     useEffect(() => {
-        if (isOpen && containerRef.current && !centered) {
+        if (isOpen && containerRef.current && !centered && !isMobile) {
             const updatePosition = () => {
                 const rect = containerRef.current?.getBoundingClientRect();
                 if (rect) {
-                    const dropdownHeight = 350; // Approx max height for calendar
+                    const dropdownHeight = 380; // Approx max height for calendar
                     const spaceBelow = window.innerHeight - rect.bottom;
                     const showAbove = spaceBelow < dropdownHeight;
 
@@ -50,7 +69,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                 window.removeEventListener('scroll', () => setIsOpen(false), true);
             };
         }
-    }, [isOpen]);
+    }, [isOpen, centered, isMobile]);
 
     useEffect(() => {
         if (value) {
@@ -58,26 +77,10 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
         }
     }, [value]);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            // Check if click is outside BOTH the trigger button (containerRef) AND the portal content
-            // We need a specific ref for the dropdown content, or rely on the logic that if it's not the container, close it?
-            // Actually, since the dropdown is in a portal, containerRef.contains(event.target) won't work for the dropdown content.
-            // We need to stop propagation on the dropdown or check a ref on the dropdown.
-            // Let's rely on a separate ref for the dropdown content.
-        };
-        // Simplified: We'll close if we click anywhere else. 
-        // We will perform the check inside the click handler:
-        // If clicking inside the portal, don't close.
-        // If clicking inside the trigger, don't close (handled by toggle).
-        // If clicking elsewhere, close.
-    }, []);
-
     // Better click outside logic that works with Portal
     useEffect(() => {
         const handleGlobalClick = (e: MouseEvent) => {
             if (!isOpen) return;
-            // We need a ref for the dropdown portal content
             const dropdownEl = document.getElementById(portalId);
             if (containerRef.current?.contains(e.target as Node)) {
                 return; // Clicked on trigger
@@ -94,13 +97,23 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
     const renderHeader = () => {
         return (
             <div className="flex items-center justify-between mb-4 px-2">
-                <button type="button" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors">
+                <button
+                    type="button"
+                    onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                    className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Previous month"
+                >
                     <ChevronLeft className="w-5 h-5" />
                 </button>
-                <span className="text-slate-800 font-bold capitalize">
+                <span className="text-slate-800 font-bold capitalize text-sm md:text-base">
                     {format(currentMonth, 'MMMM yyyy', { locale })}
                 </span>
-                <button type="button" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors">
+                <button
+                    type="button"
+                    onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                    className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Next month"
+                >
                     <ChevronRight className="w-5 h-5" />
                 </button>
             </div>
@@ -108,13 +121,13 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
     };
 
     const renderDays = () => {
-        const dateFormat = "EEEEE";
+        const dateFormat = isMobile ? "EE" : "EEEEE";
         const days = [];
         let startDate = startOfWeek(currentMonth, { locale });
 
         for (let i = 0; i < 7; i++) {
             days.push(
-                <div key={i} className="text-center text-xs font-bold text-slate-400 uppercase py-1">
+                <div key={i} className="text-center text-[10px] md:text-xs font-bold text-slate-400 uppercase py-1 md:py-2">
                     {format(addDays(startDate, i), dateFormat, { locale })}
                 </div>
             );
@@ -147,7 +160,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                 days.push(
                     <div
                         key={day.toString()}
-                        className={`p-1 relative`}
+                        className={`p-0.5 md:p-1 relative`}
                     >
                         <button
                             type="button"
@@ -155,12 +168,13 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                                 onChange(cloneDay);
                                 setIsOpen(false);
                             }}
+                            aria-label={format(cloneDay, 'PPPP', { locale })}
                             className={`
-                                w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold transition-all relative z-10 mx-auto
+                                w-10 h-10 md:w-9 md:h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all relative z-10 mx-auto
                                 ${!isCurrentMonth ? 'text-slate-300' : ''}
                                 ${isSelected
                                     ? 'bg-promed-primary text-white shadow-lg shadow-promed-primary/30'
-                                    : isCurrentMonth ? 'text-slate-700 hover:bg-slate-100' : ''
+                                    : isCurrentMonth ? 'text-slate-700 hover:bg-slate-100 active:bg-slate-200' : ''
                                 }
                                 ${isTodayDate && !isSelected ? 'text-promed-primary bg-promed-light' : ''}
                             `}
@@ -184,7 +198,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
         return <div>{rows}</div>;
     };
 
-    // Generate a unique ID for this instance if not provided
+    // Generate a unique ID for this instance
     const portalId = useRef(`datepicker-portal-${Math.random().toString(36).substr(2, 9)}`).current;
 
     // Portal Dropdown Content
@@ -199,14 +213,48 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-white rounded-3xl shadow-2xl shadow-blue-500/10 border border-slate-100 overflow-hidden p-6 w-[340px]"
+                            className="bg-white rounded-3xl shadow-2xl shadow-blue-500/10 border border-slate-100 overflow-hidden p-6 w-[340px] max-w-[90vw]"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-label="Date picker"
                         >
                             {renderHeader()}
                             {renderDays()}
                             {renderCells()}
                         </motion.div>
                     </div>
+                ) : isMobile ? (
+                    // Mobile: Bottom Sheet
+                    <div
+                        className="fixed inset-0 z-[100000] bg-black/20 backdrop-blur-sm"
+                        onClick={() => setIsOpen(false)}
+                    >
+                        <motion.div
+                            id={portalId}
+                            initial={{ opacity: 0, y: 100 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 100 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl border-t border-slate-200 overflow-hidden pb-6 safe-area-bottom"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-label="Date picker"
+                        >
+                            {/* Drag Handle */}
+                            <div className="flex justify-center pt-3 pb-2">
+                                <div className="w-10 h-1 bg-slate-300 rounded-full" />
+                            </div>
+
+                            <div className="px-4 pb-4">
+                                {renderHeader()}
+                                {renderDays()}
+                                {renderCells()}
+                            </div>
+                        </motion.div>
+                    </div>
                 ) : (
+                    // Desktop: Dropdown
                     <motion.div
                         id={portalId}
                         initial={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -221,7 +269,10 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                             width: '320px',
                             zIndex: 99999
                         }}
-                        className="bg-white rounded-3xl shadow-2xl shadow-slate-200/50 border border-slate-300 overflow-hidden p-4"
+                        className="bg-white rounded-2xl shadow-2xl shadow-slate-200/50 border border-slate-200 overflow-hidden p-4"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Date picker"
                     >
                         {renderHeader()}
                         {renderDays()}
@@ -242,20 +293,23 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
+                aria-haspopup="dialog"
+                aria-expanded={isOpen}
+                aria-label={value ? `Selected date: ${format(value, 'PPP', { locale })}` : (placeholder || 'Select date')}
                 className={`
                     w-full text-left flex items-center gap-2 md:gap-3 transition-all duration-200 outline-none group
                     ${minimal
                         ? 'bg-transparent border-none px-2 md:px-3 h-full'
-                        : `bg-slate-50 border border-slate-300 rounded-2xl py-3.5 px-3 md:px-4 ${isOpen ? 'ring-4 ring-promed-primary/10 border-promed-primary bg-white' : 'hover:border-slate-400 hover:bg-white'}`
+                        : `bg-slate-50 border border-slate-300 rounded-2xl py-3 md:py-3.5 px-3 md:px-4 ${isOpen ? 'ring-4 ring-promed-primary/10 border-promed-primary bg-white' : 'hover:border-slate-400 hover:bg-white'}`
                     }
                     text-slate-700 font-bold
                 `}
             >
-                <CalendarIcon className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-colors ${isOpen ? 'text-promed-primary' : 'group-hover:text-slate-600'}`} />
+                <CalendarIcon className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-colors ${isOpen ? 'text-promed-primary' : 'group-hover:text-slate-600'} flex-shrink-0`} />
                 <span className="flex-1 whitespace-nowrap truncate text-xs sm:text-sm">
                     {value ? format(value, 'dd MMM yyyy', { locale }) : (placeholder || 'Select Date')}
                 </span>
-                <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-promed-primary' : ''}`} />
+                <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180 text-promed-primary' : ''}`} />
             </button>
 
             {/* Render Portal */}
