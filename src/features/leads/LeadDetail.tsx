@@ -272,7 +272,6 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
                 {/* Modal */}
                 <motion.div
-                    layoutId={`lead-card-${lead.id}`}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}

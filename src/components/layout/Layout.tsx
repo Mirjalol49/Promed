@@ -246,7 +246,7 @@ const Layout: React.FC<LayoutProps> = ({
         </header>
 
         {/* Main Area */}
-        <main className={`flex-1 overflow-x-hidden scroll-smooth z-0 ${currentPage === 'MESSAGES' ? 'overflow-hidden px-6 pb-6 pt-2 md:px-8 md:pb-8 md:pt-2' : 'overflow-y-auto no-scrollbar p-6 md:p-8'}`}>
+        <main className={`flex-1 overflow-x-hidden scroll-smooth z-0 ${currentPage === 'MESSAGES' ? 'overflow-hidden px-2 pb-2 pt-1 md:px-6 md:pb-6 md:pt-2 lg:px-8 lg:pb-8' : 'overflow-y-auto no-scrollbar p-4 md:p-6 lg:p-8'}`}>
           <div className="max-w-[1600px] mx-auto text-white">
             <div className="text-slate-900">
               {children}

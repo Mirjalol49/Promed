@@ -667,11 +667,11 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     };
 
     return (
-        <div className="flex h-[calc(100vh-96px)] md:h-[calc(100vh-120px)] bg-white rounded-3xl shadow-2xl border border-slate-300 overflow-hidden font-sans">
+        <div className="flex h-[calc(100dvh-80px)] md:h-[calc(100vh-120px)] bg-white rounded-2xl md:rounded-3xl shadow-2xl border border-slate-300 overflow-hidden font-sans">
             {/* Sidebar */}
             <div className={`w-full md:w-96 border-r border-slate-300 flex-col bg-white ${selectedPatientId ? 'hidden md:flex' : 'flex'}`}>
-                <div className="p-5 border-b border-slate-300">
-                    <h2 className="font-bold text-2xl text-slate-800 mb-4 tracking-tight">{t('messages')}</h2>
+                <div className="p-4 md:p-5 border-b border-slate-300">
+                    <h2 className="font-bold text-xl md:text-2xl text-slate-800 mb-3 md:mb-4 tracking-tight">{t('messages')}</h2>
                     <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
@@ -679,7 +679,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                             value={searchText}
                             onChange={e => setSearchText(e.target.value)}
                             placeholder={t('search')}
-                            className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-promed-primary/40 focus:border-promed-primary transition-all placeholder:text-slate-400 font-medium text-slate-700 shadow-sm"
+                            className="w-full pl-11 pr-4 py-2.5 md:py-3 bg-white border border-slate-300 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-promed-primary/40 focus:border-promed-primary transition-all placeholder:text-slate-400 font-medium text-slate-700 shadow-sm"
                         />
                     </div>
                 </div>
@@ -745,46 +745,49 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                 {selectedPatient ? (
                     <>
                         {/* Header */}
-                        <div className="px-6 py-4 bg-white border-b border-slate-300 flex items-center justify-between shadow-md z-20 sticky top-0">
-                            <div className="flex items-center gap-4">
-                                <button
-                                    onClick={() => setSelectedPatientId(null)}
-                                    className="md:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors"
-                                >
-                                    <ChevronDown className="rotate-90" size={24} />
-                                </button>
-                                <ProfileAvatar src={selectedPatient.profileImage} alt={selectedPatient.fullName} size={44} className="rounded-full shadow-sm" />
-                                <div>
-                                    <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                                        {selectedPatient.fullName}
-                                        {selectedPatient.tier === 'pro' && <ProBadge size={22} />}
-                                    </h3>
-                                    {patientIsTyping && !isScheduledView && (
-                                        <div className="flex items-center gap-1.5 text-promed-primary text-xs font-black animate-pulse">
-                                            <span className="relative flex h-1.5 w-1.5">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-promed-primary/40 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-promed-primary"></span>
-                                            </span>
-                                            yozmoqda...
-                                        </div>
-                                    )}
+                        <div className="px-3 py-3 md:px-6 md:py-4 bg-white border-b border-slate-300 shadow-md z-20 sticky top-0">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+                                    <button
+                                        onClick={() => setSelectedPatientId(null)}
+                                        className="md:hidden p-1.5 -ml-1 text-slate-500 hover:bg-slate-100 rounded-full transition-colors flex-shrink-0"
+                                    >
+                                        <ChevronDown className="rotate-90" size={22} />
+                                    </button>
+                                    <ProfileAvatar src={selectedPatient.profileImage} alt={selectedPatient.fullName} size={40} className="rounded-full shadow-sm flex-shrink-0 md:!w-11 md:!h-11" />
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="font-bold text-slate-800 text-base md:text-lg flex items-center gap-1.5 truncate">
+                                            <span className="truncate">{selectedPatient.fullName}</span>
+                                            {selectedPatient.tier === 'pro' && <ProBadge size={18} />}
+                                        </h3>
+                                        {patientIsTyping && !isScheduledView && (
+                                            <div className="flex items-center gap-1.5 text-promed-primary text-xs font-black animate-pulse">
+                                                <span className="relative flex h-1.5 w-1.5">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-promed-primary/40 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-promed-primary"></span>
+                                                </span>
+                                                yozmoqda...
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="flex bg-slate-200 p-1 rounded-lg border border-slate-300">
-                                <button
-                                    onClick={() => setIsScheduledView(false)}
-                                    className={`px-3 py-1.5 text-xs font-black rounded-md transition-all ${!isScheduledView ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
-                                >
-                                    {t('tab_chat')}
-                                </button>
-                                <button
-                                    onClick={() => setIsScheduledView(true)}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-md transition-all ${isScheduledView ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
-                                >
-                                    <CalendarClock size={14} />
-                                    {t('tab_scheduled')}
-                                </button>
+                                <div className="flex bg-slate-200 p-0.5 md:p-1 rounded-lg border border-slate-300 flex-shrink-0">
+                                    <button
+                                        onClick={() => setIsScheduledView(false)}
+                                        className={`px-2 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-black rounded-md transition-all ${!isScheduledView ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
+                                    >
+                                        {t('tab_chat')}
+                                    </button>
+                                    <button
+                                        onClick={() => setIsScheduledView(true)}
+                                        className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-black rounded-md transition-all ${isScheduledView ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
+                                    >
+                                        <CalendarClock size={12} className="hidden sm:block md:w-[14px] md:h-[14px]" />
+                                        <span className="hidden sm:inline">{t('tab_scheduled')}</span>
+                                        <CalendarClock size={14} className="sm:hidden" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -860,7 +863,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                     const isNearBottom = scrollHeight - scrollTop - clientHeight < 300;
                                     setShowScrollButton(!isNearBottom);
                                 }}
-                                className="absolute inset-0 overflow-y-auto px-4 pt-4 pb-1 space-y-3 no-scrollbar"
+                                className="absolute inset-0 overflow-y-auto px-2 md:px-4 pt-3 md:pt-4 pb-1 space-y-2 md:space-y-3 no-scrollbar"
                             >
                                 {hasMore && !loadingMore && !isScheduledView && (
                                     <div className="flex justify-center pb-4">
@@ -931,10 +934,10 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
 
                                                                 <div
-                                                                    className={`max-w-[75%] px-3 py-2 text-[15px] leading-relaxed relative shadow-sm group ${msg.sender === 'doctor'
-                                                                        ? 'gel-blue-style text-white rounded-3xl bubble-tail-out'
-                                                                        : 'bg-white text-slate-800 rounded-3xl bubble-tail-in'
-                                                                        } ${editingMessageId === msg.id ? 'w-full min-w-[300px]' : ''} ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}
+                                                                    className={`max-w-[85%] sm:max-w-[75%] px-3 py-2 text-[14px] md:text-[15px] leading-relaxed relative shadow-sm group ${msg.sender === 'doctor'
+                                                                        ? 'gel-blue-style text-white rounded-2xl md:rounded-3xl bubble-tail-out'
+                                                                        : 'bg-white text-slate-800 rounded-2xl md:rounded-3xl bubble-tail-in'
+                                                                        } ${editingMessageId === msg.id ? 'w-full min-w-0 sm:min-w-[300px]' : ''} ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}
                                                                     onContextMenu={(e) => {
                                                                         e.preventDefault();
                                                                         setContextMenuMessageId(msg.id);
@@ -951,7 +954,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                                                     {/* Actions Menu (Right-Click Context Menu) */}
                                                                     {editingMessageId !== msg.id && contextMenuMessageId === msg.id && (
                                                                         <div
-                                                                            className={`absolute top-0 ${msg.sender === 'doctor' ? 'right-full mr-2' : 'left-full ml-2'} flex flex-col gap-1 z-20 animate-in fade-in zoom-in-95 duration-150`}
+                                                                            className={`absolute z-20 animate-in fade-in zoom-in-95 duration-150 ${msg.sender === 'doctor' ? 'right-0 md:right-full md:mr-2 top-full mt-1 md:top-0 md:mt-0' : 'left-0 md:left-full md:ml-2 top-full mt-1 md:top-0 md:mt-0'} flex flex-col gap-1`}
                                                                             onClick={(e) => e.stopPropagation()}
                                                                             onContextMenu={(e) => e.stopPropagation()}
                                                                         >
@@ -1123,11 +1126,11 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                         </div >
 
                         {/* Input Area - White Theme */}
-                        < div className="p-3 bg-white relative z-10" >
+                        < div className="p-2 md:p-3 bg-white relative z-10" >
                             {/* Emoji Picker Popover */}
                             {
                                 showEmojiPicker && (
-                                    <div className="absolute bottom-20 left-2 z-50 shadow-xl rounded-2xl border border-slate-100">
+                                    <div className="absolute bottom-16 md:bottom-20 left-0 md:left-2 z-50 shadow-xl rounded-2xl border border-slate-100 max-w-[calc(100vw-16px)]">
                                         <div className="relative">
                                             <EmojiPicker
                                                 emojiStyle={EmojiStyle.APPLE}
@@ -1137,8 +1140,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                                 theme={Theme.LIGHT}
                                                 lazyLoadEmojis={true}
                                                 searchDisabled={false}
-                                                width={300}
-                                                height={400}
+                                                width={typeof window !== 'undefined' && window.innerWidth < 640 ? Math.min(window.innerWidth - 16, 300) : 300}
+                                                height={350}
                                                 previewConfig={{ showPreview: false }}
                                             />
                                         </div>
@@ -1150,14 +1153,15 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                             {/* Reply Indicator (Banner) */}
                             {
                                 replyingToMessage && (
-                                    <div className="flex items-center justify-between px-4 py-2 border-t border-l border-r border-promed-primary/20 bg-white ml-2 mr-2 border-b-0 rounded-t-xl mb-[-4px] relative z-0 animate-slide-up shadow-sm">
-                                        <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className="h-8 w-1 bg-promed-primary rounded-full"></div>
-                                            <div className="flex flex-col">
-                                                <span className="text-promed-primary text-xs font-black uppercase tracking-wide flex items-center gap-1">
-                                                    <Reply size={12} /> Reply to {replyingToMessage.sender === 'doctor' ? 'Yourself' : selectedPatient.fullName}
+                                    <div className="flex items-center justify-between px-3 md:px-4 py-2 border-t border-l border-r border-promed-primary/20 bg-white mx-1 md:mx-2 border-b-0 rounded-t-xl mb-[-4px] relative z-0 animate-slide-up shadow-sm">
+                                        <div className="flex items-center gap-2 md:gap-3 overflow-hidden min-w-0 flex-1">
+                                            <div className="h-8 w-1 bg-promed-primary rounded-full flex-shrink-0"></div>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-promed-primary text-[10px] md:text-xs font-black uppercase tracking-wide flex items-center gap-1">
+                                                    <Reply size={12} />
+                                                    <span className="truncate">Reply to {replyingToMessage.sender === 'doctor' ? 'Yourself' : selectedPatient.fullName}</span>
                                                 </span>
-                                                <span className="text-slate-600 text-xs truncate max-w-[200px] md:max-w-xs font-black">{replyingToMessage.text}</span>
+                                                <span className="text-slate-600 text-xs truncate max-w-[150px] sm:max-w-[200px] md:max-w-xs font-black">{replyingToMessage.text}</span>
                                             </div>
                                         </div>
                                         <button
@@ -1194,7 +1198,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                 )
                             }
 
-                            <div className="flex items-end gap-2 bg-white p-1 rounded-xl">
+                            <div className="flex items-end gap-1 md:gap-2 bg-white p-0.5 md:p-1 rounded-xl">
 
                                 {/* Schedule Modal */}
                                 <ScheduleModal
@@ -1249,10 +1253,10 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                 {/* 1. Emoji (Left) */}
                                 <button
                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                    className={`p-3 rounded-full hover:bg-slate-100 transition-colors flex-shrink-0 ${showEmojiPicker ? 'text-promed-primary' : 'text-slate-400'}`}
+                                    className={`p-2 md:p-3 rounded-full hover:bg-slate-100 transition-colors flex-shrink-0 ${showEmojiPicker ? 'text-promed-primary' : 'text-slate-400'}`}
                                     disabled={isSending}
                                 >
-                                    <Smile size={24} />
+                                    <Smile size={22} className="md:w-6 md:h-6" />
                                 </button>
 
                                 {/* 2. Input (Middle) */}
@@ -1270,7 +1274,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                     autoComplete="off"
                                     spellCheck={false}
                                     style={{ outline: 'none', boxShadow: 'none', WebkitTapHighlightColor: 'transparent' }}
-                                    className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none px-0 py-3 text-[16px] resize-none min-h-[44px] overflow-hidden w-full placeholder:text-slate-400 text-black disabled:opacity-50"
+                                    className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none px-0 py-2.5 md:py-3 text-[16px] resize-none min-h-[40px] md:min-h-[44px] overflow-hidden w-full placeholder:text-slate-400 text-black disabled:opacity-50"
                                     rows={1}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -1317,15 +1321,15 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                         }
                                     }}
                                     disabled={!messageInput.trim() || isSending}
-                                    className={`p-3 rounded-full transition-all duration-200 flex-shrink-0 flex items-center justify-center ${!messageInput.trim() ? 'text-promed-primary opacity-50 cursor-not-allowed' : 'text-promed-primary hover:bg-promed-light hover:scale-110 active:scale-90'}`}
+                                    className={`p-2 md:p-3 rounded-full transition-all duration-200 flex-shrink-0 flex items-center justify-center ${!messageInput.trim() ? 'text-promed-primary opacity-50 cursor-not-allowed' : 'text-promed-primary hover:bg-promed-light hover:scale-110 active:scale-90'}`}
                                     title="Send Message (Hold for options)"
                                 >
                                     {isSending ? (
                                         <ButtonLoader />
                                     ) : editingMessageId ? (
-                                        <Check size={26} className="ml-0.5 mt-0.5" />
+                                        <Check size={24} className="ml-0.5 mt-0.5" />
                                     ) : (
-                                        <Send size={24} className="ml-2 mt-1 rotate-45" fill="currentColor" />
+                                        <Send size={22} className="ml-1.5 mt-0.5 md:ml-2 md:mt-1 rotate-45" fill="currentColor" />
                                     )}
                                 </button>
                             </div>

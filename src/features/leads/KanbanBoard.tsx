@@ -456,7 +456,6 @@ export const KanbanBoard: React.FC = () => {
                                         setIsReminderModalOpen(true);
                                     }}
                                     onSelect={(lead) => setSelectedLead(lead)}
-                                    layoutId={`lead-card-${lead.id}`}
                                     isViewer={isViewer}
                                 />
                             ))}

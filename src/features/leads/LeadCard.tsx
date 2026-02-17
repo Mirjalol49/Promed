@@ -31,7 +31,6 @@ interface LeadCardProps {
     onDelete: (lead: Lead) => void;
     onRemind: (lead: Lead) => void;
     onSelect: (lead: Lead) => void;
-    layoutId?: string;
     isViewer?: boolean;
 }
 
@@ -87,7 +86,7 @@ const COL_ICONS: Record<LeadStatus, React.ElementType> = {
     'LOST': Archive
 };
 
-export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit, onDelete, onRemind, onSelect, layoutId, isViewer }) => {
+export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit, onDelete, onRemind, onSelect, isViewer }) => {
     const { t, language } = useLanguage();
     const isStale = leadService.checkStale(lead);
 
@@ -193,7 +192,6 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
 
     return (
         <motion.div
-            layoutId={layoutId}
             onClick={() => onSelect(lead)}
             animate={isOverdue ? {
                 boxShadow: [
