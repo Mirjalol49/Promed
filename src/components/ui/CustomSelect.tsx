@@ -180,18 +180,18 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
-                    w-full px-4 text-left flex items-center justify-between
-                    text-slate-700 font-bold transition-all duration-200 outline-none
+                    w-full px-3 md:px-4 text-left flex items-center justify-between
+                    text-slate-700 font-bold transition-all duration-200 outline-none text-[inherit]
                     ${minimal
                         ? 'bg-transparent border-none h-full'
                         : `h-[52px] bg-slate-50 border border-slate-300 rounded-2xl ${isOpen ? 'border-promed-primary bg-white' : 'hover:border-slate-400 hover:bg-white'}`
                     }
                 `}
             >
-                <div className="flex items-center gap-2 overflow-hidden">
-                    {selectedOption ? (renderOption ? renderOption(selectedOption) : selectedOption.label) : <span className="text-slate-400 font-normal">{placeholder}</span>}
+                <div className="flex items-center gap-2 overflow-hidden truncate">
+                    {selectedOption ? (renderOption ? renderOption(selectedOption) : <span className="truncate">{selectedOption.label}</span>) : <span className="text-slate-400 font-normal truncate">{placeholder}</span>}
                 </div>
-                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-promed-primary' : ''}`} />
+                <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180 text-promed-primary' : ''}`} />
             </button>
 
             {typeof document !== 'undefined' && createPortal(dropdownContent, document.body)}

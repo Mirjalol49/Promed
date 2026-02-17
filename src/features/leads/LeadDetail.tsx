@@ -260,7 +260,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
     return (
         <Portal>
-            <div className="fixed inset-0 z-[55] flex items-center justify-center p-6 md:p-12 pt-16 md:pt-16">
+            <div className="fixed inset-0 z-[55] flex items-end md:items-center justify-center p-0 md:p-12 md:pt-16">
                 {/* Backdrop */}
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -272,32 +272,32 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
                 {/* Modal */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
                     transition={{ duration: 0.2 }}
-                    className="relative w-full max-w-4xl h-[80vh] max-h-[800px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+                    className="relative w-full md:max-w-4xl h-full md:h-[80vh] md:max-h-[800px] bg-white rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
                 >
                     {/* Premium Glossy Blue Header */}
                     <div className="relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}>
                         {/* Glossy reflection */}
                         <div className="absolute inset-x-0 top-0 h-[50%] pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 100%)' }} />
-                        <div className="relative z-10 flex items-center justify-between px-6 py-4">
-                            <div className="flex items-center gap-4">
+                        <div className="relative z-10 flex items-center justify-between px-4 md:px-6 py-3 md:py-4">
+                            <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
                                 {/* Avatar */}
-                                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center text-white font-bold text-base md:text-lg shadow-lg flex-shrink-0">
                                     {getInitials(lead.full_name)}
                                 </div>
-                                <div>
-                                    <h2 className="text-lg font-bold text-white" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.15))' }}>{lead.full_name}</h2>
-                                    <div className="flex items-center gap-2 text-sm text-blue-100">
-                                        <span>{lead.phone_number}</span>
+                                <div className="min-w-0">
+                                    <h2 className="text-base md:text-lg font-bold text-white truncate" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.15))' }}>{lead.full_name}</h2>
+                                    <div className="flex items-center gap-2 text-xs md:text-sm text-blue-100 truncate">
+                                        <span className="truncate">{lead.phone_number}</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-0.5 md:gap-1 flex-shrink-0">
                                 {!isViewer && (
                                     <>
                                         <button
@@ -310,7 +310,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                 });
                                                 setIsReminderOpen(true);
                                             }}
-                                            className={`p-2.5 rounded-xl transition-all ${hasReminder(lead)
+                                            className={`p-2 md:p-2.5 rounded-xl transition-all ${hasReminder(lead)
                                                 ? isOverdue(lead)
                                                     ? 'text-white bg-rose-500/80 hover:bg-rose-500'
                                                     : 'text-white bg-white/20 hover:bg-white/30 ring-1 ring-white/30'
@@ -318,182 +318,189 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                 }`}
                                             title="Set Reminder"
                                         >
-                                            <Clock size={20} />
+                                            <Clock size={18} className="md:w-5 md:h-5" />
                                         </button>
                                         <button
                                             onClick={() => onEdit(lead)}
-                                            className="p-2.5 text-white/70 hover:text-white hover:bg-white/15 rounded-xl transition-all"
+                                            className="p-2 md:p-2.5 text-white/70 hover:text-white hover:bg-white/15 rounded-xl transition-all"
                                             title="Edit"
                                         >
-                                            <Edit2 size={20} />
+                                            <Edit2 size={18} className="md:w-5 md:h-5" />
                                         </button>
                                         <button
                                             onClick={() => onDelete(lead)}
-                                            className="p-2.5 text-white/70 hover:text-rose-200 hover:bg-rose-500/30 rounded-xl transition-all"
+                                            className="p-2 md:p-2.5 text-white/70 hover:text-rose-200 hover:bg-rose-500/30 rounded-xl transition-all"
                                             title="Delete"
                                         >
-                                            <Trash2 size={20} />
+                                            <Trash2 size={18} className="md:w-5 md:h-5" />
                                         </button>
 
-                                        <div className="w-px h-8 bg-white/20 mx-2" />
+                                        <div className="w-px h-6 md:h-8 bg-white/20 mx-1 md:mx-2" />
                                     </>
                                 )}
 
                                 <button
                                     onClick={onClose}
-                                    className="p-2 text-white/50 hover:text-white hover:bg-white/15 rounded-xl transition-all"
+                                    className="p-1.5 md:p-2 text-white/50 hover:text-white hover:bg-white/15 rounded-xl transition-all"
                                 >
-                                    <X size={22} />
+                                    <X size={20} className="md:w-[22px] md:h-[22px]" />
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     {/* Content: Sidebar + Timeline */}
-                    <div className="flex-1 flex overflow-hidden">
+                    <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
 
-                        {/* Left Sidebar (30%) */}
-                        <div className="w-[320px] border-r border-slate-100 p-6 overflow-y-auto bg-slate-50/50">
+                        {/* Left Sidebar (Mobile: Horizontal Scroll, Desktop: Vertical Fixed) */}
+                        <div className="w-full md:w-[320px] border-b md:border-b-0 md:border-r border-slate-100 bg-slate-50/50 flex-shrink-0">
+                            <div className="flex md:flex-col overflow-x-auto md:overflow-y-auto md:overflow-x-visible p-4 md:p-6 gap-3 md:gap-6 items-center md:items-stretch no-scrollbar">
 
-                            {/* Status Dropdown */}
-                            <div className="mb-6" ref={statusRef}>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">{t('status')}</label>
-                                <div className="relative">
-                                    <button
-                                        onClick={() => !isViewer && setIsStatusOpen(!isStatusOpen)}
-                                        disabled={isViewer}
-                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-colors shadow-sm ${statusColors.color} ${isStatusOpen ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-300 hover:border-slate-400'} ${isViewer ? 'opacity-90 cursor-default' : ''}`}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <div className={`w-2 h-2 rounded-full ${statusColors.bg.replace('100', '500')}`} />
-                                            <span className="font-semibold text-sm">{getStatusLabel(lead.status)}</span>
+                                {/* Status Dropdown */}
+                                <div className="flex-shrink-0 min-w-[200px] md:min-w-0 md:mb-6" ref={statusRef}>
+                                    <label className="hidden md:block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">{t('status')}</label>
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => !isViewer && setIsStatusOpen(!isStatusOpen)}
+                                            disabled={isViewer}
+                                            className={`w-full flex items-center justify-between px-3 py-2 md:px-4 md:py-3 rounded-xl md:rounded-2xl border transition-colors shadow-sm ${statusColors.color} ${isStatusOpen ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-300 hover:border-slate-400'} ${isViewer ? 'opacity-90 cursor-default' : ''}`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-2 h-2 rounded-full ${statusColors.bg.replace('100', '500')}`} />
+                                                <span className="font-semibold text-xs md:text-sm">{getStatusLabel(lead.status)}</span>
+                                            </div>
+                                            {!isViewer && <ChevronDown size={14} className={`md:w-4 md:h-4 transition-transform ${isStatusOpen ? 'rotate-180' : ''}`} />}
+                                        </button>
+
+                                        <AnimatePresence>
+                                            {isStatusOpen && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: -8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -8 }}
+                                                    className="fixed md:absolute top-auto md:top-full left-4 right-4 md:left-0 md:right-0 mt-2 bg-white border border-slate-300 rounded-xl shadow-2xl z-[60] overflow-hidden max-h-[300px] overflow-y-auto"
+                                                    style={{ bottom: window.innerWidth < 768 ? '20px' : 'auto' }}
+                                                >
+                                                    {VISIBLE_STATUSES.map((key) => {
+                                                        const colors = STATUS_COLORS[key];
+                                                        return (
+                                                            <button
+                                                                key={key}
+                                                                onClick={() => handleStatusChange(key)}
+                                                                className={`w-full flex items-center gap-2 px-4 py-3 text-sm font-medium hover:bg-slate-50 transition-colors ${key === lead.status ? 'bg-slate-100' : ''} ${colors.color}`}
+                                                            >
+                                                                <div className={`w-2 h-2 rounded-full ${colors.bg.replace('100', '500')}`} />
+                                                                <span>{getStatusLabel(key)}</span>
+                                                                {key === lead.status && <Check size={14} className="ml-auto" />}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                </div>
+
+                                {/* Divider for Mobile */}
+                                <div className="w-px h-8 bg-slate-200 md:hidden flex-shrink-0" />
+
+                                {/* Lead Details Group */}
+                                <div className="flex md:flex-col gap-3 md:gap-5 flex-shrink-0 items-center md:items-stretch">
+                                    <div className="flex-shrink-0">
+                                        <label className="hidden md:block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">{t('phone')}</label>
+                                        <a href={`tel:${lead.phone_number}`} className="flex items-center gap-2 px-3 py-2 md:p-0 bg-white md:bg-transparent border md:border-0 border-slate-200 rounded-lg text-sm font-medium text-slate-800 hover:text-blue-600 transition-colors">
+                                            <Phone size={14} className="md:hidden text-slate-400" />
+                                            <span className="truncate max-w-[120px] md:max-w-none">{lead.phone_number}</span>
+                                            <div className="bg-slate-100 p-1 rounded-full md:hidden">
+                                                <ExternalLink size={10} className="text-slate-500" />
+                                            </div>
+                                        </a>
+                                    </div>
+
+                                    <div className="flex-shrink-0">
+                                        <label className="hidden md:block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">{t('source_label')}</label>
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-2 md:py-1.5 bg-white border border-slate-300 rounded-lg text-xs md:text-sm font-bold text-slate-700 shadow-sm whitespace-nowrap">
+                                            {lead.source === 'Instagram' && <span className="text-pink-500 text-base md:text-sm">📸</span>}
+                                            {lead.source === 'Telegram' && <span className="text-sky-500 text-base md:text-sm">✈️</span>}
+                                            {lead.source === 'Walk-in' && <span className="text-base md:text-sm">🚶</span>}
+                                            {lead.source === 'Referral' && <span className="text-base md:text-sm">👥</span>}
+                                            {
+                                                lead.source === 'Instagram' ? (t('source_instagram') || 'Instagram') :
+                                                    lead.source === 'Telegram' ? (t('source_telegram') || 'Telegram') :
+                                                        lead.source === 'Walk-in' ? (t('source_walkin') || 'Walk-in') :
+                                                            lead.source === 'Referral' ? (t('source_referral') || 'Referral') :
+                                                                lead.source
+                                            }
+                                        </span>
+                                    </div>
+
+                                    {/* Created Date */}
+                                    <div className="flex-shrink-0 md:pt-4 md:mt-4 md:border-t border-slate-200">
+                                        <div className="flex items-center gap-2 text-slate-500 md:mb-1">
+                                            <Plus size={14} strokeWidth={2.5} className="hidden md:block" />
+                                            <span className="hidden md:inline text-[11px] font-bold uppercase tracking-wide">{t('lead_created')}</span>
                                         </div>
-                                        {!isViewer && <ChevronDown size={16} className={`transition-transform ${isStatusOpen ? 'rotate-180' : ''}`} />}
-                                    </button>
-
-                                    <AnimatePresence>
-                                        {isStatusOpen && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: -8 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -8 }}
-                                                className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-xl z-20 overflow-hidden"
-                                            >
-                                                {VISIBLE_STATUSES.map((key) => {
-                                                    const colors = STATUS_COLORS[key];
-                                                    return (
-                                                        <button
-                                                            key={key}
-                                                            onClick={() => handleStatusChange(key)}
-                                                            className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 transition-colors ${key === lead.status ? 'bg-slate-100' : ''} ${colors.color}`}
-                                                        >
-                                                            <div className={`w-2 h-2 rounded-full ${colors.bg.replace('100', '500')}`} />
-                                                            <span>{getStatusLabel(key)}</span>
-                                                            {key === lead.status && <Check size={14} className="ml-auto" />}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
-                            </div>
-
-                            {/* Lead Details */}
-                            <div className="space-y-5">
-                                <div>
-                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">{t('phone')}</label>
-                                    <a href={`tel:${lead.phone_number}`} className="text-sm font-medium text-slate-800 hover:text-blue-600 flex items-center gap-1">
-                                        {lead.phone_number}
-                                        <ExternalLink size={12} className="text-slate-400" />
-                                    </a>
-                                </div>
-
-                                <div>
-                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">{t('source_label')}</label>
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-700 shadow-sm">
-                                        {lead.source === 'Instagram' && <span className="text-pink-500">📸</span>}
-                                        {lead.source === 'Telegram' && <span className="text-sky-500">✈️</span>}
-                                        {lead.source === 'Walk-in' && <span>🚶</span>}
-                                        {lead.source === 'Referral' && <span>👥</span>}
-                                        {
-                                            lead.source === 'Instagram' ? (t('source_instagram') || 'Instagram') :
-                                                lead.source === 'Telegram' ? (t('source_telegram') || 'Telegram') :
-                                                    lead.source === 'Walk-in' ? (t('source_walkin') || 'Walk-in') :
-                                                        lead.source === 'Referral' ? (t('source_referral') || 'Referral') :
-                                                            lead.source
-                                        }
-                                    </span>
-                                </div>
-
-                                {/* Created Date */}
-                                <div className="pt-4 mt-4 border-t border-slate-200">
-                                    <div className="flex items-center gap-2 text-slate-500">
-                                        <Plus size={14} strokeWidth={2.5} />
-                                        <span className="text-[11px] font-bold uppercase tracking-wide">{t('lead_created')}</span>
-                                    </div>
-                                    <div className="text-sm font-bold text-slate-800 mt-1 pl-6">
-                                        {formatDate(lead.created_at)}
+                                        <div className="flex items-center gap-1.5 px-3 py-2 md:p-0 bg-white md:bg-transparent border md:border-0 border-slate-200 rounded-lg text-xs md:text-sm font-bold text-slate-800 whitespace-nowrap md:pl-6">
+                                            <span className="md:hidden text-slate-400 font-normal mr-1">{t('created')}:</span>
+                                            {formatDate(lead.created_at)}
+                                        </div>
                                     </div>
                                 </div>
-
-                                {/* Active Reminder - REMOVED */}
-                                {/* {hasReminder(lead) && lead.reminder && ( ... )} */}
                             </div>
                         </div>
 
                         {/* Right Timeline (70%) */}
-                        <div className="flex-1 flex flex-col bg-white">
+                        <div className="flex-1 flex flex-col bg-white overflow-hidden relative">
                             {/* Timeline Header */}
-                            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}>
-                                    <Activity size={16} className="text-white" />
+                            <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 flex items-center gap-2 md:gap-3 flex-shrink-0 bg-white z-10 shadow-sm md:shadow-none">
+                                <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}>
+                                    <Activity size={14} className="md:w-4 md:h-4 text-white" />
                                 </div>
-                                <h3 className="font-bold text-slate-900 text-lg">{t('lead_activity')}</h3>
-                                <span className="text-xs font-bold text-white px-2.5 py-1 rounded-full" style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}>
+                                <h3 className="font-bold text-slate-900 text-base md:text-lg">{t('lead_activity')}</h3>
+                                <span className="text-[10px] md:text-xs font-bold text-white px-2 py-0.5 md:px-2.5 md:py-1 rounded-full" style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}>
                                     {timeline.length + 1}
                                 </span>
                             </div>
 
                             {/* Timeline Content */}
-                            <div className="flex-1 overflow-y-auto p-6" ref={scrollRef}>
-                                <div className="space-y-4 relative max-w-2xl">
+                            <div className="flex-1 overflow-y-auto p-4 md:p-6" ref={scrollRef}>
+                                <div className="space-y-4 md:space-y-6 relative max-w-2xl">
                                     {/* Vertical Line */}
-                                    <div className="absolute left-[15px] top-2 bottom-2 w-[3px] bg-slate-200 rounded-full" />
+                                    <div className="absolute left-[15px] md:left-[19px] top-2 bottom-2 w-[2px] md:w-[3px] bg-slate-200 rounded-full" />
 
                                     {/* Timeline Events */}
                                     {timeline.map((event) => (
-                                        <div key={event.id} className="flex gap-4 relative group">
+                                        <div key={event.id} className="flex gap-3 md:gap-4 relative group">
                                             {/* Icon/Avatar */}
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white z-10 shrink-0 ring-4 ring-white ${getTimelineColor(event)}`}>
-                                                {getTimelineIcon(event)}
+                                            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-white z-10 shrink-0 ring-4 ring-white ${getTimelineColor(event)}`}>
+                                                {React.cloneElement(getTimelineIcon(event) as any, { size: 14, className: "md:w-5 md:h-5" })}
                                             </div>
 
-                                            <div className="flex-1 min-w-0 pb-6">
+                                            <div className="flex-1 min-w-0 pb-2 md:pb-6">
                                                 {/* Header: Author & Time */}
-                                                <div className="flex items-center gap-2 mb-1.5">
+                                                <div className="flex items-center gap-2 mb-1 md:mb-1.5">
                                                     {event.created_by !== 'current-user' && (
-                                                        <span className="text-sm font-bold text-slate-900">
+                                                        <span className="text-xs md:text-sm font-bold text-slate-900">
                                                             {t('system') || 'Tizim'}
                                                         </span>
                                                     )}
-                                                    <span className="text-[11px] font-medium text-slate-400">
+                                                    <span className="text-[10px] md:text-[11px] font-medium text-slate-400">
                                                         {formatDate(event.created_at)}
                                                     </span>
                                                 </div>
 
                                                 {/* Content Block */}
-                                                <div className={`relative group/content ${event.type === 'note' ? 'bg-slate-50/80 hover:bg-slate-50 border border-slate-300' : ''} rounded-2xl ${event.type === 'note' ? 'p-3' : ''} transition-colors`}>
+                                                <div className={`relative group/content ${event.type === 'note' ? 'bg-slate-50/80 hover:bg-slate-50 border border-slate-300' : ''} rounded-xl md:rounded-2xl ${event.type === 'note' ? 'p-3' : ''} transition-colors`}>
                                                     {event.type === 'reminder' ? (
                                                         <div
                                                             className="bg-white border text-left border-blue-200 rounded-xl overflow-hidden relative shadow-sm hover:shadow-md transition-all w-full select-none max-w-lg group-hover/content:border-blue-300"
                                                             onContextMenu={(e) => handleContextMenu(e, event)}
                                                         >
                                                             {/* Glossy Blue Header */}
-                                                            <div className="px-4 py-2.5 flex items-center justify-between border-b border-blue-100" style={{ background: 'linear-gradient(135deg, rgba(74,133,255,0.08) 0%, rgba(0,68,255,0.05) 100%)' }}>
+                                                            <div className="px-3 py-2 md:px-4 md:py-2.5 flex items-center justify-between border-b border-blue-100" style={{ background: 'linear-gradient(135deg, rgba(74,133,255,0.08) 0%, rgba(0,68,255,0.05) 100%)' }}>
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4A85FF' }} />
-                                                                    <span className="text-xs font-bold uppercase tracking-wide" style={{ color: '#0044FF' }}>{t('reminder') || 'Eslatma'}</span>
+                                                                    <span className="text-[10px] md:text-xs font-bold uppercase tracking-wide" style={{ color: '#0044FF' }}>{t('reminder') || 'Eslatma'}</span>
                                                                 </div>
                                                                 {!completionEventId && !event.metadata?.isCompleted && (
                                                                     <button
@@ -501,16 +508,16 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                             e.stopPropagation();
                                                                             setCompletionEventId(event.id);
                                                                         }}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm group/done text-white"
+                                                                        className="flex items-center gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all shadow-sm group/done text-white"
                                                                         style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}
                                                                     >
-                                                                        <Check size={14} strokeWidth={3} className="group-hover/done:scale-110 transition-transform" />
+                                                                        <Check size={12} strokeWidth={3} className="md:w-[14px] md:h-[14px] group-hover/done:scale-110 transition-transform" />
                                                                         <span>{t('complete')}</span>
                                                                     </button>
                                                                 )}
                                                             </div>
 
-                                                            <div className="p-4">
+                                                            <div className="p-3 md:p-4">
                                                                 {completionEventId === event.id ? (
                                                                     <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
                                                                         <div className="flex items-center justify-between">
@@ -554,10 +561,10 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                         </div>
                                                                     </div>
                                                                 ) : (
-                                                                    <div className="flex flex-col gap-3">
-                                                                        <div className="flex flex-wrap gap-2 text-sm">
+                                                                    <div className="flex flex-col gap-2 md:gap-3">
+                                                                        <div className="flex flex-wrap gap-2 text-xs md:text-sm">
                                                                             <div className="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                                                                                <Calendar size={13} />
+                                                                                <Calendar size={12} className="md:w-[13px] md:h-[13px]" />
                                                                                 <span className="font-medium">
                                                                                     {event.metadata?.reminderDate
                                                                                         ? format(new Date(event.metadata.reminderDate), 'd MMM, yyyy')
@@ -565,7 +572,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                                 </span>
                                                                             </div>
                                                                             <div className="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                                                                                <Clock size={13} />
+                                                                                <Clock size={12} className="md:w-[13px] md:h-[13px]" />
                                                                                 <span className="font-medium">
                                                                                     {event.metadata?.reminderDate
                                                                                         ? format(new Date(event.metadata.reminderDate), 'HH:mm')
@@ -573,7 +580,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                                 </span>
                                                                             </div>
                                                                         </div>
-                                                                        <p className="text-slate-800 font-medium leading-relaxed">
+                                                                        <p className="text-slate-800 text-sm md:text-base font-medium leading-relaxed">
                                                                             {event.metadata?.reason || event.content.split(': ').pop()}
                                                                         </p>
                                                                     </div>
@@ -583,7 +590,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                     ) : (
                                                         <div
                                                             onContextMenu={(e) => handleContextMenu(e, event)}
-                                                            className={`text-[15px] leading-relaxed whitespace-pre-wrap text-slate-700 ${event.metadata?.isCompletion ? 'italic text-slate-500' : ''}`}
+                                                            className={`text-sm md:text-[15px] leading-relaxed whitespace-pre-wrap text-slate-700 ${event.metadata?.isCompletion ? 'italic text-slate-500' : ''}`}
                                                         >
                                                             {event.content}
                                                         </div>
@@ -591,9 +598,9 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
                                                     {/* Status Ticks for User Notes */}
                                                     {event.type === 'note' && event.created_by === 'current-user' && (
-                                                        <div className="absolute bottom-2 right-2 opacity-0 group-hover/content:opacity-100 transition-opacity">
+                                                        <div className="absolute bottom-2 right-2 opacity-100 md:opacity-0 md:group-hover/content:opacity-100 transition-opacity">
                                                             <span className={event.status === 'read' ? 'text-blue-500' : 'text-slate-300'}>
-                                                                {getTickIcon(event.status || 'read')}
+                                                                {React.cloneElement(getTickIcon(event.status || 'read') as any, { size: 14, className: "md:w-4 md:h-4" })}
                                                             </span>
                                                         </div>
                                                     )}
@@ -604,14 +611,14 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                 </div>
                             </div>
 
-                            {/* Add Note Input - Hidden for Viewer */}
+                            {/* Add Note Input - Sticky at Bottom */}
                             {!isViewer && (
-                                <div className="bg-white border-t border-slate-100">
+                                <div className="bg-white border-t border-slate-100 sticky bottom-0 z-20 pb-safe md:pb-0">
                                     {editingEventId && (
-                                        <div className="flex items-center justify-between px-4 py-2 bg-blue-50 border-b border-blue-100 animate-in slide-in-from-bottom-2">
+                                        <div className="flex items-center justify-between px-3 py-1.5 md:px-4 md:py-2 bg-blue-50 border-b border-blue-100 animate-in slide-in-from-bottom-2">
                                             <div className="flex items-center gap-2 text-blue-700">
-                                                <Edit2 size={14} />
-                                                <span className="text-xs font-bold uppercase tracking-wide">Editing message...</span>
+                                                <Edit2 size={12} className="md:w-[14px] md:h-[14px]" />
+                                                <span className="text-[10px] md:text-xs font-bold uppercase tracking-wide">Editing message...</span>
                                             </div>
                                             <button
                                                 onClick={() => {
@@ -624,8 +631,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                             </button>
                                         </div>
                                     )}
-                                    <div className="p-4">
-                                        <form onSubmit={handleAddNote} className="flex gap-3 items-end">
+                                    <div className="p-3 md:p-4">
+                                        <form onSubmit={handleAddNote} className="flex gap-2 md:gap-3 items-end">
                                             <textarea
                                                 ref={textareaRef}
                                                 value={newNote}
@@ -648,15 +655,15 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                 }}
                                                 placeholder={editingEventId ? "Edit note..." : t('add_note_placeholder')}
                                                 rows={1}
-                                                className={`flex-1 px-4 py-3 bg-white border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none min-h-[48px] max-h-[150px] placeholder:text-slate-500 font-medium ${editingEventId ? 'border-blue-500 focus:ring-blue-500/20 shadow-sm' : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-500'}`}
-                                                style={{ height: '48px', overflowY: 'hidden' }}
+                                                className={`flex-1 px-3 py-2.5 md:px-4 md:py-3 bg-white border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none min-h-[44px] md:min-h-[48px] max-h-[150px] placeholder:text-slate-500 font-medium ${editingEventId ? 'border-blue-500 focus:ring-blue-500/20 shadow-sm' : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-500'}`}
+                                                style={{ height: window.innerWidth < 768 ? '44px' : '48px', overflowY: 'hidden' }}
                                             />
                                             <button
                                                 type="submit"
                                                 disabled={!newNote.trim()}
-                                                className={`px-5 py-3 text-white rounded-2xl disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 h-[48px] flex items-center justify-center ${editingEventId ? 'bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20' : 'btn-premium-blue'}`}
+                                                className={`w-11 h-11 md:w-auto md:h-[48px] md:px-5 flex items-center justify-center text-white rounded-xl md:rounded-2xl disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 ${editingEventId ? 'bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20' : 'btn-premium-blue'}`}
                                             >
-                                                {editingEventId ? <Check size={18} /> : <Send size={18} />}
+                                                {editingEventId ? <Check size={18} /> : <Send size={18} className="ml-0.5 md:ml-0" />}
                                             </button>
                                         </form>
                                     </div>

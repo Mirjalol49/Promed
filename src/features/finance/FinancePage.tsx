@@ -336,70 +336,73 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
             {view === 'overview' ? (
                 <div className="space-y-6 relative z-10">
                     {/* 1. KEY STATS CARDS */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
                         {/* Income Card */}
                         <div
-                            className="relative rounded-[2rem] p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
+                            className="relative rounded-2xl md:rounded-[2rem] p-4 md:p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
                         >
                             <div className="relative z-10">
-                                <div className="flex items-start justify-between mb-6">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('income') || 'Kirim'}</span>
-                                        <Tooltip content={formatCurrency(stats.totalIncome)}>
-                                            <div className="text-3xl md:text-[2.5rem] font-black text-slate-900 tracking-tighter leading-none mt-1">
-                                                +{formatCompactNumber(stats.totalIncome)}
-                                            </div>
-                                        </Tooltip>
+                                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:mb-6">
+                                    <div className="flex items-center md:items-start gap-2 md:gap-0 md:flex-col">
+                                        <div className="w-9 h-9 md:hidden rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                                            <ArrowUpRight className="w-5 h-5 text-emerald-600 stroke-[2.5]" />
+                                        </div>
+                                        <span className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">{t('income') || 'Kirim'}</span>
                                     </div>
-                                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors duration-300">
+                                    <Tooltip content={formatCurrency(stats.totalIncome)}>
+                                        <div className="text-2xl md:text-[2.5rem] font-black text-slate-900 tracking-tighter leading-none">
+                                            +{formatCompactNumber(stats.totalIncome)}
+                                        </div>
+                                    </Tooltip>
+                                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 hidden md:flex items-center justify-center group-hover:bg-emerald-100 transition-colors duration-300">
                                         <ArrowUpRight className="w-7 h-7 text-emerald-600 stroke-[2.5]" />
                                     </div>
                                 </div>
-
                             </div>
                         </div>
 
                         {/* Expense Card */}
                         <div
-                            className="relative rounded-[2rem] p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
+                            className="relative rounded-2xl md:rounded-[2rem] p-4 md:p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
                         >
                             <div className="relative z-10">
-                                <div className="flex items-start justify-between mb-6">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('expense') || 'Xarajat'}</span>
-                                        <Tooltip content={formatCurrency(stats.totalExpense)}>
-                                            <div className="text-3xl md:text-[2.5rem] font-black text-slate-900 tracking-tighter leading-none mt-1">
-                                                -{formatCompactNumber(stats.totalExpense)}
-                                            </div>
-                                        </Tooltip>
+                                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:mb-6">
+                                    <div className="flex items-center md:items-start gap-2 md:gap-0 md:flex-col">
+                                        <div className="w-9 h-9 md:hidden rounded-xl bg-rose-50 flex items-center justify-center flex-shrink-0">
+                                            <ArrowDownRight className="w-5 h-5 text-rose-600 stroke-[2.5]" />
+                                        </div>
+                                        <span className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">{t('expense') || 'Xarajat'}</span>
                                     </div>
-                                    <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center group-hover:bg-rose-100 transition-colors duration-300">
+                                    <Tooltip content={formatCurrency(stats.totalExpense)}>
+                                        <div className="text-2xl md:text-[2.5rem] font-black text-slate-900 tracking-tighter leading-none">
+                                            -{formatCompactNumber(stats.totalExpense)}
+                                        </div>
+                                    </Tooltip>
+                                    <div className="w-14 h-14 rounded-2xl bg-rose-50 hidden md:flex items-center justify-center group-hover:bg-rose-100 transition-colors duration-300">
                                         <ArrowDownRight className="w-7 h-7 text-rose-600 stroke-[2.5]" />
                                     </div>
                                 </div>
-
                             </div>
                         </div>
 
                         {/* Net Profit Card */}
                         <div
-                            className="relative rounded-[2rem] p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
+                            className="relative rounded-2xl md:rounded-[2rem] p-4 md:p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] col-span-2 md:col-span-1"
                         >
                             <div className="relative z-10">
-                                <div className="flex items-start justify-between mb-6">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('net_profit') || 'Sof foyda'}</span>
+                                <div className="flex items-center md:items-start justify-between md:mb-6">
+                                    <div className="flex flex-col gap-0.5 md:gap-1">
+                                        <span className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">{t('net_profit') || 'Sof foyda'}</span>
                                         <Tooltip content={formatCurrency(stats.netProfit)}>
-                                            <div className={`text-3xl md:text-[2.5rem] font-black tracking-tighter leading-none mt-1 ${stats.netProfit >= 0 ? 'text-slate-900' : 'text-amber-500'}`}>
+                                            <div className={`text-2xl md:text-[2.5rem] font-black tracking-tighter leading-none ${stats.netProfit >= 0 ? 'text-slate-900' : 'text-amber-500'}`}>
                                                 {formatCompactNumber(stats.netProfit)}
                                             </div>
                                         </Tooltip>
                                     </div>
-                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors duration-300 ${stats.netProfit >= 0 ? 'bg-blue-50 group-hover:bg-blue-100' : 'bg-amber-50 group-hover:bg-amber-100'}`}>
-                                        <Wallet className={`w-7 h-7 stroke-[2.5] ${stats.netProfit >= 0 ? 'text-blue-600' : 'text-amber-600'}`} />
+                                    <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center transition-colors duration-300 ${stats.netProfit >= 0 ? 'bg-blue-50 group-hover:bg-blue-100' : 'bg-amber-50 group-hover:bg-amber-100'}`}>
+                                        <Wallet className={`w-5 h-5 md:w-7 md:h-7 stroke-[2.5] ${stats.netProfit >= 0 ? 'text-blue-600' : 'text-amber-600'}`} />
                                     </div>
                                 </div>
-
                             </div>
                         </div>
                     </div>
@@ -785,27 +788,40 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                     </div>
 
                     {/* --- VISUAL SUMMARY --- */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-slate-200 border-b border-slate-200">
-                        {[
-                            {
-                                label: t('total_income') || 'Total Income',
-                                value: filteredTransactionsList.filter(t => t.type === 'income' && !t.returned && !t.isVoided).reduce((sum, t) => sum + t.amount, 0),
-                                color: 'text-emerald-600',
-                                bg: 'bg-emerald-50/50'
-                            },
-                            {
-                                label: t('total_expenses') || 'Total Expense',
-                                value: filteredTransactionsList.filter(t => t.type === 'expense' && !t.returned && !t.isVoided).reduce((sum, t) => sum + t.amount, 0),
-                                color: 'text-rose-600',
-                                bg: 'bg-rose-50/50'
-                            }
-                        ].map((stat, i) => (
-                            <div key={i} className={`p-4 flex flex-col items-center justify-center gap-1 ${stat.bg.replace('/50', '')}`}>
-                                <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">{stat.label}</span>
-                                <span className={`text-lg md:text-xl font-black ${stat.color} text-center break-all`}>{formatCurrency(stat.value)}</span>
+                    {(() => {
+                        const incomeVal = filteredTransactionsList.filter(t => t.type === 'income' && !t.returned && !t.isVoided).reduce((sum, t) => sum + t.amount, 0);
+                        const expenseVal = filteredTransactionsList.filter(t => t.type === 'expense' && !t.returned && !t.isVoided).reduce((sum, t) => sum + t.amount, 0);
+                        return (
+                            <div className="grid grid-cols-2 border-b border-slate-200">
+                                {/* Income */}
+                                <Tooltip content={formatCurrency(incomeVal)}>
+                                    <div className="flex items-center gap-2.5 px-3 py-3 md:px-5 md:py-4 bg-emerald-50">
+                                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                            <ArrowUpRight className="w-4 h-4 md:w-5 md:h-5 text-emerald-600 stroke-[2.5]" />
+                                        </div>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="text-emerald-500/70 font-bold text-[9px] md:text-[10px] uppercase tracking-wider leading-none">{t('total_income') || 'Daromad'}</span>
+                                            <span className="text-emerald-700 font-black text-base md:text-lg leading-tight truncate">+{formatCompactNumber(incomeVal)}</span>
+                                            <span className="text-emerald-600 font-bold text-[10px] md:text-xs leading-none hidden md:block">{formatCurrency(incomeVal)}</span>
+                                        </div>
+                                    </div>
+                                </Tooltip>
+                                {/* Expense */}
+                                <Tooltip content={formatCurrency(expenseVal)}>
+                                    <div className="flex items-center gap-2.5 px-3 py-3 md:px-5 md:py-4 bg-rose-50">
+                                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0">
+                                            <ArrowDownRight className="w-4 h-4 md:w-5 md:h-5 text-rose-600 stroke-[2.5]" />
+                                        </div>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="text-rose-500/70 font-bold text-[9px] md:text-[10px] uppercase tracking-wider leading-none">{t('total_expenses') || 'Xarajat'}</span>
+                                            <span className="text-rose-700 font-black text-base md:text-lg leading-tight truncate">-{formatCompactNumber(expenseVal)}</span>
+                                            <span className="text-rose-600 font-bold text-[10px] md:text-xs leading-none hidden md:block">{formatCurrency(expenseVal)}</span>
+                                        </div>
+                                    </div>
+                                </Tooltip>
                             </div>
-                        ))}
-                    </div>
+                        );
+                    })()}
 
                     {/* --- TRANSACTIONS LIST --- */}
                     <div className="flex-1 overflow-y-auto bg-slate-50 custom-scrollbar p-0">

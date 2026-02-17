@@ -1016,8 +1016,8 @@ const StaffDetail = ({
 
             {/* Timeline (High Density Ledger) */}
             <div className="space-y-3">
-                <div className="flex items-center justify-between px-2">
-                    <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+                <div className="flex items-center justify-between px-1 md:px-2">
+                    <h3 className="font-bold text-base md:text-lg text-slate-900 flex items-center gap-2">
                         {t('payment_history') || 'Payment History'}
                         {payments.length > 0 && (
                             <span className="bg-slate-100 text-slate-500 text-xs font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
@@ -1027,7 +1027,7 @@ const StaffDetail = ({
                     </h3>
 
                     {/* Month Filter Dropdown */}
-                    <div className="w-56 h-10 bg-white border border-slate-200 rounded-xl relative z-20">
+                    <div className="w-36 md:w-56 h-9 md:h-10 bg-white border border-slate-200 rounded-lg md:rounded-xl relative z-20 text-xs md:text-sm">
                         <CustomSelect
                             options={monthOptions}
                             value={selectedMonth}
@@ -1059,35 +1059,35 @@ const StaffDetail = ({
                                 return (
                                     <div key={monthKey}>
                                         {/* Sticky Month Header - Clean & Distinct */}
-                                        <div className="sticky top-0 bg-slate-50/95 backdrop-blur-md px-6 py-2.5 border-b border-slate-200/60 z-10 flex items-center justify-between group">
-                                            <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600 transition-colors">
+                                        <div className="sticky top-0 bg-slate-50/95 backdrop-blur-md px-3 md:px-6 py-2 md:py-2.5 border-b border-slate-200/60 z-10 flex items-center justify-between group">
+                                            <h4 className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600 transition-colors">
                                                 {monthData.label}
                                             </h4>
-                                            <span className="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">{monthData.payments.length} {t('records') || 'records'}</span>
+                                            <span className="text-[9px] md:text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">{monthData.payments.length} {t('records') || 'records'}</span>
                                         </div>
 
                                         {/* Ledger List */}
-                                        <div className="space-y-2 px-6 pb-6">
+                                        <div className="space-y-2 px-3 md:px-6 pb-4 md:pb-6">
                                             {monthData.payments.map((payment, idx) => {
                                                 const isVoided = !!payment.isVoided;
                                                 return (
                                                     <div
                                                         key={payment.id}
-                                                        className={`rounded-2xl p-4 flex items-center justify-between transition-colors group cursor-default border ${isVoided
+                                                        className={`rounded-xl md:rounded-2xl p-3 md:p-4 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-0 sm:justify-between transition-colors group cursor-default border ${isVoided
                                                             ? 'bg-slate-100 border-slate-200 opacity-60'
                                                             : 'bg-slate-200/60 border-slate-300/60 hover:bg-slate-200 hover:border-slate-400'
                                                             }`}
                                                     >
-                                                        {/* Left: Icon & Info */}
-                                                        <div className="flex items-center gap-4">
-                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm transition-transform duration-300 ${isVoided
+                                                        {/* Top/Left: Icon & Info */}
+                                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                            <div className={`w-9 h-9 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center border shadow-sm flex-shrink-0 transition-transform duration-300 ${isVoided
                                                                 ? 'bg-slate-50 text-slate-400 border-slate-100'
                                                                 : 'bg-white text-emerald-600 border-slate-200 group-hover:scale-110'
                                                                 }`}>
-                                                                <Banknote size={18} className="stroke-[2.5]" />
+                                                                <Banknote size={16} className="stroke-[2.5] md:w-[18px] md:h-[18px]" />
                                                             </div>
-                                                            <div className="flex flex-col gap-0.5">
-                                                                <p className={`font-bold text-sm leading-none capitalize transition-colors ${isVoided
+                                                            <div className="flex flex-col gap-0.5 min-w-0">
+                                                                <p className={`font-bold text-[13px] md:text-sm leading-tight capitalize transition-colors truncate ${isVoided
                                                                     ? 'text-slate-400 line-through decoration-slate-300'
                                                                     : 'text-slate-900 group-hover:text-blue-600'
                                                                     }`}>
@@ -1095,29 +1095,29 @@ const StaffDetail = ({
                                                                         ? `${t('split_from') || '[Split] '}${payment.description.replace('[Split]', '').trim()}`
                                                                         : (t(payment.description) || payment.description)}
                                                                 </p>
-                                                                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                                                                <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-xs text-slate-500 font-medium flex-wrap">
                                                                     <span>{new Date(payment.date).toLocaleDateString()}</span>
                                                                     <span className="w-1 h-1 rounded-full bg-slate-400" />
                                                                     <span>{payment.time || '—'}</span>
                                                                     {isVoided && (
-                                                                        <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-200 text-[9px] font-bold uppercase text-slate-500 tracking-wider">
-                                                                            {t('voided') || 'BEKOR QILINGAN'}
+                                                                        <span className="px-1.5 py-0.5 rounded bg-slate-200 text-[9px] font-bold uppercase text-slate-500 tracking-wider">
+                                                                            {t('voided') || 'VOIDED'}
                                                                         </span>
                                                                     )}
                                                                 </div>
                                                             </div>
                                                         </div>
 
-                                                        {/* Right: Amount & Buttons */}
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="text-right flex flex-col items-end gap-1">
-                                                                <p className={`font-bold text-base tabular-nums leading-none ${isVoided ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-900'
+                                                        {/* Bottom/Right: Amount & Buttons */}
+                                                        <div className="flex items-center justify-between sm:justify-end gap-3 md:gap-4 pl-12 sm:pl-4">
+                                                            <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-1">
+                                                                <p className={`font-black text-[15px] md:text-base tabular-nums leading-none ${isVoided ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-900'
                                                                     }`}>
                                                                     {Number(payment.amount).toLocaleString()}
                                                                     <span className={`text-[10px] font-extrabold ml-1 uppercase ${isVoided ? 'text-slate-300 no-underline' : 'text-slate-500'
                                                                         }`}>{payment.currency}</span>
                                                                 </p>
-                                                                <div className={`flex items-center gap-1.5 transition-opacity ${isVoided ? 'opacity-50' : 'opacity-80 group-hover:opacity-100'
+                                                                <div className={`flex items-center gap-1 transition-opacity ${isVoided ? 'opacity-50' : 'opacity-80 group-hover:opacity-100'
                                                                     }`}>
                                                                     <div className={`w-1.5 h-1.5 rounded-full ${isVoided ? 'bg-slate-400' : 'bg-emerald-500'}`}></div>
                                                                     <span className={`text-[9px] font-bold uppercase tracking-wider ${isVoided ? 'text-slate-400' : 'text-emerald-700'
@@ -1131,7 +1131,7 @@ const StaffDetail = ({
                                                             {isVoided ? (
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); handleRestoreTransaction(payment.id); }}
-                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors bg-white border border-slate-200 shadow-sm"
+                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors bg-white border border-slate-200 shadow-sm flex-shrink-0"
                                                                     title={t('restore') || 'Restore'}
                                                                 >
                                                                     <RotateCcw size={16} strokeWidth={2.5} />
@@ -1139,7 +1139,7 @@ const StaffDetail = ({
                                                             ) : (
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); handleDeleteTransaction(payment.id); }}
-                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-500 hover:bg-white hover:border-rose-200 border border-transparent transition-all shadow-none hover:shadow-sm opacity-0 group-hover:opacity-100"
+                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-500 hover:bg-white hover:border-rose-200 border border-transparent transition-all shadow-none hover:shadow-sm opacity-100 sm:opacity-0 sm:group-hover:opacity-100 flex-shrink-0"
                                                                     title={t('delete') || 'Delete'}
                                                                 >
                                                                     <Trash2 size={16} strokeWidth={2.5} />
