@@ -76,22 +76,24 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, o
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden"
             >
-                {/* Premium Gradient Header */}
-                <div className="relative px-8 py-10 bg-gradient-to-br from-blue-700 via-blue-800 to-blue-950 overflow-hidden">
+                {/* Premium Glossy Blue Header */}
+                <div className="relative px-8 py-10 overflow-hidden" style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}>
+                    {/* Glossy reflection overlay */}
+                    <div className="absolute inset-x-0 top-0 h-[45%] pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0) 100%)' }} />
                     {/* Abstract background glow */}
-                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl animate-pulse" />
+                    <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full blur-3xl animate-pulse" style={{ background: 'rgba(74,133,255,0.35)' }} />
 
-                    <div className="relative flex items-center gap-5">
-                        <div className="w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[1.25rem] flex items-center justify-center shadow-lg transform rotate-3">
+                    <div className="relative flex items-center gap-5 z-10">
+                        <div className="w-14 h-14 bg-white/15 backdrop-blur-xl border border-white/25 rounded-[1.25rem] flex items-center justify-center shadow-lg transform rotate-3">
                             <Bell size={28} className="text-white fill-white/10" />
                         </div>
                         <div className="flex-1">
-                            <h3 className="font-black text-2xl text-white tracking-tight leading-none mb-1.5">{t('set_reminder')}</h3>
-                            <p className="text-[10px] font-bold text-blue-200 uppercase tracking-[0.15em] opacity-80">{t('dont_forget_call')}</p>
+                            <h3 className="font-black text-2xl text-white tracking-tight leading-none mb-1.5" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }}>{t('set_reminder')}</h3>
+                            <p className="text-[10px] font-bold text-blue-100 uppercase tracking-[0.15em] opacity-90">{t('dont_forget_call')}</p>
                         </div>
                         <button
                             onClick={onClose}
-                            className="absolute top-0 right-0 p-2 text-white/40 hover:text-white transition-colors"
+                            className="absolute top-0 right-0 p-2 text-white/50 hover:text-white transition-colors"
                         >
                             <X size={20} />
                         </button>
@@ -116,7 +118,7 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, o
                                     key={btn.id}
                                     type="button"
                                     onClick={() => handleQuickSelect(btn.id as any)}
-                                    className="h-11 rounded-2xl border border-slate-100 bg-slate-50 text-[11px] font-bold text-slate-700 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 transition-all active:scale-95 shadow-sm"
+                                    className="h-11 rounded-2xl border border-slate-100 bg-slate-50 text-[11px] font-bold text-slate-700 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 transition-all active:scale-95 shadow-sm"
                                 >
                                     {btn.label}
                                 </button>
@@ -177,10 +179,12 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, o
                     <div className="flex flex-col gap-3 pt-4">
                         <button
                             type="submit"
-                            className="w-full h-16 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-[1.25rem] flex items-center justify-center gap-3 font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/40 hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                            className="btn-glossy-blue w-full !h-16 !rounded-[1.25rem] flex items-center justify-center gap-3 !font-black !text-sm uppercase tracking-widest"
                         >
-                            <Bell size={18} strokeWidth={3} />
-                            {t('save')}
+                            <span className="flex items-center gap-3">
+                                <Bell size={18} strokeWidth={3} />
+                                {t('save')}
+                            </span>
                         </button>
 
                         <div className="flex gap-3">

@@ -45,26 +45,30 @@ export const useReminder = (): UseReminderReturn => {
                 created_at: new Date().toISOString()
             };
 
-            // Update lead with reminder
+            // Update lead with reminder (this is the critical operation)
             await updateDoc(doc(db, 'leads', leadId), {
                 reminder: reminderData,
                 updated_at: serverTimestamp()
             });
 
-            if (existingEventId) {
-                // Update existing timeline event
-                await leadService.updateTimelineEvent(leadId, existingEventId, {
-                    content: `Reminder updated to ${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}: ${reason.trim()}`,
-                    metadata: { reminderDate: date.toISOString(), reason: reason.trim() }
-                });
-            } else {
-                // Add timeline event for the reminder
-                await leadService.addTimelineEvent(leadId, {
-                    type: 'reminder',
-                    content: `Reminder set for ${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}: ${reason.trim()}`,
-                    created_by: 'current-user',
-                    metadata: { reminderDate: date.toISOString(), reason: reason.trim() }
-                });
+            // Try to add timeline event (non-blocking — don't fail the reminder if this errors)
+            try {
+                if (existingEventId) {
+                    await leadService.updateTimelineEvent(leadId, existingEventId, {
+                        content: `Reminder updated to ${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}: ${reason.trim()}`,
+                        metadata: { reminderDate: date.toISOString(), reason: reason.trim() }
+                    });
+                } else {
+                    await leadService.addTimelineEvent(leadId, {
+                        type: 'reminder',
+                        content: `Reminder set for ${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}: ${reason.trim()}`,
+                        created_by: 'current-user',
+                        metadata: { reminderDate: date.toISOString(), reason: reason.trim() }
+                    });
+                }
+            } catch (timelineErr) {
+                // Timeline event failed (likely permission-denied) but reminder was saved
+                console.warn('Timeline event failed, but reminder was saved:', timelineErr);
             }
 
             setIsLoading(false);

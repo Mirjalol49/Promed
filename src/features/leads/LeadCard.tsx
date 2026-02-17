@@ -225,12 +225,15 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                                 className="absolute inset-0 rounded-full bg-rose-400 blur-sm"
                             />
                         )}
-                        <div className={`
-                            w-8 h-8 rounded-full flex items-center justify-center shadow-md border-2 transition-all
-                            ${isOverdue
-                                ? 'bg-rose-500 border-white text-white shadow-rose-400/30'
-                                : 'bg-white border-blue-100 text-blue-500 shadow-blue-100/50'}
-                        `}>
+                        <div
+                            className={`
+                                w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 transition-all
+                                ${isOverdue
+                                    ? 'bg-rose-500 border-white text-white shadow-rose-400/30'
+                                    : 'border-white text-white shadow-blue-500/40'}
+                            `}
+                            style={!isOverdue ? { background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' } : undefined}
+                        >
                             <Clock size={15} strokeWidth={2.5} className={isOverdue ? 'animate-pulse' : ''} />
                         </div>
                     </motion.div>

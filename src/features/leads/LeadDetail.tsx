@@ -243,11 +243,11 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     };
 
     const getTimelineColor = (event: TimelineEvent) => {
-        if (event.metadata?.isCompletion) return 'bg-blue-600'; // Changed from emerald-500 to blue-600
-        if (event.type === 'note' && event.created_by === 'current-user') return 'bg-blue-600'; // Sent details
+        if (event.metadata?.isCompletion) return 'bg-blue-600';
+        if (event.type === 'note' && event.created_by === 'current-user') return 'bg-blue-600';
         switch (event.type) {
-            case 'note': return 'bg-slate-500'; // Received/Other details
-            case 'reminder': return 'bg-purple-600';
+            case 'note': return 'bg-slate-500';
+            case 'reminder': return 'bg-blue-600';
             case 'status_change': return 'bg-amber-600';
             default: return 'bg-slate-500';
         }
@@ -279,70 +279,74 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                     transition={{ duration: 0.2 }}
                     className="relative w-full max-w-4xl h-[80vh] max-h-[800px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
                 >
-                    {/* Sticky Action Bar */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
-                        <div className="flex items-center gap-4">
-                            {/* Avatar */}
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
-                                {getInitials(lead.full_name)}
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-slate-900">{lead.full_name}</h2>
-                                <div className="flex items-center gap-2 text-sm text-slate-500">
-                                    <span>{lead.phone_number}</span>
+                    {/* Premium Glossy Blue Header */}
+                    <div className="relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}>
+                        {/* Glossy reflection */}
+                        <div className="absolute inset-x-0 top-0 h-[50%] pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 100%)' }} />
+                        <div className="relative z-10 flex items-center justify-between px-6 py-4">
+                            <div className="flex items-center gap-4">
+                                {/* Avatar */}
+                                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                    {getInitials(lead.full_name)}
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-white" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.15))' }}>{lead.full_name}</h2>
+                                    <div className="flex items-center gap-2 text-sm text-blue-100">
+                                        <span>{lead.phone_number}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-1">
-                            {!isViewer && (
-                                <>
-                                    <button
-                                        ref={reminderButtonRef}
-                                        onClick={() => {
-                                            setReminderEditingId(null);
-                                            setReminderInitialState({
-                                                date: lead.reminder?.date ? new Date(lead.reminder.date) : undefined,
-                                                reason: lead.reminder?.note
-                                            });
-                                            setIsReminderOpen(true);
-                                        }}
-                                        className={`p-2.5 rounded-lg transition-colors ${hasReminder(lead)
-                                            ? isOverdue(lead)
-                                                ? 'text-red-600 bg-red-50 hover:bg-red-100'
-                                                : 'text-purple-600 bg-purple-50 hover:bg-purple-100'
-                                            : 'text-slate-500 hover:text-purple-600 hover:bg-purple-50'
-                                            }`}
-                                        title="Set Reminder"
-                                    >
-                                        <Clock size={20} />
-                                    </button>
-                                    <button
-                                        onClick={() => onEdit(lead)}
-                                        className="p-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                                        title="Edit"
-                                    >
-                                        <Edit2 size={20} />
-                                    </button>
-                                    <button
-                                        onClick={() => onDelete(lead)}
-                                        className="p-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                        title="Delete"
-                                    >
-                                        <Trash2 size={20} />
-                                    </button>
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-1">
+                                {!isViewer && (
+                                    <>
+                                        <button
+                                            ref={reminderButtonRef}
+                                            onClick={() => {
+                                                setReminderEditingId(null);
+                                                setReminderInitialState({
+                                                    date: lead.reminder?.date ? new Date(lead.reminder.date) : undefined,
+                                                    reason: lead.reminder?.note
+                                                });
+                                                setIsReminderOpen(true);
+                                            }}
+                                            className={`p-2.5 rounded-xl transition-all ${hasReminder(lead)
+                                                ? isOverdue(lead)
+                                                    ? 'text-white bg-rose-500/80 hover:bg-rose-500'
+                                                    : 'text-white bg-white/20 hover:bg-white/30 ring-1 ring-white/30'
+                                                : 'text-white/70 hover:text-white hover:bg-white/15'
+                                                }`}
+                                            title="Set Reminder"
+                                        >
+                                            <Clock size={20} />
+                                        </button>
+                                        <button
+                                            onClick={() => onEdit(lead)}
+                                            className="p-2.5 text-white/70 hover:text-white hover:bg-white/15 rounded-xl transition-all"
+                                            title="Edit"
+                                        >
+                                            <Edit2 size={20} />
+                                        </button>
+                                        <button
+                                            onClick={() => onDelete(lead)}
+                                            className="p-2.5 text-white/70 hover:text-rose-200 hover:bg-rose-500/30 rounded-xl transition-all"
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={20} />
+                                        </button>
 
-                                    <div className="w-px h-8 bg-slate-200 mx-2" />
-                                </>
-                            )}
+                                        <div className="w-px h-8 bg-white/20 mx-2" />
+                                    </>
+                                )}
 
-                            <button
-                                onClick={onClose}
-                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                            >
-                                <X size={22} />
-                            </button>
+                                <button
+                                    onClick={onClose}
+                                    className="p-2 text-white/50 hover:text-white hover:bg-white/15 rounded-xl transition-all"
+                                >
+                                    <X size={22} />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -442,10 +446,12 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                         {/* Right Timeline (70%) */}
                         <div className="flex-1 flex flex-col bg-white">
                             {/* Timeline Header */}
-                            <div className="px-6 py-5 border-b border-slate-200 flex items-center gap-3">
-                                <Activity size={20} className="text-slate-500" />
+                            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}>
+                                    <Activity size={16} className="text-white" />
+                                </div>
                                 <h3 className="font-bold text-slate-900 text-lg">{t('lead_activity')}</h3>
-                                <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+                                <span className="text-xs font-bold text-white px-2.5 py-1 rounded-full" style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}>
                                     {timeline.length + 1}
                                 </span>
                             </div>
@@ -481,14 +487,14 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                 <div className={`relative group/content ${event.type === 'note' ? 'bg-slate-50/80 hover:bg-slate-50 border border-slate-300' : ''} rounded-2xl ${event.type === 'note' ? 'p-3' : ''} transition-colors`}>
                                                     {event.type === 'reminder' ? (
                                                         <div
-                                                            className="bg-white border text-left border-purple-300 rounded-xl overflow-hidden relative shadow-sm hover:shadow-md transition-all w-full select-none max-w-lg group-hover/content:border-purple-400"
+                                                            className="bg-white border text-left border-blue-200 rounded-xl overflow-hidden relative shadow-sm hover:shadow-md transition-all w-full select-none max-w-lg group-hover/content:border-blue-300"
                                                             onContextMenu={(e) => handleContextMenu(e, event)}
                                                         >
-                                                            {/* Minimal Header */}
-                                                            <div className="px-4 py-2.5 flex items-center justify-between bg-purple-50/50 border-b border-purple-100">
+                                                            {/* Glossy Blue Header */}
+                                                            <div className="px-4 py-2.5 flex items-center justify-between border-b border-blue-100" style={{ background: 'linear-gradient(135deg, rgba(74,133,255,0.08) 0%, rgba(0,68,255,0.05) 100%)' }}>
                                                                 <div className="flex items-center gap-2">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
-                                                                    <span className="text-xs font-bold text-purple-700 uppercase tracking-wide">Eslatma</span>
+                                                                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4A85FF' }} />
+                                                                    <span className="text-xs font-bold uppercase tracking-wide" style={{ color: '#0044FF' }}>{t('reminder') || 'Eslatma'}</span>
                                                                 </div>
                                                                 {!completionEventId && !event.metadata?.isCompleted && (
                                                                     <button
@@ -496,7 +502,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                             e.stopPropagation();
                                                                             setCompletionEventId(event.id);
                                                                         }}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-100/80 text-purple-700 hover:bg-purple-200 rounded-lg text-xs font-bold transition-all shadow-sm shadow-purple-200/50 group/done"
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm group/done text-white"
+                                                                        style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}
                                                                     >
                                                                         <Check size={14} strokeWidth={3} className="group-hover/done:scale-110 transition-transform" />
                                                                         <span>{t('complete')}</span>
@@ -527,7 +534,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                                 e.target.style.height = e.target.scrollHeight + 'px';
                                                                             }}
                                                                             placeholder={t('notes_placeholder')}
-                                                                            className="w-full text-sm p-3 rounded-xl border border-purple-200 bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none resize-none transition-all placeholder:text-slate-400 overflow-hidden"
+                                                                            className="w-full text-sm p-3 rounded-xl border border-blue-200 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none transition-all placeholder:text-slate-400 overflow-hidden"
                                                                             rows={2}
                                                                             autoFocus
                                                                         />
@@ -541,7 +548,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                                     setCompletionEventId(null);
                                                                                     setCompletionNote('');
                                                                                 }}
-                                                                                className="px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow-sm transition-all"
+                                                                                className="btn-glossy-blue !px-4 !py-2 !text-xs !font-bold !rounded-lg"
                                                                             >
                                                                                 {t('confirm')}
                                                                             </button>

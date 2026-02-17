@@ -112,6 +112,12 @@ service cloud.firestore {
     match /leads/{leadId} {
       allow read: if isAuthenticated() && canViewLeads() && (resource == null || belongsToAccount(resource));
       allow write: if isAuthenticated() && canEditLeads() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));
+      
+      // Timeline subcollection (reminders, notes, status changes)
+      match /timeline/{eventId} {
+        allow read: if isAuthenticated() && canViewLeads();
+        allow write: if isAuthenticated() && canEditLeads();
+      }
     }
 
     // Finance

@@ -135,22 +135,26 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                         }}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-6 bg-gradient-to-br from-promed-primary to-promed-dark shrink-0">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md shadow-inner ring-1 ring-white/20">
-                                    <Bell size={22} className="text-white" />
+                        <div className="relative px-6 py-6 shrink-0 overflow-hidden" style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}>
+                            {/* Glossy reflection overlay */}
+                            <div className="absolute inset-x-0 top-0 h-[45%] pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0) 100%)' }} />
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-2.5 bg-white/15 rounded-xl backdrop-blur-md shadow-inner ring-1 ring-white/25">
+                                        <Bell size={22} className="text-white" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-black text-white tracking-tight leading-none" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }}>Eslatma o'rnatish</h2>
+                                        <p className="text-[10px] text-white/80 font-black uppercase tracking-widest mt-1">Mijozga qo'ng'iroq qilishni unutmang</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h2 className="text-xl font-black text-white tracking-tight leading-none">Eslatma o'rnatish</h2>
-                                    <p className="text-[10px] text-white/70 font-black uppercase tracking-widest mt-1">Mijozga qo'ng'iroq qilishni unutmang</p>
-                                </div>
+                                <button
+                                    onClick={onClose}
+                                    className="p-2.5 hover:bg-white/15 rounded-xl transition-colors text-white/60 hover:text-white"
+                                >
+                                    <X size={22} />
+                                </button>
                             </div>
-                            <button
-                                onClick={onClose}
-                                className="p-2.5 hover:bg-white/10 rounded-xl transition-colors text-white/70 hover:text-white"
-                            >
-                                <X size={22} />
-                            </button>
                         </div>
 
                         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50" onClick={() => { /* Don't close calendar on click inside */ }}>
@@ -171,9 +175,10 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                                     applyQuickOption(idx, opt.getDate);
                                                 }}
                                                 className={`py-2.5 px-2 rounded-xl text-sm font-black transition-all duration-300 border ${selectedQuick === idx
-                                                    ? 'bg-promed-primary text-white border-promed-primary shadow-lg shadow-promed-primary/30 transform scale-[1.02]'
-                                                    : 'bg-white text-slate-700 border-slate-200 hover:border-promed-primary/30 hover:bg-slate-50'
+                                                    ? 'text-white border-transparent shadow-lg shadow-blue-500/30 transform scale-[1.02]'
+                                                    : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400/30 hover:bg-blue-50/50'
                                                     }`}
+                                                style={selectedQuick === idx ? { background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' } : undefined}
                                             >
                                                 {opt.label}
                                             </button>
@@ -300,23 +305,25 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                         type="submit"
                                         disabled={isSaving}
                                         onClick={(e) => e.stopPropagation()}
-                                        className="flex-[2] px-5 py-3.5 text-sm font-black text-white bg-gradient-to-r from-promed-primary to-promed-dark hover:shadow-lg hover:shadow-promed-primary/30 active:scale-[0.98] disabled:opacity-50 disabled:scale-100 rounded-xl transition-all flex items-center justify-center gap-2"
+                                        className="btn-glossy-blue flex-[2] !px-5 !py-3.5 !text-sm !font-black !rounded-xl disabled:opacity-50"
                                     >
-                                        {showSuccess ? (
-                                            <motion.div
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                            >
-                                                <Check size={20} className="stroke-[3]" />
-                                            </motion.div>
-                                        ) : isSaving ? (
-                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        ) : (
-                                            <>
-                                                <Bell size={18} className="fill-white/20" />
-                                                Saqlash
-                                            </>
-                                        )}
+                                        <span className="flex items-center justify-center gap-2">
+                                            {showSuccess ? (
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                >
+                                                    <Check size={20} className="stroke-[3]" />
+                                                </motion.div>
+                                            ) : isSaving ? (
+                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <Bell size={18} className="fill-white/20" />
+                                                    Saqlash
+                                                </>
+                                            )}
+                                        </span>
                                     </button>
                                 </div>
                             </div>
