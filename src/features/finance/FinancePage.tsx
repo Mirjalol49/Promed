@@ -166,7 +166,22 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
             result = result.filter(t => t.category === txCategoryFilter);
         }
 
-        return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return result.sort((a, b) => {
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            if (dateB !== dateA) {
+                return dateB - dateA;
+            }
+            // Secondary sort: Time if available
+            if (a.time && b.time) {
+                if (b.time !== a.time) return b.time.localeCompare(a.time);
+            }
+
+            // Tertiary sort: CreatedAt
+            const createdA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const createdB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return createdB - createdA;
+        });
     }, [transactions, txTypeFilter, startDate, endDate, txCategoryFilter]);
 
     // Paginate Transactions
@@ -342,20 +357,17 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                             className="relative rounded-2xl md:rounded-[2rem] p-4 md:p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
                         >
                             <div className="relative z-10">
-                                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:mb-6">
-                                    <div className="flex items-center md:items-start gap-2 md:gap-0 md:flex-col">
-                                        <div className="w-9 h-9 md:hidden rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                                            <ArrowUpRight className="w-5 h-5 text-emerald-600 stroke-[2.5]" />
-                                        </div>
+                                <div className="flex items-center md:items-start justify-between md:mb-6">
+                                    <div className="flex flex-col gap-0.5 md:gap-1">
                                         <span className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">{t('income') || 'Kirim'}</span>
+                                        <Tooltip content={formatCurrency(stats.totalIncome)}>
+                                            <div className="text-2xl md:text-[2.5rem] font-black text-emerald-600 tracking-tighter leading-none">
+                                                +{formatCompactNumber(stats.totalIncome)}
+                                            </div>
+                                        </Tooltip>
                                     </div>
-                                    <Tooltip content={formatCurrency(stats.totalIncome)}>
-                                        <div className="text-2xl md:text-[2.5rem] font-black text-slate-900 tracking-tighter leading-none">
-                                            +{formatCompactNumber(stats.totalIncome)}
-                                        </div>
-                                    </Tooltip>
-                                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 hidden md:flex items-center justify-center group-hover:bg-emerald-100 transition-colors duration-300">
-                                        <ArrowUpRight className="w-7 h-7 text-emerald-600 stroke-[2.5]" />
+                                    <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors duration-300">
+                                        <ArrowUpRight className="w-5 h-5 md:w-7 md:h-7 text-emerald-600 stroke-[2.5]" />
                                     </div>
                                 </div>
                             </div>
@@ -366,20 +378,17 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                             className="relative rounded-2xl md:rounded-[2rem] p-4 md:p-6 bg-white border border-slate-100 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
                         >
                             <div className="relative z-10">
-                                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:mb-6">
-                                    <div className="flex items-center md:items-start gap-2 md:gap-0 md:flex-col">
-                                        <div className="w-9 h-9 md:hidden rounded-xl bg-rose-50 flex items-center justify-center flex-shrink-0">
-                                            <ArrowDownRight className="w-5 h-5 text-rose-600 stroke-[2.5]" />
-                                        </div>
+                                <div className="flex items-center md:items-start justify-between md:mb-6">
+                                    <div className="flex flex-col gap-0.5 md:gap-1">
                                         <span className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">{t('expense') || 'Xarajat'}</span>
+                                        <Tooltip content={formatCurrency(stats.totalExpense)}>
+                                            <div className="text-2xl md:text-[2.5rem] font-black text-rose-600 tracking-tighter leading-none">
+                                                -{formatCompactNumber(stats.totalExpense)}
+                                            </div>
+                                        </Tooltip>
                                     </div>
-                                    <Tooltip content={formatCurrency(stats.totalExpense)}>
-                                        <div className="text-2xl md:text-[2.5rem] font-black text-slate-900 tracking-tighter leading-none">
-                                            -{formatCompactNumber(stats.totalExpense)}
-                                        </div>
-                                    </Tooltip>
-                                    <div className="w-14 h-14 rounded-2xl bg-rose-50 hidden md:flex items-center justify-center group-hover:bg-rose-100 transition-colors duration-300">
-                                        <ArrowDownRight className="w-7 h-7 text-rose-600 stroke-[2.5]" />
+                                    <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-rose-50 flex items-center justify-center group-hover:bg-rose-100 transition-colors duration-300">
+                                        <ArrowDownRight className="w-5 h-5 md:w-7 md:h-7 text-rose-600 stroke-[2.5]" />
                                     </div>
                                 </div>
                             </div>
@@ -394,13 +403,13 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                     <div className="flex flex-col gap-0.5 md:gap-1">
                                         <span className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">{t('net_profit') || 'Sof foyda'}</span>
                                         <Tooltip content={formatCurrency(stats.netProfit)}>
-                                            <div className={`text-2xl md:text-[2.5rem] font-black tracking-tighter leading-none ${stats.netProfit >= 0 ? 'text-slate-900' : 'text-amber-500'}`}>
+                                            <div className={`text-2xl md:text-[2.5rem] font-black tracking-tighter leading-none ${stats.netProfit >= 0 ? 'text-blue-600' : 'text-rose-500'}`}>
                                                 {formatCompactNumber(stats.netProfit)}
                                             </div>
                                         </Tooltip>
                                     </div>
-                                    <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center transition-colors duration-300 ${stats.netProfit >= 0 ? 'bg-blue-50 group-hover:bg-blue-100' : 'bg-amber-50 group-hover:bg-amber-100'}`}>
-                                        <Wallet className={`w-5 h-5 md:w-7 md:h-7 stroke-[2.5] ${stats.netProfit >= 0 ? 'text-blue-600' : 'text-amber-600'}`} />
+                                    <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center transition-colors duration-300 ${stats.netProfit >= 0 ? 'bg-blue-50 group-hover:bg-blue-100' : 'bg-rose-50 group-hover:bg-rose-100'}`}>
+                                        <Wallet className={`w-5 h-5 md:w-7 md:h-7 stroke-[2.5] ${stats.netProfit >= 0 ? 'text-blue-600' : 'text-rose-600'}`} />
                                     </div>
                                 </div>
                             </div>

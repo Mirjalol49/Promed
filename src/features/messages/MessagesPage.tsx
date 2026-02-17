@@ -82,6 +82,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     // Optimization State
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // Initial load state
     const [oldestDoc, setOldestDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
     const [patientIsTyping, setPatientIsTyping] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -223,7 +224,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
         }
 
         // 1. Try Local Cache
-        const cached = localStorage.getItem(`msgs_${selectedPatientId} `);
+        const cached = localStorage.getItem(`msgs_${selectedPatientId}`);
         if (cached) {
             try {
                 setMessages(JSON.parse(cached));
@@ -231,6 +232,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
         }
 
         // 2. Initial Realtime Listener (Limit to 30)
+        setIsLoading(true);
         const q = query(
             collection(db, 'patients', selectedPatientId, 'messages'),
             orderBy('createdAt', 'desc'),
@@ -244,12 +246,18 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             })).reverse() as Message[];
 
             setMessages(msgs);
-            localStorage.setItem(`msgs_${selectedPatientId} `, JSON.stringify(msgs));
+            localStorage.setItem(`msgs_${selectedPatientId}`, JSON.stringify(msgs)); // Fixed key
 
             if (snapshot.docs.length > 0) {
                 setOldestDoc(snapshot.docs[snapshot.docs.length - 1]);
                 setHasMore(snapshot.docs.length === 30);
+            } else {
+                setHasMore(false);
             }
+            setIsLoading(false); // Data loaded
+        }, (error) => {
+            console.error("Snapshot error:", error);
+            setIsLoading(false);
         });
 
         // 3. Hear Typing Status
@@ -881,16 +889,22 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                     </div>
                                 )}
 
-                                {displayedMessages.length === 0 && (
+                                {isLoading && messages.length === 0 && (
+                                    <div className="flex justify-center items-center h-full">
+                                        <Loader2 size={32} className="animate-spin text-slate-400" />
+                                    </div>
+                                )}
+
+                                {!isLoading && displayedMessages.length === 0 && (
                                     <div className="flex flex-col items-center justify-center h-full text-center px-8">
-                                        <div className="mb-4 p-6 rounded-full bg-white shadow-sm">
+                                        <div className="mb-4 p-6 rounded-full bg-slate-50 shadow-sm border border-slate-100">
                                             {isScheduledView ? (
-                                                <CalendarClock size={48} className="text-slate-800" />
+                                                <CalendarClock size={48} className="text-slate-300" />
                                             ) : (
-                                                <User size={48} className="text-slate-800" />
+                                                <User size={48} className="text-slate-300" />
                                             )}
                                         </div>
-                                        <p className="text-slate-800 text-base font-medium mb-2">
+                                        <p className="text-slate-500 text-base font-medium mb-2">
                                             {isScheduledView ? t('no_scheduled_messages') : t('no_messages_yet')}
                                         </p>
                                     </div>

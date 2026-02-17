@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, X, Info, AlertTriangle, ShieldCheck, Megaphone, Clock } from 'lucide-react';
 import { useSystemAlert } from '../../contexts/SystemAlertContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { dismissNotification } from '../../lib/notificationService';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const NotificationBell: React.FC<{ className?: string }> = ({ className = 'text-slate-600 hover:bg-slate-100 hover:text-promed-primary' }) => {
     const { alerts, unreadCount, markAllAsRead } = useSystemAlert();
+    const { t } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -57,10 +59,10 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
         const now = new Date();
         const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / 60000);
 
-        if (diffInMinutes < 1) return 'Hozirgina';
-        if (diffInMinutes < 60) return `${diffInMinutes} m avval`;
+        if (diffInMinutes < 1) return t('time_just_now');
+        if (diffInMinutes < 60) return t('time_minute_ago').replace('{m}', diffInMinutes.toString());
         const diffInHours = Math.floor(diffInMinutes / 60);
-        if (diffInHours < 24) return `${diffInHours} s avval`;
+        if (diffInHours < 24) return t('time_hour_ago').replace('{h}', diffInHours.toString());
         return date.toLocaleDateString();
     };
 
@@ -115,7 +117,7 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
                     >
                         <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div className="flex items-center gap-2">
-                                <h3 className="font-black text-xs uppercase tracking-widest text-slate-900">Bildirishnomalar</h3>
+                                <h3 className="font-black text-xs uppercase tracking-widest text-slate-900">{t('notifications')}</h3>
                                 <span className="px-2 py-0.5 bg-promed-light text-promed-primary rounded-lg text-[10px] font-black">{alerts.length}</span>
                             </div>
                             <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
@@ -129,7 +131,7 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
                                     <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 grayscale opacity-50">
                                         <Megaphone size={24} className="text-slate-400" />
                                     </div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">Hozircha hech qanday bildirishnoma yo'q</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">{t('no_notifications_yet')}</p>
                                 </div>
                             ) : (
                                 <div className="divide-y divide-slate-50">

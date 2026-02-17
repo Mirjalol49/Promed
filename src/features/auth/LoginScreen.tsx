@@ -8,6 +8,7 @@ import { httpsCallable } from 'firebase/functions'; // For calling OTP functions
 import { loginSchema, safeValidate } from '../../lib/validation';
 import { useAppSounds } from '../../hooks/useAppSounds';
 import { PinInput } from '../../components/ui/PinInput'; // Import PinInput
+import { DashboardSkeleton } from '../../components/skeletons/DashboardSkeleton'; // Import Skeleton
 
 import { useToast } from '../../contexts/ToastContext';
 import lockIcon from '../../assets/images/lock.png';
@@ -48,6 +49,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [shake, setShake] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const [showSkeleton, setShowSkeleton] = useState(false); // 🔥 Instant Entry State
 
   // Forgot Password state
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -175,7 +177,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const handlePhonePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setError('');
     setLoading(true);
+    setShowSkeleton(true); // Optimistic: Show Skeleton immediately
 
     try {
       // 1. Check if input is an email (Legacy Login)
@@ -213,13 +217,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         const proxyEmailDebug = `${cleanPhoneDebug}@promed.sys`;
         const debugMsg = t('login_error_invalid_password');
         // DEBUG: Show what we tried
+        // DEBUG: Show what we tried
         setError(`${debugMsg} (Trying: ${proxyEmailDebug})`);
       } else {
         setError(err.message || t('login_error_generic'));
       }
       setTimeout(() => setShake(false), 500);
-    } finally {
       setLoading(false);
+      setShowSkeleton(false);
+    } finally {
+      // setLoading(false); // REMOVED: Keep loading true on success to transition to Skeleton
     }
   };
 
@@ -246,13 +253,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       setError(msg);
       setShake(true);
       playError();
-    } finally {
       setLoading(false);
+    } finally {
+      // setLoading(false);
     }
   };
 
   const handleVerifyOtp = async (code: string) => {
     setLoading(true);
+    setShowSkeleton(true); // Optimistic: Show Skeleton immediately
     setError('');
 
     try {
@@ -273,8 +282,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       playError();
       // Clear OTP on error
       setOtp(['', '', '', '', '', '']);
-    } finally {
       setLoading(false);
+      setShowSkeleton(false);
+    } finally {
+      // setLoading(false);
     }
   };
 
@@ -282,7 +293,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     e.preventDefault();
     setError('');
     setShake(false);
+    setError('');
+    setShake(false);
     setLoading(true);
+    setShowSkeleton(true); // Optimistic: Show Skeleton immediately
 
     try {
       const password = pinCode.join('');
@@ -302,12 +316,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         setError(err.message || t('login_error_generic'));
       }
       setTimeout(() => setShake(false), 500);
-    } finally {
       setLoading(false);
+      setShowSkeleton(false);
+    } finally {
+      // setLoading(false);
     }
   };
 
   const handleLoginSuccess = async (user: any) => {
+    // 🔥 INSTANT ENTRY: Show Skeleton immediately while checking profile
+    setShowSkeleton(true);
+
     // 🛡️ SECURITY: Check account status in Firestore
     const { db } = await import('../../lib/firebase');
     const { doc, getDoc } = await import('firebase/firestore');
@@ -331,6 +350,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         playError();
         const { signOut } = await import('firebase/auth');
         await signOut(auth);
+
+        // Disable Skeleton and return to login
+        setShowSkeleton(false);
+        setLoading(false);
         return; // Stop here
       }
     }
@@ -353,6 +376,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       );
     }, 100);
   };
+
+  if (showSkeleton) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-promed-deep flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -449,7 +476,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               {/* Login Button */}
               <button type="submit" disabled={loading} className="btn-glossy-blue group w-full py-4 rounded-2xl text-lg shadow-xl shadow-blue-500/20 active:scale-95 transition-all mt-4">
                 {loading ? (
-                  <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                  <div className="w-6 h-6 border-[3px] border-white/30 border-t-white rounded-full animate-spin mx-auto" />
                 ) : (
                   <span>{t('login_btn')}</span>
                 )}
