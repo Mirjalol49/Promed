@@ -34,16 +34,20 @@ service cloud.firestore {
     }
     
     // Check if resource belongs to user's account
+    // Check if resource belongs to user's account
     function belongsToAccount(resource) {
        let docAccountId = "account_id" in resource.data ? resource.data.account_id : ("accountId" in resource.data ? resource.data.accountId : null);
        let docUserId = "userId" in resource.data ? resource.data.userId : ("user_id" in resource.data ? resource.data.user_id : null);
        
+       // FAST PATH: Check Own UID directly (Zero Cost)
+       if (docAccountId == request.auth.uid || docUserId == request.auth.uid) return true;
+       if (docAccountId == ("account_" + request.auth.uid)) return true;
+
+       // SLOW PATH: Fetch Profile (1 Read cost)
        let userAcc = getUserAccountId();
        
-       // Allow if docAccountId OR docUserId matches user's accountId/UID
-       // This supports legacy leads that only have 'userId'
-       return (docAccountId != null && (docAccountId == userAcc || docAccountId == request.auth.uid || docAccountId == ("account_" + request.auth.uid))) 
-           || (docUserId != null && (docUserId == userAcc || docUserId == request.auth.uid || docUserId == ("account_" + request.auth.uid)));
+       return (docAccountId != null && docAccountId == userAcc) 
+           || (docUserId != null && docUserId == userAcc);
     }
     
     function writesToAccount(requestData) {
@@ -106,6 +110,18 @@ service cloud.firestore {
     match /patients/{patientId} {
       allow read: if isAuthenticated() && canViewPatients() && (resource == null || belongsToAccount(resource));
       allow write: if isAuthenticated() && canEditPatients() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));
+      
+      // Messages Subcollection (Fix for Permission Denied)
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && canViewPatients();
+        allow write: if isAuthenticated() && canEditPatients();
+      }
+    }
+
+    // Outbound Messages (Bot Queue)
+    match /outbound_messages/{msgId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && canEditPatients();
     }
 
     // Leads (Clients)

@@ -1,7 +1,7 @@
 import React, { createContext, useEffect, useState, useContext, ReactNode } from 'react';
-import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'; // Firebase imports
-import { auth, db } from '../lib/firebase'; // Custom Firebase instance
-import { doc, getDoc } from 'firebase/firestore'; // Firestore imports
+import { User, onAuthStateChanged, signOut as firebaseSignOut, setPersistence, browserLocalPersistence } from 'firebase/auth'; // Added persistence
+import { auth, db } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 interface AuthContextType {
     user: User | null;
@@ -16,41 +16,77 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Listen for Firebase Auth changes
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            console.log("🔐 Auth State Change:", firebaseUser?.email);
+        let mounted = true;
 
+        const initAuth = async () => {
+            // 1. Set Persistence (Best effort)
             try {
-                if (firebaseUser) {
-                    // SESSION GUARD: Check if profile actually exists
-                    const profileRef = doc(db, 'profiles', firebaseUser.uid);
-                    const profileSnap = await getDoc(profileRef);
-
-                    if (!profileSnap.exists()) {
-                        console.warn(`⛔ ACCOUNT DELETED: Profile for ${firebaseUser.uid} is missing. Forcing logout.`);
-                        await firebaseSignOut(auth);
-                        setUser(null);
-                        setLoading(false);
-                        return;
-                    }
-                }
-                setUser(firebaseUser);
+                await setPersistence(auth, browserLocalPersistence);
             } catch (error) {
-                console.error("Auth State verification failed:", error);
-                // In case of error, we arguably should log them out or at least let them proceed as null to avoid hanging
-                // For safety, let's treat as logged out if verification fails hard
-                setUser(null);
-            } finally {
+                console.error("Auth Persistence warning:", error);
+            }
+
+            // 2. Listen for Auth Changes
+            onAuthStateChanged(auth, async (firebaseUser) => {
+                if (!mounted) return;
+                console.log("🔐 Auth State Change:", firebaseUser?.email);
+
+                if (firebaseUser) {
+                    try {
+                        // Quick Profile Check
+                        const profileRef = doc(db, 'profiles', firebaseUser.uid);
+                        // Timeout the profile check to prevent infinite loading on bad connection
+                        const profilePromise = getDoc(profileRef);
+                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000));
+
+                        const profileSnap: any = await Promise.race([profilePromise, timeoutPromise]).catch(e => null);
+
+                        if (profileSnap && profileSnap.exists()) {
+                            setUser(firebaseUser);
+                        } else if (profileSnap === null) {
+                            // Timeout or error -> Assume offline/ok to proceed to avoid lockout
+                            console.warn("⚠️ Profile check timed out/failed. Allowing access offline.");
+                            setUser(firebaseUser);
+                        } else {
+                            // Profile definitely doesn't exist
+                            console.warn(`⛔ Profile missing for ${firebaseUser.uid}. Forcing logout.`);
+                            await firebaseSignOut(auth);
+                            setUser(null);
+                        }
+                    } catch (e) {
+                        console.error("Critical Auth Error:", e);
+                        setUser(firebaseUser); // Fail open -> let them in, views will handle missing data
+                    }
+                } else {
+                    setUser(null);
+                }
+                setLoading(false);
+            });
+        };
+
+        initAuth();
+
+        // Safety Valve: If nothing happens in 6 seconds, stop loading
+        const safetyTimer = setTimeout(() => {
+            if (loading) {
+                console.warn("⚠️ Auth Safety Timer triggered. Forcing app load.");
                 setLoading(false);
             }
-        });
+        }, 6000);
 
-        return () => unsubscribe();
+        return () => {
+            mounted = false;
+            clearTimeout(safetyTimer);
+        };
     }, []);
 
     const signOut = async () => {
-        await firebaseSignOut(auth);
-        setUser(null);
+        try {
+            await firebaseSignOut(auth);
+            setUser(null);
+        } catch (error) {
+            console.error("Sign Out Error:", error);
+        }
     };
 
     const value = {

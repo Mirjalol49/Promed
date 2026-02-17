@@ -274,10 +274,10 @@ const App: React.FC = () => {
       setResetCode(oobCode);
     }
 
-    // Request Notification Permission
-    if ('Notification' in window && Notification.permission !== 'granted') {
-      Notification.requestPermission();
-    }
+    // Request Notification Permission - REMOVED: Requires user gesture
+    // if ('Notification' in window && Notification.permission !== 'granted') {
+    //   Notification.requestPermission();
+    // }
   }, []);
 
   // 🔥 GLOBAL NOTIFICATION LISTENER
@@ -478,49 +478,28 @@ const App: React.FC = () => {
             finalAccount: finalAccountId
           });
 
-          setAccount(finalAccountId || userId, userId, profile.fullName || accountName || '', userEmail, profile.role || 'doctor', true, profile.profileImage); // Now VERIFIED
+          // Optimization: Only update context if data CHANGED
+          if (
+            finalAccountId !== accountId ||
+            (profile.role && profile.role !== role) ||
+            (profile.fullName && profile.fullName !== accountName) ||
+            (profile.profileImage && profile.profileImage !== userImage)
+          ) {
+            console.log("♻️ [Profile Sync] Updating Context due to change.");
+            setAccount(finalAccountId || userId, userId, profile.fullName || accountName || '', userEmail, profile.role || 'doctor', true, profile.profileImage);
+          }
+
           if (profile.lockEnabled !== undefined) {
-            console.log("  • Lock Enabled:", profile.lockEnabled);
-            setIsLockEnabled(profile.lockEnabled);
+            if (profile.lockEnabled !== isLockEnabled) setIsLockEnabled(profile.lockEnabled);
           }
-          if (profile.lockPassword) {
-            console.log("🛡️ [Security Sync] Setting User Password from Profile:", !!profile.lockPassword, profile.lockPassword === '000000' ? '(DEFAULT 000000)' : '(CUSTOM)');
-            setUserPassword(profile.lockPassword);
-          } else {
-            console.warn("⚠️ [Security Sync] Profile has NO lockPassword field! Falling back to 000000");
-            setUserPassword('000000');
-          }
-          if (profile.profileImage) {
-            console.log("  • Image URL:", profile.profileImage);
-            // Context handles this now via setAccount above
-          }
-
-
-          // 🔥 SECURITY ALERT: If account is restricted (frozen or banned), log out immediately
-          // 🔥 SECURITY ALERT: If account is restricted (frozen or banned), log out immediately
-          if (profile.status === 'frozen' || profile.status === 'banned') {
-            console.warn(`🛡️ Account RESTRICTED (${profile.status}) detected for user:`, userId);
-
-            if (profile.status === 'banned') {
-              setIsBanned(true);
-              // Don't logout immediately, let them see the screen
-            } else {
-              const message = 'Your account has been suspended. Please contact support.';
-              alert(message);
-              handleLogout(); // Force immediate session termination
-            }
-          } else {
-            // ✅ AUTO-RECOVER: If status is not banned, ensure we clear the state
-            setIsBanned(false);
-          }
-
+          // ... rest of logic
         }
       },
       (error) => console.error("Profile subscription error:", error)
     );
 
     return () => unsubscribe();
-  }, [userId]); // Removed 'view' to prevent unnecessary re-subscriptions on navigation
+  }, [userId, accountId, role, accountName, userImage]); // Dependencies for comparison
 
   useEffect(() => {
     let mounted = true;
@@ -528,8 +507,12 @@ const App: React.FC = () => {
     let transactionSubscription: (() => void) | null = null;
 
     if (!accountId) {
-      console.log("⏳ [Subscription] Waiting for accountId...");
-      setLoading(false);
+      if (userId) {
+        console.log("⏳ [Subscription] Waiting for accountId (User Present)...");
+        setLoading(true); // Keep loading if we are authorized but waiting for ID
+      } else {
+        setLoading(false);
+      }
       return;
     }
 

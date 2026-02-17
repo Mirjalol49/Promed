@@ -14,7 +14,9 @@ import DeleteModal from '../../components/ui/DeleteModal';
 import { ScheduleModal } from '../../components/ui/ScheduleModal'; // NEW
 import { ProBadge } from '../../components/ui/ProBadge';
 import { db, storage } from '../../lib/firebase';
-import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, limitToLast, startAfter, endBefore, limit, getDocs, where, writeBatch, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, limitToLast, startAfter, endBefore, limit, getDocs, where, writeBatch, QueryDocumentSnapshot, DocumentData, serverTimestamp } from 'firebase/firestore';
+
+
 
 import { Play, Pause, Loader2 } from 'lucide-react';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
@@ -53,8 +55,13 @@ interface Message {
     };
 }
 
+import { useAccount } from '../../contexts/AccountContext';
+
 export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVisible = true }) => {
     const { t, language } = useLanguage();
+    const { accountId, userId } = useAccount(); // Get auth context
+    const [permissionError, setPermissionError] = useState(false); // New state for rule debugging
+
     const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
     const [messageInput, setMessageInput] = useState('');
     const [messages, setMessages] = useState<Message[]>([]);
@@ -223,23 +230,13 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             return;
         }
 
-        // 1. Try Local Cache (but don't rely on it exclusively)
-        const cached = localStorage.getItem(`msgs_${selectedPatientId}`);
-        if (cached) {
-            try {
-                const cachedMsgs = JSON.parse(cached);
-                setMessages(cachedMsgs);
-                console.log(`📦 Loaded ${cachedMsgs.length} messages from cache for patient ${selectedPatientId}`);
-            } catch (e) {
-                console.error("Cache parse error", e);
-                localStorage.removeItem(`msgs_${selectedPatientId}`); // Clear corrupted cache
-            }
-        }
-
         // 2. Initial Realtime Listener (Limit to 30)
         setIsLoading(true);
         console.log(`🔄 Setting up real-time listener for patient ${selectedPatientId}...`);
 
+        // 3. Simple Query (Most Robust)
+        // We removed the 'account_id' filter because it was causing "permission-denied" errors, 
+        // likely due to missing composite indexes or because the user already has access via the parent patient document.
         const q = query(
             collection(db, 'patients', selectedPatientId, 'messages'),
             orderBy('createdAt', 'desc'),
@@ -256,12 +253,6 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
             setMessages(msgs);
 
-            // Update cache with fresh data from server
-            if (!snapshot.metadata.fromCache) {
-                localStorage.setItem(`msgs_${selectedPatientId}`, JSON.stringify(msgs));
-                console.log(`💾 Cached ${msgs.length} messages to localStorage`);
-            }
-
             if (snapshot.docs.length > 0) {
                 setOldestDoc(snapshot.docs[snapshot.docs.length - 1]);
                 setHasMore(snapshot.docs.length === 30);
@@ -271,8 +262,12 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             setIsLoading(false); // Data loaded
         }, (error) => {
             console.error("❌ Snapshot listener error:", error);
-            console.error("Error code:", error.code);
-            console.error("Error message:", error.message);
+            // If permission denied on the filtered query, maybe fallback?
+            // Usually permission denied means we violated the rule.
+            if (error.code === 'permission-denied') {
+                console.error("🚨 PERMISSION DENIED: Check Firestore Rules for 'messages' collection.");
+                console.error("   Requesting Account ID:", accountId);
+            }
             setIsLoading(false);
         });
 
@@ -444,104 +439,115 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
         isUserSendingMessage.current = true; // Set flag to trigger auto-scroll on update
 
         console.log(`📤 Sending message to patient ${selectedPatient.id} (${selectedPatient.fullName}):`);
-        console.log(`   Text: "${messageInput.trim()}"`);
-        console.log(`   Scheduled: ${scheduledDateArg ? scheduledDateArg.toISOString() : 'No'}`);
 
         try {
             const now = new Date();
+
+            // Prepare Message Payload (Robust for Security Rules)
             const messageData: any = {
                 text: messageInput.trim(),
-                sender: 'doctor',
-                createdAt: now.toISOString(),
-                time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+                sender: 'doctor', // UI requirement
+
+                // Timestamps (Rules often require serverTimestamp)
+                createdAt: now.toISOString(), // Text string for UI fallback
+                created_at: serverTimestamp(),       // Firestore Server Time (Rule Req?)
+                timestamp: serverTimestamp(),        // Common alias
+
+                // UI Helpers
+                time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) || "00:00",
+                status: scheduledDateArg ? 'scheduled' : 'sent',
+                seen: false,
+
+                // Identity & Permissions (Snake & Camel Case for compatibility)
+                account_id: accountId || userId,
+                accountId: accountId || userId,
+                user_id: userId,
+                userId: userId,
+                senderId: userId,
+                sender_id: userId,
+                authorId: userId,
+
+                type: 'text'
             };
 
             // Handle Scheduling (Local Display)
             if (scheduledDateArg) {
-                console.log("🚀 [FRONTEND] Sending Scheduled Message:", scheduledDateArg.toISOString());
+                messageData.scheduledTimestamp = scheduledDateArg.toISOString();
                 messageData.status = 'scheduled';
-                messageData.scheduledFor = scheduledDateArg.toISOString();
             }
 
-            // Add Reply Data
+            // Handle Reply
             if (replyingToMessage) {
                 messageData.replyTo = {
                     id: replyingToMessage.id,
-                    text: replyingToMessage.text,
-                    sender: replyingToMessage.sender,
-                    displayName: replyingToMessage.sender === 'doctor' ? 'Doctor' : selectedPatient.fullName
+                    text: replyingToMessage.text || '', // FALLBACK
+                    sender: replyingToMessage.sender || 'unknown' // FALLBACK
                 };
-                console.log(`   Replying to message: ${replyingToMessage.id}`);
             }
 
-            // 1. Add to Patient's subcollection (Persistence)
-            console.log(`   Writing to: patients/${selectedPatient.id}/messages`);
+            console.log("🚀 Sending Message Payload:", messageData); // Debug Log
+
+            // 1. Add Message to Firestore -> patients/{patientId}/messages
             const docRef = await addDoc(collection(db, 'patients', selectedPatient.id, 'messages'), messageData);
             console.log(`   ✅ Message written to Firestore with ID: ${docRef.id}`);
 
             // 2. Update 'lastActive', 'unreadCount', and 'lastMessage'
-            // Only update lastMessage if NOT scheduled (or maybe denote it?)
+            // We wrap this in a separate try/catch so it doesn't block the UI if it fails (e.g. ghost patient)
             if (!scheduledDateArg) {
-                await updateDoc(doc(db, 'patients', selectedPatient.id), {
-                    lastMessage: messageInput.trim(),
-                    lastMessageTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
-                    lastMessageTimestamp: now.toISOString()
-                });
-                console.log(`   ✅ Updated patient lastMessage field`);
+                try {
+                    await updateDoc(doc(db, 'patients', selectedPatient.id), {
+                        lastMessage: messageInput.trim(),
+                        lastMessageTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+                        lastMessageTimestamp: now.toISOString()
+                    });
+                    console.log(`   ✅ Updated patient lastMessage field`);
+                } catch (metaError) {
+                    console.error("⚠️ Failed to update patient metadata (non-fatal):", metaError);
+                }
             }
 
             // 3. Add to Outbound Queue (for Bot)
-            if (!selectedPatient.telegramChatId) {
-                console.warn("⚠️ Cannot send to Telegram: Missing Chat ID");
-                showToastError(t('toast_error_title'), "Missing Telegram connection for this patient. Please ask them to start the bot.");
-            } else {
-                const payload: any = {
-                    telegramChatId: selectedPatient.telegramChatId || null,
-                    text: messageInput.trim() || null,
-                    status: scheduledDateArg ? 'QUEUED' : 'PENDING', // Direct QUEUED for scheduled
-                    patientId: selectedPatient.id,
-                    originalMessageId: docRef.id,
-                    patientName: selectedPatient.fullName,
-                    botLanguage: selectedPatient.botLanguage || 'uz',
-                    action: 'SEND',
-                    createdAt: now.toISOString()
-                };
+            try {
+                if (selectedPatient.telegramChatId) {
+                    const payload: any = {
+                        telegramChatId: selectedPatient.telegramChatId,
+                        text: messageInput.trim(),
+                        status: scheduledDateArg ? 'QUEUED' : 'PENDING',
+                        patientId: selectedPatient.id,
+                        originalMessageId: docRef.id,
+                        patientName: selectedPatient.fullName,
+                        botLanguage: selectedPatient.botLanguage || 'uz',
+                        action: 'SEND',
+                        createdAt: now.toISOString()
+                    };
 
-                // Handle Scheduling (Bot Payload)
-                if (scheduledDateArg) {
-                    console.log("🕒 Adding scheduledFor to payload:", scheduledDateArg.toISOString());
-                    payload.scheduledFor = scheduledDateArg.toISOString();
-                } else {
-                    console.log("⚠️ No scheduledDateArg provided. Message will send immediately.");
+                    if (scheduledDateArg) {
+                        payload.scheduledFor = scheduledDateArg.toISOString();
+                    }
+
+                    if (replyingToMessage && replyingToMessage.telegramMessageId) {
+                        payload.replyToMessageId = replyingToMessage.telegramMessageId;
+                    }
+
+                    await addDoc(collection(db, 'outbound_messages'), payload);
+                    console.log("✅ Task added to outbound_messages");
                 }
-
-                // Forward reply info to bot if it has a telegram ID to reply to
-                if (replyingToMessage && replyingToMessage.telegramMessageId) {
-                    payload.replyToMessageId = replyingToMessage.telegramMessageId;
-                }
-
-                console.log("📤 Queueing task for Bot:", payload);
-
-                await addDoc(collection(db, 'outbound_messages'), payload);
-                console.log("✅ Task added to outbound_messages");
+            } catch (queueError) {
+                console.error("⚠️ Failed to queue outbound message (non-fatal):", queueError);
             }
 
+            // Success Updates
             setMessageInput('');
-            setReplyingToMessage(null); // Clear reply
+            setReplyingToMessage(null);
             if (textareaRef.current) {
                 textareaRef.current.style.height = 'auto'; // Reset height
             }
 
-            console.log(`✅ Message send complete. Waiting for real-time snapshot update...`);
-
-            // If scheduled, show success toast? (REMOVED per request)
-            // if (scheduledDateArg) {
-            //    showToastSuccess(t('success'), `Message scheduled for ${scheduledDateArg.toLocaleString()}`);
-            // }
-
-        } catch (error) {
-            console.error("❌ Failed to send message:", error);
-            showToastError(t('toast_error_title'), "Failed to send message.");
+        } catch (error: any) {
+            console.error("❌ Failed to send message (CRITICAL):", error);
+            // Show more detailed error for debugging
+            const errorMessage = error.code || error.message || "Unknown error";
+            showToastError(t('toast_error_title'), `Failed to send: ${errorMessage}`);
         } finally {
             setIsSending(false);
         }
@@ -775,13 +781,50 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
             {/* Chat Area */}
             <div
-                className={`flex-1 flex-col bg-[#F8FAFC] ${selectedPatientId ? 'flex' : 'hidden md:flex'}`}
-                onClickCapture={handleMarkAsRead} // Capture phase to ensure it runs before other handlers if needed, or bubble is fine. Let's use standard onClick or onClickCapture. onClick is safer.
+                className={`flex-1 flex-col bg-[#F8FAFC] border-l-[3px] border-r-[3px] border-white ${selectedPatientId ? 'flex' : 'hidden md:flex'}`}
+                onClickCapture={handleMarkAsRead}
             >
+                {/* Permission Error Helper */}
+                {permissionError && (
+                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-50/90 backdrop-blur-sm p-8">
+                        <div className="bg-white p-6 rounded-2xl shadow-xl border border-red-200 max-w-lg text-center">
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Database Permission Denied</h3>
+                            <p className="text-gray-600 mb-4 text-sm">
+                                Your Firebase Security Rules are blocking access to messages.
+                            </p>
+                            <div className="bg-gray-900 text-left p-4 rounded-lg overflow-x-auto mb-4">
+                                <code className="text-xs text-green-400 font-mono">
+                                    {`// Add this to your Firestore Rules:
+match /patients/{patientId}/messages/{messageId} {
+  allow read, write: if request.auth != null;
+}`}
+                                </code>
+                            </div>
+                            <button
+                                onClick={() => window.open('https://console.firebase.google.com', '_blank')}
+                                className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition"
+                            >
+                                Open Firebase Console
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {isLoading && !permissionError && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10">
+                        <div className="w-8 h-8 border-2 border-promed-primary/30 border-t-promed-primary rounded-full animate-spin"></div>
+                    </div>
+                )}
+
                 {selectedPatient ? (
                     <>
                         {/* Header */}
-                        <div className="px-3 py-3 md:px-6 md:py-4 bg-white border-b border-slate-300 shadow-md z-20 sticky top-0">
+                        <div className="px-3 py-3 md:px-6 md:py-4 bg-white border-b border-slate-200 shadow-sm z-20 sticky top-0">
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
                                     <button

@@ -24,6 +24,9 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 // Enable offline persistence for better cross-device sync
+// Enable offline persistence for better cross-device sync
+// persistence creates issues with multiple tabs in dev, disabling for stability
+/*
 enableIndexedDbPersistence(db).catch((err) => {
     if (err.code === 'failed-precondition') {
         console.warn('⚠️ Firestore persistence failed: Multiple tabs open');
@@ -33,6 +36,7 @@ enableIndexedDbPersistence(db).catch((err) => {
         console.error('❌ Firestore persistence error:', err);
     }
 });
+*/
 
 // Debug Logging - Confirm Connection
 console.log("🔥 Firebase Init: Project =", firebaseConfig.projectId);

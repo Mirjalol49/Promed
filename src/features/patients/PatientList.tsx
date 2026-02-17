@@ -1616,8 +1616,8 @@ export const AddPatientForm: React.FC<{
                           </div>
 
                           {/* Custom Toggle Switch */}
-                          <div className={`w-12 h-7 rounded-full transition-colors duration-300 relative z-10 ${tier === 'pro' ? 'bg-yellow-400' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
-                            <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300 ${tier === 'pro' ? 'translate-x-[22px]' : 'translate-x-1'}`} />
+                          <div className={`w-16 h-9 rounded-full transition-colors duration-300 relative z-10 ${tier === 'pro' ? 'bg-yellow-400' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
+                            <div className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow-sm transition-transform duration-300 ${tier === 'pro' ? 'translate-x-8' : 'translate-x-1'}`} />
                           </div>
                         </div>
                       </div>

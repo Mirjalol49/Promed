@@ -33,39 +33,32 @@ interface StoredAccount {
 }
 
 export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [accountId, setAccountId] = useState<string>('');
-  const [userId, setUserId] = useState<string>('');
-  const [accountName, setAccountName] = useState<string>('');
-  const [userEmail, setUserEmail] = useState<string>('');
-  const [userImage, setUserImage] = useState<string>('');
-  const [role, setRole] = useState<'admin' | 'doctor' | 'staff' | 'viewer' | 'seller' | 'nurse'>('doctor');
+  // Optimization: Lazy Initialize from LocalStorage to avoid "null" gap
+  const getStored = (): StoredAccount | null => {
+    try {
+      const item = localStorage.getItem(STORAGE_KEY);
+      return item ? JSON.parse(item) : null;
+    } catch { return null; }
+  };
+
+  const stored = getStored();
+
+  const [accountId, setAccountId] = useState<string>(stored?.id || '');
+  const [userId, setUserId] = useState<string>(stored?.userId || '');
+  const [accountName, setAccountName] = useState<string>(stored?.name || '');
+  const [userEmail, setUserEmail] = useState<string>(stored?.email || '');
+  const [userImage, setUserImage] = useState<string>(stored?.image || '');
+  const [role, setRole] = useState<'admin' | 'doctor' | 'staff' | 'viewer' | 'seller' | 'nurse'>(stored?.role || 'doctor');
   const [subscriptionStatus, setSubscriptionStatus] = useState<'trial' | 'active' | 'frozen'>('trial');
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
-  const [createdAt, setCreatedAt] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [createdAt, setCreatedAt] = useState<string | null>(stored?.createdAt || null);
+
+  // If we have data, we are not loading. If no data, we are loading (waiting for auth)
+  const [isLoading, setIsLoading] = useState<boolean>(!stored);
   const [isVerified, setIsVerified] = useState<boolean>(false);
 
-  // Load account from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    console.log('AccountProvider: Checking localStorage', stored);
-    if (stored) {
-      try {
-        const account: StoredAccount = JSON.parse(stored);
-        setAccountId(account.id);
-        setUserId(account.userId || '');
-        setAccountName(account.name);
-        setUserEmail(account.email || '');
-        setUserImage(account.image || '');
-        setRole(account.role || 'doctor');
-        setCreatedAt(account.createdAt || null);
-      } catch (e) {
-        console.error('Failed to parse stored account:', e);
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
-    setIsLoading(false);
-  }, []);
+  // Removed redundant useEffect for initial load since we do it lazily above.
+
 
   const setAccount = (id: string, userId: string, name: string, email: string, userRole: 'admin' | 'doctor' | 'staff' | 'viewer' | 'seller' | 'nurse' = 'doctor', verified: boolean = false, image: string = '', createdAtDate: string = '') => {
     setAccountId(id);
