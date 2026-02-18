@@ -11,8 +11,6 @@ import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../lib/firebase';
 import { useToast } from '../contexts/ToastContext';
 import ToastContainer from '../components/ui/ToastContainer';
-import happyIcon from '../components/mascot/happy_mascot.png';
-import upsetIcon from '../components/mascot/upset_mascot.png';
 import { SystemAlertBanner } from '../components/layout/SystemAlertBanner';
 import { BroadcastPanel } from '../components/admin/BroadcastPanel';
 import { sendTargetedNotifications } from '../lib/notificationService';
@@ -111,7 +109,7 @@ export const EmergencySetup: React.FC = () => {
         try {
             await updateDoc(doc(db, 'profiles', userId), { status: newStatus });
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus } : u));
-            success('Status Updated', `User marked as ${newStatus}`, happyIcon);
+            success('Status Updated', `User marked as ${newStatus}`);
         } catch (err: any) {
             showError('Update Failed', err.message);
         }
@@ -141,7 +139,7 @@ export const EmergencySetup: React.FC = () => {
                 console.warn("Client-side delete skipped:", manualErr);
             }
 
-            success('Account Eradicated', 'User has been completely removed from the system.', upsetIcon);
+            success('Account Eradicated', 'User has been completely removed from the system.');
         } catch (err: any) {
             // FALLBACK: If Cloud Function fails entirely, STILL try to delete local docs
             try {
@@ -154,7 +152,7 @@ export const EmergencySetup: React.FC = () => {
 
             // DO NOT REVERT UI.
             console.error("Delete error:", err);
-            success('Force Removed', 'User removed from local list (Backend might have had a hiccup, but it is gone for you).', upsetIcon);
+            success('Force Removed', 'User removed from local list (Backend might have had a hiccup, but it is gone for you).');
         }
     };
 
@@ -176,7 +174,7 @@ export const EmergencySetup: React.FC = () => {
             });
 
             setStatus({ type: 'success', msg: 'System Node Created Successfully.' });
-            success(role === 'admin' ? 'Admin Created' : 'User Created', `New ${role} account is ready.`, happyIcon);
+            success(role === 'admin' ? 'Admin Created' : 'User Created', `New ${role} account is ready.`);
             setName('');
             setPhone('+998');
             setPassword('');
@@ -203,7 +201,7 @@ export const EmergencySetup: React.FC = () => {
                 type: 'info',
                 category: 'message'
             });
-            success('Message Sent', `Notification delivered to ${msgTarget.fullName}`, happyIcon);
+            success('Message Sent', `Notification delivered to ${msgTarget.fullName}`);
             setMsgTarget(null);
             setMsgTitle('');
             setMsgContent('');

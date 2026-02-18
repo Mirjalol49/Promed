@@ -10,7 +10,7 @@ import {
 import { format } from 'date-fns';
 import { uz, ru, enUS } from 'date-fns/locale';
 import { formatCompactNumber, formatCurrency } from '../lib/formatters';
-import { StatCard, InjectionAppointmentWidget } from '../features/dashboard/Widgets';
+import { StatCard } from '../features/dashboard/Widgets';
 import { DashboardScheduler } from '../features/dashboard/DashboardScheduler';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAccount } from '../contexts/AccountContext';
@@ -18,9 +18,7 @@ import { Patient } from '../types';
 import { DashboardLoader } from '../components/ui/DashboardLoader';
 import LockedOverlay from '../components/ui/LockedOverlay';
 import TourGuide from '../components/tour/TourGuide';
-import operationIcon from '../assets/images/operation.png';
-import patientsIcon from '../assets/images/patients.png';
-import injectionIcon from '../assets/images/injection.png';
+
 
 interface DashboardProps {
     stats: {
@@ -32,7 +30,7 @@ interface DashboardProps {
     };
     onNewPatient: () => void;
     onUploadPhoto: () => void;
-    onPatientSelect: (id: string) => void;
+    onPatientSelect: (id: string, injectionId?: string) => void;
     patients: Patient[];
     isLoading?: boolean;
 }

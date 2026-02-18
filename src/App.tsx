@@ -62,7 +62,6 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 
 import lockIcon from './assets/images/lock.png';
 // New High-Res Assets for Toasts
-import happyIcon from './components/mascot/happy_mascot.png';
 import upsetIcon from './components/mascot/upset_mascot.png';
 import operationIcon from './assets/images/operation.png';
 import injectionIcon from './assets/images/injection.png';
@@ -242,6 +241,7 @@ const App: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [selectedInjectionId, setSelectedInjectionId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   // Initialize lock state from localStorage to persist across refreshes
   const [isLocked, setIsLocked] = useState(() => {
@@ -492,6 +492,11 @@ const App: React.FC = () => {
           if (profile.lockEnabled !== undefined) {
             if (profile.lockEnabled !== isLockEnabled) setIsLockEnabled(profile.lockEnabled);
           }
+
+          if (profile.lockPassword && profile.lockPassword !== userPassword) {
+            console.log("🔐 [Profile Sync] Updating Lock Password from DB");
+            setUserPassword(profile.lockPassword);
+          }
           // ... rest of logic
         }
       },
@@ -619,11 +624,15 @@ const App: React.FC = () => {
 
   const handleNavigate = useCallback((page: PageView) => {
     setView(page);
-    if (page !== 'PATIENT_DETAIL') setSelectedPatientId(null);
+    if (page !== 'PATIENT_DETAIL') {
+      setSelectedPatientId(null);
+      setSelectedInjectionId(null);
+    }
   }, []);
 
-  const handleSelectPatient = useCallback((id: string) => {
+  const handleSelectPatient = useCallback((id: string, injectionId?: string) => {
     setSelectedPatientId(id);
+    setSelectedInjectionId(injectionId || null);
     setView('PATIENT_DETAIL');
   }, []);
 
@@ -654,7 +663,7 @@ const App: React.FC = () => {
     localStorage.clear();
     logout();
     setPatients([]);
-    success(t('logout'), t('logout_desc'), happyIcon);
+    success(t('logout'), t('logout_desc'));
     setView('DASHBOARD');
     window.location.href = '/'; // Reset everything
   };
@@ -694,7 +703,7 @@ const App: React.FC = () => {
       // 4. Update Local State
       setAccount(accountId!, userId, data.name, userEmail, 'doctor', true, avatarUrl || userImage); // Updates name & image context
 
-      success(t('profile_updated_title'), t('profile_updated_msg'), happyIcon);
+      success(t('profile_updated_title'), t('profile_updated_msg'));
 
     } catch (err: any) {
       console.error("Error updating profile:", err);
@@ -731,7 +740,7 @@ const App: React.FC = () => {
         // [GHOST FIX] SUCCESS TOAST MOVED TO AFTER DB VERIFICATION (Line 650)
       } else {
         setPatients(prev => prev.map(p => p.id === optimisticPatient.id ? optimisticPatient : p));
-        success(t('patient_updated_title'), t('patient_updated_msg'), happyIcon);
+        success(t('patient_updated_title'), t('patient_updated_msg'));
       }
 
       // 2) Navigation moved to after successful save to prevent data loss on error
@@ -769,7 +778,7 @@ const App: React.FC = () => {
         const activeAccountId = accountId || (userEmail ? `account_${userEmail}` : userId);
         const realId = await addPatient(patientWithoutId, userId, activeAccountId);
 
-        success(t('patient_added_title'), t('patient_added_msg'), happyIcon);
+        success(t('patient_added_title'), t('patient_added_msg'));
 
         // 🔥 HANDOVER: Link the local blob to the new real ID
         const profileBlob = getOptimisticImage(`${tempId}_profile`);
@@ -893,7 +902,7 @@ const App: React.FC = () => {
         ? `${t('permission_denied')} (${err.code}) [${projectId}/${databaseId}]`
         : `${(t('toast_delete_failed') || "O'chirishda xatolik yuz berdi")} (${err.message || 'Unknown'}) [${projectId}/${databaseId}]`;
 
-      showError(t('toast_error_title'), errorMessage, upsetIcon);
+      showError(t('toast_error_title'), errorMessage);
     }
   };
 
@@ -933,7 +942,7 @@ const App: React.FC = () => {
     try {
       console.log('Adding new injection:', { patientId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('injection_added_title'), t('injection_added_msg'), happyIcon);
+      success(t('injection_added_title'), t('injection_added_msg'));
 
       // 🔥 NOTIFICATION LOGIC: Send Telegram Message for NEW Injection
       if (patient.telegramChatId) {
@@ -986,7 +995,7 @@ const App: React.FC = () => {
     try {
       console.log('Editing injection:', { patientId, injectionId, date, notes });
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('injection_updated_title'), t('injection_updated_msg'), happyIcon);
+      success(t('injection_updated_title'), t('injection_updated_msg'));
 
       // 🔥 NOTIFICATION LOGIC: Send Telegram Message if Date/Time Changed
       if (patient.telegramChatId && oldInjection && oldInjection.date !== date) {
@@ -1045,7 +1054,7 @@ const App: React.FC = () => {
       });
 
       await updatePatientInjections(patientId, updatedInjections, accountId);
-      success(t('deleted_title'), t('toast_injection_deleted'), upsetIcon);
+      success(t('deleted_title'), t('toast_injection_deleted'));
 
       setTimeout(() => {
         setPendingDeletes(prev => {
@@ -1062,7 +1071,7 @@ const App: React.FC = () => {
         next.delete(injectionId);
         return next;
       });
-      showError(t('toast_error_title'), `${t('toast_delete_failed') || 'Delete failed'}: ${err.message || 'Unknown error'}`, upsetIcon);
+      showError(t('toast_error_title'), `${t('toast_delete_failed') || 'Delete failed'}: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -1097,7 +1106,7 @@ const App: React.FC = () => {
         return { ...p, afterImages: [optimisticImage, ...(p.afterImages || [])] };
       }));
 
-      success(t('photo_added_title'), t('photo_added_msg'), happyIcon);
+      success(t('photo_added_title'), t('photo_added_msg'));
 
       // 4. Background Upload
       let finalPhotoUrl = typeof photoOrFile === 'string' ? photoOrFile : '';
@@ -1160,7 +1169,7 @@ const App: React.FC = () => {
 
       await deletePatientAfterImage(patientId, photoId, targetPatient.afterImages);
 
-      success(t('photo_deleted_title'), t('photo_deleted_msg'), happyIcon);
+      success(t('photo_deleted_title'), t('photo_deleted_msg'));
 
       setTimeout(() => {
         setPendingDeletes(prev => {
@@ -1177,7 +1186,7 @@ const App: React.FC = () => {
         next.delete(photoId);
         return next;
       });
-      showError(t('toast_error_title'), `${t('toast_delete_failed') || 'Delete failed'}: ${error.message}`, upsetIcon);
+      showError(t('toast_error_title'), `${t('toast_delete_failed') || 'Delete failed'}: ${error.message}`);
     }
   };
 
@@ -1259,7 +1268,8 @@ const App: React.FC = () => {
                 <>
                   <PatientDetail
                     patient={patient}
-                    onBack={() => setView('PATIENTS')}
+                    initialInjectionId={selectedInjectionId || undefined}
+                    onBack={() => { setView('PATIENTS'); setSelectedInjectionId(null); }}
                     onUpdateInjection={handleUpdateInjection}
                     onAddInjection={handleAddInjection}
                     onEditInjection={handleEditInjection}

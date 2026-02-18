@@ -7,7 +7,8 @@ import { useToast } from '../../contexts/ToastContext';
 import { useAppSounds } from '../../hooks/useAppSounds';
 import confetti from 'canvas-confetti';
 import injectionMascot from '../../components/mascot/injection_mascot.png';
-import { Plus, Check, X, Clock, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Clock, Edit2, Trash2, ShieldCheck, HeartPulse, Droplets, CheckCircle2, X, Check } from 'lucide-react';
+import injectSvg from '../../assets/images/mascots/inject.svg';
 
 interface InjectionTimelineProps {
     injections: Injection[];
@@ -15,7 +16,9 @@ interface InjectionTimelineProps {
     onEditInjection: (injection: Injection) => void;
     onDeleteInjection: (id: string, e: React.MouseEvent) => void;
     onUpdateStatus: (id: string, status: InjectionStatus) => void;
+
     readOnly?: boolean;
+    initialInjectionId?: string;
 }
 
 export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
@@ -24,25 +27,51 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
     onEditInjection,
     onDeleteInjection,
     onUpdateStatus,
-    readOnly = false
+    readOnly = false,
+    initialInjectionId
 }) => {
     const { t } = useLanguage();
     const { activeToast } = useToast();
     const { playConfetti } = useAppSounds();
 
+    // Scroll to initial injection on mount
+    // Scroll to initial injection on mount
+    React.useEffect(() => {
+        if (initialInjectionId) {
+            // Instant scroll attempt first
+            const immediateElement = document.getElementById(`injection-${initialInjectionId}`);
+            if (immediateElement) {
+                immediateElement.scrollIntoView({ behavior: 'auto', block: 'center' });
+            }
+
+            // Smooth scroll adjustment after short delay to handle layout shifts
+            setTimeout(() => {
+                const element = document.getElementById(`injection-${initialInjectionId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Add momentary highlight
+                    element.classList.add('ring-4', 'ring-promed-primary/30');
+                    setTimeout(() => {
+                        element.classList.remove('ring-4', 'ring-promed-primary/30');
+                    }, 2000);
+                }
+            }, 100);
+        }
+    }, [initialInjectionId]);
+
     // Animation Variants
     const containerVariants = {
-        hidden: { opacity: 0 },
+        hidden: { opacity: initialInjectionId ? 1 : 0 },
         show: {
             opacity: 1,
             transition: {
-                staggerChildren: 0.15
+                staggerChildren: initialInjectionId ? 0 : 0.15
             }
         }
     };
 
     const cardVariants = {
-        hidden: { opacity: 0, y: 30 },
+        hidden: { opacity: initialInjectionId ? 1 : 0, y: initialInjectionId ? 0 : 30 },
         show: {
             opacity: 1,
             y: 0,
@@ -73,9 +102,9 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                     {!readOnly && (
                         <button
                             onClick={onAddInjection}
-                            className="btn-premium-blue !px-4 !py-2 text-xs shadow-lg shadow-promed-primary/20 hover:shadow-promed-primary/40 hover:-translate-y-0.5 transition-all"
+                            className="btn-premium-blue shadow-lg shadow-promed-primary/20 hover:shadow-promed-primary/40 hover:-translate-y-0.5 transition-all"
                         >
-                            <Plus size={16} className="relative z-10" />
+                            <Plus size={18} className="relative z-10" />
                             <span>{t('add_injection')}</span>
                         </button>
                     )}
@@ -112,17 +141,17 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                     <motion.div
                                         key={inj.id}
                                         variants={cardVariants}
-                                        className={`relative pl-8 pb-12 group ${isLast ? 'pb-0' : ''}`}
+                                        className={`relative pl-8 pb-12 group ${isLast ? 'pb-0' : ''} transition-all duration-500 rounded-3xl`}
                                     >
                                         {/* SEGMENTED CONNECTION LINE (The Spine) */}
                                         {!isLast && (
                                             <div
-                                                className={`absolute left-[8px] top-8 h-[calc(100%+3rem)] z-0 w-[2px]
+                                                className={`absolute left-[7px] top-8 h-[calc(100%+3rem)] z-0 w-[3px] rounded-full
                                                     ${isDone && injections[index + 1]?.status === InjectionStatus.COMPLETED
-                                                        ? 'bg-emerald-500' // History (Done -> Done)
+                                                        ? 'bg-emerald-200' // Past: Soft Mint Green
                                                         : isDone && injections[index + 1]?.status === InjectionStatus.SCHEDULED
-                                                            ? 'bg-promed-primary' // Done -> Active (Connects last completed to current)
-                                                            : 'border-l-2 border-dashed border-slate-300 left-[8px] bg-transparent' // Future (Dashed)
+                                                            ? 'bg-gradient-to-b from-emerald-200 to-sky-200' // Transition
+                                                            : 'border-l-[3px] border-dashed border-slate-200 left-[7px] bg-transparent w-0' // Future: Dashed
                                                     }
                                                 `}
                                             />
@@ -130,30 +159,52 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
 
                                         {/* THE CONNECTOR NODE */}
                                         <div className={`
-                                          absolute -left-[9px] top-6 
-                                          w-9 h-9 rounded-full border-[3px] z-20
-                                          transition-all duration-500 flex items-center justify-center
-                                          ${isDone ? 'bg-emerald-500 border-emerald-100 shadow-lg shadow-emerald-200 ring-4 ring-emerald-50' :
-                                                isActive ? 'bg-white border-promed-primary shadow-[0_0_0_4px_rgba(0,51,255,0.2)] animate-[pulse_8s_ease-in-out_infinite]' :
-                                                    'bg-slate-50 border-slate-300' // Future
+                                          absolute -left-[11px] top-6 
+                                          w-10 h-10 rounded-full border-[3px] z-20
+                                          transition-all duration-500 flex items-center justify-center group/node cursor-default overflow-visible
+                                          ${isDone ? 'bg-emerald-500 border-white shadow-sm scale-105' :
+                                                isActive ? 'bg-gradient-to-b from-[#4A85FF] to-[#0044FF] border-white shadow-lg shadow-blue-200 scale-110 z-30' :
+                                                    'bg-white border-slate-100 scale-90' // Future
                                             }
                                         `}>
-                                            {isDone && <Check size={16} className="text-white font-bold" strokeWidth={3} />}
-                                            {isActive && <div className="w-3 h-3 bg-promed-primary rounded-full" />}
-                                            {isFuture && <div className="w-2.5 h-2.5 rounded-full border-2 border-slate-300" />}
-                                            {isMissed && <X size={16} className="text-white" strokeWidth={3} />}
+                                            {isDone && (
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                                >
+                                                    <Check size={20} className="text-white" strokeWidth={3} />
+                                                </motion.div>
+                                            )}
+                                            {isActive && (
+                                                <div className="absolute inset-0 flex items-center justify-center p-2.5 pointer-events-none">
+                                                    <img src={injectSvg} alt="Injecting" className="w-full h-full object-contain drop-shadow-sm" />
+                                                </div>
+                                            )}
+                                            {isFuture && <div className="w-3 h-3 rounded-full bg-slate-200/50" />}
+                                            {isMissed && <X size={18} className="text-red-400" strokeWidth={3} />}
+
+                                            {/* Hover Tooltip for Validation */}
+                                            {isDone && (
+                                                <div className="absolute left-12 bg-emerald-800 text-white text-[10px] font-bold px-2 py-1 rounded-md opacity-0 group-hover/node:opacity-100 transition-opacity whitespace-nowrap shadow-xl pointer-events-none">
+                                                    {t('medically_verified') || "Medically Verified"}
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* THE CARD */}
-                                        <div className={`
-                                            p-5 rounded-2xl border transition-all duration-300 
-                                            flex flex-col md:flex-row justify-between items-start group/card relative overflow-hidden pr-5 gap-4 md:gap-0
+                                        <div
+                                            id={`injection-${inj.id}`}
+                                            className={`
+                                            p-6 rounded-3xl border transition-all duration-1000 
+                                            flex flex-col md:flex-row justify-between items-start group/card relative overflow-hidden pr-6 gap-4 md:gap-0
                                             ${isActive
-                                                ? 'bg-white border-promed-primary/10 shadow-apple opacity-100 scale-100'
-                                                : isFuture
-                                                    ? 'bg-slate-50 border-slate-100 shadow-none opacity-60 hover:opacity-100'
-                                                    : 'bg-promed-light/60 border-promed-primary/10 shadow-sm opacity-100' // Completed/Done style
-                                            }
+                                                    ? 'bg-sky-50/50 border-sky-100 shadow-[0_4px_20px_-5px_rgba(14,165,233,0.1)] opacity-100 scale-100' // Whimsical Sky Active
+
+                                                    : isFuture
+                                                        ? 'bg-white border-slate-50 shadow-sm opacity-80 hover:opacity-100 hover:-translate-y-1 hover:shadow-md' // Floating Future
+                                                        : 'bg-emerald-50/40 border-emerald-100/50 shadow-none opacity-100' // Gentle Past
+                                                }
                                         `}>
 
                                             {/* Rest of Card Content (Keep largely same but adapted styles if needed) */}
@@ -164,7 +215,7 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
 
                                             <div className="flex-1 min-w-0 pr-4">
                                                 <div className="flex items-center gap-3">
-                                                    <h4 className={`font-black text-base ${isDone ? 'text-emerald-700' : isActive ? 'text-promed-primary' : 'text-slate-500'}`}>
+                                                    <h4 className={`font-bold text-lg tracking-tight ${isDone ? 'text-emerald-700' : isActive ? 'text-sky-700' : 'text-slate-400'}`}>
                                                         {t('injection')} #{index + 1}
                                                     </h4>
 
@@ -199,8 +250,8 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                             })()}
                                                         </span>
                                                         {inj.date.includes('T') && (
-                                                            <span className={`text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-md border flex items-center gap-1 whitespace-nowrap
-                                                                ${isActive ? 'bg-promed-light text-promed-primary border-promed-primary/10' : 'text-slate-400 bg-slate-50 border-slate-100'}
+                                                            <span className={`text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg border flex items-center gap-1.5 whitespace-nowrap
+                                                        ${isActive ? 'bg-sky-100/50 text-sky-600 border-sky-200' : 'text-slate-400 bg-slate-50 border-slate-100'}
                                                             `}>
                                                                 <Clock size={10} />
                                                                 {inj.date.split('T')[1].substring(0, 5)}
@@ -229,12 +280,22 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                                     const x = (rect.left + rect.width / 2) / window.innerWidth;
                                                                     const y = (rect.top + rect.height / 2) / window.innerHeight;
                                                                     onUpdateStatus(inj.id, InjectionStatus.COMPLETED);
-                                                                    confetti({ particleCount: 150, spread: 60, origin: { x, y }, zIndex: 9999 });
+                                                                    confetti({
+                                                                        particleCount: 100,
+                                                                        spread: 70,
+                                                                        origin: { x, y },
+                                                                        zIndex: 9999,
+                                                                        colors: ['#34d399', '#6ee7b7', '#059669', '#a7f3d0'] // Minty confetti
+                                                                    });
                                                                 }}
-                                                                className="btn-premium-emerald flex-1 md:flex-none !px-6 !py-2 !text-xs shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 z-20 whitespace-nowrap"
+                                                                className="btn-glossy-emerald !py-2.5 !px-6 text-sm shadow-emerald-500/20 hover:shadow-emerald-500/40"
                                                             >
-                                                                <Check size={14} strokeWidth={3} />
-                                                                <span>{t('status_completed')}</span>
+                                                                {/* Removing manual gloss divs as they are in the class now */}
+
+                                                                <div className="relative flex items-center gap-2 z-10">
+                                                                    <CheckCircle2 size={18} strokeWidth={2.5} />
+                                                                    <span className="mb-0.5">{t('mark_done')}</span>
+                                                                </div>
                                                             </motion.button>
                                                         ) : (
                                                             /* Future State Button/Label */
@@ -255,8 +316,8 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                         }}
                                                         className={`
                                                         w-full md:w-auto text-center px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wide border ${!readOnly ? 'cursor-pointer hover:opacity-80 transition-opacity' : 'cursor-default opacity-80'}
-                                                        ${isDone ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                                                isMissed ? 'bg-red-50 text-red-600 border-red-100' : ''}
+                                                        ${isDone ? 'bg-emerald-100/50 text-emerald-600 border-emerald-200' :
+                                                                isMissed ? 'bg-red-50 text-red-500 border-red-100' : ''}
                                                     `}>
                                                         {isDone ? t('status_completed') : isMissed ? t('status_missed') : t('status_scheduled')}
                                                     </motion.span>

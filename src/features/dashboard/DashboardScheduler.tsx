@@ -19,7 +19,7 @@ import dateAnimation from '../../assets/images/mascots/date.json';
 
 interface DashboardSchedulerProps {
     patients: Patient[];
-    onViewPatient: (id: string) => void;
+    onViewPatient: (id: string, injectionId?: string) => void;
 }
 
 interface FlattenedEvent {
@@ -33,6 +33,7 @@ interface FlattenedEvent {
     name: string;
     status?: string | InjectionStatus;
     tier?: 'regular' | 'pro';
+    injectionId?: string;
 }
 
 interface GroupedEvent {
@@ -86,7 +87,8 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                         title: t('plasma_injection') || 'Plasma Injection',
                         subtitle: inj.notes || inj.dose || t('routine_followup'),
                         patientImage: patient.profileImage,
-                        tier: patient.tier
+                        tier: patient.tier,
+                        injectionId: inj.id
                     };
                 }).filter((e) => Boolean(e)) as FlattenedEvent[];
 
@@ -227,7 +229,9 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                             >
                                                 {/* Primary Card Content */}
                                                 <div
-                                                    onClick={() => onViewPatient(patientId)}
+                                                    onClick={() => {
+                                                        onViewPatient(patientId, primaryEvent.injectionId);
+                                                    }}
                                                     className="flex items-stretch cursor-pointer relative"
                                                 >
                                                     {/* Left Time Panel */}
@@ -287,7 +291,7 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                                             <div
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    onViewPatient(patientId);
+                                                                    onViewPatient(patientId, primaryEvent.injectionId);
                                                                 }}
                                                                 className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${primaryEvent.type === 'Operation'
                                                                     ? 'bg-rose-50 text-rose-500 group-hover:bg-rose-500 group-hover:text-white'

@@ -8,7 +8,6 @@ import { noteService } from '../../services/noteService';
 import { useAccount } from '../../contexts/AccountContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../contexts/ToastContext';
-import upsetIcon from '../../components/mascot/upset_mascot.png';
 import { Note } from '../../types';
 import { NoteCard } from './NoteCard';
 import { FolderCard, FolderType } from './FolderCard';
@@ -19,7 +18,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 
 export const NotesPage: React.FC = () => {
     const { t } = useLanguage();
-    const { error: showError } = useToast();
+    const { success, error: showError } = useToast();
     const { userId, isLoading: isAuthLoading } = useAccount();
     const [notes, setNotes] = useState<Note[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -76,10 +75,11 @@ export const NotesPage: React.FC = () => {
 
             try {
                 await noteService.deleteNote(noteId);
+                success(t('deleted_title'), t('toast_note_deleted'));
             } catch (error) {
                 console.error("Failed to delete note:", error);
                 setNotes(originalNotes);
-                showError("Xatolik", "Eslatmani o'chirishda xatolik yuz berdi", upsetIcon);
+                showError("Xatolik", "Eslatmani o'chirishda xatolik yuz berdi");
             }
         }
     };
@@ -99,10 +99,11 @@ export const NotesPage: React.FC = () => {
 
             try {
                 await noteService.updateNote(noteToEdit.id, data);
+                success(t('status_updated_title'), t('toast_note_updated') || "Eslatma muvaffaqiyatli yangilandi");
             } catch (error) {
                 console.error("Failed to update note:", error);
                 setNotes(originalNotes);
-                showError("Xatolik", "Eslatmani yangilashda xatolik yuz berdi", upsetIcon);
+                showError("Xatolik", "Eslatmani yangilashda xatolik yuz berdi");
             }
         } else {
             const tempId = 'temp-' + Date.now();
@@ -119,10 +120,11 @@ export const NotesPage: React.FC = () => {
 
             try {
                 await noteService.addNote(data.content, userId, data.title, data.color);
+                success(t('injection_added_title'), t('toast_note_added') || "Yangi eslatma muvaffaqiyatli qo'shildi");
             } catch (error) {
                 console.error("Failed to add note:", error);
                 setNotes(originalNotes);
-                showError("Xatolik", "Eslatmani qo'shishda xatolik yuz berdi", upsetIcon);
+                showError("Xatolik", "Eslatmani qo'shishda xatolik yuz berdi");
             }
         }
     };

@@ -13,9 +13,7 @@ import {
     Trash,
     Lock
 } from 'lucide-react';
-import happyIcon from '../assets/images/patients.png';
 import operationIcon from '../assets/images/operation.png';
-import thinkingIcon from '../assets/images/patients.png'; // Fallback
 import { subscribeToAllProfiles, updateUserProfile } from '../lib/userService';
 import { createSystemAlert, sendTargetedNotifications, clearAlerts } from '../lib/notificationService';
 import { Profile } from '../types';
@@ -95,7 +93,7 @@ export const AdminDashboard: React.FC = () => {
         const newStatus = profile.status === 'frozen' ? 'active' : 'frozen';
         try {
             await updateUserProfile(profile.id, { status: newStatus });
-            success(t('status_updated_title'), newStatus === 'frozen' ? t('account_frozen_msg') : t('account_active_msg'), thinkingIcon);
+            success(t('status_updated_title'), newStatus === 'frozen' ? t('account_frozen_msg') : t('account_active_msg'));
         } catch (err) {
             error(t('toast_error_title'), t('toast_save_failed'));
         }
@@ -127,7 +125,7 @@ export const AdminDashboard: React.FC = () => {
                     category: notificationCategory
                 });
             }
-            success(t('megaphone_title'), t('broadcast_success'), happyIcon);
+            success(t('megaphone_title'), t('broadcast_success'));
             setBroadcastData({ title: '', content: '', type: 'info' });
             setSelectedUserIds([]);
             setTargetAudience('all');

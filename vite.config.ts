@@ -27,7 +27,15 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // Fix PWA Precaching limitation (Netlify build fix)
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // Fix PWA Precaching limitation
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
+        sourcemap: true
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module',
       },
       includeAssets: ['favicon.ico', 'favicon.svg', 'favicon-96x96.png', 'apple-touch-icon.png', 'site.webmanifest'],
       manifestFilename: 'site.webmanifest',

@@ -7,7 +7,6 @@ import { leadService } from '../../services/leadService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAccount } from '../../contexts/AccountContext';
 import { useToast } from '../../contexts/ToastContext';
-import upsetIcon from '../../components/mascot/upset_mascot.png';
 
 interface AddLeadModalProps {
     isOpen: boolean;
@@ -19,7 +18,7 @@ interface AddLeadModalProps {
 export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onSuccess, leadToEdit }) => {
     const { t } = useLanguage();
     const { userId, accountId } = useAccount();
-    const { error: showError } = useToast();
+    const { success, error: showError } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState<Partial<Lead>>({
         full_name: '',
@@ -88,7 +87,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
         if (!formData.full_name || !formData.phone_number) {
             console.error("Validation Failed: Missing fields", formData);
             console.error("Validation Failed: Missing fields", formData);
-            showError("Xatolik", "To'ldirilmagan qatorlar bor!", upsetIcon);
+            showError("Xatolik", "To'ldirilmagan qatorlar bor!");
             return;
         }
 
@@ -108,13 +107,19 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                 console.log("Creating new lead");
                 if (!accountId) {
                     if (!accountId) {
-                        showError("Xatolik", "Hisob ID topilmadi. Iltimos qayta kiring.", upsetIcon);
+                        showError("Xatolik", "Hisob ID topilmadi. Iltimos qayta kiring.");
                         return;
                     }
                 }
                 id = await leadService.createLead(cleanData as Omit<Lead, 'id' | 'status' | 'created_at' | 'updated_at'>, accountId, userId);
             }
             console.log("Operation successful, ID:", id);
+
+            success(
+                leadToEdit ? t('patient_updated_title') : t('patient_added_title'),
+                leadToEdit ? t('patient_updated_msg') : t('patient_added_msg')
+            );
+
             onSuccess(id);
             onClose();
             // Reset form only if adding a new lead
@@ -130,7 +135,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
             console.error("Failed to save lead", error);
             // Renaming the caught error variable to avoid conflict with the hook 'error' function
             const msg = (error as Error).message;
-            showError("Xatolik", "Xatolik yuz berdi: " + msg, upsetIcon);
+            showError("Xatolik", "Xatolik yuz berdi: " + msg);
         } finally {
             setIsLoading(false);
         }

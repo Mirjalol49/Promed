@@ -43,8 +43,6 @@ import {
 } from 'lucide-react';
 import { Patient, InjectionStatus, Injection } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
-import thinkingMascot from '../../assets/images/patients.png'; // Fallback
-import injectionMascot from '../../assets/images/injection.png';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { TimePicker } from '../../components/ui/TimePicker';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -67,14 +65,10 @@ import { useAccount } from '../../contexts/AccountContext';
 import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
 
 import { useReliableUpload } from '../../hooks/useReliableUpload';
-import trashIcon from '../../assets/images/patients.png'; // Fallback for missing trash.png
 import Lottie from 'lottie-react';
 import loadingAnimation from '../../assets/images/mascots/loading.json';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
 import { PatientListSkeleton } from '../../components/ui/Skeletons';
-
-// Fallback for missing date.png removed as unused
-import editIcon from '../../assets/images/patients.png'; // Fallback for missing edit.png
 
 // Helper to translate status
 const useStatusTranslation = () => {
@@ -623,7 +617,8 @@ export const PatientDetail: React.FC<{
   onDeleteAfterPhoto: (pId: string, photoId: string) => void;
   onEditPatient: () => void;
   onDeletePatient: () => void;
-}> = ({ patient, onBack, onUpdateInjection, onAddInjection, onEditInjection, onDeleteInjection, onAddAfterPhoto, onDeleteAfterPhoto, onEditPatient, onDeletePatient }) => {
+  initialInjectionId?: string;
+}> = ({ patient, onBack, onUpdateInjection, onAddInjection, onEditInjection, onDeleteInjection, onAddAfterPhoto, onDeleteAfterPhoto, onEditPatient, onDeletePatient, initialInjectionId }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { playConfetti } = useAppSounds();
   const [isInjModalOpen, setInjModalOpen] = useState(false);
@@ -1049,6 +1044,7 @@ export const PatientDetail: React.FC<{
                 onDeleteInjection={(id, e) => handleDeleteClick(e, id)}
                 onUpdateStatus={(id, status) => onUpdateInjection(patient.id, id, status)}
                 readOnly={!canEdit}
+                initialInjectionId={initialInjectionId}
               />
             </div>
           </div>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-import dateIcon from "../../assets/images/patients.png"; // Fallback for missing date.png
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface DatePickerProps {

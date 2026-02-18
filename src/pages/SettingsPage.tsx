@@ -8,7 +8,6 @@ import { useAccount } from '../contexts/AccountContext';
 import { ProfileAvatar } from '../components/layout/ProfileAvatar';
 import { useImageUpload } from '../hooks/useImageUpload'; // Correct import
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, getAuth } from 'firebase/auth';
-import happyIcon from '../components/mascot/happy_mascot.png';
 import { LogoutModal } from '../components/ui/LogoutModal';
 
 interface SettingsPageProps {
@@ -160,7 +159,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
 
             // 3. Finalize
             if (newPin) {
-                success(t('toast_success_title'), "Parol va PIN muvaffaqiyatli sinxronlandi! (Universal)", happyIcon);
+                success(t('toast_success_title'), "Parol va PIN muvaffaqiyatli sinxronlandi! (Universal)");
                 setPinDigits(['', '', '', '', '', '']); // Clear New PIN field
 
                 // Update Current PIN field instantly with the NEW PIN
@@ -177,7 +176,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                 //     logout(); 
                 // }, 2000);
             } else {
-                success(t('toast_success_title'), t('profile_updated_msg'), happyIcon);
+                success(t('toast_success_title'), t('profile_updated_msg'));
             }
 
             refreshProfile();

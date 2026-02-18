@@ -39,6 +39,7 @@ interface Message {
     telegramMessageId?: number;
     status?: 'sent' | 'delivered' | 'seen' | 'scheduled'; // Updated status
     scheduledFor?: string; // New field
+    scheduledTimestamp?: string; // Legacy/Fallback
     seen?: boolean;
     isPinned?: boolean;
     replyTo?: {
@@ -472,7 +473,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
             // Handle Scheduling (Local Display)
             if (scheduledDateArg) {
-                messageData.scheduledTimestamp = scheduledDateArg.toISOString();
+                messageData.scheduledFor = scheduledDateArg.toISOString();
                 messageData.status = 'scheduled';
             }
 
@@ -618,6 +619,29 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
         }
     };
 
+
+
+    const scrollToAndHighlight = (messageId: string) => {
+        const el = document.getElementById(`msg-${messageId}`);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Find the actual message bubble (inner div)
+            // The structure is <div id="msg-ID" class="flex ..."><div class="bubble ...">
+            if (el) {
+                // Add highlight class
+                el.classList.add('animate-highlight-bg');
+
+                // Remove after animation
+                setTimeout(() => {
+                    el.classList.remove('animate-highlight-bg');
+                }, 2000);
+            }
+        } else {
+            showToastSuccess(t('info'), "Message not loaded in current view.");
+        }
+    };
+
     const confirmDeleteMessage = async () => {
         if (!selectedPatientId || !messageToDelete) return;
 
@@ -626,13 +650,14 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             await deleteDoc(doc(db, 'patients', selectedPatientId, 'messages', messageToDelete.id));
 
             // 2. If it's a scheduled message, also delete from outbound_messages queue
-            if (messageToDelete.status === 'scheduled' && messageToDelete.scheduledFor && selectedPatient?.telegramChatId) {
+            const scheduledTime = messageToDelete.scheduledFor || messageToDelete.scheduledTimestamp;
+            if (messageToDelete.status === 'scheduled' && scheduledTime && selectedPatient?.telegramChatId) {
                 // Query for matching queued message in outbound_messages
                 const outboundQuery = query(
                     collection(db, 'outbound_messages'),
                     where('telegramChatId', '==', selectedPatient.telegramChatId),
                     where('status', '==', 'QUEUED'),
-                    where('scheduledFor', '==', messageToDelete.scheduledFor),
+                    where('scheduledFor', '==', scheduledTime),
                     where('text', '==', messageToDelete.text)
                 );
 
@@ -675,8 +700,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             return messages
                 .filter(m => m.status === 'scheduled')
                 .sort((a, b) => {
-                    const dateA = a.scheduledFor ? new Date(a.scheduledFor).getTime() : 0;
-                    const dateB = b.scheduledFor ? new Date(b.scheduledFor).getTime() : 0;
+                    const dateA = (a.scheduledFor || a.scheduledTimestamp) ? new Date(a.scheduledFor || a.scheduledTimestamp!).getTime() : 0;
+                    const dateB = (b.scheduledFor || b.scheduledTimestamp) ? new Date(b.scheduledFor || b.scheduledTimestamp!).getTime() : 0;
                     return dateA - dateB;
                 });
         }
@@ -987,7 +1012,7 @@ match /patients/{patientId}/messages/{messageId} {
                                     let currentGroup: { key: string; messages: typeof displayedMessages } | null = null;
 
                                     displayedMessages.forEach((msg) => {
-                                        const dateProp = isScheduledView ? msg.scheduledFor : msg.createdAt;
+                                        const dateProp = isScheduledView ? (msg.scheduledFor || msg.scheduledTimestamp) : msg.createdAt;
                                         // Use existing helper but pass args
                                         // Scheduled: Group by Minute (true)
                                         // Normal: Group by Day (false)
@@ -1055,7 +1080,7 @@ match /patients/{patientId}/messages/{messageId} {
                                                                                     className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-lg transition-colors text-sm font-medium"
                                                                                 >
                                                                                     <Reply size={16} />
-                                                                                    <span>Reply</span>
+                                                                                    <span>{t('reply')}</span>
                                                                                 </button>
                                                                                 {/* Copy */}
                                                                                 <button
@@ -1067,7 +1092,7 @@ match /patients/{patientId}/messages/{messageId} {
                                                                                     className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-lg transition-colors text-sm font-medium"
                                                                                 >
                                                                                     <Copy size={16} />
-                                                                                    <span>Copy</span>
+                                                                                    <span>{t('copy')}</span>
                                                                                 </button>
 
                                                                                 {/* Pin */}
@@ -1080,7 +1105,7 @@ match /patients/{patientId}/messages/{messageId} {
                                                                                     className={`flex items-center gap-2 px-3 py-2 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium ${msg.isPinned ? 'text-promed-primary' : 'text-slate-600 hover:text-promed-primary'}`}
                                                                                 >
                                                                                     {msg.isPinned ? <PinOff size={16} /> : <Pin size={16} />}
-                                                                                    <span>{msg.isPinned ? 'Unpin' : 'Pin'}</span>
+                                                                                    <span>{msg.isPinned ? t('unpin') : t('pin')}</span>
                                                                                 </button>
 
                                                                                 {/* Edit/Delete (Only for My Messages) */}
@@ -1098,7 +1123,7 @@ match /patients/{patientId}/messages/{messageId} {
                                                                                             className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 text-slate-600 hover:text-promed-primary rounded-lg transition-colors text-sm font-medium"
                                                                                         >
                                                                                             <Edit2 size={16} />
-                                                                                            <span>Edit</span>
+                                                                                            <span>{t('edit')}</span>
                                                                                         </button>
                                                                                         <button
                                                                                             onClick={(e) => {
@@ -1110,7 +1135,7 @@ match /patients/{patientId}/messages/{messageId} {
                                                                                             className="flex items-center gap-2 px-3 py-2 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg transition-colors text-sm font-medium"
                                                                                         >
                                                                                             <Trash2 size={16} />
-                                                                                            <span>Delete</span>
+                                                                                            <span>{t('delete')}</span>
                                                                                         </button>
                                                                                     </>
                                                                                 )}
@@ -1123,8 +1148,9 @@ match /patients/{patientId}/messages/{messageId} {
                                                                         <div
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
-                                                                                const el = document.getElementById(`msg-${msg.replyTo!.id}`);
-                                                                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                                                if (msg.replyTo) {
+                                                                                    scrollToAndHighlight(msg.replyTo.id);
+                                                                                }
                                                                             }}
                                                                             className={`mb-2 border-l-[3px] rounded-r-md px-2 py-1 cursor-pointer text-xs transition-colors ${msg.sender === 'doctor'
                                                                                 ? 'border-white/60 bg-white/10 hover:bg-white/20'
@@ -1132,7 +1158,7 @@ match /patients/{patientId}/messages/{messageId} {
                                                                                 }`}
                                                                         >
                                                                             <div className={`font-black uppercase tracking-widest text-[10px] ${msg.sender === 'doctor' ? 'text-white/90' : 'text-promed-primary'}`}>
-                                                                                {msg.replyTo.displayName || (msg.replyTo.sender === 'doctor' ? 'Doctor' : 'Patient')}
+                                                                                {msg.replyTo.displayName || (msg.replyTo.sender === 'doctor' ? t('doctor') : t('patient'))}
                                                                             </div>
                                                                             <div className={`truncate ${msg.sender === 'doctor' ? 'text-white/80' : 'text-slate-600'}`}>{msg.replyTo.text}</div>
                                                                         </div>
@@ -1189,7 +1215,7 @@ match /patients/{patientId}/messages/{messageId} {
                                                         </React.Fragment>
                                                     ))
                                                     }
-                                                </div>
+                                                </div >
                                             ))}
                                             <div ref={messagesEndRef} />
                                         </>

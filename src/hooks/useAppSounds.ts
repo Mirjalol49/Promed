@@ -37,5 +37,7 @@ export const useAppSounds = () => {
         playUnlock: () => playIfEnabled(playUnlock),
         playLock: () => playIfEnabled(playLock),
         playError: () => playIfEnabled(playError),
+        playPop: () => playIfEnabled(playUnlock), // Alias for pop
+        playThud: () => playIfEnabled(playLock), // Alias for thud
     };
 };

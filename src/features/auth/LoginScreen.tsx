@@ -11,7 +11,6 @@ import { PinInput } from '../../components/ui/PinInput';
 import { DashboardLoader } from '../../components/ui/DashboardLoader'; // Changed from DashboardSkeleton
 import { useToast } from '../../contexts/ToastContext';
 import lockIcon from '../../assets/images/lock.png';
-import happyIcon from '../../components/mascot/happy_mascot.png';
 
 interface LoginScreenProps {
   onLogin: (accountId: string, userId: string, name: string, email: string, password?: string, role?: string) => void;
@@ -70,8 +69,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
       success(
         t('magic_link_sent') || 'Email Sent!',
-        t('magic_link_desc') || 'Check your inbox for the reset link.',
-        happyIcon
+        t('magic_link_desc') || 'Check your inbox for the reset link.'
       );
 
       setResetMessage(t('magic_link_sent') || 'Password reset link sent! Check your email.');

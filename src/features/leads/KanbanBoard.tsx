@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAccount } from '../../contexts/AccountContext';
+import { useToast } from '../../contexts/ToastContext';
 import { EmptyState } from '../../components/ui/EmptyState';
 
 
@@ -65,6 +66,7 @@ export const KanbanBoard: React.FC = () => {
     const [celebrationOrigin, setCelebrationOrigin] = useState<{ x: number, y: number } | undefined>(undefined);
 
     const { userId, accountId, role, isLoading: isAuthLoading } = useAccount();
+    const { success, error: showError } = useToast();
     const isViewer = role === 'viewer';
 
     // One-time migration: backfill account_id on existing leads (admin/doctor only)
@@ -139,6 +141,7 @@ export const KanbanBoard: React.FC = () => {
 
         try {
             await leadService.updateLeadStatus(id, newStatus);
+            success(t('status_updated_title') || 'Status Yangilandi', `${t(`status_${newStatus.toLowerCase()}`) || newStatus} ga o'tkazildi`);
         } catch (error) {
             console.error("Failed to update status", error);
             setLeads(originalLeads); // Revert
@@ -163,6 +166,7 @@ export const KanbanBoard: React.FC = () => {
         if (leadToDelete) {
             try {
                 await leadService.deleteLead(leadToDelete.id);
+                success(t('deleted_title'), t('lead_deleted_msg'));
                 // No need to reload, subscription handles it
                 setIsDeleteModalOpen(false);
                 setLeadToDelete(null);
@@ -514,6 +518,7 @@ export const KanbanBoard: React.FC = () => {
                             };
                             await leadService.updateLead(leadToRemind.id, { reminder: reminderData });
 
+                            success(t('reminder_set_title') || 'Eslatma belgilandi', t('reminder_set_msg') || 'Yangi eslatma muvaffaqiyatli saqlandi');
                             console.log('Reminder set successfully (timeline + lead update)');
                         } catch (e) {
                             console.error("Failed to set reminder", e);
@@ -540,6 +545,7 @@ export const KanbanBoard: React.FC = () => {
                             // 2. Remove reminder from Lead
                             await leadService.updateLead(leadToRemind.id, { reminder: null as any }); // Use null to remove field or check types
 
+                            success(t('deleted_title'), t('reminder_deleted_msg') || 'Eslatma o\'chirildi');
                             setIsReminderModalOpen(false);
                             setLeadToRemind(null);
                         } catch (e) {
