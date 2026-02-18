@@ -67,9 +67,22 @@ const SyncToast: React.FC<SyncToastProps> = ({ id, title, message, type = 'succe
         const isDelete = titleLower.includes('delete') ||
             titleLower.includes('o\'chirish') ||
             titleLower.includes('o\'chirildi') ||
+            titleLower.includes('o’chirildi') ||
+            titleLower.includes('udaleno') ||
+            titleLower.includes('удалено') ||
+            titleLower.includes('udalen') ||
+            titleLower.includes('удален') ||
+            titleLower.includes('tashlandi') ||
             messageLower.includes('delete') ||
             messageLower.includes('o\'chirish') ||
-            messageLower.includes('o\'chirildi');
+            messageLower.includes('o\'chirildi') ||
+            messageLower.includes('o’chirildi') ||
+            messageLower.includes('udaleno') ||
+            messageLower.includes('удалено') ||
+            messageLower.includes('udalen') ||
+            messageLower.includes('удален') ||
+            messageLower.includes('removed') ||
+            messageLower.includes('tashlandi');
 
         if (isDelete) {
             return {
@@ -142,7 +155,15 @@ const SyncToast: React.FC<SyncToastProps> = ({ id, title, message, type = 'succe
 
     // Handle delete specifically for gradient - GREEN NOW
     const finalGradient = React.useMemo(() => {
-        const isDeleteTitle = title.toLowerCase().includes('delete') || title.toLowerCase().includes('o\'chir');
+        const t = title.toLowerCase();
+        const isDeleteTitle = t.includes('delete') ||
+            t.includes('o\'chir') ||
+            t.includes('udaleno') ||
+            t.includes('удалено') ||
+            t.includes('udalen') ||
+            t.includes('удален') ||
+            t.includes('removed') ||
+            t.includes('tashlandi');
         return isDeleteTitle ? 'from-emerald-400 to-emerald-600' : gradient;
     }, [title, gradient]);
 
@@ -161,7 +182,7 @@ const SyncToast: React.FC<SyncToastProps> = ({ id, title, message, type = 'succe
                 }
             }}
             exit={{ opacity: 0, scale: 0.8, y: 10, transition: { duration: 0.2 } }}
-            className={`pointer-events-auto flex w-full md:w-auto items-end justify-end mb-4 px-4 md:px-0`}
+            className={`pointer-events-auto flex w-full md:w-auto items-end justify-center md:justify-end mb-4 px-4 md:px-0`}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
         >
@@ -213,12 +234,12 @@ const SyncToast: React.FC<SyncToastProps> = ({ id, title, message, type = 'succe
                             {/* Visual Accent Strip */}
                             <div className={`w-1.5 ${config.progressColor} opacity-90`} />
 
-                            <div className={`flex-1 p-5 md:p-6 flex items-start gap-4 ${isRight ? 'pr-20 md:pr-28' : 'pl-20 md:pl-28'}`}>
+                            <div className={`flex-1 p-5 md:p-6 flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-2 md:gap-4 ${isRight ? 'pr-5 md:pr-28' : 'pl-5 md:pl-28'}`}>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className={`font-black text-[15px] md:text-base leading-tight tracking-tight mb-1 ${config.titleColor}`}>
+                                    <h3 className={`font-black text-[15px] md:text-base leading-tight tracking-tight mb-1 ${config.titleColor} text-center md:text-left`}>
                                         {title}
                                     </h3>
-                                    <p className="text-xs md:text-sm font-bold text-slate-500 leading-snug">
+                                    <p className="text-xs md:text-sm font-bold text-slate-500 leading-snug text-center md:text-left">
                                         {message}
                                     </p>
                                 </div>

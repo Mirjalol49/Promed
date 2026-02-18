@@ -41,6 +41,12 @@ const ToastTestPanel: React.FC = () => {
                 >
                     ℹ️ Test Info
                 </button>
+                <button
+                    onClick={() => success("O'chirildi", "Mijoz muvaffaqiyatli o'chirildi.")}
+                    className="px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-900 transition text-sm font-medium"
+                >
+                    🗑️ Test Delete
+                </button>
             </div>
         </div>
     );
