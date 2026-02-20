@@ -308,16 +308,6 @@ export const RolesPage: React.FC = () => {
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-            <div className="bg-red-500 text-white p-4 font-mono text-xs whitespace-pre-wrap rounded-xl shadow-lg border-4 border-red-700">
-                <h2>CRITICAL DIAGNOSTICS:</h2>
-                <strong>accountId:</strong> {accountId}
-                <br /><strong>normalizedAccountId:</strong> {normalizedAccountId}
-                <br /><strong>legacyAccountId:</strong> {legacyAccountId}
-                <br /><strong>userId (Who am I):</strong> {userId}
-                <br /><strong>Num Profiles Fetched:</strong> {users.length}
-                <br /><strong>Profiles Raw:</strong> {JSON.stringify(users.map(u => ({ name: u.fullName, accId: u.account_id, accID2: (u as any).accountId })))}
-            </div>
-
             {/* Header - TITLE REMOVED, BUTTON CENTERED */}
             {/* Header Actions */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
