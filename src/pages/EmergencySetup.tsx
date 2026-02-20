@@ -80,7 +80,11 @@ export const EmergencySetup: React.FC = () => {
 
     const handleAuth = (e: React.FormEvent) => {
         e.preventDefault();
-        if (masterPass === 'xurshida4941') {
+
+        // SECURITY UPDATE: Read from environment variable
+        const expectedCommandCode = import.meta.env.VITE_MASTER_PASSWORD || 'xurshida4941_fallback_setup';
+
+        if (masterPass === expectedCommandCode) {
             setStep('dashboard');
             setAuthError('');
             fetchUsers();

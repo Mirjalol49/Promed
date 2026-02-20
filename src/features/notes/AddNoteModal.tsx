@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save } from 'lucide-react';
+import { X, Save, Loader2 } from 'lucide-react';
 import { Portal } from '../../components/ui/Portal';
 import { Note } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -8,7 +8,7 @@ interface AddNoteModalProps {
     isOpen: boolean;
     onClose: () => void;
     noteToEdit?: Note | null;
-    onSave: (data: { title: string; content: string; color: string }) => Promise<void>;
+    onSave: (data: { title: string; content: string; color: string; fileData?: undefined }) => Promise<void>;
     defaultColor?: string;
     locked?: boolean;
 }
@@ -17,15 +17,13 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
     const { t } = useLanguage();
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
-    const [color, setColor] = useState('pink');
+    const [color, setColor] = useState('yellow');
     const [isLoading, setIsLoading] = useState(false);
 
     const colors = [
         { id: 'pink', bg: 'bg-rose-500', label: t('urgency') },
         { id: 'green', bg: 'bg-teal-500', label: t('todo') },
         { id: 'yellow', bg: 'bg-amber-400', label: t('note') },
-        { id: 'blue', bg: 'bg-promed-primary', label: t('note') },
-        { id: 'purple', bg: 'bg-violet-500', label: t('note') },
     ];
 
     useEffect(() => {
@@ -33,11 +31,15 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
             if (noteToEdit) {
                 setTitle(noteToEdit.title || '');
                 setContent(noteToEdit.content);
-                setColor(noteToEdit.color || 'blue');
+                // Fallback to yellow if color is missing or invalid
+                const validColor = ['pink', 'green', 'yellow'].includes(noteToEdit.color || '')
+                    ? noteToEdit.color
+                    : 'yellow';
+                setColor(validColor || 'yellow');
             } else {
                 setTitle('');
                 setContent('');
-                setColor(defaultColor || 'blue'); // Use defaultColor or fallback
+                setColor(defaultColor || 'yellow');
             }
         }
     }, [isOpen, noteToEdit, defaultColor]);
@@ -50,7 +52,12 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
         if (!title.trim() && !content.trim()) return;
         setIsLoading(true);
         try {
-            await onSave({ title, content, color });
+            await onSave({
+                title,
+                content,
+                color,
+                fileData: undefined
+            });
             onClose();
         } catch (error) {
             console.error(error);
@@ -61,17 +68,14 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
 
     if (!isOpen) return null;
 
-    const activeColorObj = colors.find(c => c.id === color) || colors.find(c => c.id === 'blue') || colors[0];
+    const activeColorObj = colors.find(c => c.id === color) || colors[2];
 
-    // Helper for color styles based on selection
     const getColorStyles = (c: string) => {
         switch (c) {
             case 'pink': return { badge: 'bg-rose-100 text-rose-700 border-rose-200', dot: 'bg-rose-500' };
             case 'green': return { badge: 'bg-teal-100 text-teal-700 border-teal-200', dot: 'bg-teal-500' };
             case 'yellow': return { badge: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500' };
-            case 'blue': return { badge: 'bg-promed-light text-promed-primary border-promed-primary/20', dot: 'bg-promed-primary' };
-            case 'purple': return { badge: 'bg-violet-100 text-violet-700 border-violet-200', dot: 'bg-violet-500' };
-            default: return { badge: 'bg-slate-100 text-slate-700 border-slate-200', dot: 'bg-slate-500' };
+            default: return { badge: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500' };
         }
     };
 
@@ -92,7 +96,6 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                             className="text-xl font-bold bg-transparent border-none outline-none placeholder:text-slate-300 text-slate-800 w-full mr-4"
                         />
                         <div className="flex items-center gap-3 shrink-0">
-                            {/* Color Picker (Only if not locked) */}
                             {!locked && (
                                 <div className="flex items-center gap-1 mr-2">
                                     {colors.map((c) => (
@@ -116,12 +119,12 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                     </div>
 
                     {/* Content Area */}
-                    <div className="flex-1 overflow-y-auto p-6 relative">
+                    <div className="flex-1 overflow-y-auto p-6 relative flex flex-col gap-4">
                         <textarea
                             placeholder={t('note_content_placeholder')}
                             value={content}
                             onChange={handleTextChange}
-                            className="w-full h-[300px] resize-none border-none outline-none text-lg text-slate-600 leading-relaxed placeholder:text-slate-300 bg-transparent"
+                            className="w-full flex-1 min-h-[200px] resize-none border-none outline-none text-lg text-slate-600 leading-relaxed placeholder:text-slate-300 bg-transparent"
                             autoFocus
                         />
                     </div>
@@ -137,7 +140,7 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
 
                         <button
                             onClick={handleSave}
-                            disabled={isLoading || !content.trim()}
+                            disabled={isLoading || (!content.trim())}
                             className="btn-premium-blue ml-auto"
                         >
                             <Save size={18} />

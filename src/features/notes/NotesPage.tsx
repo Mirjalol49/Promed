@@ -5,6 +5,7 @@ import {
     FileText, ArrowLeft, FolderOpen
 } from 'lucide-react';
 import { noteService } from '../../services/noteService';
+import { auth } from '../../lib/firebase';
 import { useAccount } from '../../contexts/AccountContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -32,26 +33,44 @@ export const NotesPage: React.FC = () => {
     const [activeFolder, setActiveFolder] = useState<FolderType | null>(null);
 
     useEffect(() => {
-        if (isAuthLoading) return;
-        if (!userId) {
-            setIsLoading(false);
-            return;
-        }
+        let unsubscribeNotes: (() => void) | undefined;
 
-        const unsubscribe = noteService.subscribeToNotes(
-            userId,
-            (data) => {
-                setNotes(data);
-                setIsLoading(false);
-            },
-            (error) => {
-                console.error("Notes subscription failed:", error);
+        // Listen for Auth State Changes directly from Firebase
+        // This avoids race conditions between LocalStorage (AccountContext) and Firebase SDK
+        const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is authenticated, subscribe to their notes using the authoritative UID
+                // Check if we have an existing subscription and clear it first (unlikely but safe)
+                if (unsubscribeNotes) unsubscribeNotes();
+
+                unsubscribeNotes = noteService.subscribeToNotes(
+                    user.uid,
+                    (data) => {
+                        setNotes(data);
+                        setIsLoading(false);
+                    },
+                    (error) => {
+                        console.error("Notes subscription error:", error);
+                        // Only show toast for actual permission/logic errors, not standard cancellations
+                        if (error?.code === 'permission-denied') {
+                            showError("Ruxsat yo'q", "Sizga ma'lumotlarni ko'rishga ruxsat berilmagan. Iltimos qayta kiring.");
+                        }
+                        setIsLoading(false);
+                    }
+                );
+            } else {
+                // User is signed out or initializing
+                setNotes([]);
                 setIsLoading(false);
             }
-        );
+        });
 
-        return () => unsubscribe();
-    }, [userId, isAuthLoading]);
+        // Cleanup on unmount
+        return () => {
+            unsubscribeAuth();
+            if (unsubscribeNotes) unsubscribeNotes();
+        };
+    }, []);
 
     const handleEdit = (note: Note) => {
         setNoteToEdit(note);
@@ -84,8 +103,13 @@ export const NotesPage: React.FC = () => {
         }
     };
 
-    const handleSaveNote = async (data: { title: string; content: string; color: string }) => {
-        if (!userId) return;
+    const handleSaveNote = async (data: { title: string; content: string; color: string; fileData?: { fileUrl: string, fileName: string, fileType: string } }) => {
+        const currentUserId = auth.currentUser?.uid || userId;
+
+        if (!currentUserId) {
+            showError(t('toast_error_title'), "Foydalanuvchi ma'lumotlari topilmadi. Iltimos qayta kiring.");
+            return;
+        }
 
         const originalNotes = [...notes];
 
@@ -93,6 +117,9 @@ export const NotesPage: React.FC = () => {
             const updatedNote: Note = {
                 ...noteToEdit,
                 ...data,
+                // Include file data if present
+                ...(data.fileData ? data.fileData : (noteToEdit.fileUrl ? {} : {})),
+                ...(data.fileData || {})
             };
 
             setNotes(prev => prev.map(n => n.id === noteToEdit.id ? updatedNote : n));
@@ -109,22 +136,24 @@ export const NotesPage: React.FC = () => {
             const tempId = 'temp-' + Date.now();
             const newNote: Note = {
                 id: tempId,
-                userId,
+                userId: currentUserId,
                 title: data.title,
                 content: data.content,
                 color: data.color,
-                createdAt: { toDate: () => new Date(), toMillis: () => Date.now(), seconds: Date.now() / 1000, nanoseconds: 0 } as any
+                createdAt: { seconds: Date.now() / 1000, nanoseconds: 0, toDate: () => new Date(), toMillis: () => Date.now() } as any,
+                ...(data.fileData || {})
             };
 
             setNotes(prev => [newNote, ...prev]);
 
             try {
-                await noteService.addNote(data.content, userId, data.title, data.color);
+                await noteService.addNote(data.content, currentUserId, data.title, data.color, data.fileData);
                 success(t('injection_added_title'), t('toast_note_added') || "Yangi eslatma muvaffaqiyatli qo'shildi");
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Failed to add note:", error);
                 setNotes(originalNotes);
-                showError("Xatolik", "Eslatmani qo'shishda xatolik yuz berdi");
+                // Show specific error message from Firestore/Service
+                showError("Xatolik", error.message || "Eslatmani qo'shishda xatolik yuz berdi");
             }
         }
     };
@@ -176,6 +205,19 @@ export const NotesPage: React.FC = () => {
             case 'todo': return t('tasks_folder');
             case 'note': return t('notes_folder');
             default: return "";
+        }
+    };
+
+    const handleStatusChange = async (id: string, isCompleted: boolean) => {
+        // Optimistic update
+        setNotes(prev => prev.map(n => n.id === id ? { ...n, isCompleted } : n));
+        try {
+            await noteService.updateNote(id, { isCompleted });
+        } catch (error: any) {
+            console.error("Failed to update status", error);
+            // Revert on error
+            setNotes(prev => prev.map(n => n.id === id ? { ...n, isCompleted: !isCompleted } : n));
+            showError("Xatolik", error.message || "Statusni o'zgartirishda xatolik");
         }
     };
 
@@ -282,9 +324,9 @@ export const NotesPage: React.FC = () => {
                     />
                 ) : activeFolder === 'todo' ? (
                     /* TIMELINE VIEW FOR TASKS */
-                    <div className="max-w-4xl mx-auto py-8 relative min-h-[500px]">
+                    <div className="relative w-full max-w-5xl mx-auto px-4 py-8 min-h-[500px]">
                         {/* Central dashed line base - visual guide - Hidden on mobile, visible on md+ */}
-                        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 border-l-2 border-dashed border-slate-200 -translate-x-1/2 hidden md:block" />
+                        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 border-l-2 border-dashed border-slate-300 -translate-x-1/2 hidden md:block" />
 
                         <div className="space-y-0 relative z-10">
                             <AnimatePresence mode="popLayout">
@@ -294,18 +336,18 @@ export const NotesPage: React.FC = () => {
                                         note={note}
                                         index={index}
                                         isLeft={index % 2 === 0}
-                                        onEdit={handleEdit}
+                                        onEdit={(n) => {
+                                            setNoteToEdit(n);
+                                            setIsModalOpen(true);
+                                        }}
                                         onDelete={(id) => {
                                             setNoteToDelete(id);
                                             setIsDeleteModalOpen(true);
                                         }}
+                                        onStatusChange={handleStatusChange}
                                     />
                                 ))}
                             </AnimatePresence>
-                        </div>
-                        {/* End of timeline indicator */}
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full pt-4">
-                            <div className="w-3 h-3 rounded-full bg-slate-300"></div>
                         </div>
                     </div>
                 ) : (

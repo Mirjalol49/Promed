@@ -89,11 +89,33 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (data.created_at) setCreatedAt(data.created_at);
 
         // Update Identity
-        if (data.full_name || data.avatar_url || data.profile_image || data.role) {
+        if (data.full_name || data.avatar_url || data.profile_image || data.role || data.account_id || data.accountId) {
           if (data.full_name) setAccountName(data.full_name);
 
           if (data.role) {
             setRole(data.role);
+          }
+
+          // RESTORATION & FIX: Definitively enforce Data Isolation Policy. 
+          // If the logged in user is a primary Tenant (doctor or admin), they MUST be sandboxed to their own UID. 
+          // This overrides any polluted `account_id` in the DB that could have been saved accidentally via stale state.
+          const isPrimaryTenant = data.role === 'admin' || data.role === 'doctor';
+
+          let remoteAccountId = data.account_id || data.accountId;
+
+          if (isPrimaryTenant) {
+            remoteAccountId = `account_${userId}`;
+
+            // Self-heal the database silently if it was polluted
+            if (data.account_id !== remoteAccountId) {
+              const { updateDoc } = await import('firebase/firestore');
+              updateDoc(docRef, { account_id: remoteAccountId, accountId: remoteAccountId }).catch(() => { });
+            }
+          }
+
+          if (remoteAccountId && remoteAccountId !== accountId) {
+            console.log("🔄 AccountContext: Tenant Workspace Assured", accountId, "->", remoteAccountId);
+            setAccountId(remoteAccountId);
           }
 
           const newImage = data.avatar_url || data.profile_image;
@@ -107,6 +129,10 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
             if (newImage) parsed.image = newImage;
             if (data.role) parsed.role = data.role;
             if (data.created_at) parsed.createdAt = data.created_at;
+
+            // Sync Account ID to storage
+            if (remoteAccountId) parsed.id = remoteAccountId;
+
             localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
           }
         }

@@ -14,6 +14,7 @@ import DeleteModal from '../../components/ui/DeleteModal';
 import { ScheduleModal } from '../../components/ui/ScheduleModal'; // NEW
 import { ProBadge } from '../../components/ui/ProBadge';
 import { db, storage } from '../../lib/firebase';
+import { Portal } from '../../components/ui/Portal';
 import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, limitToLast, startAfter, endBefore, limit, getDocs, where, writeBatch, QueryDocumentSnapshot, DocumentData, serverTimestamp } from 'firebase/firestore';
 
 
@@ -84,8 +85,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
 
-    // Context Menu State (Right-Click)
-    const [contextMenuMessageId, setContextMenuMessageId] = useState<string | null>(null);
+    // Context Menu State (Global Fixed Positioning)
+    const [msgContextMenu, setMsgContextMenu] = useState<{ id: string, x: number, y: number } | null>(null);
 
     // Optimization State
     const [hasMore, setHasMore] = useState(true);
@@ -125,26 +126,17 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
     // Close context menu on click outside
     useEffect(() => {
-        if (!contextMenuMessageId) return;
+        if (!msgContextMenu) return;
 
-        // Use timeout to prevent the opening right-click from immediately closing the menu
-        const timer = setTimeout(() => {
-            const handleClickOutside = () => setContextMenuMessageId(null);
-            document.addEventListener('click', handleClickOutside);
-            document.addEventListener('contextmenu', handleClickOutside);
-
-            // Store cleanup in ref pattern
-            (window as any).__menuCleanup = () => {
-                document.removeEventListener('click', handleClickOutside);
-                document.removeEventListener('contextmenu', handleClickOutside);
-            };
-        }, 10);
+        const handleClickOutside = () => setMsgContextMenu(null);
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
 
         return () => {
-            clearTimeout(timer);
-            (window as any).__menuCleanup?.();
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
         };
-    }, [contextMenuMessageId]);
+    }, [msgContextMenu]);
 
 
     // Filter patients
@@ -577,8 +569,9 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             // if(newPinnedState) showToastSuccess("Pinned", "Message pinned to top");
             // else showToastSuccess("Unpinned", "Message unpinned");
 
-        } catch (e) {
+        } catch (e: any) {
             console.error("❌ Pin error:", e);
+            showToastError("Xatolik", "Xabarni qadashda xatolik yuz berdi");
         }
     };
 
@@ -590,9 +583,11 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
         if (!messageToUpdate) return;
 
         try {
+            const newText = messageInput.trim();
+
             // 1. Update Firestore
             await updateDoc(doc(db, 'patients', selectedPatientId, 'messages', messageId), {
-                text: messageInput.trim()
+                text: newText
             });
 
             console.log("🛠 Debug Edit: Msg ID:", messageId);
@@ -603,11 +598,40 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                 await addDoc(collection(db, 'outbound_messages'), {
                     telegramChatId: selectedPatient.telegramChatId,
                     telegramMessageId: messageToUpdate.telegramMessageId,
-                    text: messageInput.trim(),
+                    text: newText,
                     action: 'EDIT',
                     status: 'PENDING',
                     patientName: selectedPatient.fullName,
                     createdAt: new Date().toISOString()
+                });
+            }
+
+            // 3. SYNC: Always strictly enforce synchronization with the actual DB state
+            // Fetch the authoritative latest message from Firestore
+            const latestMsgQuery = query(
+                collection(db, 'patients', selectedPatientId, 'messages'),
+                orderBy('createdAt', 'desc'),
+                limit(1)
+            );
+
+            const latestSnapshot = await getDocs(latestMsgQuery);
+
+            if (!latestSnapshot.empty) {
+                const latestMsgDoc = latestSnapshot.docs[0];
+                const latestMsgData = latestMsgDoc.data();
+
+                // If the message we just edited IS the latest one (by ID), OR if the latest one happens to be this one
+                // Actually, we should just update the patient doc with whatever is CURRENTLY the latest in DB.
+                // This self-heals any discrepancies.
+
+                const newPreviewText = latestMsgData.text || (latestMsgData.image ? '[Rasm]' : '') || (latestMsgData.voice ? '[Audio]' : '');
+
+                console.log("🔄 Syncing sidebar preview with authoritative latest:", newPreviewText);
+
+                await updateDoc(doc(db, 'patients', selectedPatientId), {
+                    lastMessage: newPreviewText,
+                    lastMessageTimestamp: latestMsgData.createdAt,
+                    lastMessageTime: new Date(latestMsgData.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
                 });
             }
 
@@ -645,20 +669,25 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     const confirmDeleteMessage = async () => {
         if (!selectedPatientId || !messageToDelete) return;
 
+        // Optimistically close modal immediately
+        setIsDeleteModalOpen(false);
+        const msg = messageToDelete; // Capture reference
+        setMessageToDelete(null); // Clear state
+
         try {
             // 1. Delete from Firestore messages subcollection
-            await deleteDoc(doc(db, 'patients', selectedPatientId, 'messages', messageToDelete.id));
+            await deleteDoc(doc(db, 'patients', selectedPatientId, 'messages', msg.id));
 
             // 2. If it's a scheduled message, also delete from outbound_messages queue
-            const scheduledTime = messageToDelete.scheduledFor || messageToDelete.scheduledTimestamp;
-            if (messageToDelete.status === 'scheduled' && scheduledTime && selectedPatient?.telegramChatId) {
+            const scheduledTime = msg.scheduledFor || msg.scheduledTimestamp;
+            if (msg.status === 'scheduled' && scheduledTime && selectedPatient?.telegramChatId) {
                 // Query for matching queued message in outbound_messages
                 const outboundQuery = query(
                     collection(db, 'outbound_messages'),
                     where('telegramChatId', '==', selectedPatient.telegramChatId),
                     where('status', '==', 'QUEUED'),
                     where('scheduledFor', '==', scheduledTime),
-                    where('text', '==', messageToDelete.text)
+                    where('text', '==', msg.text)
                 );
 
                 const outboundSnapshot = await getDocs(outboundQuery);
@@ -669,15 +698,14 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                     deleteBatch.delete(doc.ref);
                 });
                 await deleteBatch.commit();
-
-                console.log(`🗑️ Deleted ${outboundSnapshot.size} queued message(s) from outbound_messages`);
             }
 
             // 3. If it has a Telegram ID (already sent), trigger bot deletion
-            if (messageToDelete.telegramMessageId && selectedPatient?.telegramChatId) {
+            // NOTE: This runs in background now since modal is closed
+            if (msg.telegramMessageId && selectedPatient?.telegramChatId) {
                 await addDoc(collection(db, 'outbound_messages'), {
                     telegramChatId: selectedPatient.telegramChatId,
-                    telegramMessageId: messageToDelete.telegramMessageId,
+                    telegramMessageId: msg.telegramMessageId,
                     action: 'DELETE',
                     status: 'PENDING',
                     patientName: selectedPatient.fullName,
@@ -685,12 +713,35 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                 });
             }
 
-            setIsDeleteModalOpen(false);
-            setMessageToDelete(null);
+            // 4. SYNC: Update Patient's lastMessage field
+            // Fetch the new latest message for this patient
+            const latestMsgQuery = query(
+                collection(db, 'patients', selectedPatientId, 'messages'),
+                orderBy('createdAt', 'desc'),
+                limit(1)
+            );
+            const latestSnapshot = await getDocs(latestMsgQuery);
+            const patientRef = doc(db, 'patients', selectedPatientId);
+
+            if (!latestSnapshot.empty) {
+                const newLastMsg = latestSnapshot.docs[0].data();
+                await updateDoc(patientRef, {
+                    lastMessage: newLastMsg.text || (newLastMsg.image ? '[Image]' : '') || (newLastMsg.voice ? '[Voice]' : ''),
+                    lastMessageTimestamp: newLastMsg.createdAt,
+                    lastMessageTime: new Date(newLastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+                });
+            } else {
+                // No messages left
+                await updateDoc(patientRef, {
+                    lastMessage: '',
+                    lastMessageTimestamp: null,
+                    lastMessageTime: ''
+                });
+            }
 
         } catch (error) {
             console.error('Error deleting message:', error);
-            alert("Failed to delete");
+            showToastError("Xatolik", "O'chirishda xatolik yuz berdi");
         }
     };
 
@@ -758,34 +809,34 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                             onClick={async () => {
                                 setSelectedPatientId(patient.id);
                             }}
-                            className={`p-3 rounded-2xl cursor-pointer flex items-center gap-4 transition-all duration-300 ${selectedPatientId === patient.id
-                                ? 'gel-blue-style shadow-xl scale-[1.02] !border-none'
-                                : 'hover:bg-slate-100'
+                            className={`p-3.5 rounded-2xl cursor-pointer flex items-center gap-4 transition-all duration-300 mx-1 ${selectedPatientId === patient.id
+                                ? 'bg-blue-600 shadow-lg shadow-blue-200 scale-[1.02] active:scale-100'
+                                : 'hover:bg-slate-50 active:scale-95'
                                 }`}
                         >
                             <div className="relative flex-shrink-0">
-                                <ProfileAvatar src={patient.profileImage} alt={patient.fullName} size={48} className="rounded-full ring-2 ring-white shadow-sm" optimisticId={patient.id} />
+                                <ProfileAvatar src={patient.profileImage} alt={patient.fullName} size={52} className="rounded-full ring-2 ring-white shadow-sm" optimisticId={patient.id} />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-baseline mb-0.5">
+                                <div className="flex justify-between items-baseline mb-1">
                                     <div className="flex items-center gap-1.5 overflow-hidden min-w-0">
-                                        <h4 className={`font-bold text-sm truncate ${selectedPatientId === patient.id ? 'text-white' : 'text-slate-900'} flex items-center gap-1.5`}>
+                                        <h4 className={`font-bold text-sm md:text-base truncate ${selectedPatientId === patient.id ? 'text-white' : 'text-slate-900'} flex items-center gap-1.5`}>
                                             <span className="truncate">{patient.fullName}</span>
                                             {patient.tier === 'pro' && <span className="flex-shrink-0"><ProBadge size={16} className={selectedPatientId === patient.id ? 'text-white' : ''} /></span>}
                                         </h4>
                                     </div>
-                                    <span className={`text-[10px] font-medium whitespace-nowrap ml-2 ${selectedPatientId === patient.id ? 'text-blue-100' : 'text-slate-400'}`}>
+                                    <span className={`text-[10px] md:text-xs font-semibold whitespace-nowrap ml-2 ${selectedPatientId === patient.id ? 'text-blue-100' : 'text-slate-400'}`}>
                                         {patient.lastMessageTimestamp
                                             ? new Date(patient.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
                                             : patient.lastMessageTime || ''}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <p className={`text-xs truncate max-w-[180px] ${selectedPatientId === patient.id ? 'text-blue-100' : 'text-slate-500'}`}>
+                                    <p className={`text-xs md:text-sm truncate max-w-[180px] ${selectedPatientId === patient.id ? 'text-blue-100' : 'text-slate-500'} font-medium`}>
                                         {patient.lastMessage || t('no_messages_yet')}
                                     </p>
                                     {patient.unreadCount && patient.unreadCount > 0 ? (
-                                        <span className={`flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full shadow-sm ml-2 ${selectedPatientId === patient.id ? 'bg-white text-promed-primary' : 'bg-promed-primary text-white'}`}>
+                                        <span className={`flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-[10px] font-bold rounded-full shadow-lg ml-2 ${selectedPatientId === patient.id ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>
                                             {patient.unreadCount}
                                         </span>
                                     ) : null}
@@ -955,8 +1006,8 @@ match /patients/{patientId}/messages/{messageId} {
                             </div>
                         )}
 
-                        {/* Messages List - Telegram Style */}
-                        <div className="flex-1 relative bg-slate-300">
+                        {/* Messages List - Professional Style */}
+                        <div className="flex-1 relative bg-[#F0F2F5]">
                             <div
                                 ref={messagesContentRef}
                                 onScroll={(e) => {
@@ -1044,13 +1095,23 @@ match /patients/{patientId}/messages/{messageId} {
 
 
                                                                 <div
-                                                                    className={`max-w-[85%] sm:max-w-[75%] px-3 py-2 text-[14px] md:text-[15px] leading-relaxed relative shadow-sm group ${msg.sender === 'doctor'
+                                                                    className={`max-w-[85%] sm:max-w-[75%] px-3 py-2 text-[14px] md:text-[15px] leading-relaxed relative shadow-sm group cursor-pointer transition-transform active:scale-[0.98] ${msg.sender === 'doctor'
                                                                         ? 'gel-blue-style text-white rounded-2xl md:rounded-3xl bubble-tail-out'
                                                                         : 'bg-white text-slate-800 rounded-2xl md:rounded-3xl bubble-tail-in'
-                                                                        } ${editingMessageId === msg.id ? 'w-full min-w-0 sm:min-w-[300px]' : ''} ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}
+                                                                        } ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}
                                                                     onContextMenu={(e) => {
                                                                         e.preventDefault();
-                                                                        setContextMenuMessageId(msg.id);
+                                                                        setMsgContextMenu({ id: msg.id, x: e.clientX, y: e.clientY });
+                                                                    }}
+                                                                    onTouchStart={(e) => {
+                                                                        const touch = e.touches[0];
+                                                                        const timer = setTimeout(() => {
+                                                                            setMsgContextMenu({ id: msg.id, x: touch.clientX, y: touch.clientY });
+                                                                        }, 500);
+                                                                        (window as any).__lastTouchTimer = timer;
+                                                                    }}
+                                                                    onTouchEnd={() => {
+                                                                        clearTimeout((window as any).__lastTouchTimer);
                                                                     }}
                                                                 >
 
@@ -1061,87 +1122,6 @@ match /patients/{patientId}/messages/{messageId} {
                                                                         </div>
                                                                     )}
 
-                                                                    {/* Actions Menu (Right-Click Context Menu) */}
-                                                                    {editingMessageId !== msg.id && contextMenuMessageId === msg.id && (
-                                                                        <div
-                                                                            className={`absolute z-20 animate-in fade-in zoom-in-95 duration-150 ${msg.sender === 'doctor' ? 'right-0 md:right-full md:mr-2 top-full mt-1 md:top-0 md:mt-0' : 'left-0 md:left-full md:ml-2 top-full mt-1 md:top-0 md:mt-0'} flex flex-col gap-1`}
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                            onContextMenu={(e) => e.stopPropagation()}
-                                                                        >
-                                                                            <div className="bg-white/95 backdrop-blur-md shadow-lg rounded-xl p-1.5 flex flex-col gap-0.5 items-stretch border border-slate-200/50">
-                                                                                {/* Reply */}
-                                                                                <button
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        setReplyingToMessage(msg);
-                                                                                        textareaRef.current?.focus();
-                                                                                        setContextMenuMessageId(null);
-                                                                                    }}
-                                                                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-lg transition-colors text-sm font-medium"
-                                                                                >
-                                                                                    <Reply size={16} />
-                                                                                    <span>{t('reply')}</span>
-                                                                                </button>
-                                                                                {/* Copy */}
-                                                                                <button
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        navigator.clipboard.writeText(msg.text);
-                                                                                        setContextMenuMessageId(null);
-                                                                                    }}
-                                                                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-lg transition-colors text-sm font-medium"
-                                                                                >
-                                                                                    <Copy size={16} />
-                                                                                    <span>{t('copy')}</span>
-                                                                                </button>
-
-                                                                                {/* Pin */}
-                                                                                <button
-                                                                                    onClick={async (e) => {
-                                                                                        e.stopPropagation();
-                                                                                        await handleTogglePin(msg);
-                                                                                        setContextMenuMessageId(null);
-                                                                                    }}
-                                                                                    className={`flex items-center gap-2 px-3 py-2 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium ${msg.isPinned ? 'text-promed-primary' : 'text-slate-600 hover:text-promed-primary'}`}
-                                                                                >
-                                                                                    {msg.isPinned ? <PinOff size={16} /> : <Pin size={16} />}
-                                                                                    <span>{msg.isPinned ? t('unpin') : t('pin')}</span>
-                                                                                </button>
-
-                                                                                {/* Edit/Delete (Only for My Messages) */}
-                                                                                {msg.sender === 'doctor' && (
-                                                                                    <>
-                                                                                        <div className="h-px bg-slate-100 my-1" />
-                                                                                        <button
-                                                                                            onClick={(e) => {
-                                                                                                e.stopPropagation();
-                                                                                                setEditingMessageId(msg.id);
-                                                                                                setMessageInput(msg.text);
-                                                                                                setTimeout(() => textareaRef.current?.focus(), 10);
-                                                                                                setContextMenuMessageId(null);
-                                                                                            }}
-                                                                                            className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 text-slate-600 hover:text-promed-primary rounded-lg transition-colors text-sm font-medium"
-                                                                                        >
-                                                                                            <Edit2 size={16} />
-                                                                                            <span>{t('edit')}</span>
-                                                                                        </button>
-                                                                                        <button
-                                                                                            onClick={(e) => {
-                                                                                                e.stopPropagation();
-                                                                                                setMessageToDelete(msg);
-                                                                                                setIsDeleteModalOpen(true);
-                                                                                                setContextMenuMessageId(null);
-                                                                                            }}
-                                                                                            className="flex items-center gap-2 px-3 py-2 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg transition-colors text-sm font-medium"
-                                                                                        >
-                                                                                            <Trash2 size={16} />
-                                                                                            <span>{t('delete')}</span>
-                                                                                        </button>
-                                                                                    </>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
 
                                                                     {/* Reply Context (Quoted Message) */}
                                                                     {msg.replyTo && (
@@ -1165,7 +1145,7 @@ match /patients/{patientId}/messages/{messageId} {
                                                                     )}
 
                                                                     {msg.text && (
-                                                                        <p className="whitespace-pre-wrap break-words">
+                                                                        <div className="whitespace-pre-wrap break-words">
                                                                             {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, index) => {
                                                                                 if (part.match(/https?:\/\/[^\s]+/)) {
                                                                                     return (
@@ -1183,7 +1163,7 @@ match /patients/{patientId}/messages/{messageId} {
                                                                                 }
                                                                                 return part;
                                                                             })}
-                                                                        </p>
+                                                                        </div>
                                                                     )}
                                                                     {msg.preview && (
                                                                         <div className="mt-2 mb-1 border-l-[3px] border-[#3390EC] pl-2 rounded-sm overflow-hidden cursor-pointer hover:bg-black/5 transition-colors" onClick={() => window.open(msg.preview?.url, '_blank')}>
@@ -1309,7 +1289,7 @@ match /patients/{patientId}/messages/{messageId} {
                                 )
                             }
 
-                            <div className="flex items-end gap-1 md:gap-2 bg-white p-0.5 md:p-1 rounded-xl">
+                            <div className="flex items-end gap-2 bg-slate-100 p-2 rounded-2xl relative">
 
                                 {/* Schedule Modal */}
                                 <ScheduleModal
@@ -1360,14 +1340,12 @@ match /patients/{patientId}/messages/{messageId} {
                                 )}
 
                                 {/* 1. Emoji (Left) */}
-
-                                {/* 1. Emoji (Left) */}
                                 <button
                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                    className={`p-2 md:p-3 rounded-full hover:bg-slate-100 transition-colors flex-shrink-0 ${showEmojiPicker ? 'text-promed-primary' : 'text-slate-400'}`}
+                                    className={`p-2.5 rounded-xl hover:bg-white transition-all flex-shrink-0 ${showEmojiPicker ? 'text-blue-500 bg-white shadow-sm' : 'text-slate-400'}`}
                                     disabled={isSending}
                                 >
-                                    <Smile size={22} className="md:w-6 md:h-6" />
+                                    <Smile size={24} />
                                 </button>
 
                                 {/* 2. Input (Middle) */}
@@ -1385,7 +1363,7 @@ match /patients/{patientId}/messages/{messageId} {
                                     autoComplete="off"
                                     spellCheck={false}
                                     style={{ outline: 'none', boxShadow: 'none', WebkitTapHighlightColor: 'transparent' }}
-                                    className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none px-0 py-2.5 md:py-3 text-[16px] resize-none min-h-[40px] md:min-h-[44px] overflow-hidden w-full placeholder:text-slate-400 text-black disabled:opacity-50"
+                                    className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none px-2 py-3 text-[16px] resize-none min-h-[44px] max-h-[150px] w-full placeholder:text-slate-400 text-slate-900 disabled:opacity-50 font-medium"
                                     rows={1}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -1399,8 +1377,7 @@ match /patients/{patientId}/messages/{messageId} {
                                     }}
                                 />
 
-                                {/* 3. Send Button (Telegram Blue Plane) */}
-                                {/* 3. Send Button (Telegram Context Menu) */}
+                                {/* 3. Send Button (Right) */}
                                 <button
                                     ref={sendButtonRef}
                                     onClick={(e) => {
@@ -1420,6 +1397,7 @@ match /patients/{patientId}/messages/{messageId} {
                                     }}
                                     onTouchStart={(e) => {
                                         if (!messageInput.trim()) return;
+                                        // e.preventDefault(); // CAREFUL: This might block click
                                         longPressTimeoutRef.current = setTimeout(() => {
                                             // Trigger context menu for mobile
                                             const touch = e.touches[0];
@@ -1432,15 +1410,15 @@ match /patients/{patientId}/messages/{messageId} {
                                         }
                                     }}
                                     disabled={!messageInput.trim() || isSending}
-                                    className={`p-2 md:p-3 rounded-full transition-all duration-200 flex-shrink-0 flex items-center justify-center ${!messageInput.trim() ? 'text-promed-primary opacity-50 cursor-not-allowed' : 'text-promed-primary hover:bg-promed-light hover:scale-110 active:scale-90'}`}
+                                    className={`p-2.5 rounded-xl transition-all duration-200 flex-shrink-0 flex items-center justify-center ${!messageInput.trim() ? 'text-slate-400 cursor-not-allowed' : 'bg-blue-500 text-white shadow-md hover:bg-blue-600 hover:shadow-lg active:scale-95'}`}
                                     title="Send Message (Hold for options)"
                                 >
                                     {isSending ? (
-                                        <ButtonLoader />
+                                        <div className="w-6 h-6 flex items-center justify-center"><Loader2 size={18} className="animate-spin" /></div>
                                     ) : editingMessageId ? (
-                                        <Check size={24} className="ml-0.5 mt-0.5" />
+                                        <Check size={20} />
                                     ) : (
-                                        <Send size={22} className="ml-1.5 mt-0.5 md:ml-2 md:mt-1 rotate-45" fill="currentColor" />
+                                        <Send size={20} className={!messageInput.trim() ? "" : "ml-0.5"} fill={!messageInput.trim() ? "none" : "currentColor"} />
                                     )}
                                 </button>
                             </div>
@@ -1460,6 +1438,142 @@ match /patients/{patientId}/messages/{messageId} {
                     </div>
                 )}
             </div>
+            {/* Global Message Context Menu Overlay */}
+            {/* Global Message Context Menu Overlay */}
+            {msgContextMenu && (
+                <Portal lockScroll={false}>
+                    <div
+                        className="fixed inset-0 z-[99999] isolate flex items-start justify-start"
+                        onMouseDown={(e) => {
+                            // Only close if the mousedown happened on the backdrop itself
+                            if (e.target === e.currentTarget) {
+                                e.preventDefault();
+                                setMsgContextMenu(null);
+                            }
+                        }}
+                        onContextMenu={(e) => { e.preventDefault(); setMsgContextMenu(null); }}
+                    >
+                        {/* Semi-transparent backdrop for visual only, click handled by parent */}
+                        <div className="absolute inset-0 bg-black/5 pointer-events-none" />
+
+                        {(() => {
+                            const targetMsg = messages.find(m => m.id === msgContextMenu.id);
+                            if (!targetMsg) return null;
+
+                            // Smart Positioning logic
+                            const menuWidth = 200;
+                            const menuHeight = 280;
+                            let x = msgContextMenu.x;
+                            let y = msgContextMenu.y;
+
+                            // Boundary checks
+                            if (x + menuWidth > window.innerWidth) x -= menuWidth;
+                            if (y + menuHeight > window.innerHeight) y -= menuHeight;
+                            if (x < 0) x = 10;
+                            if (y < 0) y = 10;
+
+                            return (
+                                <div
+                                    className="fixed z-[100000] animate-in fade-in zoom-in-95 duration-200 shadow-2xl rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-xl p-1.5 flex flex-col gap-0.5 min-w-[200px]"
+                                    style={{ top: y, left: x }}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <button
+                                        onClick={(e) => {
+                                            setMsgContextMenu(null);
+                                            setReplyingToMessage(targetMsg);
+                                            setTimeout(() => textareaRef.current?.focus(), 100);
+                                        }}
+                                        className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 text-slate-700 hover:text-blue-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
+                                    >
+                                        <Reply size={18} className="text-slate-400" />
+                                        <span>{t('reply')}</span>
+                                    </button>
+                                    <button
+                                        onClick={async (e) => {
+                                            setMsgContextMenu(null);
+                                            try {
+                                                if (navigator.clipboard && navigator.clipboard.writeText) {
+                                                    await navigator.clipboard.writeText(targetMsg.text);
+                                                    showToastSuccess(t('success') || 'Bajarildi', t('copied_to_clipboard') || 'Nusxalandi');
+                                                } else {
+                                                    const textArea = document.createElement("textarea");
+                                                    textArea.value = targetMsg.text;
+                                                    document.body.appendChild(textArea);
+                                                    textArea.select();
+                                                    document.execCommand('copy');
+                                                    document.body.removeChild(textArea);
+                                                    showToastSuccess(t('success') || 'Bajarildi', t('copied_to_clipboard') || 'Nusxalandi');
+                                                }
+                                            } catch (err) {
+                                                console.error("Copy failed:", err);
+                                                showToastError("Xatolik", "Nusxalashda xatolik yuz berdi");
+                                            }
+                                        }}
+                                        className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 text-slate-700 hover:text-blue-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
+                                    >
+                                        <Copy size={18} className="text-slate-400" />
+                                        <span>{t('copy')}</span>
+                                    </button>
+                                    <button
+                                        onClick={async (e) => {
+                                            // Debug alert removed, relying on console
+                                            setMsgContextMenu(null);
+                                            try {
+                                                await handleTogglePin(targetMsg);
+                                            } catch (err) {
+                                                console.error("Pin action failed:", err);
+                                                alert("Pin action failed: " + err);
+                                            }
+                                        }}
+                                        className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-100 rounded-xl transition-all text-sm font-semibold text-left w-full ${targetMsg.isPinned ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'}`}
+                                    >
+                                        {targetMsg.isPinned ? <PinOff size={18} className="text-blue-500" /> : <Pin size={18} className="text-slate-400" />}
+                                        <span>{targetMsg.isPinned ? t('unpin') : t('pin')}</span>
+                                    </button>
+                                    {targetMsg.sender === 'doctor' && (
+                                        <>
+                                            <div className="h-px bg-slate-100 my-1 mx-2" />
+                                            <button
+                                                onClick={(e) => {
+                                                    setMsgContextMenu(null);
+                                                    setEditingMessageId(targetMsg.id);
+                                                    setMessageInput(targetMsg.text);
+                                                    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+                                                    setTimeout(() => {
+                                                        textareaRef.current?.focus();
+                                                        if (textareaRef.current) {
+                                                            const scrollHeight = textareaRef.current.scrollHeight;
+                                                            textareaRef.current.style.height = `${Math.min(scrollHeight, 150)}px`;
+                                                        }
+                                                    }, 100);
+                                                }}
+                                                className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 text-slate-700 hover:text-blue-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
+                                            >
+                                                <Edit2 size={18} className="text-slate-400" />
+                                                <span>{t('edit')}</span>
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    setMsgContextMenu(null);
+                                                    setMessageToDelete(targetMsg);
+                                                    setIsDeleteModalOpen(true);
+                                                }}
+                                                className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
+                                            >
+                                                <Trash2 size={18} className="text-red-400" />
+                                                <span>{t('delete')}</span>
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </Portal>
+            )}
+
             {/* Delete Confirmation Modal */}
             <DeleteModal
                 isOpen={isDeleteModalOpen}

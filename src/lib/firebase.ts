@@ -26,17 +26,10 @@ export const db = getFirestore(app);
 // Enable offline persistence for better cross-device sync
 // Enable offline persistence for better cross-device sync
 // persistence creates issues with multiple tabs in dev, disabling for stability
-/*
-enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-        console.warn('⚠️ Firestore persistence failed: Multiple tabs open');
-    } else if (err.code === 'unimplemented') {
-        console.warn('⚠️ Firestore persistence not supported in this browser');
-    } else {
-        console.error('❌ Firestore persistence error:', err);
-    }
-});
-*/
+// EXPLICITLY DISABLED TO PREVENT 'INTERNAL ASSERTION FAILED' ERRORS
+// enableIndexedDbPersistence(db).catch((err) => { ... });
+
+
 
 // Debug Logging - Confirm Connection
 console.log("🔥 Firebase Init: Project =", firebaseConfig.projectId);

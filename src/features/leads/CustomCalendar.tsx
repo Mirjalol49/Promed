@@ -18,13 +18,13 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({ value, onChange 
 
     const renderHeader = () => {
         return (
-            <div className="flex items-center justify-between px-2 py-3 mb-2">
+            <div className="flex items-center justify-between px-2 py-3">
                 <button
                     type="button"
                     onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                    className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 hover:text-slate-900 transition-colors border border-transparent hover:border-slate-300"
+                    className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors"
                 >
-                    <ChevronLeft size={20} />
+                    <ChevronLeft size={24} strokeWidth={2.5} />
                 </button>
                 <div className="font-extrabold text-slate-900 capitalize text-lg tracking-tight">
                     {format(currentMonth, 'MMMM yyyy', { locale })}
@@ -32,9 +32,9 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({ value, onChange 
                 <button
                     type="button"
                     onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                    className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 hover:text-slate-900 transition-colors border border-transparent hover:border-slate-300"
+                    className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors"
                 >
-                    <ChevronRight size={20} />
+                    <ChevronRight size={24} strokeWidth={2.5} />
                 </button>
             </div>
         );
@@ -53,7 +53,7 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({ value, onChange 
             );
         }
 
-        return <div className="grid grid-cols-7 mb-2 border-b border-slate-100 pb-2">{days}</div>;
+        return <div className="grid grid-cols-7 mb-2">{days}</div>;
     };
 
     const renderCells = () => {
@@ -88,19 +88,23 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({ value, onChange 
                             onClick={() => {
                                 if (isCurrentMonth) onChange(cloneDay);
                             }}
+                            aria-label={`Select ${formattedDate}, ${format(day, 'MMMM yyyy', { locale })}`}
                             className={`
-                                w-full h-full flex items-center justify-center rounded-lg text-sm font-semibold transition-all duration-200 border
+                                w-full h-full flex items-center justify-center rounded-full text-sm font-bold transition-all duration-200
                                 ${!isCurrentMonth
-                                    ? 'text-slate-300 cursor-default border-transparent'
+                                    ? 'text-slate-300 cursor-default hidden'
                                     : isSelected
-                                        ? 'bg-promed-primary text-white shadow-lg shadow-promed-primary/20 border-promed-primary'
+                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-105'
                                         : isDayToday
-                                            ? 'bg-promed-light text-promed-primary border-promed-primary/20'
-                                            : 'text-slate-900 hover:bg-slate-100 border-transparent hover:border-slate-300'
+                                            ? 'bg-blue-50 text-blue-600 relative'
+                                            : 'text-slate-700 hover:bg-slate-100'
                                 }
                             `}
                         >
                             {formattedDate}
+                            {isDayToday && !isSelected && (
+                                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />
+                            )}
                         </button>
                     </div>
                 );

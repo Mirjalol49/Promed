@@ -125,6 +125,10 @@ export interface Note {
   color?: string; // For sticky note color effect
   createdAt: any; // Firestore Timestamp
   userId: string;
+  fileUrl?: string; // Optional: URL to attached file (image/doc)
+  fileName?: string; // Optional: Original filename
+  fileType?: string; // Optional: MIME type (e.g. 'image/jpeg')
+  isCompleted?: boolean;
 }
 
 // --- STAFF MODULE TYPES ---

@@ -39,15 +39,21 @@ service cloud.firestore {
        let docAccountId = "account_id" in resource.data ? resource.data.account_id : ("accountId" in resource.data ? resource.data.accountId : null);
        let docUserId = "userId" in resource.data ? resource.data.userId : ("user_id" in resource.data ? resource.data.user_id : null);
        
-       // FAST PATH: Check Own UID directly (Zero Cost)
-       if (docAccountId == request.auth.uid || docUserId == request.auth.uid) return true;
-       if (docAccountId == ("account_" + request.auth.uid)) return true;
+       // Helper variables for clean logic
+       let isDirectOwner = (docAccountId == request.auth.uid) || (docUserId == request.auth.uid) || (docAccountId == ("account_" + request.auth.uid));
 
-       // SLOW PATH: Fetch Profile (1 Read cost)
-       let userAcc = getUserAccountId();
+       // SLOW PATH: Fetch Profile (1 Read cost) - only if direct check fails
+       // Note: In rules, we can't completely prevent the read if strict short-circuiting isn't guaranteed, 
+       // but logical OR usually works.
+       // However, we must perform the "getUserAccountId" call to handle shared accounts.
+       // To "optimize", we can check isDirectOwner first.
        
-       return (docAccountId != null && docAccountId == userAcc) 
-           || (docUserId != null && docUserId == userAcc);
+       return isDirectOwner || (
+         getUserAccountId() != null && (
+           (docAccountId != null && docAccountId == getUserAccountId()) || 
+           (docUserId != null && docUserId == getUserAccountId())
+         )
+       );
     }
     
     function writesToAccount(requestData) {
@@ -146,6 +152,11 @@ service cloud.firestore {
     match /staff/{staffId} {
       allow read: if isAuthenticated() && (isAdminOrDoctor() || getRole() == 'viewer' || getRole() == 'nurse') && (resource == null || belongsToAccount(resource));
       allow write: if isAuthenticated() && isAdminOrDoctor() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));
+    }
+
+    // Notes (Personal)
+    match /notes/{noteId} {
+      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
     }
     
     match /{document=**} {

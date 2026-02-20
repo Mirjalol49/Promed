@@ -252,6 +252,7 @@ export const translations = {
     forgot_password_prompt: "It seems you're having trouble. Do you want to recover your password via Telegram?",
     no_cancel: "No",
     yes_recover: "Yes",
+    undo: "Undo",
     reset_password_title: "Reset Password",
     reset_password_desc: "Enter your email and we'll send you a reset link.",
     send_link: "Send Link",
@@ -300,6 +301,8 @@ export const translations = {
     view_all_schedule: "View Full Schedule",
 
     // Toasts
+    success: "Success",
+    copied_to_clipboard: "Copied to clipboard",
     toast_success_title: "Success",
     saving_patient_data: "Saving patient data...",
     uploading_large_image: "Uploading large image, please wait...",
@@ -467,6 +470,7 @@ export const translations = {
     source_telegram: "Telegram",
     overdue_reminder: "Overdue",
     upcoming_reminder: "Reminder",
+    reminder: "Reminder",
     reminder_call_now: "Call Now",
     remind: "Remind",
     complete: "Complete",
@@ -597,6 +601,12 @@ export const translations = {
     clear_filters: "Clear all filters",
     staff: "Staff",
     search_patients: "Search patients...",
+
+    transaction_deleted: "Deleted",
+    transaction_deleted_msg: "Transaction successfully deleted",
+    error_deleting: "Error deleting",
+    restored: "Restored",
+    restored_msg: "Transaction successfully restored",
     select_patient: "Select Patient",
     enter_custom_category: "Enter custom category...",
     add_note_details: "Add a note details...",
@@ -791,6 +801,7 @@ export const translations = {
     delete_warning: "Ushbu amalni ortga qaytarib bo'lmaydi. Ushbu seansni butunlay o'chirib tashlashga ishonchingiz komilmi?",
     delete_photo_title: "Ishonchingiz komilmi?",
     delete_photo_desc: "Ushbu rasm bemorning jarayon tarixidan butunlay olib tashlanadi. Ishonchingiz komilmi?",
+    undo: "Qaytarish",
     confirm: "Tasdiqlash",
     yes: "Ha",
     no: "Yo'q",
@@ -1162,6 +1173,12 @@ export const translations = {
     all_months: "Barcha oylar",
     this_month: "Shu oy",
 
+    transaction_deleted: "O'chirildi",
+    transaction_deleted_msg: "Tranzaksiya muvaffaqiyatli o'chirildi",
+    error_deleting: "O'chirishda xatolik",
+    restored: "Tiklandi",
+    restored_msg: "Tranzaksiya muvaffaqiyatli tiklandi",
+
     // Staff
     staff_management: "Xodimlar Boshqaruvi",
     staff_subtitle: "Jamoa a'zolari va rollarini boshqarish",
@@ -1228,6 +1245,7 @@ export const translations = {
     source_telegram: "Telegram",
     overdue_reminder: "Muddati o'tgan",
     upcoming_reminder: "Eslatma",
+    reminder: "Eslatma",
     reminder_call_now: "Qo'ng'iroq qilish",
     remind: "Eslatish",
     complete: "Bajarish",
@@ -1268,6 +1286,8 @@ export const translations = {
     clinic_remainder: "Klinika (Qoldiq)",
     split: "Taqsimot",
     salary_split: "Oylik",
+    success: "Muvaffaqiyatli",
+    copied_to_clipboard: "Nusxalandi",
   },
   ru: {
     loading: "Загрузка...",
@@ -1433,6 +1453,8 @@ export const translations = {
     delete_warning: "Это действие нельзя отменить. Вы уверены?",
     delete_photo_title: "Вы уверены?",
     delete_photo_desc: "Вы хотите навсегда удалить это фото?",
+    undo: "Отменить",
+    reminder: "Напоминание",
     confirm: "Подтвердить",
     yes: "Да",
     no: "Нет",
@@ -1582,6 +1604,8 @@ export const translations = {
     source_referral: "Рекомендация",
 
     // Toasts
+    success: "Успешно",
+    copied_to_clipboard: "Скопировано в буфер обмена",
     toast_success_title: "Успешно!",
     saving_patient_data: "Сохранение данных пациента...",
     uploading_large_image: "Загрузка большого изображения, пожалуйста, подождите...",
@@ -1838,6 +1862,12 @@ export const translations = {
 
     staff_delete_popup_title: "Удалить сотрудника?",
     staff_delete_popup_desc: "Вы уверены, что хотите удалить этого сотрудника? Это действие нельзя отменить.",
+
+    transaction_deleted: "Удалено",
+    transaction_deleted_msg: "Транзакция успешно удалена",
+    error_deleting: "Ошибка удаления",
+    restored: "Восстановлено",
+    restored_msg: "Транзакция успешно восстановлена",
   }
 };
 

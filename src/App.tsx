@@ -1332,11 +1332,6 @@ const App: React.FC = () => {
     );
   };
 
-  // If authentication or initial data is loading, show the mascot loader // 🔥 ROUTING: Simple Check
-  if (window.location.pathname.includes('/admin')) {
-    return <EmergencySetup />;
-  }
-
   // --- RENDERING ---
   if (authLoading) return <DashboardLoader />;
 
@@ -1378,6 +1373,12 @@ const App: React.FC = () => {
         handleLogout();
       }} />
     );
+  }
+
+  // PROTECTED ADMIN ROUTE INTERCEPTOR
+  // This serves as our client-side middleware for the Vite SPA
+  if (window.location.pathname.includes('/admin')) {
+    return <EmergencySetup />;
   }
 
   // Render Lock Screen if locked

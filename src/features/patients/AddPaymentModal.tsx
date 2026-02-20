@@ -348,7 +348,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                             <div className="font-bold text-gray-900">{patient.fullName}</div>
                                         </div>
                                     </div>
-                                    <div className="p-4 border-b border-gray-100 flex items-center gap-4 relative group hover:bg-gray-50 transition-colors cursor-pointer bg-white">
+                                    <div className="p-4 flex items-center gap-4 relative group hover:bg-gray-50 transition-colors cursor-pointer bg-white rounded-b-2xl">
                                         <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 shrink-0"><Calendar size={18} /></div>
                                         <div className="flex-1">
                                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('date') || 'Sana'}</div>
@@ -357,25 +357,24 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                         </div>
                                         <div className="absolute inset-0 opacity-0"><CustomDatePicker value={date} onChange={setDate} centered /></div>
                                     </div>
-                                    <div className="p-4 flex items-start gap-4 hover:bg-gray-50 transition-colors rounded-b-2xl bg-white">
-                                        <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 shrink-0 mt-0.5"><FileText size={18} /></div>
-                                        <div className="flex-1">
-                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">{t('description') || 'Izoh'}</div>
-                                            <textarea
-                                                value={expenseDescription}
-                                                onChange={e => {
-                                                    setExpenseDescription(e.target.value);
-                                                    e.target.style.height = 'auto';
-                                                    e.target.style.height = e.target.scrollHeight + 'px';
-                                                }}
-                                                placeholder={t('expense_note_placeholder') || "Xarajat haqida..."}
-                                                rows={3}
-                                                className="w-full bg-transparent text-sm font-medium text-gray-900 outline-none placeholder-gray-300 resize-none max-h-48 overflow-y-auto no-scrollbar"
-                                            />
-                                        </div>
-                                    </div>
+                                </div>
+
+                                {/* Expense Note - Moved Outside as Standalone */}
+                                <div className="mb-6">
+                                    <textarea
+                                        value={expenseDescription}
+                                        onChange={e => {
+                                            setExpenseDescription(e.target.value);
+                                            e.target.style.height = 'auto';
+                                            e.target.style.height = e.target.scrollHeight + 'px';
+                                        }}
+                                        rows={3}
+                                        placeholder={t('expense_note_placeholder') || "Xarajat haqida..."}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 text-sm font-bold text-slate-900 outline-none placeholder-slate-400 resize-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm"
+                                    />
                                 </div>
                             </div>
+
                         ) : (
                             <>
                                 <div className="w-full md:w-[35%] bg-blue-50/20 p-8 flex flex-col border-b md:border-b-0 md:border-r border-blue-100/50 relative shrink-0">
@@ -521,6 +520,21 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            {/* Notes / Description Field */}
+                                            <div className="mt-6">
+                                                <textarea
+                                                    value={note}
+                                                    onChange={e => {
+                                                        setNote(e.target.value);
+                                                        e.target.style.height = 'auto';
+                                                        e.target.style.height = e.target.scrollHeight + 'px';
+                                                    }}
+                                                    rows={3}
+                                                    placeholder={t('add_note_placeholder') || "Izoh qo'shish..."}
+                                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-bold text-slate-900 outline-none placeholder-slate-400 resize-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
@@ -565,7 +579,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                     </div>
                     <button onClick={onClose} className="md:hidden absolute top-4 right-4 z-50 p-2 bg-white rounded-full shadow-sm text-gray-500"><X size={20} /></button>
                 </motion.div>
-            </div>
-        </Portal>
+            </div >
+        </Portal >
     );
 };

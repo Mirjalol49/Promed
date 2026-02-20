@@ -15,6 +15,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { leadService } from '../../services/leadService';
 import { Portal } from '../../components/ui/Portal';
 import { ReminderPopover } from './ReminderPopover';
+import DeleteModal from '../../components/ui/DeleteModal';
 import { useReminder } from '../../hooks/useReminder';
 
 // Status color configuration - only 4 statuses to match Kanban tabs
@@ -56,6 +57,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     const [reminderEditingId, setReminderEditingId] = useState<string | null>(null);
     const [completionEventId, setCompletionEventId] = useState<string | null>(null); // Changed from boolean to ID
     const [completionNote, setCompletionNote] = useState('');
+    const [deleteModalEventId, setDeleteModalEventId] = useState<string | null>(null);
 
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, eventId: string, type: 'note' | 'reminder', content?: string, date?: Date } | null>(null);
 
@@ -184,7 +186,18 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
     const handleDeleteNote = async (eventId: string) => {
         try {
+            const eventToDelete = timeline.find(e => e.id === eventId);
+
             await leadService.deleteTimelineEvent(lead.id, eventId);
+
+            // If the deleted event was the active reminder, clear it from the lead document
+            if (eventToDelete?.type === 'reminder' && lead.reminder?.date) {
+                const eventDate = eventToDelete.metadata?.reminderDate;
+                // If dates match (or if checking against active reminder logic)
+                if (eventDate === lead.reminder.date) {
+                    await clearReminder(lead.id);
+                }
+            }
         } catch (error) {
             console.error('Error deleting note:', error);
         }
@@ -493,7 +506,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                 </div>
                                 <h3 className="font-bold text-slate-900 text-base md:text-lg">{t('lead_activity')}</h3>
                                 <span className="text-[10px] md:text-xs font-bold text-white px-2 py-0.5 md:px-2.5 md:py-1 rounded-full" style={{ background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' }}>
-                                    {timeline.length + 1}
+                                    {timeline.length}
                                 </span>
                             </div>
 
@@ -579,7 +592,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                             rows={2}
                                                                             autoFocus
                                                                         />
-                                                                        <div className="flex items-center justify-end">
+                                                                        <div className="pt-2">
                                                                             <button
                                                                                 onClick={async () => {
                                                                                     await clearReminder(lead.id, completionNote);
@@ -589,7 +602,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                                     setCompletionEventId(null);
                                                                                     setCompletionNote('');
                                                                                 }}
-                                                                                className="btn-glossy-blue !px-4 !py-2 !text-xs !font-bold !rounded-lg"
+                                                                                className="w-full btn-glossy-blue !py-3.5 !text-sm !font-bold !rounded-xl shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
                                                                             >
                                                                                 {t('confirm')}
                                                                             </button>
@@ -765,8 +778,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                         </button>
                                         <button
                                             onClick={() => {
-                                                if (window.confirm('Delete this item?')) {
-                                                    handleDeleteNote(contextMenu.eventId);
+                                                if (contextMenu.eventId) {
+                                                    setDeleteModalEventId(contextMenu.eventId);
                                                 }
                                                 setContextMenu(null);
                                             }}
@@ -811,6 +824,17 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                         )}
                     </AnimatePresence>
                 </motion.div>
+                <DeleteModal
+                    isOpen={!!deleteModalEventId}
+                    onClose={() => setDeleteModalEventId(null)}
+                    onConfirm={() => {
+                        if (deleteModalEventId) {
+                            handleDeleteNote(deleteModalEventId);
+                        }
+                        setDeleteModalEventId(null);
+                    }}
+                    title={t('delete_modal_headline')}
+                />
             </div >
         </Portal >
     );

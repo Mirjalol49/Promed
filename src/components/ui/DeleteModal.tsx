@@ -36,10 +36,10 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onConfirm, t
 
                         {/* Modal Content */}
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            transition={{ type: "spring", bounce: 0.4 }}
+                            exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }}
+                            transition={{ type: "spring", bounce: 0.3, duration: 0.3 }}
                             className="relative bg-white rounded-[32px] shadow-apple w-full max-w-sm overflow-hidden p-6 md:p-8 flex flex-col items-center text-center border border-slate-100 max-h-[85vh] overflow-y-auto"
                         >
                             {/* Close Button */}

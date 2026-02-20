@@ -43,6 +43,8 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
     const [selectedQuick, setSelectedQuick] = useState<number | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false);
+    const [calendarPos, setCalendarPos] = useState({ top: 0, left: 0, isAbove: false });
+    const buttonRef = useRef<HTMLDivElement>(null);
 
     // Reset state when opening
     useEffect(() => {
@@ -189,7 +191,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                 {/* Date & Time */}
                                 <div className="space-y-2">
                                     <div className="grid grid-cols-5 gap-3">
-                                        <div className="col-span-3 space-y-2">
+                                        <div className="col-span-3 space-y-2 relative" ref={buttonRef}>
                                             <label className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-widest px-1">
                                                 <CalendarIcon size={12} strokeWidth={2.5} />
                                                 Sana
@@ -198,6 +200,16 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                                 type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    // Check if near bottom
+                                                    const spaceBelow = window.innerHeight - rect.bottom;
+                                                    const showAbove = spaceBelow < 340; // ~320px for calendar + padding
+
+                                                    setCalendarPos({
+                                                        top: showAbove ? rect.top - 8 : rect.bottom + 8,
+                                                        left: rect.left,
+                                                        isAbove: showAbove
+                                                    });
                                                     setShowCalendar(!showCalendar);
                                                 }}
                                                 className={`w-full px-4 py-3.5 flex items-center justify-between text-sm font-bold border rounded-xl transition-all duration-200 bg-white
@@ -209,6 +221,40 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                                 <span className="font-bold">{format(parse(date, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy')}</span>
                                                 <ChevronDown size={18} className={`text-slate-500 transition-transform duration-300 ${showCalendar ? 'rotate-180 text-promed-primary' : ''}`} />
                                             </button>
+
+                                            {/* Floating Calendar via Portal - No Clipping */}
+                                            {showCalendar && (
+                                                <Portal>
+                                                    <div
+                                                        className="fixed inset-0 z-[9999]"
+                                                        onClick={() => setShowCalendar(false)}
+                                                    />
+                                                    <motion.div
+                                                        initial={{ opacity: 0, scale: 0.95, y: calendarPos.isAbove ? 10 : -10 }}
+                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                        exit={{ opacity: 0, scale: 0.95, y: calendarPos.isAbove ? 10 : -10 }}
+                                                        transition={{ duration: 0.2 }}
+                                                        style={{
+                                                            position: 'fixed',
+                                                            top: calendarPos.isAbove ? 'auto' : calendarPos.top,
+                                                            bottom: calendarPos.isAbove ? (window.innerHeight - calendarPos.top) : 'auto',
+                                                            left: calendarPos.left,
+                                                            zIndex: 10000
+                                                        }}
+                                                        className="bg-white rounded-2xl shadow-2xl shadow-slate-900/15 border border-slate-200 p-4 w-[320px]"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <CustomCalendar
+                                                            value={parse(date, 'yyyy-MM-dd', new Date())}
+                                                            onChange={(d) => {
+                                                                setDate(format(d, 'yyyy-MM-dd'));
+                                                                setSelectedQuick(null);
+                                                                setShowCalendar(false);
+                                                            }}
+                                                        />
+                                                    </motion.div>
+                                                </Portal>
+                                            )}
                                         </div>
                                         <div className="col-span-2 space-y-2">
                                             <label className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-widest px-1">
@@ -225,29 +271,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                     </div>
 
                                     {/* Custom Calendar Popup - Full Width Expand */}
-                                    <AnimatePresence>
-                                        {showCalendar && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                                                animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
-                                                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                                                transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
-                                                className="overflow-hidden"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-300/50">
-                                                    <CustomCalendar
-                                                        value={parse(date, 'yyyy-MM-dd', new Date())}
-                                                        onChange={(d) => {
-                                                            setDate(format(d, 'yyyy-MM-dd'));
-                                                            setSelectedQuick(null);
-                                                            setShowCalendar(false);
-                                                        }}
-                                                    />
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
+
                                 </div>
 
                                 {/* Reason */}

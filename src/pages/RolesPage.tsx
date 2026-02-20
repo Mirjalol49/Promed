@@ -3,7 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAccount } from '../contexts/AccountContext';
 import { useToast } from '../contexts/ToastContext';
 import { db } from '../lib/firebase';
-import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, updateDoc, or } from 'firebase/firestore';
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import {
@@ -23,6 +23,7 @@ interface SubUser {
     createdAt: any;
     status: 'active' | 'disabled';
     lockPassword?: string;
+    account_id?: string;
 }
 
 // --- Firebase Config for Secondary App (to create users without logging out admin) ---
@@ -31,7 +32,9 @@ const firebaseConfig = getApp().options;
 
 export const RolesPage: React.FC = () => {
     const { t } = useLanguage();
-    const { accountId, role: userRole } = useAccount(); // Ensure only admin can access
+    const { accountId, userId, role: userRole } = useAccount(); // Ensure only admin can access
+    // Detect if the user is viewing a shared workspace (Tenant ID != User ID)
+    const isShared = userId && accountId && accountId !== userId && accountId !== `account_${userId}`;
     const { success, error: showError } = useToast();
 
     const [users, setUsers] = useState<SubUser[]>([]);
@@ -59,20 +62,42 @@ export const RolesPage: React.FC = () => {
 
     // --- Subscription ---
     useEffect(() => {
-        if (!accountId) return;
+        // RESET STATE on account switch (Security Best Practice)
+        setUsers([]);
+        setLoading(true);
 
-        // Subscribe to profiles that are 'viewer' or 'seller' and belong to this account (if applicable)
-        // Note: profiles don't consistently have accountId, but we can filter by role.
+        if (!accountId) {
+            console.warn("RolesPage: No Account ID detected.");
+            return;
+        }
+        console.log("RolesPage: Accessing Tenant Zone:", accountId);
+
+        const normalizedAccountId = accountId.startsWith('account_') ? accountId.replace('account_', '') : accountId;
+        const legacyAccountId = `account_${normalizedAccountId}`;
+        if (legacyAccountId === 'account_undefined' || !normalizedAccountId) return;
+        // Subscribe to profiles that belong to this account (handling both naming formats)
+        // Security Fix: Strictly filter by account_id to prevent data leakage between tenants
         const q = query(
             collection(db, 'profiles'),
-            where('role', 'in', ['viewer', 'seller', 'nurse'])
+            or(
+                where('account_id', '==', normalizedAccountId),
+                where('accountId', '==', normalizedAccountId),
+                where('account_id', '==', legacyAccountId),
+                where('accountId', '==', legacyAccountId)
+            )
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const fetchedUsers = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as SubUser[];
+            const fetchedUsers = snapshot.docs
+                .map(d => ({ id: d.id, ...d.data() }) as SubUser)
+                .filter(u => ['viewer', 'seller', 'nurse'].includes(u.role));
+
+            // DIAGNOSTIC: Log every user's account_id to see what the DB actually has
+            console.log("🔍 RolesPage DIAGNOSTIC: accountId used in query =", accountId);
+            fetchedUsers.forEach(u => {
+                console.log(`  👤 ${u.fullName}: account_id="${u.account_id}", accountId="${(u as any).accountId}", role="${u.role}"`);
+            });
+
             setUsers(fetchedUsers);
             setLoading(false);
         }, (err) => {
@@ -84,6 +109,26 @@ export const RolesPage: React.FC = () => {
     }, [accountId]);
 
     // --- Handlers ---
+
+    // Fix for "Ghost Data": Allow sub-admins to detach and create their own workspace
+    const handleCreatePersonalWorkspace = async () => {
+        if (!window.confirm(`⚠️ CREATE PERSONAL WORKSPACE?\n\nYou are currently viewing a Shared Workspace (ID: ${accountId}).\n\nThis action will:\n1. Create a NEW, EMPTY workspace for your account.\n2. Disconnect you from the current shared data.\n\nAre you sure you want to proceed?`)) return;
+
+        try {
+            setLoading(true);
+            const newAccountId = `account_${userId}`;
+            await updateDoc(doc(db, 'profiles', userId), {
+                accountId: newAccountId,
+                account_id: newAccountId
+            });
+            // Force reload to pick up new context
+            window.location.reload();
+        } catch (e: any) {
+            console.error("Workspace creation failed:", e);
+            showError("Error", "Failed to create workspace: " + e.message);
+            setLoading(false);
+        }
+    };
 
     const handleEditClick = (user: SubUser) => {
         setEditingUser(user);
@@ -144,7 +189,9 @@ export const RolesPage: React.FC = () => {
                 const updateData: any = {
                     fullName: formData.fullName,
                     phone: formData.phone,
-                    role: formData.role
+                    role: formData.role,
+                    // Security Fix - Force sync account association on update if missing
+                    account_id: accountId
                 };
                 if (formData.password) {
                     updateData.lockPassword = formData.password;
@@ -253,8 +300,24 @@ export const RolesPage: React.FC = () => {
         );
     }
 
+    // Normalized IDs for accurate filtering
+    const normalizedAccountId = accountId.startsWith('account_') ? accountId.replace('account_', '') : accountId;
+    const legacyAccountId = `account_${normalizedAccountId}`;
+
+    if (legacyAccountId === 'account_undefined' || !normalizedAccountId) return null;
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+            <div className="bg-red-500 text-white p-4 font-mono text-xs whitespace-pre-wrap rounded-xl shadow-lg border-4 border-red-700">
+                <h2>CRITICAL DIAGNOSTICS:</h2>
+                <strong>accountId:</strong> {accountId}
+                <br /><strong>normalizedAccountId:</strong> {normalizedAccountId}
+                <br /><strong>legacyAccountId:</strong> {legacyAccountId}
+                <br /><strong>userId (Who am I):</strong> {userId}
+                <br /><strong>Num Profiles Fetched:</strong> {users.length}
+                <br /><strong>Profiles Raw:</strong> {JSON.stringify(users.map(u => ({ name: u.fullName, accId: u.account_id, accID2: (u as any).accountId })))}
+            </div>
+
             {/* Header - TITLE REMOVED, BUTTON CENTERED */}
             {/* Header Actions */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
@@ -304,6 +367,8 @@ export const RolesPage: React.FC = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {users
+                        // Security Double-Check: Strictly filter in JS as well to handle potential query lag or index issues
+                        .filter(u => u.account_id === normalizedAccountId || (u as any).accountId === normalizedAccountId || u.account_id === legacyAccountId || (u as any).accountId === legacyAccountId)
                         .filter(u => u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || u.phone.includes(searchQuery))
                         .map(user => {
                             const roleConfig = {

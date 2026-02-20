@@ -262,8 +262,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     playUnlock();
     // Short delay to let the unlock sound start before unmounting, but UI shows loader
     setTimeout(() => {
-      const targetAccountId = profileData.accountId || ('account_' + (user.email || user.uid));
       const targetRole = profileData.role || 'doctor';
+      const isPrimaryTenant = targetRole === 'admin' || targetRole === 'doctor';
+
+      // CRITICAL FIX: Primary tenants (Owners) MUST ONLY be tied to their own UIDs.
+      // This enforces isolation across clinics even if browser localStorage is contaminated.
+      let targetAccountId = profileData.account_id || profileData.accountId;
+      if (isPrimaryTenant) {
+        targetAccountId = 'account_' + user.uid;
+      } else if (!targetAccountId) {
+        // Fallback legacy behavior
+        targetAccountId = 'account_' + user.uid;
+      }
+
+      console.log("🔐 Login Success: Target Tenant =", targetAccountId);
 
       onLogin(
         targetAccountId,

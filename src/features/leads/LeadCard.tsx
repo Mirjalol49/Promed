@@ -222,26 +222,27 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
             `}
         >
             {/* ── Floating Reminder Indicator ── */}
+            {/* ── Floating Reminder Indicator ── */}
             {(isOverdue || hasActiveReminder) && (
-                <div className="absolute -top-2 -right-2 z-30">
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 15 }}>
+                <div className="absolute -top-2.5 -right-2.5 z-30 pointer-events-none">
+                    <motion.div
+                        initial={{ scale: 0, rotate: -20 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+                    >
                         {isOverdue && (
-                            <motion.div
-                                animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                                className="absolute inset-0 rounded-full bg-rose-400 blur-sm"
-                            />
+                            <span className="absolute inset-0 rounded-2xl bg-rose-500/50 animate-ping duration-1500" />
                         )}
                         <div
                             className={`
-                                w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 transition-all
+                                relative w-8 h-8 rounded-xl flex items-center justify-center shadow-lg transition-all
                                 ${isOverdue
-                                    ? 'bg-rose-500 border-white text-white shadow-rose-400/30'
-                                    : 'border-white text-white shadow-blue-500/40'}
+                                    ? 'bg-gradient-to-br from-rose-400 to-red-600 shadow-rose-500/30'
+                                    : 'bg-gradient-to-br from-sky-400 to-blue-600 shadow-blue-500/30'}
+                                ring-2 ring-white
                             `}
-                            style={!isOverdue ? { background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' } : undefined}
                         >
-                            <Clock size={15} strokeWidth={2.5} className={isOverdue ? 'animate-pulse' : ''} />
+                            <Clock size={14} strokeWidth={3} className={`text-white drop-shadow-sm ${isOverdue ? 'animate-pulse' : ''}`} />
                         </div>
                     </motion.div>
                 </div>
@@ -303,24 +304,27 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                             <button
                                 onClick={(e) => { e.stopPropagation(); if (!isViewer) onRemind(lead); }}
                                 disabled={isViewer}
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all
+                                className={`
+                                    relative group/reminder overflow-hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all duration-300
                                     ${isOverdue
-                                        ? 'bg-rose-50 text-rose-600 hover:bg-rose-100'
-                                        : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}
-                                    ${isViewer ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                                        ? 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-100 hover:ring-rose-200 hover:bg-rose-100'
+                                        : 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100 hover:ring-indigo-200 hover:bg-indigo-100'}
+                                    ${isViewer ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5'}
                                 `}
                             >
-                                <Clock size={12} />
-                                {(() => {
-                                    const d = new Date(lead.reminder.date);
-                                    const monthNames: Record<string, string[]> = {
-                                        uz: ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'],
-                                        ru: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
-                                        en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                                    };
-                                    const months = monthNames[language] || monthNames.en;
-                                    return `${d.getDate()} ${months[d.getMonth()]}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-                                })()}
+                                <Clock size={12} strokeWidth={2.5} className={`transition-transform duration-500 ${isOverdue ? 'group-hover/reminder:animate-bounce' : 'group-hover/reminder:rotate-[360deg]'}`} />
+                                <span className={isOverdue ? 'animate-pulse' : ''}>
+                                    {(() => {
+                                        const d = new Date(lead.reminder.date);
+                                        const monthNames: Record<string, string[]> = {
+                                            uz: ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'],
+                                            ru: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+                                            en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                                        };
+                                        const months = monthNames[language] || monthNames.en;
+                                        return `${d.getDate()} ${months[d.getMonth()]}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                                    })()}
+                                </span>
                             </button>
                         )}
                     </div>

@@ -30,11 +30,8 @@ export const createSystemUser = async (data: {
             userCredential = await createUserWithEmailAndPassword(secondaryAuth, data.email, data.password);
         } catch (authError: any) {
             if (authError.code === 'auth/email-already-in-use') {
-                console.log("Email in use, attempting to 'heal' by signing in...");
-                // If it already exists, try to sign in to get the UID. 
-                // This ensures we can recover if Firestore save failed earlier.
-                userCredential = await signInWithEmailAndPassword(secondaryAuth, data.email, data.password);
-                console.log("Legacy account verified and claimed.");
+                console.error("Duplicate phone usage detected.");
+                throw new Error("ACCOUNT_EXISTS: This phone number is already registered to another active clinic or user. You must use a unique phone number for each new System Node.");
             } else {
                 throw authError;
             }

@@ -21,7 +21,7 @@ interface SyncToastProps {
     onClose: (id: string) => void;
 }
 
-const SyncToast: React.FC<SyncToastProps> = ({ id, title, message, type = 'success', mascot, duration = 5000, action, onClose }) => {
+const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title, message, type = 'success', mascot, duration = 5000, action, onClose }, ref) => {
     const [isPaused, setIsPaused] = useState(false);
     const [progress, setProgress] = useState(100);
     const [showAnimation, setShowAnimation] = useState(false);
@@ -156,6 +156,7 @@ const SyncToast: React.FC<SyncToastProps> = ({ id, title, message, type = 'succe
     // Handle delete specifically for gradient - GREEN NOW
     const finalGradient = React.useMemo(() => {
         const t = title.toLowerCase();
+        // @ts-ignore
         const isDeleteTitle = t.includes('delete') ||
             t.includes('o\'chir') ||
             t.includes('udaleno') ||
@@ -169,6 +170,7 @@ const SyncToast: React.FC<SyncToastProps> = ({ id, title, message, type = 'succe
 
     return (
         <motion.div
+            ref={ref}
             layout
             initial={{ opacity: 0, scale: 0.8, y: 30 }}
             animate={{
@@ -283,6 +285,8 @@ const SyncToast: React.FC<SyncToastProps> = ({ id, title, message, type = 'succe
             </div>
         </motion.div>
     );
-};
+});
+
+SyncToast.displayName = 'SyncToast';
 
 export default SyncToast;

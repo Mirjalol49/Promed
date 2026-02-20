@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Note } from '../../types';
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
-import { Pin, Trash2, Check } from 'lucide-react';
+import { Pin, Trash2, Check, RotateCcw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -11,11 +11,16 @@ interface TimelineNoteProps {
     note: Note;
     index: number;
     isLeft: boolean;
-    onEdit: (note: Note) => void;
+    onEdit?: (note: Note) => void;
+    onStatusChange?: (id: string, isCompleted: boolean) => void;
     onDelete?: (id: string) => void;
 }
 
-export const TimelineNote: React.FC<TimelineNoteProps> = ({ note, index, isLeft, onEdit, onDelete }) => {
+interface ExtendedTimelineNoteProps extends TimelineNoteProps {
+    [key: string]: any;
+}
+
+export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: string, isCompleted: boolean) => void }> = ({ note, index, isLeft, onEdit, onDelete, onStatusChange }) => {
     const { t } = useLanguage();
 
     // Inverted tilt: Left cards tilt Left (-), Right cards tilt Right (+)
@@ -71,10 +76,21 @@ export const TimelineNote: React.FC<TimelineNoteProps> = ({ note, index, isLeft,
 
     const pinColors = getPinColors(index);
 
-    const [isCompleted, setIsCompleted] = React.useState(false);
+    const [isCompleted, setIsCompleted] = React.useState(note.isCompleted || false);
 
-    const handleDone = (e: React.MouseEvent) => {
+    const handleDone = async (e: React.MouseEvent) => {
         e.stopPropagation();
+
+        const newState = !isCompleted;
+        setIsCompleted(newState); // Optimistic
+
+        // Trigger onStatusChange handler
+        if (onStatusChange) {
+            onStatusChange(note.id, newState);
+        } else if (onEdit && (onEdit as any).onStatusChange) {
+            // Fallback for previous hacky way if any
+            (onEdit as any).onStatusChange(note.id, newState);
+        }
 
         if (!isCompleted) {
             // Calculate origin based on click position
@@ -101,8 +117,6 @@ export const TimelineNote: React.FC<TimelineNoteProps> = ({ note, index, isLeft,
             fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
             fire(0.1, { spread: 120, startVelocity: 45 });
         }
-
-        setIsCompleted(!isCompleted);
     };
 
     // Component for the complex 3D Pin shape
@@ -156,7 +170,7 @@ export const TimelineNote: React.FC<TimelineNoteProps> = ({ note, index, isLeft,
                     w-full md:w-[45%] bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/60 relative cursor-pointer
                      group transition-all duration-300
                     ${isLeft ? 'md:origin-top-right' : 'md:origin-top-left'}
-                    ${isCompleted ? 'opacity-60 grayscale' : ''}
+                    ${isCompleted ? 'opacity-90 ring-1 ring-slate-100 bg-slate-50/50' : ''}
                 `}
             >
                 {/* Visual Pin on the card itself (Top Center) - Tilted with card (Static) */}
@@ -181,20 +195,30 @@ export const TimelineNote: React.FC<TimelineNoteProps> = ({ note, index, isLeft,
 
                 {/* Single Professional Number Badge (Removed duplicate watermark) */}
                 <div className="mb-4 flex items-center justify-between">
-                    <div className={`
-                        px-3 py-1 rounded-full bg-white border ${pinColors.border} shadow-sm
-                        text-xs font-black ${pinColors.text} tracking-widest uppercase flex items-center gap-1.5
-                    `}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${pinColors.head}`}></div>
-                        {t('step')} {String(index + 1).padStart(2, '0')}
+                    <div className="flex items-center gap-2">
+                        {/* Status Badge - Shows Green Check when Done */}
+                        {isCompleted && (
+                            <div className="w-6 h-6 rounded-full bg-green-500 border-2 border-white shadow-md flex items-center justify-center animate-in zoom-in spin-in-12 duration-300">
+                                <Check size={14} className="text-white" strokeWidth={3} />
+                            </div>
+                        )}
+
+                        {/* Step Number Badge */}
+                        <div className={`
+                            px-3 py-1 rounded-full bg-white border ${pinColors.border} shadow-sm
+                            text-xs font-black ${pinColors.text} tracking-widest uppercase flex items-center gap-1.5
+                        `}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${pinColors.head}`}></div>
+                            {t('step')} {String(index + 1).padStart(2, '0')}
+                        </div>
                     </div>
                 </div>
 
-                <h3 className={`font-bold text-slate-800 text-lg leading-tight mb-2 line-clamp-2 group-hover:text-promed-primary transition-colors pr-8 ${isCompleted ? 'line-through decoration-slate-400 decoration-2 text-slate-400' : ''}`}>
+                <h3 className={`font-bold text-lg leading-tight mb-2 line-clamp-2 group-hover:text-promed-primary transition-colors pr-8 ${isCompleted ? 'line-through decoration-slate-400 decoration-2 text-slate-400' : 'text-slate-800'}`}>
                     {note.title || 'Sarlavhasiz'}
                 </h3>
 
-                <p className={`text-slate-600/80 text-sm leading-relaxed line-clamp-4 mb-3 ${isCompleted ? 'line-through decoration-slate-300 decoration-1 text-slate-400' : ''}`}>
+                <p className={`text-sm leading-relaxed line-clamp-4 mb-3 ${isCompleted ? 'line-through decoration-slate-300 decoration-1 text-slate-400' : 'text-slate-600/80'}`}>
                     {note.content}
                 </p>
 
@@ -210,10 +234,14 @@ export const TimelineNote: React.FC<TimelineNoteProps> = ({ note, index, isLeft,
                         onClick={handleDone}
                         className={`
                             flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-300
-                            ${isCompleted ? 'bg-slate-100 text-slate-500 hover:bg-slate-200' : `${pinColors.btn} shadow-md`}
+                            ${isCompleted ? 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700' : `${pinColors.btn} shadow-md`}
                         `}
                     >
-                        {isCompleted ? <React.Fragment><Check size={14} className="opacity-0 w-0" />Undo</React.Fragment> : <React.Fragment><Check size={14} strokeWidth={3} />{t('done')}</React.Fragment>}
+                        {isCompleted ? (
+                            <React.Fragment><RotateCcw size={14} strokeWidth={2} />{t('undo')}</React.Fragment>
+                        ) : (
+                            <React.Fragment><Check size={14} strokeWidth={3} />{t('done')}</React.Fragment>
+                        )}
                     </button>
                 </div>
             </motion.div>
