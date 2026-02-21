@@ -19,7 +19,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
     const [isOpen, setIsOpen] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const containerRef = useRef<HTMLDivElement>(null);
-    const { language } = useLanguage();
+    const { language, t } = useLanguage();
     const locale = language === 'uz' ? uz : language === 'ru' ? ru : enUS;
     const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number; width: number }>({ left: 0, width: 0 });
     const [isMobile, setIsMobile] = useState(false);
@@ -127,7 +127,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
 
         for (let i = 0; i < 7; i++) {
             days.push(
-                <div key={i} className="text-center text-[10px] md:text-xs font-bold text-slate-400 uppercase py-1 md:py-2">
+                <div key={i} className="text-center text-[10px] md:text-xs font-black text-blue-600 uppercase tracking-wider py-1 md:py-2">
                     {format(addDays(startDate, i), dateFormat, { locale })}
                 </div>
             );
@@ -173,15 +173,15 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                                 w-10 h-10 md:w-9 md:h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all relative z-10 mx-auto
                                 ${!isCurrentMonth ? 'text-slate-300' : ''}
                                 ${isSelected
-                                    ? 'bg-promed-primary text-white shadow-lg shadow-promed-primary/30'
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
                                     : isCurrentMonth ? 'text-slate-700 hover:bg-slate-100 active:bg-slate-200' : ''
                                 }
-                                ${isTodayDate && !isSelected ? 'text-promed-primary bg-promed-light' : ''}
+                                ${isTodayDate && !isSelected ? 'text-blue-600 ring-[1.5px] ring-blue-600 bg-blue-50 font-black shadow-sm' : ''}
                             `}
                         >
                             {formattedDate}
                             {isTodayDate && !isSelected && (
-                                <span className="absolute bottom-1 w-1 h-1 bg-promed-primary rounded-full" />
+                                <span className="absolute bottom-1 w-1 h-1 bg-blue-600 rounded-full" />
                             )}
                         </button>
                     </div>
@@ -297,19 +297,19 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                 aria-expanded={isOpen}
                 aria-label={value ? `Selected date: ${format(value, 'PPP', { locale })}` : (placeholder || 'Select date')}
                 className={`
-                    w-full text-left flex items-center gap-2 md:gap-3 transition-all duration-200 outline-none group
+                    w-full flex items-center justify-center gap-1 md:gap-2 transition-all duration-200 outline-none group
                     ${minimal
                         ? 'bg-transparent border-none px-2 md:px-3 h-full'
-                        : `bg-slate-50 border border-slate-300 rounded-2xl py-3 md:py-3.5 px-3 md:px-4 ${isOpen ? 'ring-4 ring-promed-primary/10 border-promed-primary bg-white' : 'hover:border-slate-400 hover:bg-white'}`
+                        : `bg-slate-50 border border-slate-300 rounded-2xl py-3 md:py-3.5 px-3 md:px-4 ${isOpen ? 'ring-4 ring-blue-600/10 border-blue-600 bg-white' : 'hover:border-slate-400 hover:bg-white'}`
                     }
                     text-slate-700 font-bold
                 `}
             >
-                <CalendarIcon className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-colors ${isOpen ? 'text-promed-primary' : 'group-hover:text-slate-600'} flex-shrink-0`} />
-                <span className="flex-1 whitespace-nowrap truncate text-xs sm:text-sm">
-                    {value ? format(value, 'dd MMM yyyy', { locale }) : (placeholder || 'Select Date')}
+                <CalendarIcon className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-colors ${isOpen ? 'text-blue-600' : 'group-hover:text-slate-600'} flex-shrink-0`} />
+                <span className="flex-1 text-center whitespace-nowrap text-[11px] sm:text-[13px] tracking-wide">
+                    {value ? format(value, 'dd MMMM yyyy', { locale }) : (placeholder || t('select_date') || 'Sanani tanlang')}
                 </span>
-                <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180 text-promed-primary' : ''}`} />
+                <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />
             </button>
 
             {/* Render Portal */}

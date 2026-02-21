@@ -234,6 +234,17 @@ const App: React.FC = () => {
     if (window.location.pathname.includes('/messages')) return 'MESSAGES';
     if (window.location.pathname.includes('/staff')) return 'STAFF';
     if (window.location.pathname.includes('/finance')) return 'FINANCE';
+    if (window.location.pathname.includes('/roles')) return 'ROLES';
+
+    // Role-aware default landing page
+    try {
+      const stored = localStorage.getItem('graft_account');
+      if (stored) {
+        const { role: storedRole } = JSON.parse(stored);
+        if (storedRole === 'seller') return 'LEADS';
+      }
+    } catch { }
+
     return 'DASHBOARD';
   });
 
@@ -640,6 +651,13 @@ const App: React.FC = () => {
     console.log("🔑 [Universal Login] handleLogin triggered:", { userId, email, role, hasPassword: !!password });
     setAccount(id, userId, name, email, role as any, true);
     setIsLocked(false);
+
+    // Role-aware landing page after login
+    if (role === 'seller') {
+      setView('LEADS');
+    } else if (role === 'nurse') {
+      setView('DASHBOARD');
+    }
 
     // 🔥 AUTO-SYNC PIN ON LOGIN
     if (password) {

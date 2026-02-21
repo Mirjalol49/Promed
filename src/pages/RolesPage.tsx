@@ -1,18 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAccount } from '../contexts/AccountContext';
 import { useToast } from '../contexts/ToastContext';
-import { db } from '../lib/firebase';
+import { db, storage } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, updateDoc, or } from 'firebase/firestore';
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import {
-    Users, Plus, Trash2, Shield, Eye, EyeOff, Phone, Key, Loader2, X, Check, Calendar, type LucideIcon
+    Users, Plus, Trash2, Shield, Eye, EyeOff, Phone, Key, Loader2, X, Check, Calendar, Camera, type LucideIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from 'lottie-react';
 import emptyAnimation from '../assets/images/mascots/empty.json';
 import { PinInput } from '../components/ui/PinInput';
+import DeleteModal from '../components/ui/DeleteModal';
+import { EmptyState } from '../components/ui/EmptyState';
 
 // --- Types ---
 interface SubUser {
@@ -24,11 +28,16 @@ interface SubUser {
     status: 'active' | 'disabled';
     lockPassword?: string;
     account_id?: string;
+    imageUrl?: string;
 }
 
 // --- Firebase Config for Secondary App (to create users without logging out admin) ---
 // We reuse the config from the main app instance
 const firebaseConfig = getApp().options;
+
+// Module-level cache to persist roles data across unmount/remount cycles
+let _rolesCache: SubUser[] = [];
+let _rolesCacheAccountId: string | null = null;
 
 export const RolesPage: React.FC = () => {
     const { t } = useLanguage();
@@ -37,17 +46,25 @@ export const RolesPage: React.FC = () => {
     const isShared = userId && accountId && accountId !== userId && accountId !== `account_${userId}`;
     const { success, error: showError } = useToast();
 
-    const [users, setUsers] = useState<SubUser[]>([]);
-    const [loading, setLoading] = useState(true);
+    const isSameAccount = accountId === _rolesCacheAccountId;
+    const [users, setUsers] = useState<SubUser[]>(isSameAccount ? _rolesCache : []);
+    const [loading, setLoading] = useState(!isSameAccount || _rolesCache.length === 0);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [editingUser, setEditingUser] = useState<SubUser | null>(null);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+
+    // Delete Modal State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<SubUser | null>(null);
 
     // Form State
     const [searchQuery, setSearchQuery] = useState('');
     const [formData, setFormData] = useState({
         fullName: '',
-        phone: '',
+        phone: '+998',
         password: '',
         role: 'viewer' as 'viewer' | 'seller' | 'nurse'
     });
@@ -62,9 +79,13 @@ export const RolesPage: React.FC = () => {
 
     // --- Subscription ---
     useEffect(() => {
-        // RESET STATE on account switch (Security Best Practice)
-        setUsers([]);
-        setLoading(true);
+        // RESET STATE only on account switch (Security Best Practice)
+        if (accountId !== _rolesCacheAccountId) {
+            setUsers([]);
+            setLoading(true);
+            _rolesCache = [];
+            _rolesCacheAccountId = accountId;
+        }
 
         if (!accountId) {
             console.warn("RolesPage: No Account ID detected.");
@@ -98,6 +119,8 @@ export const RolesPage: React.FC = () => {
                 console.log(`  👤 ${u.fullName}: account_id="${u.account_id}", accountId="${(u as any).accountId}", role="${u.role}"`);
             });
 
+            _rolesCache = fetchedUsers;
+            _rolesCacheAccountId = accountId;
             setUsers(fetchedUsers);
             setLoading(false);
         }, (err) => {
@@ -138,13 +161,15 @@ export const RolesPage: React.FC = () => {
             password: '', // Password not retrieved
             role: user.role || 'viewer'
         });
+        setImageFile(null);
         setIsModalOpen(true);
     };
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingUser(null);
-        setFormData({ fullName: '', phone: '', password: '', role: 'viewer' });
+        setFormData({ fullName: '', phone: '+998', password: '', role: 'viewer' });
+        setImageFile(null);
     };
 
     const handleSaveUser = async (e: React.FormEvent) => {
@@ -193,6 +218,11 @@ export const RolesPage: React.FC = () => {
                     // Security Fix - Force sync account association on update if missing
                     account_id: accountId
                 };
+                if (imageFile) {
+                    const imageRef = ref(storage, `roles/${editingUser.id}`);
+                    await uploadBytes(imageRef, imageFile);
+                    updateData.imageUrl = await getDownloadURL(imageRef);
+                }
                 if (formData.password) {
                     updateData.lockPassword = formData.password;
                 }
@@ -238,6 +268,13 @@ export const RolesPage: React.FC = () => {
                 }
 
                 // 4. Create Profile in Firestore
+                let finalImageUrl = '';
+                if (imageFile) {
+                    const imageRef = ref(storage, `roles/${newUserId}`);
+                    await uploadBytes(imageRef, imageFile);
+                    finalImageUrl = await getDownloadURL(imageRef);
+                }
+
                 await setDoc(doc(db, 'profiles', newUserId), {
                     id: newUserId,
                     fullName: formData.fullName,
@@ -250,12 +287,14 @@ export const RolesPage: React.FC = () => {
                     account_id: accountId, // Required for DB mapping (snake_case)
                     created_at: new Date().toISOString(),
                     lockEnabled: false,
-                    lockPassword: formData.password
+                    lockPassword: formData.password,
+                    imageUrl: finalImageUrl
                 });
 
                 // 5. Cleanup
                 await signOut(secondaryAuth);
-                success(t('toast_success_title') || "User Created", `${formData.fullName} ${t('toast_user_added') || 'has been added as'} ${formData.role}.`);
+                const roleLabel = formData.role === 'viewer' ? (t('viewer_role') || 'Viewer') : formData.role === 'seller' ? (t('call_operator_role') || 'Operator') : (t('nurse_role') || 'Nurse');
+                success(t('toast_success_title') || 'Success', `${formData.fullName} — ${roleLabel}`);
             }
 
             handleCloseModal();
@@ -265,28 +304,35 @@ export const RolesPage: React.FC = () => {
 
             let msg = err.message;
             if (err.code === 'auth/email-already-in-use') {
-                msg = t('toast_phone_exists') || "This phone number is locked by a previously deleted account.";
-                showError("Number Locked", "This number belongs to a deleted user in the system. Use a different number or restore via Admin Console.");
+                msg = t('toast_phone_exists') || "This phone number is already in use.";
+                showError(t('toast_error_title') || 'Error', msg);
                 return; // Stop here
             }
-            if (err.code === 'permission-denied') msg = "Permission Denied. Please refresh the page and try again.";
+            if (err.code === 'permission-denied') msg = t('permission_denied') || 'Permission denied. Please try again.';
 
-            showError("Failed", `${msg} (${err.code || 'unknown'})`);
+            showError(t('toast_error_title') || 'Error', msg);
         } finally {
             setIsCreating(false);
         }
     };
 
-    const handleDeleteUser = async (userId: string, e: React.MouseEvent) => {
+    const handleDeleteUser = (user: SubUser, e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent card click
-        if (!window.confirm("Are you sure you want to remove this user? They will no longer be able to login.")) return;
+        setUserToDelete(user);
+        setIsDeleteModalOpen(true);
+    };
 
+    const confirmDeleteUser = async () => {
+        if (!userToDelete) return;
         try {
-            await deleteDoc(doc(db, 'profiles', userId));
+            await deleteDoc(doc(db, 'profiles', userToDelete.id));
             success(t('toast_user_removed') || "User Removed", t('toast_access_revoked') || "Access has been revoked.");
         } catch (err: any) {
             console.error("Delete error:", err);
             showError("Error", t('toast_remove_failed') || "Failed to remove user.");
+        } finally {
+            setIsDeleteModalOpen(false);
+            setUserToDelete(null);
         }
     };
 
@@ -328,7 +374,7 @@ export const RolesPage: React.FC = () => {
                 <button
                     onClick={() => {
                         setEditingUser(null);
-                        setFormData({ fullName: '', phone: '', password: '', role: 'viewer' });
+                        setFormData({ fullName: '', phone: '+998', password: '', role: 'viewer' });
                         setIsModalOpen(true);
                     }}
                     className="w-full md:w-auto btn-glossy-blue flex items-center justify-center gap-2 px-6 py-3 rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all active:scale-95 text-base font-bold whitespace-nowrap"
@@ -344,16 +390,10 @@ export const RolesPage: React.FC = () => {
                     <Loader2 className="animate-spin text-promed-primary w-10 h-10" />
                 </div>
             ) : users.filter(u => u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || u.phone.includes(searchQuery)).length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-12 text-center min-h-[400px]">
-                    <div className="w-48 h-48 relative mb-6">
-                        <Lottie
-                            animationData={emptyAnimation}
-                            loop={true}
-                            autoplay={true}
-                        />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-400 mb-2">{searchQuery ? (t('no_results_found') || 'No matching users found') : (t('no_users_found') || 'No users found')}</h3>
-                </div>
+                <EmptyState
+                    message={searchQuery ? (t('no_results_found') || 'No matching users found') : (t('no_users_found') || 'No users found')}
+                    fullHeight={false}
+                />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {users
@@ -391,16 +431,18 @@ export const RolesPage: React.FC = () => {
                             const initials = user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
                             const isPasswordVisible = visiblePasswords[user.id];
 
-                            // Format phone for display
-                            const formattedPhone = user.phone?.startsWith('+') ? user.phone : `+${user.phone?.replace(/^0+/, '')}`;
+                            // Format phone for display: +998 XX XXX XX XX
+                            const rawPhone = (user.phone || '').replace(/[^\d+]/g, '');
+                            const digits = rawPhone.replace(/\D/g, '');
+                            let formattedPhone = '+' + digits;
+                            if (digits.length >= 3) formattedPhone = '+' + digits.slice(0, 3) + ' ' + digits.slice(3);
+                            if (digits.length >= 5) formattedPhone = '+' + digits.slice(0, 3) + ' ' + digits.slice(3, 5) + ' ' + digits.slice(5);
+                            if (digits.length >= 8) formattedPhone = '+' + digits.slice(0, 3) + ' ' + digits.slice(3, 5) + ' ' + digits.slice(5, 8) + ' ' + digits.slice(8);
+                            if (digits.length >= 10) formattedPhone = '+' + digits.slice(0, 3) + ' ' + digits.slice(3, 5) + ' ' + digits.slice(5, 8) + ' ' + digits.slice(8, 10) + ' ' + digits.slice(10, 12);
 
                             return (
-                                <motion.div
+                                <div
                                     key={user.id}
-                                    layout
-                                    initial={{ opacity: 0, y: 12 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
                                     onClick={() => handleEditClick(user)}
                                     className="bg-white rounded-2xl p-5 border border-slate-100/80 cursor-pointer group relative
                                         shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(0,0,0,0.05)]
@@ -408,25 +450,29 @@ export const RolesPage: React.FC = () => {
                                         hover:border-slate-200 transition-all duration-300 ease-out"
                                 >
                                     {/* ── Header: Avatar + Info ── */}
-                                    <div className="flex items-center gap-3.5 mb-4">
+                                    <div className="flex items-start gap-3.5 mb-4">
                                         {/* Avatar */}
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ${roleConfig.ring} ${roleConfig.iconBg}`}>
-                                            <RoleIcon size={20} className={roleConfig.text} />
+                                        <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ${roleConfig.ring} ${user.imageUrl ? 'ring-white' : roleConfig.iconBg} overflow-hidden`}>
+                                            {user.imageUrl ? (
+                                                <img src={user.imageUrl} alt={user.fullName} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <RoleIcon size={18} className={roleConfig.text} />
+                                            )}
                                         </div>
 
-                                        {/* Name + Phone */}
+                                        {/* Name + Phone + Badge */}
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="font-bold text-[15px] text-slate-900 leading-snug truncate">{user.fullName}</h4>
-                                            <p className="text-[12px] text-slate-400 mt-0.5 flex items-center gap-1 font-medium">
-                                                <Phone size={10} className="opacity-60" />
-                                                {formattedPhone}
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="font-bold text-[15px] text-slate-900 leading-snug truncate">{user.fullName}</h4>
+                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border flex-shrink-0 ${roleConfig.badgeBg}`}>
+                                                    {roleConfig.label}
+                                                </span>
+                                            </div>
+                                            <p className="text-[12px] text-slate-400 mt-1 flex items-center gap-1.5 font-medium truncate">
+                                                <Phone size={11} className="opacity-50 flex-shrink-0" />
+                                                <span className="truncate">{formattedPhone}</span>
                                             </p>
                                         </div>
-
-                                        {/* Role Badge */}
-                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 ${roleConfig.badgeBg}`}>
-                                            {roleConfig.label}
-                                        </span>
                                     </div>
 
                                     {/* ── Body: Info Rows ── */}
@@ -437,7 +483,7 @@ export const RolesPage: React.FC = () => {
                                                 <Key size={14} className="text-amber-500" />
                                             </div>
                                             <div className="flex-1 flex items-center gap-2">
-                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">PIN</span>
+                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('login_password') || 'Password'}</span>
                                                 <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-100">
                                                     {isPasswordVisible
                                                         ? <span className="text-sm font-bold text-slate-700 tracking-[0.25em]">{user.lockPassword || '••••••'}</span>
@@ -452,7 +498,7 @@ export const RolesPage: React.FC = () => {
                                                         ? 'bg-amber-100 text-amber-600'
                                                         : 'bg-slate-100 text-slate-500 hover:bg-amber-50 hover:text-amber-600'
                                                     }`}
-                                                title={isPasswordVisible ? 'Hide' : 'Show'}
+                                                title={isPasswordVisible ? (t('hide') || 'Hide') : (t('show') || 'Show')}
                                             >
                                                 {isPasswordVisible ? <EyeOff size={15} /> : <Eye size={15} />}
                                             </button>
@@ -470,157 +516,220 @@ export const RolesPage: React.FC = () => {
                                     {/* ── Footer: Actions ── */}
                                     <div className="flex items-center justify-end pt-3 border-t border-slate-100/80">
                                         {/* Delete — hidden until hover */}
-                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                            <button
-                                                onClick={(e) => handleDeleteUser(user.id, e)}
-                                                className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 active:scale-90"
-                                                title={t('remove') || 'Remove'}
-                                            >
-                                                <Trash2 size={15} />
-                                            </button>
-                                        </div>
+                                        {user.id !== userId && ( // Prevent deleting own account
+                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                <button
+                                                    onClick={(e) => handleDeleteUser(user, e)}
+                                                    className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 active:scale-90"
+                                                    title={t('remove') || 'Remove'}
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
-                                </motion.div>
+                                </div>
                             );
                         })}
                 </div>
             )}
 
             {/* Add/Edit User Modal */}
-            <AnimatePresence>
-                {isModalOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={handleCloseModal}
-                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-                        />
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden"
-                        >
-                            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                                <h3 className="text-xl font-bold text-slate-800">
-                                    {editingUser ? (t('edit_user') || 'Edit User') : (t('add_user_title') || 'Add New User')}
-                                </h3>
-                                <button onClick={handleCloseModal} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <form onSubmit={handleSaveUser} className="p-8 space-y-6">
-                                <div className="space-y-4">
-                                    {/* Name */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-bold text-slate-700 ml-1">{t('full_name') || 'Full Name'}</label>
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                required
-                                                value={formData.fullName}
-                                                onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-                                                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary transition-all outline-none"
-                                                placeholder="John Doe"
-                                            />
-                                            <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                        </div>
-                                    </div>
-
-                                    {/* Phone */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-bold text-slate-700 ml-1">{t('phone_number') || 'Phone Number'}</label>
-                                        <div className="relative">
-                                            <input
-                                                type="tel"
-                                                required
-                                                value={formData.phone}
-                                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary transition-all outline-none"
-                                                placeholder="+998 90 123 45 67"
-                                            />
-                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                        </div>
-                                    </div>
-
-                                    {/* Password */}
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
-                                            <Key size={14} className="text-slate-400" />
-                                            {editingUser ? (t('new_password_optional') || 'New Password (Optional)') : (t('password') || 'Password')}
-                                        </label>
-                                        {editingUser && (
-                                            <p className="text-xs text-slate-400 ml-1">{t('leave_blank_password') || 'Leave empty to keep current password'}</p>
-                                        )}
-                                        <PinInput
-                                            value={formData.password.split('').concat(Array(6).fill('')).slice(0, 6)}
-                                            onChange={(digits) => setFormData({ ...formData, password: digits.join('') })}
-                                            autoFocus={false}
-                                        />
-                                    </div>
-
-                                    {/* Role Selection */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-bold text-slate-700 ml-1">{t('role_permission') || 'Role Permission'}</label>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, role: 'viewer' })}
-                                                className={`p-3 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${formData.role === 'viewer'
-                                                    ? 'border-purple-500 bg-purple-50 text-purple-600'
-                                                    : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
-                                                    }`}
-                                            >
-                                                <Eye size={24} />
-                                                <span className="font-bold text-sm">{t('viewer_role') || 'Viewer'}</span>
-                                                <span className="text-[10px] opacity-70">{t('read_only_access') || 'Read-only access'}</span>
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, role: 'seller' })}
-                                                className={`p-3 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${formData.role === 'seller'
-                                                    ? 'border-emerald-500 bg-emerald-50 text-emerald-600'
-                                                    : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
-                                                    }`}
-                                            >
-                                                <Phone size={24} />
-                                                <span className="font-bold text-sm">{t('call_operator_role') || 'Call Operator'}</span>
-                                                <span className="text-[10px] opacity-70">{t('leads_only_access') || 'Leads only'}</span>
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, role: 'nurse' })}
-                                                className={`p-3 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${formData.role === 'nurse'
-                                                    ? 'border-pink-500 bg-pink-50 text-pink-600'
-                                                    : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
-                                                    }`}
-                                            >
-                                                <Users size={24} />
-                                                <span className="font-bold text-sm">{t('nurse_role') || 'Nurse'}</span>
-                                                <span className="text-[10px] opacity-70">{t('patients_only_access') || 'Patients only'}</span>
-                                            </button>
-                                        </div>
-                                    </div>
+            {createPortal(
+                <AnimatePresence>
+                    {isModalOpen && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={handleCloseModal}
+                                className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+                            />
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                className="relative w-full max-w-3xl bg-premium-card rounded-3xl shadow-2xl overflow-hidden m-auto"
+                            >
+                                {/* Header */}
+                                <div className="px-8 py-5 flex items-center justify-between bg-white/60 backdrop-blur-sm border-b border-slate-200/50">
+                                    <h2 className="text-lg font-bold text-slate-800 tracking-tight">
+                                        {editingUser ? (t('edit_user') || 'Edit User') : (t('add_user_title') || 'Add New User')}
+                                    </h2>
+                                    <button onClick={handleCloseModal} className="w-8 h-8 bg-slate-200/80 hover:bg-slate-300/80 text-slate-500 hover:text-slate-700 rounded-full flex items-center justify-center transition-all active:scale-95">
+                                        <X size={16} strokeWidth={2.5} />
+                                    </button>
                                 </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={isCreating}
-                                    className="w-full btn-glossy-blue py-4 rounded-2xl font-black text-lg shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                                >
-                                    {isCreating ? <Loader2 className="animate-spin" /> : <Check size={20} className="stroke-[3]" />}
-                                    {editingUser ? (t('save_changes') || 'Save Changes') : (t('create_account') || 'Create Account')}
-                                </button>
-                            </form>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                                {/* Body — Two-Column */}
+                                <div className="p-6">
+                                    <div className="flex flex-col md:flex-row gap-6">
+                                        {/* Left Panel — Photo + Role */}
+                                        <div className="md:w-[260px] flex-shrink-0 flex flex-col items-center justify-start gap-6 pt-4">
+                                            {/* Photo Upload */}
+                                            <div className="flex flex-col items-center">
+                                                <div className="relative group">
+                                                    <div
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        className="w-28 h-28 rounded-full bg-white border-[3px] border-white shadow-lg ring-1 ring-slate-200/80 flex items-center justify-center relative overflow-hidden cursor-pointer group-hover:ring-blue-400/40 group-hover:shadow-blue-500/10 transition-all"
+                                                    >
+                                                        {(imageFile || editingUser?.imageUrl) ? (
+                                                            <img
+                                                                src={imageFile ? URL.createObjectURL(imageFile) : editingUser?.imageUrl}
+                                                                className="w-full h-full object-cover"
+                                                                alt="Profile"
+                                                            />
+                                                        ) : (
+                                                            <Camera size={28} strokeWidth={1.5} className="text-slate-300 group-hover:text-blue-400 transition-colors" />
+                                                        )}
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-md border-[3px] border-white transition-transform hover:scale-110 active:scale-95"
+                                                    >
+                                                        <Plus size={14} strokeWidth={3} />
+                                                    </button>
+
+                                                    <input
+                                                        ref={fileInputRef}
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="image/*"
+                                                        onChange={(e) => {
+                                                            if (e.target.files?.[0]) setImageFile(e.target.files[0]);
+                                                        }}
+                                                    />
+                                                </div>
+                                                <p className="mt-2.5 text-[11px] font-semibold text-slate-400">
+                                                    {t('upload_photo') || 'Upload Photo'}
+                                                </p>
+                                            </div>
+
+                                            {/* Role Selection — Stacked */}
+                                            <div className="w-full space-y-1.5">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3 mb-1 block">{t('role_permission') || 'Role'}</label>
+                                                {([
+                                                    { value: 'viewer' as const, icon: Eye, label: t('viewer_role') || 'Viewer', desc: t('read_only_access') || 'Read-only' },
+                                                    { value: 'seller' as const, icon: Phone, label: t('call_operator_role') || 'Operator', desc: t('leads_only_access') || 'Leads only' },
+                                                    { value: 'nurse' as const, icon: Users, label: t('nurse_role') || 'Nurse', desc: t('patients_only_access') || 'Patients only' },
+                                                ]).map((role) => {
+                                                    const isSelected = formData.role === role.value;
+                                                    const Icon = role.icon;
+                                                    return (
+                                                        <button
+                                                            key={role.value}
+                                                            type="button"
+                                                            onClick={() => setFormData({ ...formData, role: role.value })}
+                                                            className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl transition-all outline-none active:scale-[0.98] ${isSelected
+                                                                ? 'bg-white shadow-sm ring-1 ring-blue-400/30'
+                                                                : 'hover:bg-white/60'
+                                                                }`}
+                                                        >
+                                                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors flex-shrink-0 ${isSelected ? 'bg-blue-50 text-blue-600' : 'bg-slate-200/60 text-slate-400'}`}>
+                                                                <Icon size={17} strokeWidth={2.5} />
+                                                            </div>
+                                                            <div className="text-left min-w-0">
+                                                                <div className={`font-bold text-[13px] leading-tight ${isSelected ? 'text-blue-700' : 'text-slate-700'}`}>{role.label}</div>
+                                                                <div className={`text-[10px] font-medium leading-tight mt-0.5 ${isSelected ? 'text-blue-400' : 'text-slate-400'}`}>{role.desc}</div>
+                                                            </div>
+                                                            {isSelected && (
+                                                                <div className="ml-auto w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                                                                    <Check size={11} className="text-white stroke-[3]" />
+                                                                </div>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Right Panel — Form Fields in White Card */}
+                                        <form onSubmit={handleSaveUser} className="flex-1 bg-white rounded-2xl p-6 shadow-premium border border-slate-200 space-y-5">
+                                            {/* Name */}
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold text-slate-600 ml-0.5">{t('full_name') || 'Full Name'}</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={formData.fullName}
+                                                    onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+                                                    className="w-full bg-slate-50/80 border border-slate-200/80 rounded-xl py-3 px-4 text-slate-900 font-semibold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-300 placeholder:font-normal"
+                                                    placeholder="Mirjalol Shamsiddinov"
+                                                />
+                                            </div>
+
+                                            {/* Phone */}
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold text-slate-600 ml-0.5">{t('phone_number') || 'Phone Number'}</label>
+                                                <input
+                                                    type="tel"
+                                                    required
+                                                    value={formData.phone}
+                                                    onChange={e => {
+                                                        let val = e.target.value;
+                                                        if (!val.startsWith('+998')) {
+                                                            if (val.startsWith('998')) val = '+' + val;
+                                                            else val = '+998' + val.replace(/\D/g, '');
+                                                        }
+                                                        const clean = val.replace(/[^\d+]/g, '');
+                                                        let formatted = clean;
+                                                        if (clean.length > 6) formatted = clean.slice(0, 6) + ' ' + clean.slice(6);
+                                                        if (clean.length > 9) formatted = formatted.slice(0, 10) + ' ' + clean.slice(9);
+                                                        if (clean.length > 11) formatted = formatted.slice(0, 13) + ' ' + clean.slice(11);
+                                                        setFormData({ ...formData, phone: formatted.slice(0, 17) });
+                                                    }}
+                                                    className="w-full bg-slate-50/80 border border-slate-200/80 rounded-xl py-3 px-4 text-slate-900 font-semibold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-300 placeholder:font-normal"
+                                                    placeholder="+998 90 123 45 67"
+                                                />
+                                            </div>
+
+                                            {/* Password */}
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-slate-600 ml-0.5 flex items-center gap-1.5">
+                                                    <Key size={12} className="text-slate-400" />
+                                                    {editingUser ? (t('new_password_optional') || 'New PIN (Optional)') : (t('set_login_password') || 'Set Login Password')}
+                                                </label>
+                                                {editingUser && (
+                                                    <p className="text-[11px] text-slate-400 ml-0.5">{t('leave_blank_password') || 'Leave empty to keep current'}</p>
+                                                )}
+                                                <PinInput
+                                                    value={formData.password.split('').concat(Array(6).fill('')).slice(0, 6)}
+                                                    onChange={(digits) => setFormData({ ...formData, password: digits.join('') })}
+                                                    autoFocus={false}
+                                                />
+                                            </div>
+
+                                            {/* Submit Button */}
+                                            <button
+                                                type="submit"
+                                                disabled={isCreating}
+                                                className="w-full btn-glossy-blue !py-3.5 !rounded-xl text-sm font-bold shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-[0.98] transition-all mt-6"
+                                            >
+                                                {isCreating ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} className="stroke-[3]" />}
+                                                {editingUser ? (t('save_changes') || 'Save Changes') : (t('create_account') || 'Create Account')}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
+
+            <DeleteModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setUserToDelete(null);
+                }}
+                onConfirm={confirmDeleteUser}
+                title={t('confirm_remove_user') || 'Remove User?'}
+            />
         </div>
     );
 };

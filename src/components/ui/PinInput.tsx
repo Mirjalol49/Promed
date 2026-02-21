@@ -87,7 +87,7 @@ export const PinInput: React.FC<PinInputProps> = ({
                             border-[2px] 
                             ${error
                                 ? 'border-rose-500 focus:border-rose-600 ring-rose-300 shake'
-                                : 'border-slate-200 focus:border-[#f71590] focus:ring-4 focus:ring-[#f71590]'
+                                : 'border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15'
                             }
                             ${digit ? 'border-slate-300' : ''}
                             rounded-[18px] 
@@ -103,7 +103,7 @@ export const PinInput: React.FC<PinInputProps> = ({
                     {/* Blinking Cursor for Focus State */}
                     {!digit && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-                            <div className="w-[3px] h-6 bg-[#f71590] opacity-0 peer-focus:opacity-100 peer-focus:animate-pulse rounded-full transition-opacity duration-200" />
+                            <div className="w-[3px] h-6 bg-blue-500 opacity-0 peer-focus:opacity-100 peer-focus:animate-pulse rounded-full transition-opacity duration-200" />
                         </div>
                     )}
 

@@ -464,9 +464,9 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                     return (
                                         <div
                                             key={exp.id}
-                                            className={`group relative px-4 py-4 md:px-8 md:py-5 flex flex-col md:flex-row md:items-center gap-3 md:gap-5 transition-all duration-200 mx-3 md:mx-6 mb-3 rounded-2xl border border-slate-200 bg-slate-100 hover:bg-white hover:shadow-md ${isVoided ? 'opacity-75' : ''}`}
+                                            className={`group relative px-4 py-4 md:px-8 md:py-5 flex flex-col md:flex-row md:items-center gap-3 md:gap-5 transition-all duration-200 mx-3 md:mx-6 mb-3 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md ${isVoided ? 'opacity-75' : ''}`}
                                         >
-                                            <div className="hidden md:flex flex-col items-center justify-center w-[4.5rem] h-[4.5rem] bg-slate-200 rounded-2xl border border-slate-300/50 shadow-inner shrink-0 group-hover:scale-105 transition-all duration-300">
+                                            <div className="hidden md:flex flex-col items-center justify-center w-[4.5rem] h-[4.5rem] bg-slate-100/80 rounded-2xl border border-slate-200 shadow-sm shrink-0 group-hover:scale-105 transition-all duration-300">
                                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-0.5">{getMonthShort(exp.date)}</span>
                                                 <span className="text-[1.75rem] font-black text-slate-800 leading-none">{format(new Date(exp.date), 'dd')}</span>
                                                 <span className="text-[10px] font-bold text-rose-500 leading-none mt-1 bg-white/60 px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm">{exp.time || '--:--'}</span>
@@ -553,10 +553,10 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                     <div key={income.id}>
                                         {/* ── Main Transaction Row ── */}
                                         <div
-                                            className={`group relative px-4 py-4 md:px-8 md:py-5 flex flex-col md:flex-row md:items-center gap-3 md:gap-5 transition-all duration-200 mx-3 md:mx-6 mb-3 rounded-2xl border border-slate-200 bg-slate-100 hover:bg-white hover:shadow-md ${isVoided ? 'opacity-75' : (hasSplits ? 'cursor-pointer' : '')} ${isExpanded ? 'ring-2 ring-blue-100 bg-white shadow-md' : ''}`}
+                                            className={`group relative px-4 py-4 md:px-8 md:py-5 flex flex-col md:flex-row md:items-center gap-3 md:gap-5 transition-all duration-200 mx-3 md:mx-6 mb-3 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md ${isVoided ? 'opacity-75' : (hasSplits ? 'cursor-pointer' : '')} ${isExpanded ? 'ring-2 ring-blue-100 shadow-md' : ''}`}
                                             onClick={() => !isVoided && hasSplits && toggleExpand(income.id)}
                                         >
-                                            <div className="hidden md:flex flex-col items-center justify-center w-[4.5rem] h-[4.5rem] bg-slate-200 rounded-2xl border border-slate-300/50 shadow-inner shrink-0 group-hover:scale-105 transition-all duration-300">
+                                            <div className="hidden md:flex flex-col items-center justify-center w-[4.5rem] h-[4.5rem] bg-slate-100/80 rounded-2xl border border-slate-200 shadow-sm shrink-0 group-hover:scale-105 transition-all duration-300">
                                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-0.5">{getMonthShort(income.date)}</span>
                                                 <span className="text-[1.75rem] font-black text-slate-800 leading-none">{format(new Date(income.date), 'dd')}</span>
                                                 <span className="text-[10px] font-bold text-blue-600 leading-none mt-1 bg-white/80 px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm">{income.time || '--:--'}</span>

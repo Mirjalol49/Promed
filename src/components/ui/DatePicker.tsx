@@ -87,7 +87,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     ${isSelected
                             ? 'gel-blue-style text-white shadow-lg'
                             : isToday
-                                ? 'bg-amber-100 text-amber-700 font-bold border border-amber-200'
+                                ? 'text-blue-600 ring-[1.5px] ring-blue-600 bg-blue-50 font-black shadow-sm'
                                 : 'text-slate-700 hover:bg-slate-100'
                         }
                 `}
@@ -156,7 +156,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
                     <div className="grid grid-cols-7 gap-1 text-center mb-2">
                         {dayHeaders.map(day => (
-                            <div key={day} className="text-xs font-bold text-slate-400 uppercase">{day}</div>
+                            <div key={day} className="text-xs font-black text-blue-600 uppercase tracking-wider">{day}</div>
                         ))}
                     </div>
 

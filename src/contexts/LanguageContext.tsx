@@ -73,6 +73,7 @@ export const translations = {
     last_month: "Last Month",
     patients_stats: "Patients Statistics",
     monthly: "Monthly",
+    yearly: "Yearly",
     weekly: "Weekly",
     todays_appointments: "Today's Appointments",
     see_all: "See All",
@@ -345,6 +346,8 @@ export const translations = {
     // Delete Modal
     delete_modal_headline: "Are we really saying goodbye?",
     delete_modal_subtext: "This action cannot be undone. All patient data, photos, and history will be permanently deleted.",
+    confirm_remove_user: "Remove User?",
+    confirm_remove_user_desc: "Are you sure you want to remove this user? They will no longer be able to login.",
     delete_modal_cancel: "No, keep it",
     delete_modal_confirm: "Yes, delete",
     delete_transaction_title: "Delete Transaction?",
@@ -703,6 +706,7 @@ export const translations = {
     last_month: "O'tgan oy",
     patients_stats: "Bemorlar Statistikasi",
     monthly: "Oylik",
+    yearly: "Yillik",
     weekly: "Haftalik",
     todays_appointments: "Bugungi Uchrashuvlar",
     see_all: "Hammasini ko'rish",
@@ -992,7 +996,9 @@ export const translations = {
 
     // Delete Modal
     delete_modal_headline: "Rostdan ham xayrlashamizmi?",
-    delete_modal_subtext: "Bu amalni ortga qaytarib bo'lmaydi. Bemorning barcha ma'lumotlari, rasmlari va tarixi butunlay o'chib ketadi.",
+    delete_modal_subtext: "Bu amalni ortga qaytarib bo'lmaydi. Bemorning barcha ma'lumotlari, rasmlari va tarixi butunlay o'chiriladi.",
+    confirm_remove_user: "Foydalanuvchini o'chirish?",
+    confirm_remove_user_desc: "Haqiqatan ham ushbu foydalanuvchini o'chirishni xohlaysizmi? Ular endi tizimga kira olmaydilar.",
     delete_modal_cancel: "Yo'q, qolsin",
     delete_modal_confirm: "Ha, o'chirilsin",
     delete_transaction_title: "Tranzaksiyani o'chirish?",
@@ -1354,6 +1360,7 @@ export const translations = {
     last_month: "Прошлый месяц",
     patients_stats: "Статистика пациентов",
     monthly: "Ежемесячно",
+    yearly: "Годовой",
     weekly: "Еженедельно",
     todays_appointments: "Приемы сегодня",
     see_all: "Показать все",
@@ -1648,6 +1655,8 @@ export const translations = {
     // Delete Modal
     delete_modal_headline: "Мы действительно прощаемся?",
     delete_modal_subtext: "Это действие нельзя отменить. Все данные пациента, фотографии и история будут удалены безвозвратно.",
+    confirm_remove_user: "Удалить пользователя?",
+    confirm_remove_user_desc: "Вы уверены, что хотите удалить этого пользователя? Он больше не сможет войти в систему.",
     delete_modal_cancel: "Нет, оставить",
     delete_modal_confirm: "Да, удалить",
     delete_transaction_title: "Удалить транзакцию?",

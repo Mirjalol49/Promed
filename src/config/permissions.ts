@@ -54,14 +54,12 @@ export const ROLE_PERMISSIONS: Record<Role, Scope[] | '*'> = {
     [ROLES.ADMIN]: '*', // Super Admin
     [ROLES.DOCTOR]: '*', // Doctor (Admin equivalent)
 
-    // 1. Nurse: Can only access Patients (CRUD)
+    // 1. Nurse: Can only access Dashboard + Patients (CRUD)
     [ROLES.NURSE]: [
         SCOPES.canViewDashboard,
         SCOPES.canViewPatients,
         SCOPES.canEditPatients,
         SCOPES.canViewSettings,
-        SCOPES.canViewFinance,
-        SCOPES.canEditFinance,
     ],
 
     // 2. Call Operator (Seller): Can only access Leads (CRUD)

@@ -13,11 +13,8 @@ import {
     LayoutGrid, List, Clock, BarChart3, ChevronRight, Search, FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, subDays, startOfMonth, startOfWeek, isAfter, isBefore, startOfDay, endOfDay, addDays } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, startOfWeek, isAfter, isBefore, startOfDay, endOfDay, addDays } from 'date-fns';
 import { uz, ru, enUS } from 'date-fns/locale';
-import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar
-} from 'recharts';
 import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
 import { CustomSelect } from '../../components/ui/CustomSelect';
 import { CustomDatePicker } from '../../components/ui/CustomDatePicker';
@@ -29,6 +26,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 
 
 import { TransactionModal } from './TransactionModal';
+import { Chart3D } from '../../components/ui/Chart3D';
 
 // --- Types ---
 type DateFilter = 'all' | 'month' | 'week';
@@ -131,12 +129,12 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
         let result = transactions;
 
         if (startDate) {
-            const startStr = format(startDate, 'yyyy-MM-dd');
-            result = result.filter(t => t.date >= startStr);
+            const startOfDayTime = startOfDay(startDate).getTime();
+            result = result.filter(t => new Date(t.date).getTime() >= startOfDayTime);
         }
         if (endDate) {
-            const endStr = format(endDate, 'yyyy-MM-dd');
-            result = result.filter(t => t.date <= endStr);
+            const endOfDayTime = endOfDay(endDate).getTime();
+            result = result.filter(t => new Date(t.date).getTime() <= endOfDayTime);
         }
 
         return result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -153,12 +151,12 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
 
         // 2. Date Range Filter
         if (startDate) {
-            const startStr = format(startDate, 'yyyy-MM-dd');
-            result = result.filter(t => t.date >= startStr);
+            const startOfDayTime = startOfDay(startDate).getTime();
+            result = result.filter(t => new Date(t.date).getTime() >= startOfDayTime);
         }
         if (endDate) {
-            const endStr = format(endDate, 'yyyy-MM-dd');
-            result = result.filter(t => t.date <= endStr);
+            const endOfDayTime = endOfDay(endDate).getTime();
+            result = result.filter(t => new Date(t.date).getTime() <= endOfDayTime);
         }
 
         // 4. Category Filter
@@ -213,34 +211,89 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
     // Calculate Stats (Synced with chart and filters)
     const stats = useMemo(() => calculateStats(filteredTransactions), [filteredTransactions]);
 
-    // Prepare Chart Data (Group by Day)
-    const chartData = useMemo(() => {
-        const currentLocale = language === 'uz' ? uz : language === 'ru' ? ru : enUS;
+    // Generate accurate Time-Series data for the new 3D Grouped Bar Chart
+    const timeSeriesData = useMemo(() => {
+        if (!startDate || !endDate || !filteredTransactions) return [];
+        // Only consider valid transactions for the chart
+        const validTransactions = filteredTransactions.filter(t => !t.isVoided && !t.returned);
+        const sorted = [...validTransactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const dataMap = new Map<string, { kirim: number; xarajat: number; sof: number; fullLabel?: string }>();
 
-        const dataMap = new Map<string, { date: string, income: number, expense: number }>();
-
-        // Already sorted in filteredTransactions
-        const sortedForChart = filteredTransactions;
-
-        sortedForChart.forEach(t => {
-            const dateKey = t.date; // YYYY-MM-DD
-            if (!dataMap.has(dateKey)) {
-                dataMap.set(dateKey, { date: dateKey, income: 0, expense: 0 });
+        if (dateFilter === 'week') {
+            const DAYS_UZ = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Juma', 'Shan'];
+            const FULL_DAYS_UZ = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
+            // Populate exact 7 days from startDate
+            for (let i = 0; i < 7; i++) {
+                const day = addDays(startDate, i);
+                dataMap.set(DAYS_UZ[day.getDay()], { kirim: 0, xarajat: 0, sof: 0, fullLabel: FULL_DAYS_UZ[day.getDay()] });
             }
-            const entry = dataMap.get(dateKey)!;
-            if (t.type === 'income') entry.income += t.amount;
-            else entry.expense += t.amount;
-        });
+            sorted.forEach(t => {
+                const d = new Date(t.date);
+                const key = DAYS_UZ[d.getDay()];
+                const item = dataMap.get(key);
+                if (item) {
+                    if (t.type === 'income') { item.kirim += t.amount; item.sof += t.amount; }
+                    else if (t.type === 'expense') { item.xarajat += t.amount; item.sof -= t.amount; }
+                }
+            });
+        } else if (dateFilter === 'month') {
+            const dMonth = startDate || new Date();
+            const monthName = format(dMonth, 'MMMM', { locale: uz });
+            const monthNameCap = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+            const lastDay = endOfMonth(dMonth).getDate();
+            const p1 = `1-7 ${monthNameCap}`;
+            const p2 = `8-14 ${monthNameCap}`;
+            const p3 = `15-21 ${monthNameCap}`;
+            const p4 = `22-28 ${monthNameCap}`;
+            const p5 = `29-${lastDay} ${monthNameCap}`;
 
-        // Convert to array
-        const data = Array.from(dataMap.values());
+            dataMap.set(p1, { kirim: 0, xarajat: 0, sof: 0, fullLabel: `1-7 ${monthNameCap}` });
+            dataMap.set(p2, { kirim: 0, xarajat: 0, sof: 0, fullLabel: `8-14 ${monthNameCap}` });
+            dataMap.set(p3, { kirim: 0, xarajat: 0, sof: 0, fullLabel: `15-21 ${monthNameCap}` });
+            dataMap.set(p4, { kirim: 0, xarajat: 0, sof: 0, fullLabel: `22-28 ${monthNameCap}` });
+            dataMap.set(p5, { kirim: 0, xarajat: 0, sof: 0, fullLabel: `29-${lastDay} ${monthNameCap}` });
 
-        // Format date for display
-        return data.map(d => ({
-            ...d,
-            displayDate: format(new Date(d.date), 'MMMM d', { locale: currentLocale })
-        }));
-    }, [filteredTransactions, language]);
+            sorted.forEach(t => {
+                const d = new Date(t.date);
+                const dayOfMonth = d.getDate();
+                let week = p1;
+                if (dayOfMonth > 7 && dayOfMonth <= 14) week = p2;
+                else if (dayOfMonth > 14 && dayOfMonth <= 21) week = p3;
+                else if (dayOfMonth > 21 && dayOfMonth <= 28) week = p4;
+                else if (dayOfMonth > 28) week = p5;
+
+                const item = dataMap.get(week);
+                if (item) {
+                    if (t.type === 'income') { item.kirim += t.amount; item.sof += t.amount; }
+                    else if (t.type === 'expense') { item.xarajat += t.amount; item.sof -= t.amount; }
+                }
+            });
+        } else {
+            // all time -> Annually (Yillik)
+            // Pre-populate all 12 months purely
+            for (let i = 0; i < 12; i++) {
+                const monthDate = new Date(2024, i, 1); // 2024 is arbitrary leap year for safe extraction
+                const fullMonth = format(monthDate, 'MMMM', { locale: uz });
+                const formattedFullMonth = fullMonth.charAt(0).toUpperCase() + fullMonth.slice(1);
+                dataMap.set(formattedFullMonth, { kirim: 0, xarajat: 0, sof: 0, fullLabel: formattedFullMonth });
+            }
+
+            sorted.forEach(t => {
+                const d = new Date(t.date);
+                const fullMonth = format(d, 'MMMM', { locale: uz });
+                const formattedFullMonth = fullMonth.charAt(0).toUpperCase() + fullMonth.slice(1);
+
+                if (!dataMap.has(formattedFullMonth)) {
+                    dataMap.set(formattedFullMonth, { kirim: 0, xarajat: 0, sof: 0, fullLabel: formattedFullMonth });
+                }
+                const item = dataMap.get(formattedFullMonth)!;
+                if (t.type === 'income') { item.kirim += t.amount; item.sof += t.amount; }
+                else if (t.type === 'expense') { item.xarajat += t.amount; item.sof -= t.amount; }
+            });
+        }
+
+        return Array.from(dataMap.entries()).map(([label, vals]) => ({ label, ...vals }));
+    }, [filteredTransactions, dateFilter, startDate, endDate]);
 
     const handleSave = async (data: any) => {
         try {
@@ -416,8 +469,6 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                         </div>
                     </div>
 
-
-
                     <div className="flex flex-col">
                         {/* 3. ANALYTICS CHART (Full Width + Date Picker) */}
                         <div
@@ -436,7 +487,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                 {/* Date Range and Filters */}
                                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                                     {/* Date Range Box */}
-                                    <div className="flex items-center gap-0 bg-slate-50 border border-slate-200 rounded-2xl p-1 h-[52px] shadow-sm flex-1 sm:flex-none sm:w-[320px]">
+                                    <div className="flex items-center justify-center gap-0 bg-slate-50 border border-slate-200 rounded-2xl p-1 h-[52px] shadow-sm flex-1 sm:flex-none sm:w-[380px]">
                                         <div className="flex-1 min-w-0">
                                             <CustomDatePicker
                                                 value={startDate}
@@ -459,85 +510,47 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                     {/* Quick Filters */}
                                     <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 shrink-0 overflow-x-auto">
                                         {(['week', 'month', 'all'] as const).map((f) => {
-                                            const labelKey = f === 'week' ? 'weekly' : f === 'month' ? 'monthly' : 'filter_all';
+                                            const labelKey = f === 'week' ? 'weekly' : f === 'month' ? 'monthly' : 'yearly';
+                                            const isActive = dateFilter === f;
                                             return (
                                                 <button
                                                     key={f}
                                                     onClick={() => handleDateFilterChange(f)}
                                                     className={`
-                                                                px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all capitalize duration-300 whitespace-nowrap flex-1 sm:flex-none text-center
-                                                                ${dateFilter === f ? 'bg-white shadow-sm text-slate-900 scale-100 ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50'}
+                                                                relative px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all capitalize duration-300 whitespace-nowrap flex-1 sm:flex-none text-center z-10
+                                                                ${isActive ? 'text-white' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50'}
                                                             `}
                                                 >
-                                                    {t(labelKey) || (f === 'all' ? 'All' : f)}
+                                                    {isActive && (
+                                                        <div
+                                                            className="absolute inset-0 rounded-xl overflow-hidden"
+                                                            style={{
+                                                                background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
+                                                                boxShadow: '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
+                                                            }}
+                                                        >
+                                                            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
+                                                        </div>
+                                                    )}
+                                                    <span className="relative z-10">
+                                                        {t(labelKey) || (f === 'all' ? 'Yillik' : f)}
+                                                    </span>
                                                 </button>
                                             );
                                         })}
                                     </div>
                                 </div>
                             </div>
-                            <div className="h-64 md:h-96 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }} barGap={0}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                        <XAxis
-                                            dataKey="displayDate"
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
-                                            dy={15}
-                                        />
-                                        <YAxis
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
-                                            tickFormatter={(value) => formatCompactNumber(value)}
-                                            width={60}
-                                            dx={-10}
-                                        />
-                                        <RechartsTooltip
-                                            cursor={{ fill: '#f1f5f9', opacity: 0.4 }}
-                                            content={({ active, payload, label }) => {
-                                                if (active && payload && payload.length) {
-                                                    return (
-                                                        <div className="bg-white/90 backdrop-blur-xl border border-white/60 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] rounded-2xl p-4 min-w-[180px]">
-                                                            <p className="text-slate-500 font-bold text-xs mb-3 capitalize tracking-wide border-b border-slate-200/60 pb-2">{label}</p>
-                                                            {payload.map((entry: any, index: number) => (
-                                                                <div key={index} className="flex items-center justify-between gap-4 mb-2 last:mb-0">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div className={`w-2 h-2 rounded-full ring-2 ring-white shadow-sm ${entry.dataKey === 'income' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                                                                        <span className="text-xs font-bold text-slate-600 capitalize">
-                                                                            {t(entry.dataKey === 'income' ? 'income' : 'expense')}
-                                                                        </span>
-                                                                    </div>
-                                                                    <span className={`text-sm font-black ${entry.dataKey === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                                        {formatCurrency(entry.value as number)}
-                                                                    </span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
-                                        />
-                                        <Bar
-                                            dataKey="income"
-                                            fill="#10b981"
-                                            radius={[6, 6, 0, 0]}
-                                            maxBarSize={50}
-                                        />
-                                        <Bar
-                                            dataKey="expense"
-                                            fill="#f43f5e"
-                                            radius={[6, 6, 0, 0]}
-                                            maxBarSize={50}
-                                        />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
 
+                            {/* 3D BAR CHART — synced with actual data filters via stats */}
+                            <div className="pt-8 border-t border-slate-100/60 pb-0">
+                                <Chart3D
+                                    data={timeSeriesData}
+                                    maxBarHeight={260}
+                                />
+                            </div>
+
+                        </div>
                     </div>
                 </div>
             ) : false ? (
@@ -801,33 +814,40 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                         const incomeVal = filteredTransactionsList.filter(t => t.type === 'income' && !t.returned && !t.isVoided).reduce((sum, t) => sum + t.amount, 0);
                         const expenseVal = filteredTransactionsList.filter(t => t.type === 'expense' && !t.returned && !t.isVoided).reduce((sum, t) => sum + t.amount, 0);
                         return (
-                            <div className="grid grid-cols-2 border-b border-slate-200">
-                                {/* Income */}
-                                <Tooltip content={formatCurrency(incomeVal)}>
-                                    <div className="flex items-center gap-2.5 px-3 py-3 md:px-5 md:py-4 bg-emerald-50">
-                                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                                            <ArrowUpRight className="w-4 h-4 md:w-5 md:h-5 text-emerald-600 stroke-[2.5]" />
-                                        </div>
-                                        <div className="flex flex-col min-w-0">
-                                            <span className="text-emerald-500/70 font-bold text-[9px] md:text-[10px] uppercase tracking-wider leading-none">{t('total_income') || 'Daromad'}</span>
-                                            <span className="text-emerald-700 font-black text-base md:text-lg leading-tight truncate">+{formatCompactNumber(incomeVal)}</span>
-                                            <span className="text-emerald-600 font-bold text-[10px] md:text-xs leading-none hidden md:block">{formatCurrency(incomeVal)}</span>
-                                        </div>
+                            <div className="flex flex-col sm:flex-row items-stretch gap-4 px-4 md:px-6 py-4 border-b border-slate-100 bg-white/50">
+                                {/* Income Card Premium */}
+                                <div
+                                    className="flex-1 flex items-center gap-3 md:gap-4 shadow-[0_4px_12px_-4px_rgba(16,185,129,0.3)] px-4 py-3 md:px-5 md:py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden"
+                                    style={{ background: 'linear-gradient(180deg, #10B981 0%, #059669 100%)' }}
+                                >
+                                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+                                    <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0 border border-white/30 backdrop-blur-md z-10 group-hover:scale-105 transition-transform">
+                                        <ArrowUpRight className="w-5 h-5 md:w-6 md:h-6 text-white stroke-[2.5] drop-shadow-sm" />
                                     </div>
-                                </Tooltip>
-                                {/* Expense */}
-                                <Tooltip content={formatCurrency(expenseVal)}>
-                                    <div className="flex items-center gap-2.5 px-3 py-3 md:px-5 md:py-4 bg-rose-50">
-                                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0">
-                                            <ArrowDownRight className="w-4 h-4 md:w-5 md:h-5 text-rose-600 stroke-[2.5]" />
-                                        </div>
-                                        <div className="flex flex-col min-w-0">
-                                            <span className="text-rose-500/70 font-bold text-[9px] md:text-[10px] uppercase tracking-wider leading-none">{t('total_expenses') || 'Xarajat'}</span>
-                                            <span className="text-rose-700 font-black text-base md:text-lg leading-tight truncate">-{formatCompactNumber(expenseVal)}</span>
-                                            <span className="text-rose-600 font-bold text-[10px] md:text-xs leading-none hidden md:block">{formatCurrency(expenseVal)}</span>
-                                        </div>
+                                    <div className="flex flex-col min-w-0 z-10 text-white justify-center">
+                                        <span className="text-emerald-50 font-bold text-[10px] md:text-[11px] uppercase tracking-wider mb-0.5 opacity-90">{t('total_income') || 'Jami Daromad'}</span>
+                                        <span className="font-black text-lg md:text-xl leading-none truncate block drop-shadow-sm tracking-tight">
+                                            +{formatCurrency(incomeVal)}
+                                        </span>
                                     </div>
-                                </Tooltip>
+                                </div>
+
+                                {/* Expense Card Premium */}
+                                <div
+                                    className="flex-1 flex items-center gap-3 md:gap-4 shadow-[0_4px_12px_-4px_rgba(244,63,94,0.3)] px-4 py-3 md:px-5 md:py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden"
+                                    style={{ background: 'linear-gradient(180deg, #F43F5E 0%, #E11D48 100%)' }}
+                                >
+                                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+                                    <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0 border border-white/30 backdrop-blur-md z-10 group-hover:scale-105 transition-transform">
+                                        <ArrowDownRight className="w-5 h-5 md:w-6 md:h-6 text-white stroke-[2.5] drop-shadow-sm" />
+                                    </div>
+                                    <div className="flex flex-col min-w-0 z-10 text-white justify-center">
+                                        <span className="text-rose-50 font-bold text-[10px] md:text-[11px] uppercase tracking-wider mb-0.5 opacity-90">{t('total_expenses') || 'Jami Xarajatlar'}</span>
+                                        <span className="font-black text-lg md:text-xl leading-none truncate block drop-shadow-sm tracking-tight">
+                                            -{formatCurrency(expenseVal)}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         );
                     })()}

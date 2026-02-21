@@ -18,7 +18,7 @@ import { Patient } from '../types';
 import { DashboardLoader } from '../components/ui/DashboardLoader';
 import LockedOverlay from '../components/ui/LockedOverlay';
 import TourGuide from '../components/tour/TourGuide';
-import { updateUserProfile } from '../lib/userService';
+
 
 
 interface DashboardProps {
@@ -48,13 +48,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const { t, language } = useLanguage();
     const { subscriptionStatus, role, userId } = useAccount();
 
-    const handleDevRoleReset = async () => {
-        if (!userId) return;
-        if (confirm("Reset role to Doctor? (Dev Only)")) {
-            await updateUserProfile(userId, { role: 'doctor' });
-            window.location.reload();
-        }
-    };
+
 
     const localeMap = {
         uz: uz,
@@ -78,18 +72,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {/* Tour Guide */}
             <TourGuide />
 
-            {/* Temporary Fix for "Nurse Mode" issue */}
-            {role === 'nurse' && (
-                <div className="absolute top-4 right-4 z-[9999]">
-                    <button
-                        onClick={handleDevRoleReset}
-                        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded shadow-lg animate-pulse"
-                    >
-                        FIX ROLE: Reset to Doctor
-                    </button>
-                    <p className="text-xs text-red-500 bg-white p-1 rounded mt-1 shadow-sm">You are currently logged in as 'Nurse'. Click to fix.</p>
-                </div>
-            )}
+
 
             <div className="space-y-10 p-2 sm:p-4">
                 {/* Vitals Strip */}

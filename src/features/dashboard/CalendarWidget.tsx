@@ -97,7 +97,7 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
                     const dummyDate = new Date(2024, 0, 1 + i);
                     const dayName = format(dummyDate, 'EE', { locale: currentLocale });
                     return (
-                        <div key={day} className="text-center text-[11px] font-black text-blue-600 opacity-80 uppercase tracking-wider py-2">
+                        <div key={day} className="text-center text-[11px] font-black text-blue-600 uppercase tracking-wider py-2">
                             {dayName}
                         </div>
                     );

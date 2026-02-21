@@ -78,7 +78,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                     if (data.lock_enabled !== undefined) setLockEnabled(data.lock_enabled);
 
                     // Pull profile image/avatar
-                    const profileImg = data.profile_image || data.avatar_url || data.profileImage;
+                    const profileImg = data.profile_image || data.avatar_url || data.profileImage || data.imageUrl;
                     if (profileImg) setUploadedAvatarUrl(profileImg);
 
                     if (password) {

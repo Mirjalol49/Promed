@@ -160,7 +160,7 @@ const Layout: React.FC<LayoutProps> = ({
           {can(SCOPES.canViewMessages) && <NavItem page="MESSAGES" icon={MessageSquare} label={t('messages')} badge={totalUnread} />}
           {can(SCOPES.canViewNotes) && <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />}
           {can(SCOPES.canViewStaff) && <NavItem page="STAFF" icon={Briefcase} label={t('staff')} />}
-          {can(SCOPES.canViewFinance) && role !== 'nurse' && <NavItem page="FINANCE" icon={Wallet} label={t('finance')} />}
+          {can(SCOPES.canViewFinance) && <NavItem page="FINANCE" icon={Wallet} label={t('finance')} />}
 
           {(can(SCOPES.canViewRoles) || can(SCOPES.canViewAdmin)) && (
             <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">
@@ -295,7 +295,7 @@ const Layout: React.FC<LayoutProps> = ({
                 {can(SCOPES.canViewMessages) && <NavItem page="MESSAGES" icon={MessageSquare} label={t('messages')} badge={totalUnread} />}
                 {can(SCOPES.canViewNotes) && <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />}
                 {can(SCOPES.canViewStaff) && <NavItem page="STAFF" icon={Briefcase} label={t('staff')} />}
-                {can(SCOPES.canViewFinance) && role !== 'nurse' && <NavItem page="FINANCE" icon={Wallet} label={t('finance')} />}
+                {can(SCOPES.canViewFinance) && <NavItem page="FINANCE" icon={Wallet} label={t('finance')} />}
 
                 {(can(SCOPES.canViewRoles) || can(SCOPES.canViewAdmin)) && (
                   <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">

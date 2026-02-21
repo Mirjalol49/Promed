@@ -40,14 +40,23 @@ import { EmptyState } from '../../components/ui/EmptyState';
 
 import { LeadCardSkeleton } from '../../components/ui/Skeletons';
 
+// Module-level cache to persist leads across unmount/remount cycles
+let _leadsCache: Lead[] = [];
+let _hasFetchedOnce = false;
+let _leadsCacheAccountId: string | null = null;
+
 type QuickFilter = 'all' | 'today' | 'week' | 'has_reminder';
 
 export const KanbanBoard: React.FC = () => {
     const { t } = useLanguage();
-    const [leads, setLeads] = useState<Lead[]>([]);
+    const { userId, accountId, role, isLoading: isAuthLoading } = useAccount();
+
+    const isSameAccount = accountId === _leadsCacheAccountId;
+    const [leads, setLeads] = useState<Lead[]>(isSameAccount ? _leadsCache : []);
     const [activeTab, setActiveTab] = useState<LeadStatus>('NEW');
     const [isAddModalOpen, setAddModalOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(!isSameAccount || !_hasFetchedOnce);
+    const [hasFetchedOnce, setHasFetchedOnce] = useState(isSameAccount && _hasFetchedOnce);
     const [searchQuery, setSearchQuery] = useState('');
 
     // Filter State
@@ -65,7 +74,6 @@ export const KanbanBoard: React.FC = () => {
     const [celebrationId, setCelebrationId] = useState<number | null>(null);
     const [celebrationOrigin, setCelebrationOrigin] = useState<{ x: number, y: number } | undefined>(undefined);
 
-    const { userId, accountId, role, isLoading: isAuthLoading } = useAccount();
     const { success, error: showError } = useToast();
     const isViewer = role === 'viewer';
 
@@ -92,8 +100,12 @@ export const KanbanBoard: React.FC = () => {
         const unsubscribe = leadService.subscribeToLeads(
             accountId,
             (data) => {
+                _leadsCache = data;
+                _leadsCacheAccountId = accountId;
+                _hasFetchedOnce = true;
                 setLeads(data);
                 setIsLoading(false);
+                setHasFetchedOnce(true);
             },
             (error) => {
                 console.error("Critical: Failed to load leads", error);

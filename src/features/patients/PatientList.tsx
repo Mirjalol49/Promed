@@ -863,31 +863,43 @@ export const PatientDetail: React.FC<{
 
       {/* Tab Navigation */}
       <div className="flex justify-start mb-8">
-        <div className="relative inline-flex items-center bg-slate-100/80 rounded-2xl p-1.5 border border-slate-200/60 shadow-sm">
+        <div className="relative inline-flex items-center bg-white/90 rounded-2xl p-1.5 border border-slate-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-xl">
           <button
             onClick={() => setActiveTab('general')}
-            className={`relative z-10 flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-colors duration-200 ${activeTab === 'general' ? 'text-promed-primary' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`relative z-10 flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-colors duration-300 ${activeTab === 'general' ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
           >
             {activeTab === 'general' && (
               <motion.div
                 layoutId="activeTabPill"
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                className="absolute inset-0 rounded-xl bg-white shadow-md shadow-slate-900/8 border border-slate-200/50"
-              />
+                className="absolute inset-0 rounded-xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
+                  boxShadow: '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
+                }}
+              >
+                <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
+              </motion.div>
             )}
             <User size={16} strokeWidth={2.5} className="relative z-10" />
             <span className="relative z-10">{t('general_info') || "General Info"}</span>
           </button>
           <button
             onClick={() => setActiveTab('finance')}
-            className={`relative z-10 flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-colors duration-200 ${activeTab === 'finance' ? 'text-promed-primary' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`relative z-10 flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-colors duration-300 ${activeTab === 'finance' ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
           >
             {activeTab === 'finance' && (
               <motion.div
                 layoutId="activeTabPill"
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                className="absolute inset-0 rounded-xl bg-white shadow-md shadow-slate-900/8 border border-slate-200/50"
-              />
+                className="absolute inset-0 rounded-xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
+                  boxShadow: '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
+                }}
+              >
+                <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
+              </motion.div>
             )}
             <Wallet size={16} strokeWidth={2.5} className="relative z-10" />
             <span className="relative z-10">{t('finance') || "Finance"}</span>

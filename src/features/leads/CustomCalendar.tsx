@@ -47,7 +47,7 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({ value, onChange 
 
         for (let i = 0; i < 7; i++) {
             days.push(
-                <div key={i} className="text-xs font-bold text-slate-600 uppercase text-center py-2">
+                <div key={i} className="text-xs font-black text-blue-600 uppercase tracking-wider text-center py-2">
                     {format(addDays(startDate, i), 'EEEEE', { locale })}
                 </div>
             );

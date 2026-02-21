@@ -118,7 +118,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
             setAccountId(remoteAccountId);
           }
 
-          const newImage = data.avatar_url || data.profile_image;
+          const newImage = data.avatar_url || data.profile_image || data.imageUrl;
           if (newImage) setUserImage(newImage);
 
           // Update localStorage
