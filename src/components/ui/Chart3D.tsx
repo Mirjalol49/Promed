@@ -341,34 +341,38 @@ export const Chart3D: React.FC<Chart3DProps> = ({ data, maxBarHeight = 220 }) =>
             </div>
 
             {/* Interactive Chart & Grid Area */}
-            {/* Removed overflow-x-auto so it perfectly fits internally without horizontal scrollbars */}
-            <div className="w-full pl-[50px] md:pl-[60px] pr-2 md:pr-4">
-                <div className="relative w-full flex flex-col items-center">
+            {/* Added a highly responsive overflow layout for data-heavy charts on mobile */}
+            <div className="w-full overflow-x-auto custom-scrollbar pb-3 relative z-10 flex">
 
-                    {/* Y-Axis & Cartesian Grid Line Container */}
-                    <div
-                        className="absolute inset-x-0 pointer-events-none"
-                        style={{ bottom: depth + 36, height: maxBarHeight }} // bottom offset aligns grid precisely with bars ignoring X-labels
-                    >
+                {/* 1. Y-Axis Container (Sticky to viewport) */}
+                <div className="sticky left-0 z-30 bg-white/95 backdrop-blur-xl w-[45px] md:w-[60px] flex-shrink-0 shadow-[8px_0_16px_-8px_rgba(0,0,0,0.06)] border-r border-slate-100/60">
+                    <div className="absolute inset-x-0 pointer-events-none" style={{ bottom: depth + 36, height: maxBarHeight }}>
                         {ticks.map((tPct) => {
                             const tickValue = chartMax * tPct;
                             return (
-                                <div key={tPct} className="absolute w-full flex items-center" style={{ bottom: `${tPct * 100}%` }}>
-                                    {/* Strict Left-Aligned Y-Axis Label */}
-                                    <div className="absolute left-[-45px] md:left-[-55px] w-[35px] md:w-[45px] text-right">
-                                        <span className="text-[#64748B] text-[10px] md:text-[11px] font-black tracking-wide">
+                                <div key={tPct} className="absolute w-full flex items-center pr-1 md:pr-2" style={{ bottom: `${tPct * 100}%` }}>
+                                    <div className="ml-auto flex shrink-0">
+                                        <span className="text-[#64748B] text-[9px] md:text-[11px] font-black tracking-wide bg-white/40 px-0.5 rounded">
                                             {tickValue === 0 ? '0' : formatCompactNumber(tickValue)}
                                         </span>
                                     </div>
-                                    {/* Grid Line */}
-                                    <div className="w-full border-t border-[#E2E8F0] opacity-80" style={{ borderTopStyle: 'dashed', borderTopWidth: 1.5 }} />
                                 </div>
                             );
                         })}
                     </div>
+                </div>
+
+                {/* 2. Data Scroll Area */}
+                <div className="relative min-w-[500px] md:min-w-full flex-grow flex flex-col pr-4">
+                    {/* Horizontal Grid Lines */}
+                    <div className="absolute inset-x-0 pointer-events-none" style={{ bottom: depth + 36, height: maxBarHeight, left: 0 }}>
+                        {ticks.map((tPct) => (
+                            <div key={tPct} className="absolute w-full border-t border-[#E2E8F0] opacity-80" style={{ bottom: `${tPct * 100}%`, borderTopStyle: 'dashed', borderTopWidth: 1.5 }} />
+                        ))}
+                    </div>
 
                     {/* Groups layout */}
-                    <div className="relative z-10 flex items-end justify-between pt-4 w-full gap-2">
+                    <div className="relative z-10 flex items-end justify-between pt-4 w-full gap-2 pl-3 md:pl-4">
                         {data.map((group, idx) => (
                             <Group3D
                                 key={group.label}

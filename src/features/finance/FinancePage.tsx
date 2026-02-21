@@ -750,7 +750,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
 
                             {/* Category Filter */}
                             <div className="md:col-span-3 flex flex-col gap-1.5">
-                                <label className="text-xs font-medium text-gray-500 ml-1">Kategoriya</label>
+                                <label className="text-xs font-medium text-gray-500 ml-1">{t('category') || 'Kategoriya'}</label>
                                 <div className="h-[52px]">
                                     <CustomSelect
                                         value={txCategoryFilter}
@@ -769,7 +769,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
 
                             {/* Date Range */}
                             <div className="md:col-span-6 flex flex-col gap-1.5">
-                                <label className="text-xs font-medium text-gray-500 ml-1">Vaqt Oralig‘i</label>
+                                <label className="text-xs font-medium text-gray-500 ml-1">{t('time_range') || 'Vaqt Oralig‘i'}</label>
                                 <div className="flex items-center gap-0 bg-slate-50 border border-slate-300 rounded-2xl p-1 h-[52px] hover:border-slate-400 transition-colors w-full overflow-hidden">
                                     <div className="flex-1 min-w-0">
                                         <CustomDatePicker
@@ -791,7 +791,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
 
                             {/* Type Filter */}
                             <div className="md:col-span-3 flex flex-col gap-1.5">
-                                <label className="text-xs font-medium text-gray-500 ml-1">O‘tkazma Turi</label>
+                                <label className="text-xs font-medium text-gray-500 ml-1">{t('transaction_type') || 'O‘tkazma Turi'}</label>
                                 <div className="h-[52px]">
                                     <CustomSelect
                                         value={txTypeFilter}

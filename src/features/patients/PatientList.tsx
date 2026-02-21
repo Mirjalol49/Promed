@@ -1599,33 +1599,33 @@ export const AddPatientForm: React.FC<{
                         <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('tier') || 'Status'}</label>
                         <div
                           onClick={() => setTier(tier === 'regular' ? 'pro' : 'regular')}
-                          className={`w-full flex items-center justify-between p-3 rounded-xl border-2 cursor-pointer transition-all duration-300 relative overflow-hidden group ${tier === 'pro'
+                          className={`w-full flex items-center justify-between p-3 rounded-xl border-[1.5px] md:border-2 cursor-pointer transition-all duration-300 relative overflow-hidden group ${tier === 'pro'
                             ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-yellow-400 shadow-apple'
                             : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50'
                             }`}
                         >
-                          <div className="flex items-center gap-3 relative z-10">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden ${tier === 'pro' ? 'bg-yellow-100 text-yellow-900 shadow-sm scale-110' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
+                          <div className="flex items-center gap-2.5 md:gap-3 relative z-10 min-w-0 flex-1 pr-2">
+                            <div className={`w-9 h-9 md:w-10 md:h-10 shrink-0 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden ${tier === 'pro' ? 'bg-yellow-100 text-yellow-900 shadow-sm scale-110' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
                               }`}>
                               {tier === 'pro' ? (
-                                <ProBadge size={50} />
+                                <ProBadge size={40} />
                               ) : (
-                                <Crown size={20} className="text-slate-400" />
+                                <Crown size={18} className="text-slate-400" />
                               )}
                             </div>
-                            <div className="flex flex-col">
-                              <span className={`font-bold text-sm transition-colors ${tier === 'pro' ? 'text-yellow-900' : 'text-slate-600'}`}>
+                            <div className="flex flex-col min-w-0">
+                              <span className={`font-bold text-[13px] md:text-sm truncate transition-colors ${tier === 'pro' ? 'text-yellow-900' : 'text-slate-600'}`}>
                                 {t('tier_pro') || 'Pro Patient (Bonus)'}
                               </span>
-                              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                              <span className="text-[9px] md:text-[10px] uppercase font-bold tracking-wider truncate text-slate-400">
                                 {tier === 'pro' ? (t('status_active') || 'Active') : (t('status_not_paid') || 'Inactive')}
                               </span>
                             </div>
                           </div>
 
                           {/* Custom Toggle Switch */}
-                          <div className={`w-16 h-9 rounded-full transition-colors duration-300 relative z-10 ${tier === 'pro' ? 'bg-yellow-400' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
-                            <div className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow-sm transition-transform duration-300 ${tier === 'pro' ? 'translate-x-8' : 'translate-x-1'}`} />
+                          <div className={`shrink-0 w-11 h-6 md:w-16 md:h-9 rounded-full transition-colors duration-300 relative z-10 ${tier === 'pro' ? 'bg-yellow-400' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
+                            <div className={`absolute top-[3px] md:top-1 w-4.5 h-4.5 md:w-7 md:h-7 rounded-full bg-white shadow-sm transition-transform duration-300 ${tier === 'pro' ? 'translate-x-[22px] md:translate-x-8' : 'translate-x-[3px] md:translate-x-1'} aspect-square`} style={{ height: 'calc(100% - 6px)', width: 'calc(100% / 2.2)' }} />
                           </div>
                         </div>
                       </div>

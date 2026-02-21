@@ -125,8 +125,8 @@ const StaffModal = ({
                 <div className="bg-slate-200 rounded-3xl w-full max-w-2xl shadow-2xl relative z-10 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
 
                     {/* Header */}
-                    <div className="px-8 py-5 flex items-center justify-between bg-slate-200 sticky top-0 z-20 rounded-t-3xl border-b border-white/50">
-                        <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+                    <div className="px-5 md:px-8 py-4 md:py-5 flex items-center justify-between bg-slate-200 sticky top-0 z-20 rounded-t-3xl border-b border-white/50">
+                        <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight">
                             {initialData ? t('edit_staff') : t('add_new_staff')}
                         </h2>
                         <button
@@ -138,8 +138,8 @@ const StaffModal = ({
                     </div>
 
                     {/* Scrollable Content */}
-                    <div className="overflow-y-auto p-8 custom-scrollbar">
-                        <form id="staff-form" onSubmit={handleSubmit} className="space-y-8">
+                    <div className="overflow-y-auto p-5 md:p-8 custom-scrollbar">
+                        <form id="staff-form" onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
 
                             {/* Photo Section - Centered */}
                             <div className="flex flex-col items-center">
@@ -188,7 +188,7 @@ const StaffModal = ({
                             </div>
 
                             {/* Form Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                            <div className="flex flex-col md:grid md:grid-cols-2 gap-5 md:gap-x-6 md:gap-y-6">
                                 {/* First Name */}
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-bold text-slate-700 ml-1">{t('first_name')}</label>
@@ -339,7 +339,7 @@ const StaffModal = ({
                     </div>
 
                     {/* Footer */}
-                    <div className="p-6 border-t border-white/50 bg-slate-200 flex justify-end gap-3 rounded-b-3xl">
+                    <div className="p-4 md:p-6 border-t border-white/50 bg-slate-200 flex justify-end gap-3 rounded-b-3xl">
                         <button
                             type="button"
                             onClick={onClose}
@@ -1356,17 +1356,6 @@ export const StaffPage = () => {
                             <div className="flex-1 flex items-center justify-center p-12">
                                 <EmptyState
                                     message={t('no_staff_found') || "No staff members found"}
-                                    action={
-                                        !isViewer ? (
-                                            <button
-                                                onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
-                                                className="btn-glossy-blue !py-4 !px-8 text-base font-bold shadow-lg hover:shadow-blue-500/25 hover:scale-105 active:scale-95 transition-all duration-200"
-                                            >
-                                                <Plus className="w-5 h-5 mr-2" strokeWidth={3} />
-                                                {t('add_first_staff') || "Add Your First Staff Member"}
-                                            </button>
-                                        ) : undefined
-                                    }
                                 />
                             </div>
                             :

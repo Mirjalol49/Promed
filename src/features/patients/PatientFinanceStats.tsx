@@ -436,14 +436,27 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                         </div>
 
                         {/* Category Filters */}
-                        <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+                        <div className="relative inline-flex items-center bg-white/90 rounded-2xl p-1.5 border border-slate-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-xl">
                             {(['all', 'surgery', 'injection'] as const).map(cat => (
                                 <button
                                     key={cat}
                                     onClick={() => setFilterCategory(cat)}
-                                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${filterCategory === cat ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`relative z-10 flex items-center px-5 py-2.5 rounded-xl text-[13px] font-bold transition-colors duration-300 ${filterCategory === cat ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
                                 >
-                                    {cat === 'all' ? t('filter_all') : t(cat)}
+                                    {filterCategory === cat && (
+                                        <motion.div
+                                            layoutId="FinanceCategoryPill"
+                                            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                            className="absolute inset-0 rounded-xl overflow-hidden"
+                                            style={{
+                                                background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
+                                                boxShadow: '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
+                                            }}
+                                        >
+                                            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
+                                        </motion.div>
+                                    )}
+                                    <span className="relative z-10">{cat === 'all' ? t('filter_all') : t(cat)}</span>
                                 </button>
                             ))}
                         </div>
@@ -566,9 +579,9 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                             <div className="flex-1 w-full md:w-auto min-w-0">
                                                 <div className="flex justify-between items-start gap-4 mb-2 md:mb-1.5">
                                                     <div className={`font-medium text-slate-600 text-sm md:text-base leading-snug line-clamp-2 md:line-clamp-none ${isVoided ? 'line-through decoration-slate-400 text-slate-400' : ''}`}>
-                                                        {income.description && income.description !== t(income.category)
+                                                        {income.description && income.description !== t(income.category) && income.description !== income.category
                                                             ? income.description.replace(` - ${patient.fullName}`, '')
-                                                            : t(income.category)}
+                                                            : (t('payment_received') || "To'lov qabul qilindi")}
                                                     </div>
 
                                                     {/* Mobile Amount */}

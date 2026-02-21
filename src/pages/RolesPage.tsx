@@ -550,10 +550,10 @@ export const RolesPage: React.FC = () => {
                                 initial={{ scale: 0.95, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0.95, opacity: 0 }}
-                                className="relative w-full max-w-3xl bg-premium-card rounded-3xl shadow-2xl overflow-hidden m-auto"
+                                className="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-premium-card rounded-3xl shadow-2xl overflow-hidden m-auto"
                             >
                                 {/* Header */}
-                                <div className="px-8 py-5 flex items-center justify-between bg-white/60 backdrop-blur-sm border-b border-slate-200/50">
+                                <div className="px-6 md:px-8 py-4 md:py-5 flex items-center justify-between bg-white/60 backdrop-blur-sm border-b border-slate-200/50 shrink-0">
                                     <h2 className="text-lg font-bold text-slate-800 tracking-tight">
                                         {editingUser ? (t('edit_user') || 'Edit User') : (t('add_user_title') || 'Add New User')}
                                     </h2>
@@ -562,9 +562,9 @@ export const RolesPage: React.FC = () => {
                                     </button>
                                 </div>
 
-                                {/* Body — Two-Column */}
-                                <div className="p-6">
-                                    <div className="flex flex-col md:flex-row gap-6">
+                                {/* Body — Scrollable */}
+                                <div className="p-4 md:p-6 overflow-y-auto">
+                                    <div className="flex flex-col md:flex-row gap-6 pb-6">
                                         {/* Left Panel — Photo + Role */}
                                         <div className="md:w-[260px] flex-shrink-0 flex flex-col items-center justify-start gap-6 pt-4">
                                             {/* Photo Upload */}

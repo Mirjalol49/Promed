@@ -167,18 +167,29 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
                 }}
                 onClick={() => onEdit(note)}
                 className={`
-                    w-full md:w-[45%] bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/60 relative cursor-pointer
+                    w-full md:w-[45%] p-6 rounded-3xl shadow-xl shadow-slate-200/60 relative cursor-pointer
                      group transition-all duration-300
                     ${isLeft ? 'md:origin-top-right' : 'md:origin-top-left'}
-                    ${isCompleted ? 'opacity-90 ring-1 ring-slate-100 bg-slate-50/50' : ''}
+                    ${isCompleted ? 'bg-slate-50/80 border border-emerald-100/50 opacity-90' : 'bg-white'}
                 `}
             >
                 {/* Visual Pin on the card itself (Top Center) - Tilted with card (Static) */}
-                <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center">
+                <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
                     <RealisticPin />
                     {/* Pin Shadow on Paper */}
                     <div className="w-6 h-1.5 bg-black/20 rounded-full blur-[2px] mt-[-2px] ml-1" />
                 </div>
+
+                {/* --- GIANT DONE WATERMARK STAMP --- */}
+                {isCompleted && (
+                    <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none z-0">
+                        <div className="absolute w-full h-full flex items-center justify-center">
+                            <div className="transform -rotate-[15deg] border-[6px] border-emerald-500 text-emerald-500 text-3xl md:text-5xl font-black uppercase tracking-[0.2em] px-8 py-4 rounded-3xl opacity-[0.08] select-none whitespace-nowrap">
+                                {t('completed') || 'BAJARILDI'}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Delete Button (Hover) */}
                 {onDelete && (
@@ -193,8 +204,8 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
                     </button>
                 )}
 
-                {/* Single Professional Number Badge (Removed duplicate watermark) */}
-                <div className="mb-4 flex items-center justify-between">
+                {/* Single Professional Number Badge */}
+                <div className="mb-4 flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-2">
                         {/* Status Badge - Shows Green Check when Done */}
                         {isCompleted && (
@@ -214,15 +225,15 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
                     </div>
                 </div>
 
-                <h3 className={`font-bold text-lg leading-tight mb-2 line-clamp-2 group-hover:text-promed-primary transition-colors pr-8 ${isCompleted ? 'line-through decoration-slate-400 decoration-2 text-slate-400' : 'text-slate-800'}`}>
+                <h3 className={`relative z-10 font-bold text-lg leading-tight mb-2 line-clamp-2 group-hover:text-promed-primary transition-colors pr-8 ${isCompleted ? 'line-through decoration-slate-400 decoration-2 text-slate-400' : 'text-slate-800'}`}>
                     {note.title || 'Sarlavhasiz'}
                 </h3>
 
-                <p className={`text-sm leading-relaxed line-clamp-4 mb-3 ${isCompleted ? 'line-through decoration-slate-300 decoration-1 text-slate-400' : 'text-slate-600/80'}`}>
+                <p className={`relative z-10 text-sm leading-relaxed line-clamp-4 mb-3 ${isCompleted ? 'line-through decoration-slate-300 decoration-1 text-slate-400' : 'text-slate-600/80'}`}>
                     {note.content}
                 </p>
 
-                <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-xs font-medium text-slate-400">
+                <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-xs font-medium text-slate-400 relative z-10">
                     <span>
                         {note.createdAt?.toDate
                             ? format(note.createdAt.toDate(), 'd MMM, HH:mm', { locale: uz })
@@ -234,7 +245,7 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
                         onClick={handleDone}
                         className={`
                             flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-300
-                            ${isCompleted ? 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700' : `${pinColors.btn} shadow-md`}
+                            ${isCompleted ? 'bg-slate-200/80 text-slate-500 hover:bg-slate-300 hover:text-slate-700' : `${pinColors.btn} shadow-md`}
                         `}
                     >
                         {isCompleted ? (
