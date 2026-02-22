@@ -301,7 +301,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                             </span>
                         )}
                         {lead.reminder?.date && (
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={(e) => { e.stopPropagation(); if (!isViewer) onRemind(lead); }}
                                 disabled={isViewer}
                                 className={`
@@ -325,7 +325,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                                         return `${d.getDate()} ${months[d.getMonth()]}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
                                     })()}
                                 </span>
-                            </button>
+                            </motion.button>
                         )}
                     </div>
                 )}
@@ -335,28 +335,28 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                     {/* Secondary Actions — hidden until card hover */}
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         {!isViewer && (
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
                                 title={t('edit')}
                                 className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 active:scale-90"
                             >
                                 <Pencil size={15} />
-                            </button>
+                            </motion.button>
                         )}
                         {!isViewer && (
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
                                 title={t('delete')}
                                 className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 active:scale-90"
                             >
                                 <Trash2 size={15} />
-                            </button>
+                            </motion.button>
                         )}
                     </div>
 
                     {/* Primary Action: Status Dropdown */}
                     <div className="relative">
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             ref={buttonRef}
                             onClick={(e) => { e.stopPropagation(); toggleDropdown(); }}
                             disabled={isViewer}
@@ -379,7 +379,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                             }
                             <span>{STATUS_OPTIONS.find(o => o.value === lead.status)?.label || lead.status}</span>
                             {!isViewer && !isDropdownOpen && <ChevronDown size={12} className="opacity-60 -mr-0.5" />}
-                        </button>
+                        </motion.button>
 
                         {/* Dropdown Portal */}
                         {isDropdownOpen && !isViewer && (
@@ -409,7 +409,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                                             const OptIcon = COL_ICONS[opt.value] || User;
 
                                             return (
-                                                <button
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                     key={opt.value}
                                                     role="menuitem"
                                                     onClick={(e) => { e.stopPropagation(); handleStatusClick(opt.value); }}
@@ -437,7 +437,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
                                                             <Check size={10} className="text-white" strokeWidth={4} />
                                                         </div>
                                                     )}
-                                                </button>
+                                                </motion.button>
                                             );
                                         })}
                                     </div>

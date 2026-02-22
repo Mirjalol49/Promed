@@ -323,30 +323,30 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             >
                 {/* Mobile Sticky Close Button */}
                 <div className="sticky top-0 z-50 flex justify-end p-4 md:hidden pointer-events-none">
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={onClose}
                         className="bg-white/80 backdrop-blur-md p-2 rounded-full shadow-sm text-slate-500 hover:text-slate-700 pointer-events-auto border border-slate-100"
                     >
                         <X size={20} />
-                    </button>
+                    </motion.button>
                 </div>
                 {/* --- LEFT PANEL: THE SOURCE (40%) --- */}
                 <div className="w-full md:w-[40%] bg-white p-6 flex flex-col border-b md:border-b-0 md:border-r border-gray-100 relative z-10">
                     {/* ... Left Panel Content ... */}
                     {/* Header Toggle */}
                     <div className="bg-gray-100 p-1.5 rounded-xl flex w-full mb-8">
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={() => setType('income')}
                             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm ${type === 'income' ? 'btn-glossy-emerald' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             <span className="relative z-10">{t('income') || 'Kirim'}</span>
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={() => setType('expense')}
                             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm ${type === 'expense' ? 'btn-glossy-red' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
-                        </button>
+                        </motion.button>
                     </div>
 
                     <div className="flex flex-col items-center justify-center mb-8 px-4">
@@ -396,13 +396,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                                     )}
 
                                     {smartData.action && (
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={smartData.action.onClick}
                                             className="mt-3 text-xs font-bold bg-white border border-slate-200 shadow-sm text-slate-600 px-3 py-1.5 rounded-lg hover:text-rose-500 hover:border-rose-200 transition-colors flex items-center gap-1.5"
                                         >
                                             <Calculator className="w-3 h-3" />
                                             {smartData.action.label}
-                                        </button>
+                                        </motion.button>
                                     )}
                                 </div>
                             </motion.div>
@@ -469,9 +469,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                         {/* Header */}
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t('transaction_details') || 'Tranzaksiya Tafsilotlari'}</h2>
-                            <button onClick={onClose} className="hidden md:block p-2 -mr-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="hidden md:block p-2 -mr-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
                                 <X size={24} strokeWidth={2.5} />
-                            </button>
+                            </motion.button>
                         </div>
 
                         {/* --- DYNAMIC CONTEXTUAL INPUTS --- */}
@@ -568,7 +568,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
                         {/* Footer / Button */}
                         <div className="mt-8">
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={handleSubmit}
                                 disabled={loading || !formData.amount || (type === 'income' && formData.category !== 'other' && !formData.patientId) || (type === 'expense' && formData.category === 'salary' && !formData.staffId)}
                                 className={`
@@ -577,7 +577,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                                 `}
                             >
                                 {loading ? (t('saving') || 'Saving...') : (type === 'income' ? (t('confirm_income') || 'Kirimni Tasdiqlash') : (t('confirm_expense') || 'Chiqimni Tasdiqlash'))}
-                            </button>
+                            </motion.button>
                         </div>
                     </div>
 

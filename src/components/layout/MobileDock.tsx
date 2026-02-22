@@ -48,7 +48,7 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                         const isActive = currentPage === item.page;
 
                         return (
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 key={item.page}
                                 onClick={() => onNavigate(item.page)}
                                 className={`
@@ -64,7 +64,7 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                                 <span className={`text-[10px] font-bold tracking-tight ${isActive ? 'text-promed-primary' : 'text-slate-400'}`}>
                                     {item.label}
                                 </span>
-                            </button>
+                            </motion.button>
                         );
                     })}
 
@@ -72,13 +72,13 @@ export const MobileDock: React.FC<MobileDockProps> = ({ currentPage, onNavigate,
                     {isLockEnabled && (
                         <>
                             <div className="w-px h-8 bg-slate-200 mx-1" />
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={onLock}
                                 className="relative flex-none w-[64px] h-[64px] flex flex-col items-center justify-center gap-1 rounded-2xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all duration-300"
                             >
                                 <Lock size={22} strokeWidth={2} />
                                 <span className="text-[9px] font-bold tracking-tight">Lock</span>
-                            </button>
+                            </motion.button>
                         </>
                     )}
                 </div>

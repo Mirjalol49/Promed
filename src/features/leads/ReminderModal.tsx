@@ -91,12 +91,12 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, o
                             <h3 className="font-black text-2xl text-white tracking-tight leading-none mb-1.5" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }}>{t('set_reminder')}</h3>
                             <p className="text-[10px] font-bold text-blue-100 uppercase tracking-[0.15em] opacity-90">{t('dont_forget_call')}</p>
                         </div>
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={onClose}
                             className="absolute top-0 right-0 p-2 text-white/50 hover:text-white transition-colors"
                         >
                             <X size={20} />
-                        </button>
+                        </motion.button>
                     </div>
                 </div>
 
@@ -114,14 +114,14 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, o
                                 { id: '3d', label: t('three_days') },
                                 { id: '1w', label: t('one_week') }
                             ].map(btn => (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     key={btn.id}
                                     type="button"
                                     onClick={() => handleQuickSelect(btn.id as any)}
                                     className="h-11 rounded-2xl border border-slate-100 bg-slate-50 text-[11px] font-bold text-slate-700 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 transition-all active:scale-95 shadow-sm"
                                 >
                                     {btn.label}
-                                </button>
+                                </motion.button>
                             ))}
                         </div>
                     </div>
@@ -177,7 +177,7 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, o
 
                     {/* Footer Actions */}
                     <div className="flex flex-col gap-3 pt-4">
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             type="submit"
                             className="btn-glossy-blue w-full !h-16 !rounded-[1.25rem] flex items-center justify-center gap-3 !font-black !text-sm uppercase tracking-widest"
                         >
@@ -185,18 +185,18 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, o
                                 <Bell size={18} strokeWidth={3} />
                                 {t('save')}
                             </span>
-                        </button>
+                        </motion.button>
 
                         <div className="flex gap-3">
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 type="button"
                                 onClick={onClose}
                                 className="flex-1 h-14 bg-slate-50 text-slate-500 border border-slate-100 rounded-[1.25rem] font-bold text-sm hover:bg-slate-100 transition-all active:scale-[0.98]"
                             >
                                 {t('cancel')}
-                            </button>
+                            </motion.button>
                             {initialDate && onDelete && (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     type="button"
                                     onClick={() => {
                                         if (window.confirm("Delete this reminder?")) {
@@ -207,7 +207,7 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isOpen, onClose, o
                                     className="h-14 px-6 bg-rose-50 text-rose-500 border border-rose-100 rounded-[1.25rem] font-bold text-sm hover:bg-rose-100 transition-all active:scale-[0.98]"
                                 >
                                     <Trash size={18} />
-                                </button>
+                                </motion.button>
                             )}
                         </div>
                     </div>

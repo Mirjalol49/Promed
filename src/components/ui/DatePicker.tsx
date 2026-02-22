@@ -100,7 +100,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             const isToday = new Date().toDateString() === date.toDateString();
 
             days.push(
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                     key={day}
                     onClick={() => handleDayClick(day)}
                     type="button"
@@ -115,7 +115,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 `}
                 >
                     {day}
-                </button>
+                </motion.button>
             );
         }
         return days;
@@ -146,15 +146,15 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     const renderDropdownContent = () => (
         <>
             <div className="flex items-center justify-between mb-4">
-                <button type="button" onClick={prevMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition">
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} type="button" onClick={prevMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition">
                     <ChevronLeft size={20} />
-                </button>
+                </motion.button>
                 <span className="font-bold text-slate-800 text-base capitalize">
                     {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                 </span>
-                <button type="button" onClick={nextMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition">
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} type="button" onClick={nextMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition">
                     <ChevronRight size={20} />
-                </button>
+                </motion.button>
             </div>
 
             <div className="grid grid-cols-7 gap-1 text-center mb-2">

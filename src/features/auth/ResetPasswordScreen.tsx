@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
@@ -89,9 +90,9 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ oobCod
                     </div>
                     <h3 className="text-xl font-bold text-slate-900">Link Expired</h3>
                     <p className="text-slate-500">{pageError}</p>
-                    <button onClick={onCancel} className="btn-premium-blue w-full">
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onCancel} className="btn-premium-blue w-full">
                         {t('back_to_login') || "Back to Login"}
-                    </button>
+                    </motion.button>
                 </div>
             </div>
         );

@@ -248,7 +248,7 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
 
                                 {/* Undo Action Button */}
                                 {action && (
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             action.onClick();
@@ -257,16 +257,16 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
                                         className="px-3 py-1.5 text-xs font-black bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all active:scale-95 whitespace-nowrap border border-slate-200"
                                     >
                                         {action.label}
-                                    </button>
+                                    </motion.button>
                                 )}
 
                                 {/* Close X */}
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => onClose(id)}
                                     className="absolute top-4 right-4 text-slate-300 hover:text-slate-600 transition-colors p-1"
                                 >
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
 

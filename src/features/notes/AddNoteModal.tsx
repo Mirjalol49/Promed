@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 import { X, Save, Loader2 } from 'lucide-react';
 import { Portal } from '../../components/ui/Portal';
@@ -99,7 +100,7 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                             {!locked && (
                                 <div className="flex items-center gap-1 mr-2">
                                     {colors.map((c) => (
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             key={c.id}
                                             onClick={() => setColor(c.id)}
                                             className={`w-6 h-6 rounded-full border-2 transition-all ${c.bg} ${color === c.id ? 'border-slate-600 scale-110' : 'border-transparent hover:scale-105'}`}
@@ -109,12 +110,12 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                                 </div>
                             )}
 
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={onClose}
                                 className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
                             >
                                 <X size={24} />
-                            </button>
+                            </motion.button>
                         </div>
                     </div>
 
@@ -138,14 +139,14 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                             </div>
                         </div>
 
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={handleSave}
                             disabled={isLoading || (!content.trim())}
                             className="btn-premium-blue ml-auto"
                         >
                             <Save size={18} />
                             <span>{t('save')}</span>
-                        </button>
+                        </motion.button>
                     </div>
                 </div>
             </div>

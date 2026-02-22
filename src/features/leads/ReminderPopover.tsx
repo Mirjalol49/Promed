@@ -150,12 +150,12 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                         <p className="text-[10px] text-white/80 font-black uppercase tracking-widest mt-1">Mijozga qo'ng'iroq qilishni unutmang</p>
                                     </div>
                                 </div>
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={onClose}
                                     className="p-2.5 hover:bg-white/15 rounded-xl transition-colors text-white/60 hover:text-white"
                                 >
                                     <X size={22} />
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
 
@@ -169,7 +169,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                     </label>
                                     <div className="grid grid-cols-4 gap-2">
                                         {quickOptions.map((opt, idx) => (
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 key={opt.label}
                                                 type="button"
                                                 onClick={(e) => {
@@ -183,7 +183,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                                 style={selectedQuick === idx ? { background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' } : undefined}
                                             >
                                                 {opt.label}
-                                            </button>
+                                            </motion.button>
                                         ))}
                                     </div>
                                 </div>
@@ -196,7 +196,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                                 <CalendarIcon size={12} strokeWidth={2.5} />
                                                 Sana
                                             </label>
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -220,7 +220,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                             >
                                                 <span className="font-bold">{format(parse(date, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy')}</span>
                                                 <ChevronDown size={18} className={`text-slate-500 transition-transform duration-300 ${showCalendar ? 'rotate-180 text-promed-primary' : ''}`} />
-                                            </button>
+                                            </motion.button>
 
                                             {/* Floating Calendar via Portal - No Clipping */}
                                             {showCalendar && (
@@ -318,14 +318,14 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                             {/* Actions Footer */}
                             <div className="p-6 bg-white border-t border-slate-100 mt-auto sticky bottom-0">
                                 <div className="flex gap-3">
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         type="button"
                                         onClick={onClose}
                                         className="flex-1 px-5 py-3.5 text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200"
                                     >
                                         Bekor qilish
-                                    </button>
-                                    <button
+                                    </motion.button>
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         type="submit"
                                         disabled={isSaving}
                                         onClick={(e) => e.stopPropagation()}
@@ -348,7 +348,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                                 </>
                                             )}
                                         </span>
-                                    </button>
+                                    </motion.button>
                                 </div>
                             </div>
                         </form>

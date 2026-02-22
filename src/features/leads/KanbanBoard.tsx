@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import {  AnimatePresence , motion } from 'framer-motion';
 import { Lead, LeadStatus, LeadColumn as ILeadColumn } from '../../types';
 import { LeadCard } from './LeadCard';
 import { leadService } from '../../services/leadService';
@@ -321,7 +321,7 @@ export const KanbanBoard: React.FC = () => {
 
                             {/* Add Button */}
                             {!isViewer && (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => {
                                         setLeadToEdit(null);
                                         setAddModalOpen(true);
@@ -330,7 +330,7 @@ export const KanbanBoard: React.FC = () => {
                                 >
                                     <PlusCircle size={18} className="relative z-10" />
                                     <span className="font-bold">{t('add_btn')}</span>
-                                </button>
+                                </motion.button>
                             )}
                         </div>
                     </div>
@@ -345,7 +345,7 @@ export const KanbanBoard: React.FC = () => {
                             <span>{t('filter_quick_filters')}</span>
                         </div>
 
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={() => setActiveQuickFilter('today')}
                             className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeQuickFilter === 'today'
                                 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 border-transparent'
@@ -354,9 +354,9 @@ export const KanbanBoard: React.FC = () => {
                         >
                             <Calendar size={14} className={activeQuickFilter === 'today' ? 'text-white' : 'text-slate-500'} />
                             {t('filter_today_calls')}
-                        </button>
+                        </motion.button>
 
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={() => setActiveQuickFilter('week')}
                             className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeQuickFilter === 'week'
                                 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 border-transparent'
@@ -365,9 +365,9 @@ export const KanbanBoard: React.FC = () => {
                         >
                             <Clock size={14} className={activeQuickFilter === 'week' ? 'text-white' : 'text-slate-500'} />
                             {t('filter_this_week')}
-                        </button>
+                        </motion.button>
 
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={() => setActiveQuickFilter('has_reminder')}
                             className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeQuickFilter === 'has_reminder'
                                 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 border-transparent'
@@ -376,16 +376,16 @@ export const KanbanBoard: React.FC = () => {
                         >
                             <Bell size={14} className={activeQuickFilter === 'has_reminder' ? 'text-white' : 'text-slate-500'} />
                             {t('filter_has_reminder')}
-                        </button>
+                        </motion.button>
 
                         {hasActiveFilters && (
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={clearAllFilters}
                                 className="px-3 py-1.5 text-xs font-bold transition-all flex items-center gap-1.5 text-red-500 hover:text-red-600 hover:underline"
                             >
                                 <X size={14} />
                                 {t('filter_clear_all')}
-                            </button>
+                            </motion.button>
                         )}
                     </div>
 
@@ -402,7 +402,7 @@ export const KanbanBoard: React.FC = () => {
                             { key: 'Walk-in', label: t('filter_source_walkin') },
                             { key: 'Referral', label: t('filter_source_referral') }
                         ].map(({ key, label }) => (
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 key={key}
                                 onClick={() => toggleSourceFilter(key)}
                                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${selectedSources.includes(key)
@@ -411,7 +411,7 @@ export const KanbanBoard: React.FC = () => {
                                     }`}
                             >
                                 {label}
-                            </button>
+                            </motion.button>
                         ))}
                     </div>
                 </div>
@@ -423,7 +423,7 @@ export const KanbanBoard: React.FC = () => {
                         const isActive = activeTab === tab.id;
 
                         return (
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`
@@ -439,7 +439,7 @@ export const KanbanBoard: React.FC = () => {
                                 `}>
                                     {count}
                                 </span>
-                            </button>
+                            </motion.button>
                         );
                     })}
                 </div>

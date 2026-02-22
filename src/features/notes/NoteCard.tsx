@@ -88,7 +88,7 @@ export const NoteCard = React.forwardRef<HTMLDivElement, NoteCardProps>(({ note,
                     </span>
                 </div>
 
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                     onClick={(e) => {
                         e.stopPropagation();
                         onDelete(note.id);
@@ -97,7 +97,7 @@ export const NoteCard = React.forwardRef<HTMLDivElement, NoteCardProps>(({ note,
                     title="O'chirish"
                 >
                     <Trash2 size={18} />
-                </button>
+                </motion.button>
             </div>
 
             {/* Title Section */}

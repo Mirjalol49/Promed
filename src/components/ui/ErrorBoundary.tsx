@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
@@ -55,13 +56,13 @@ export class ErrorBoundary extends Component<Props, State> {
                         <pre className="opacity-70 whitespace-pre-wrap">{this.state.errorInfo?.componentStack}</pre>
                     </div>
 
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={() => window.location.reload()}
                         className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition shadow-lg shadow-red-600/20"
                     >
                         <RefreshCw size={18} />
                         <span>Reload Application</span>
-                    </button>
+                    </motion.button>
                 </div>
             );
         }

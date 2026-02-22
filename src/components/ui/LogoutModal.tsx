@@ -51,28 +51,28 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({ isOpen, onClose, onCon
 
                                 {/* Actions */}
                                 <div className="grid grid-cols-2 gap-3 w-full">
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={onClose}
                                         className="h-12 flex items-center justify-center rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition-colors"
                                     >
                                         {t('cancel') || 'Cancel'}
-                                    </button>
-                                    <button
+                                    </motion.button>
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={onConfirm}
                                         className="h-12 flex items-center justify-center rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30"
                                     >
                                         {t('logout') || 'Log Out'}
-                                    </button>
+                                    </motion.button>
                                 </div>
                             </div>
 
                             {/* Close Button X */}
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={onClose}
                                 className="absolute top-4 right-4 p-2 text-slate-300 hover:text-slate-500 transition-colors rounded-full hover:bg-slate-50"
                             >
                                 <X size={20} />
-                            </button>
+                            </motion.button>
                         </motion.div>
                     </div>
                 )}

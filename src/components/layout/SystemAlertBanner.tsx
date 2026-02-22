@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React from 'react';
 import { Megaphone, X, AlertTriangle, Info, Bell, ShieldCheck } from 'lucide-react';
 import { useSystemAlert } from '../../contexts/SystemAlertContext';
@@ -49,12 +50,12 @@ export const SystemAlertBanner: React.FC = () => {
                         <p className="text-xs font-medium text-white/90 truncate">{activeAlert.content}</p>
                     </div>
 
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={dismissAlert}
                         className="p-2 hover:bg-white/10 rounded-xl transition-colors flex-shrink-0"
                     >
                         <X size={18} />
-                    </button>
+                    </motion.button>
                 </div>
             </div>
         </div>

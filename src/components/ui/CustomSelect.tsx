@@ -140,7 +140,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
                     <div className="p-1.5 space-y-1 overflow-y-auto custom-scrollbar flex-1">
                         {filteredOptions.length > 0 ? (
                             filteredOptions.map((option) => (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     key={option.value}
                                     type="button"
                                     onClick={() => {
@@ -156,7 +156,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
                                         {renderOption ? renderOption(option) : option.label}
                                     </div>
                                     {value === option.value && <Check className="w-4 h-4 ml-2 flex-shrink-0" />}
-                                </button>
+                                </motion.button>
                             ))
                         ) : (
                             <div className="py-8 text-center text-slate-400 text-sm font-medium">
@@ -176,7 +176,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
                     {label}
                 </label>
             )}
-            <button
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
@@ -192,7 +192,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
                     {selectedOption ? (renderOption ? renderOption(selectedOption) : <span className="truncate">{selectedOption.label}</span>) : <span className="text-slate-400 font-normal truncate">{placeholder}</span>}
                 </div>
                 <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180 text-promed-primary' : ''}`} />
-            </button>
+            </motion.button>
 
             {typeof document !== 'undefined' && createPortal(dropdownContent, document.body)}
         </div>

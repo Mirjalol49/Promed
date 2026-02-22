@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, isToday } from 'date-fns';
@@ -19,23 +20,23 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({ value, onChange 
     const renderHeader = () => {
         return (
             <div className="flex items-center justify-between px-2 py-3">
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                     type="button"
                     onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
                     className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors"
                 >
                     <ChevronLeft size={24} strokeWidth={2.5} />
-                </button>
+                </motion.button>
                 <div className="font-extrabold text-slate-900 capitalize text-lg tracking-tight">
                     {format(currentMonth, 'MMMM yyyy', { locale })}
                 </div>
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                     type="button"
                     onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
                     className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors"
                 >
                     <ChevronRight size={24} strokeWidth={2.5} />
-                </button>
+                </motion.button>
             </div>
         );
     };
@@ -82,7 +83,7 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({ value, onChange 
                         key={day.toString()}
                         className={`p-0.5 w-full aspect-square`}
                     >
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             type="button"
                             disabled={!isCurrentMonth}
                             onClick={() => {
@@ -105,7 +106,7 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({ value, onChange 
                             {isDayToday && !isSelected && (
                                 <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />
                             )}
-                        </button>
+                        </motion.button>
                     </div>
                 );
                 day = addDays(day, 1);

@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 import { Megaphone, Send, Info, AlertTriangle, ShieldCheck, Bell, Users, User } from 'lucide-react';
 import { createSystemAlert, sendTargetedNotifications } from '../../lib/notificationService';
@@ -93,7 +94,7 @@ export const BroadcastPanel: React.FC<BroadcastPanelProps> = ({ users = [] }) =>
 
                 {/* Recipient Toggle */}
                 <div className="bg-slate-50 p-1 rounded-xl flex">
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         type="button"
                         onClick={() => setTargetMode('all')}
                         className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${targetMode === 'all' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
@@ -101,8 +102,8 @@ export const BroadcastPanel: React.FC<BroadcastPanelProps> = ({ users = [] }) =>
                     >
                         <Users size={16} />
                         <span>All Users</span>
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         type="button"
                         onClick={() => setTargetMode('specific')}
                         className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${targetMode === 'specific' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
@@ -110,7 +111,7 @@ export const BroadcastPanel: React.FC<BroadcastPanelProps> = ({ users = [] }) =>
                     >
                         <User size={16} />
                         <span>Specific User</span>
-                    </button>
+                    </motion.button>
                 </div>
 
                 {targetMode === 'specific' && (
@@ -137,7 +138,7 @@ export const BroadcastPanel: React.FC<BroadcastPanelProps> = ({ users = [] }) =>
                         <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Type</label>
                         <div className="flex gap-2">
                             {(['info', 'success', 'warning', 'danger'] as const).map(bt => (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     key={bt}
                                     type="button"
                                     onClick={() => setType(bt)}
@@ -148,7 +149,7 @@ export const BroadcastPanel: React.FC<BroadcastPanelProps> = ({ users = [] }) =>
                                     {bt === 'warning' && <AlertTriangle size={16} />}
                                     {bt === 'danger' && <ShieldCheck size={16} />}
                                     {bt === 'success' && <Bell size={16} />}
-                                </button>
+                                </motion.button>
                             ))}
                         </div>
                     </div>
@@ -177,21 +178,21 @@ export const BroadcastPanel: React.FC<BroadcastPanelProps> = ({ users = [] }) =>
                 </div>
 
                 <div className="pt-2 flex justify-end gap-3">
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         type="button"
                         onClick={() => { setTitle(''); setMessage(''); }}
                         className="px-4 py-3 text-slate-400 hover:text-slate-600 font-bold text-sm transition-colors"
                     >
                         {t('clear')}
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         type="submit"
                         disabled={loading}
                         className="btn-premium-blue px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-promed-primary/20"
                     >
                         <span>{loading ? 'Transmitting...' : t('transmit')}</span>
                         <Send className="w-4 h-4" />
-                    </button>
+                    </motion.button>
                 </div>
             </form>
         </div>

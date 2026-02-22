@@ -261,10 +261,11 @@ const Group3D: React.FC<{
             </div>
 
             {/* X-Axis Dynamic Label */}
-            <div className="mt-4 md:mt-5 text-center flex items-center justify-center h-10 md:h-8 w-full relative">
+            <div className="mt-4 md:mt-5 flex items-center justify-center h-10 md:h-8 w-full relative">
                 <span
-                    className={`absolute top-0 text-[9px] md:text-[10px] font-bold text-[#64748B] tracking-tight uppercase select-none transition-colors duration-300 group-hover:text-slate-800 break-words flex justify-center w-[120%]
+                    className={`absolute top-0 text-[9px] md:text-[10px] font-bold text-[#64748B] tracking-tight uppercase select-none transition-colors duration-300 group-hover:text-slate-800 break-words flex
                         ${isDense ? 'scale-90 md:scale-100 origin-top' : ''}
+                        ${alignEdge === 'left' ? 'left-0 justify-start text-left w-[120%]' : alignEdge === 'right' ? 'right-0 justify-end text-right w-[120%]' : 'left-1/2 -translate-x-1/2 justify-center text-center w-[130%]'}
                     `}
                 >
                     {isDense && group.label.length > 5 ? (
@@ -300,7 +301,7 @@ export const Chart3D: React.FC<Chart3DProps> = ({ data, maxBarHeight = 220 }) =>
 
     // Find absolute highest value among ALL bars in ALL groups to define chart ceiling
     const maxValRaw = useMemo(() => {
-        let currentMax = 1; // prevent 0
+        let currentMax = 100; // Prevent 0, and default to 100 for clean ticks without decimals when empty
         data.forEach(group => {
             currentMax = Math.max(currentMax, group.kirim, group.xarajat, group.sof);
         });
@@ -363,7 +364,7 @@ export const Chart3D: React.FC<Chart3DProps> = ({ data, maxBarHeight = 220 }) =>
                 </div>
 
                 {/* 2. Data Scroll Area */}
-                <div className="relative min-w-[500px] md:min-w-full flex-grow flex flex-col pr-4">
+                <div className="relative min-w-[500px] flex-1 flex flex-col pr-4">
                     {/* Horizontal Grid Lines */}
                     <div className="absolute inset-x-0 pointer-events-none" style={{ bottom: depth + 36, height: maxBarHeight, left: 0 }}>
                         {ticks.map((tPct) => (
@@ -383,8 +384,8 @@ export const Chart3D: React.FC<Chart3DProps> = ({ data, maxBarHeight = 220 }) =>
                                 depth={depth}
                                 gap={gap}
                                 alignEdge={
-                                    idx === 0 || (len > 8 && idx <= 1) ? 'left' :
-                                        idx === len - 1 || (len > 8 && idx >= len - 2) ? 'right' :
+                                    idx === 0 || (len >= 5 && idx <= 1) ? 'left' :
+                                        idx === len - 1 || (len >= 5 && idx >= len - 2) ? 'right' :
                                             'center'
                                 }
                                 isDense={len > 8}

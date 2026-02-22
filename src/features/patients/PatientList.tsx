@@ -142,7 +142,7 @@ const InjectionModal: React.FC<{
         <div className="bg-white rounded-3xl w-full max-w-[90vw] md:max-w-md p-6 md:p-8 transform scale-100 transition-all border border-slate-200 shadow-2xl">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-2xl font-black text-slate-800 tracking-tight">{initialData ? t('edit_injection') : t('add_injection')}</h3>
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-800 transition p-2 hover:bg-slate-100 rounded-full bg-slate-50"><X size={20} /></button>
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="text-slate-400 hover:text-slate-800 transition p-2 hover:bg-slate-100 rounded-full bg-slate-50"><X size={20} /></motion.button>
           </div>
 
           <div className="space-y-6">
@@ -177,18 +177,18 @@ const InjectionModal: React.FC<{
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2">
-              <button
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 onClick={onClose}
                 className="h-12 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-900 text-[15px] font-semibold rounded-2xl transition-colors active:scale-95 duration-200 whitespace-nowrap"
               >
                 {t('cancel')}
-              </button>
-              <button
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 onClick={handleSave}
                 className="btn-premium-blue h-12 flex items-center justify-center active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
               >
                 <span>{t('save')}</span>
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
@@ -260,19 +260,19 @@ const PhotoLabelModal: React.FC<{
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 mt-6">
-              <button
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 onClick={onClose}
                 className="h-12 flex items-center justify-center bg-white border border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all active:scale-[0.98] shadow-sm whitespace-nowrap px-1"
               >
                 {t('cancel')}
-              </button>
-              <button
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 onClick={handleSave}
                 disabled={!value}
                 className="btn-premium-blue h-12 flex items-center justify-center active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
               >
                 <span>{t('save')}</span>
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
@@ -385,13 +385,13 @@ export const PatientList: React.FC<{
           </div>
           {/* Add Button */}
           {canEdit && (
-            <button
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
               onClick={onAddPatient}
               className="btn-premium-blue flex items-center justify-center w-full md:w-auto gap-2 px-5 py-2.5 whitespace-nowrap shadow-lg shadow-promed-primary/20"
             >
               <PlusCircle size={18} className="relative z-10" />
               <span className="relative z-10 font-bold">{t('add_new_patient')}</span>
-            </button>
+            </motion.button>
           )}
         </div>
       </div>
@@ -560,19 +560,19 @@ export const PatientList: React.FC<{
       {patients.length > 0 && (
         <div className="flex items-center justify-center border-t border-slate-100 p-6 bg-white">
           <div className="flex items-center gap-3">
-            <button
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
               onClick={handlePrevPage}
               disabled={currentPage === 1}
               className="btn-premium-white !p-2.5"
               aria-label={t('previous_page') || "Previous Page"}
             >
               <ChevronLeft size={20} className="relative z-10 opacity-70" />
-            </button>
+            </motion.button>
 
             <div className="flex items-center gap-1.5 px-2">
               {getPageNumbers().map((page, idx) => (
                 typeof page === 'number' ? (
-                  <button
+                  <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                     key={idx}
                     onClick={() => setCurrentPage(page)}
                     className={`min-w-[38px] h-10 flex items-center justify-center rounded-xl text-sm font-bold transition-all ${currentPage === page
@@ -581,7 +581,7 @@ export const PatientList: React.FC<{
                       }`}
                   >
                     <span className="relative z-10">{page}</span>
-                  </button>
+                  </motion.button>
                 ) : (
                   <span key={idx} className="w-10 h-10 flex items-center justify-center text-slate-400 text-sm font-black tracking-widest">
                     {page}
@@ -590,14 +590,14 @@ export const PatientList: React.FC<{
               ))}
             </div>
 
-            <button
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
               className="btn-premium-white !p-2.5"
               aria-label={t('next_page') || "Next Page"}
             >
               <ChevronRight size={20} className="relative z-10 opacity-70" />
-            </button>
+            </motion.button>
           </div>
         </div>
       )}
@@ -768,10 +768,10 @@ export const PatientDetail: React.FC<{
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-      <button onClick={onBack} className="flex items-center space-x-2 text-slate-500 hover:text-promed-primary transition mb-2 font-bold hover:-translate-x-1 duration-200 px-1">
+      <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onBack} className="flex items-center space-x-2 text-slate-500 hover:text-promed-primary transition mb-2 font-bold hover:-translate-x-1 duration-200 px-1">
         <ChevronLeft size={20} />
         <span>{t('back_to_list')}</span>
-      </button>
+      </motion.button>
 
       {/* Header Info */}
       <div className="bg-white rounded-3xl p-4 md:p-8 border border-slate-200 flex flex-col md:flex-row gap-8 relative overflow-hidden shadow-apple">
@@ -817,20 +817,20 @@ export const PatientDetail: React.FC<{
             {/* Edit & Delete Buttons */}
             {canEdit && (
               <div className="flex items-center space-x-3 flex-shrink-0">
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                   onClick={onEditPatient}
                   className="btn-premium-white !px-5 !py-2.5"
                 >
                   <Pencil className="w-5 h-5 relative z-10" />
                   <span className="relative z-10">{t('edit_patient')}</span>
-                </button>
-                <button
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                   onClick={onDeletePatient}
                   className="btn-premium-white !px-5 !py-2.5 !text-red-600 !border-red-200 hover:!bg-red-50 group/del"
                 >
                   <Trash2 className="w-5 h-5 relative z-10 group-hover/del:scale-110 transition-transform" />
                   <span className="relative z-10">{t('delete')}</span>
-                </button>
+                </motion.button>
               </div>
             )}
           </div>
@@ -864,7 +864,7 @@ export const PatientDetail: React.FC<{
       {/* Tab Navigation */}
       <div className="flex justify-start mb-8">
         <div className="relative inline-flex items-center bg-white/90 rounded-2xl p-1.5 border border-slate-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-xl">
-          <button
+          <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
             onClick={() => setActiveTab('general')}
             className={`relative z-10 flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-colors duration-300 ${activeTab === 'general' ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
           >
@@ -883,8 +883,8 @@ export const PatientDetail: React.FC<{
             )}
             <User size={16} strokeWidth={2.5} className="relative z-10" />
             <span className="relative z-10">{t('general_info') || "General Info"}</span>
-          </button>
-          <button
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
             onClick={() => setActiveTab('finance')}
             className={`relative z-10 flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-colors duration-300 ${activeTab === 'finance' ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
           >
@@ -903,7 +903,7 @@ export const PatientDetail: React.FC<{
             )}
             <Wallet size={16} strokeWidth={2.5} className="relative z-10" />
             <span className="relative z-10">{t('finance') || "Finance"}</span>
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -1026,7 +1026,7 @@ export const PatientDetail: React.FC<{
 
                       {/* Delete Button (Hover) */}
                       {canEdit && (
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteAfterPhotoClick(img.id);
@@ -1034,7 +1034,7 @@ export const PatientDetail: React.FC<{
                           className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 shadow-sm z-20 hover:scale-110"
                         >
                           <Trash2 size={16} />
-                        </button>
+                        </motion.button>
                       )}
 
                       {/* Gradient & Label */}
@@ -1073,9 +1073,9 @@ export const PatientDetail: React.FC<{
         selectedImage && (
           <Portal>
             <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setSelectedImage(null)}>
-              <button className="absolute top-6 right-6 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition z-[10000]">
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} className="absolute top-6 right-6 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition z-[10000]">
                 <X size={36} />
-              </button>
+              </motion.button>
               <div className="max-w-full max-h-[90vh] rounded-xl overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-300 bg-black/20 relative" onClick={e => e.stopPropagation()}>
                 {(() => {
                   const matchedImg = patient.afterImages.find(img => img.url === selectedImage);
@@ -1401,9 +1401,9 @@ export const AddPatientForm: React.FC<{
             <div className="flex items-center gap-2">
               {/* ✨ Magic Auto-Fill Button (Dev Tool) */}
 
-              <button onClick={onCancel} className="text-slate-400 hover:text-slate-800 hover:bg-slate-100 p-2 md:p-2.5 rounded-full transition duration-200">
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onCancel} className="text-slate-400 hover:text-slate-800 hover:bg-slate-100 p-2 md:p-2.5 rounded-full transition duration-200">
                 <X size={20} className="sm:w-6 sm:h-6" />
-              </button>
+              </motion.button>
             </div>
           </div>
 
@@ -1489,13 +1489,13 @@ export const AddPatientForm: React.FC<{
                             <Edit2 size={14} />
                             <input type="file" className="hidden" accept="image/*,video/*" onChange={(e) => handleImageUpload(e, setBeforeImage, setBeforeImageFile, setIsBeforeUploading)} />
                           </label>
-                          <button
+                          <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             type="button"
                             onClick={() => { setBeforeImage(''); setBeforeImageFile(null); }}
                             className="p-2 bg-white/90 backdrop-blur-md text-red-500 rounded-lg hover:bg-red-50 hover:text-red-600 shadow-lg transition-all hover:scale-110 border border-slate-200"
                           >
                             <Trash2 size={14} />
-                          </button>
+                          </motion.button>
                         </div>
                       </div>
                     ) : (
@@ -1689,14 +1689,14 @@ export const AddPatientForm: React.FC<{
               </div>
             )}
             <div className="grid grid-cols-2 md:flex md:justify-end gap-3 md:gap-4">
-              <button
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 type="button"
                 onClick={onCancel}
                 className="w-full md:w-auto px-6 py-3.5 text-slate-500 font-bold hover:text-slate-800 transition rounded-xl bg-slate-100 hover:bg-slate-200 text-sm active:scale-95 duration-200"
               >
                 {t('cancel')}
-              </button>
-              <button
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 type="submit"
                 form="patient-form"
                 disabled={saving || isSubmitting}
@@ -1708,7 +1708,7 @@ export const AddPatientForm: React.FC<{
                   <Save size={18} className="relative z-10" />
                 )}
                 <span>{isSubmitting || saving ? t('saving') : t('save')}</span>
-              </button>
+              </motion.button>
             </div>
           </div>
 

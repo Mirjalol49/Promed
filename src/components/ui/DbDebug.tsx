@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
@@ -41,12 +42,12 @@ export const DbDebug = () => {
                     {error}
                 </div>
             )}
-            <button
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 onClick={checkDb}
                 className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded"
             >
                 Retry
-            </button>
+            </motion.button>
         </div>
     );
 };

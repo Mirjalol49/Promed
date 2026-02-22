@@ -229,12 +229,12 @@ export const NotesPage: React.FC = () => {
                     <div className="flex items-center justify-between md:justify-start gap-4">
                         <div className="flex items-center gap-2">
                             {activeFolder ? (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => setActiveFolder(null)}
                                     className="p-2.5 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors mr-1"
                                 >
                                     <ArrowLeft size={24} className="text-slate-600" />
-                                </button>
+                                </motion.button>
                             ) : (
                                 <div className="p-2.5 gel-blue-style text-white rounded-xl">
                                     <FolderOpen size={24} />
@@ -270,7 +270,7 @@ export const NotesPage: React.FC = () => {
                                         className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary transition-all font-medium"
                                     />
                                 </div>
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => {
                                         setNoteToEdit(null);
                                         setIsModalOpen(true);
@@ -279,7 +279,7 @@ export const NotesPage: React.FC = () => {
                                 >
                                     <Plus size={20} />
                                     <span>{t('new_note')}</span>
-                                </button>
+                                </motion.button>
                             </>
                         )}
                     </div>

@@ -68,7 +68,7 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
 
     return (
         <div className="relative" ref={dropdownRef}>
-            <button
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 onClick={toggleDropdown}
                 className={`relative p-2.5 rounded-xl transition-all duration-300 ${isOpen ? 'bg-promed-light text-promed-primary shadow-inner' : className
                     }`}
@@ -105,7 +105,7 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
                         </div>
                     )}
                 </div>
-            </button>
+            </motion.button>
 
             <AnimatePresence>
                 {isOpen && (
@@ -120,9 +120,9 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
                                 <h3 className="font-black text-xs uppercase tracking-widest text-slate-900">{t('notifications')}</h3>
                                 <span className="px-2 py-0.5 bg-promed-light text-promed-primary rounded-lg text-[10px] font-black">{alerts.length}</span>
                             </div>
-                            <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
                                 <X size={16} />
-                            </button>
+                            </motion.button>
                         </div>
 
                         <div className="max-h-[400px] overflow-y-auto no-scrollbar">
@@ -144,7 +144,7 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-start gap-2">
                                                         <h4 className="font-bold text-sm text-slate-900 mb-0.5 leading-tight">{alert.title}</h4>
-                                                        <button
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 dismissNotification(alert.id);
@@ -152,7 +152,7 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
                                                             className="p-1 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100"
                                                         >
                                                             <X size={12} />
-                                                        </button>
+                                                        </motion.button>
                                                     </div>
                                                     <p className="text-xs text-slate-500 leading-relaxed break-words">{alert.content}</p>
                                                     <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-slate-400">

@@ -100,13 +100,13 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                     </div>
 
                     {!readOnly && (
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={onAddInjection}
                             className="btn-premium-blue shadow-lg shadow-promed-primary/20 hover:shadow-promed-primary/40 hover:-translate-y-0.5 transition-all"
                         >
                             <Plus size={18} className="relative z-10" />
                             <span>{t('add_injection')}</span>
-                        </button>
+                        </motion.button>
                     )}
                 </div>
 
@@ -223,20 +223,20 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                     {/* ACTIONS (Edit & Delete) */}
                                                     {!readOnly && (
                                                         <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
-                                                            <button
+                                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                                 onClick={(e) => { e.stopPropagation(); onEditInjection(inj); }}
                                                                 className="p-1.5 text-slate-400 hover:text-promed-primary hover:bg-slate-100 rounded-lg transition-colors"
                                                                 title={t('edit')}
                                                             >
                                                                 <Edit2 size={14} />
-                                                            </button>
-                                                            <button
+                                                            </motion.button>
+                                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                                 onClick={(e) => { e.stopPropagation(); onDeleteInjection(inj.id, e); }}
                                                                 className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-slate-100 rounded-lg transition-colors"
                                                                 title={t('delete')}
                                                             >
                                                                 <Trash2 size={14} />
-                                                            </button>
+                                                            </motion.button>
                                                         </div>
                                                     )}
                                                 </div>

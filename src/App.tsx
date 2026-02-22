@@ -47,7 +47,7 @@ import DeleteModal from './components/ui/DeleteModal';
 import { Trash2 } from 'lucide-react';
 import { PinInput } from './components/ui/PinInput';
 import { useReminderNotifications } from './hooks/useReminderNotifications';
-import { AnimatePresence } from 'framer-motion';
+import {  AnimatePresence , motion } from 'framer-motion';
 import { PageTransition } from './components/ui/PageTransition';
 import { useRBAC } from './hooks/useRBAC';
 import { SCOPES } from './config/permissions';
@@ -173,13 +173,13 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
                 placeholder="Parolni kiriting"
                 autoFocus
               />
-              <button
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-promed-primary/40 hover:text-promed-primary transition-colors"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
+              </motion.button>
               {/* Error Message for Text Input */}
               {pinError && (
                 <div className="absolute -bottom-8 left-0 right-0 text-center">
@@ -192,14 +192,14 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
           )}
 
           <div className="w-full max-w-sm space-y-6">
-            <button
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
               type="submit"
               className="btn-glossy-blue group flex items-center justify-center !text-base"
             >
               <span className="flex items-center gap-2 relative z-10">
                 {t('unlock') || 'Ochish'} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
-            </button>
+            </motion.button>
             {/* Forgot Password Link REMOVED */}
           </div>
         </form>

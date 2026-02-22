@@ -193,7 +193,7 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
 
                 {/* Delete Button (Hover) */}
                 {onDelete && (
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={(e) => {
                             e.stopPropagation();
                             onDelete(note.id);
@@ -201,7 +201,7 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
                         className="absolute top-4 right-4 p-2 bg-red-50 text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 z-20"
                     >
                         <Trash2 size={18} />
-                    </button>
+                    </motion.button>
                 )}
 
                 {/* Single Professional Number Badge */}
@@ -241,7 +241,7 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
                     </span>
 
                     {/* Done Button */}
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={handleDone}
                         className={`
                             flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-300
@@ -253,7 +253,7 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
                         ) : (
                             <React.Fragment><Check size={14} strokeWidth={3} />{t('done')}</React.Fragment>
                         )}
-                    </button>
+                    </motion.button>
                 </div>
             </motion.div>
         </div>

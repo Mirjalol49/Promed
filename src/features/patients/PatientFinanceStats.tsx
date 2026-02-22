@@ -308,14 +308,14 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                     )}
                 </div>
                 {!isViewer && (
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={() => setIsAddingPayment(!isAddingPayment)}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all ${isAddingPayment ? 'bg-slate-100 text-slate-600' : 'btn-premium-emerald hover:scale-105 active:scale-95'}`}
                     >
                         {isAddingPayment ? t('cancel') : (
                             <><Plus size={18} strokeWidth={3} />{t('add_payment')}</>
                         )}
-                    </button>
+                    </motion.button>
                 )}
             </div>
 
@@ -341,7 +341,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                         {/* Custom Month Picker */}
                         <div className="relative" ref={monthPickerRef}>
                             {/* Trigger Button */}
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => {
                                     if (!isMonthPickerOpen && selectedMonth) {
                                         setPickerYear(parseInt(selectedMonth.split('-')[0]));
@@ -365,26 +365,26 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                         <XIcon size={12} strokeWidth={3} />
                                     </span>
                                 )}
-                            </button>
+                            </motion.button>
 
                             {/* Dropdown */}
                             {isMonthPickerOpen && (
                                 <div className="absolute top-full left-0 mt-2 z-50 w-[280px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-2xl shadow-slate-900/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                                     {/* Year Navigation */}
                                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => setPickerYear(y => y - 1)}
                                             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all active:scale-90"
                                         >
                                             <ChevronLeft size={18} strokeWidth={2.5} />
-                                        </button>
+                                        </motion.button>
                                         <span className="text-base font-black text-slate-800 tracking-tight">{pickerYear}</span>
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => setPickerYear(y => y + 1)}
                                             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all active:scale-90"
                                         >
                                             <ChevronRight size={18} strokeWidth={2.5} />
-                                        </button>
+                                        </motion.button>
                                     </div>
 
                                     {/* Month Grid */}
@@ -396,7 +396,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                             const isCurrentMonth = new Date().getFullYear() === pickerYear && new Date().getMonth() === idx;
 
                                             return (
-                                                <button
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                     key={idx}
                                                     onClick={() => handleSelectMonth(idx)}
                                                     className={`relative py-2.5 px-1 rounded-xl text-[13px] font-bold transition-all duration-150 ${isActive
@@ -407,20 +407,20 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                         }`}
                                                 >
                                                     {name}
-                                                </button>
+                                                </motion.button>
                                             );
                                         })}
                                     </div>
 
                                     {/* Footer */}
                                     <div className="px-4 pb-4 flex items-center gap-2">
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={handleClearMonth}
                                             className="flex-1 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all"
                                         >
                                             {t('clear') || 'Tozalash'}
-                                        </button>
-                                        <button
+                                        </motion.button>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => {
                                                 const now = new Date();
                                                 setPickerYear(now.getFullYear());
@@ -429,7 +429,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                             className="flex-1 py-2 rounded-xl text-xs font-bold text-promed-primary hover:bg-promed-primary/5 transition-all"
                                         >
                                             {t('this_month') || 'Shu oy'}
-                                        </button>
+                                        </motion.button>
                                     </div>
                                 </div>
                             )}
@@ -438,7 +438,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                         {/* Category Filters */}
                         <div className="relative inline-flex items-center bg-white/90 rounded-2xl p-1.5 border border-slate-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-xl">
                             {(['all', 'surgery', 'injection'] as const).map(cat => (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     key={cat}
                                     onClick={() => setFilterCategory(cat)}
                                     className={`relative z-10 flex items-center px-5 py-2.5 rounded-xl text-[13px] font-bold transition-colors duration-300 ${filterCategory === cat ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
@@ -457,7 +457,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                         </motion.div>
                                     )}
                                     <span className="relative z-10">{cat === 'all' ? t('filter_all') : t(cat)}</span>
-                                </button>
+                                </motion.button>
                             ))}
                         </div>
                     </div>
@@ -531,21 +531,21 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                             {!isViewer && (
                                                 <div className="flex items-center gap-2 self-end md:self-center w-full md:w-auto justify-end mt-2 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-200 md:border-transparent">
                                                     {isVoided ? (
-                                                        <button
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                             onClick={(e) => { e.stopPropagation(); handleRestore(item); }}
                                                             className="flex p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
                                                             title="Tranzaksiyani tiklash"
                                                         >
                                                             <RotateCcw size={18} strokeWidth={2.5} />
-                                                        </button>
+                                                        </motion.button>
                                                     ) : (
-                                                        <button
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                             onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
                                                             className="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-all"
                                                             title={t('delete') || "O'chirish"}
                                                         >
                                                             <Trash2 size={16} strokeWidth={2.5} />
-                                                        </button>
+                                                        </motion.button>
                                                     )}
                                                 </div>
                                             )}
@@ -695,21 +695,21 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
 
                                                 {!isViewer && (
                                                     isVoided ? (
-                                                        <button
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                             onClick={(e) => { e.stopPropagation(); handleRestore(item); }}
                                                             className="flex p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
                                                             title="Tranzaksiyani tiklash"
                                                         >
                                                             <RotateCcw size={18} strokeWidth={2.5} />
-                                                        </button>
+                                                        </motion.button>
                                                     ) : (
-                                                        <button
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                             onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}
                                                             className="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-all"
                                                             title={t('delete') || "O'chirish"}
                                                         >
                                                             <Trash2 size={16} strokeWidth={2.5} />
-                                                        </button>
+                                                        </motion.button>
                                                     )
                                                 )}
                                             </div>
@@ -887,9 +887,9 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                             <h4 className="font-black text-slate-800 text-xl mb-2">{t('no_payments_yet')}</h4>
                             <p className="text-slate-400 text-sm max-w-xs mx-auto leading-relaxed">{t('no_payments_desc')}</p>
                             {filterCategory !== 'all' && (
-                                <button onClick={() => setFilterCategory('all')} className="mt-6 text-promed-primary font-black text-sm hover:underline">
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => setFilterCategory('all')} className="mt-6 text-promed-primary font-black text-sm hover:underline">
                                     {t('clear_filters')}
-                                </button>
+                                </motion.button>
                             )}
                         </div>
                     )}

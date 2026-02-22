@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 
 import React, { useState } from 'react';
 import { X, Save, Instagram, Send, User, Users, Phone } from 'lucide-react';
@@ -151,9 +152,9 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                         <h2 className="text-lg font-bold text-slate-900">
                             {leadToEdit ? t('edit_lead') : t('add_new_lead')}
                         </h2>
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600">
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600">
                             <X size={20} />
-                        </button>
+                        </motion.button>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -196,7 +197,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                                     const Icon = s.icon;
                                     const isSelected = formData.source === s.id;
                                     return (
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             key={s.id}
                                             type="button"
                                             onClick={() => setFormData({ ...formData, source: s.id })}
@@ -209,7 +210,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                                         >
                                             <Icon size={16} />
                                             <span>{s.label}</span>
-                                        </button>
+                                        </motion.button>
                                     );
                                 })}
                             </div>
@@ -218,7 +219,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
 
 
                         <div className="pt-4">
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 type="submit"
                                 disabled={isLoading}
                                 className="w-full btn-premium-blue py-3 shadow-lg shadow-promed-primary/20"
@@ -231,7 +232,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                                         <span>Saqlash</span>
                                     </>
                                 )}
-                            </button>
+                            </motion.button>
                         </div>
                     </form>
                 </div>

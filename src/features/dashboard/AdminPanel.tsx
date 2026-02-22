@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, Plus, LogOut, Users, RefreshCw, ToggleLeft, ToggleRight,
@@ -101,7 +102,7 @@ const AdminLoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             </div>
           )}
 
-          <button
+          <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
             type="submit"
             disabled={loading}
             className="w-full btn-premium-blue !py-4"
@@ -114,7 +115,7 @@ const AdminLoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
                 <ArrowRight className="w-5 h-5 relative z-10" />
               </>
             )}
-          </button>
+          </motion.button>
         </form>
 
         <div className="mt-6 text-center">
@@ -291,13 +292,13 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               </div>
             </div>
           </div>
-          <button
+          <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
             onClick={handleLogout}
             className="flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
           >
             <LogOut className="w-4 h-4" />
             Logout
-          </button>
+          </motion.button>
         </div>
       </header>
 
@@ -322,11 +323,11 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               <p className="font-medium">Error</p>
               <p className="text-sm text-red-300/80">{globalError}</p>
             </div>
-            <button onClick={() => setGlobalError('')} className="p-1 hover:bg-red-500/20 rounded-lg transition">
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => setGlobalError('')} className="p-1 hover:bg-red-500/20 rounded-lg transition">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
+            </motion.button>
           </div>
         )}
 
@@ -343,20 +344,20 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
             />
           </div>
           <div className="flex gap-3">
-            <button
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
               onClick={fetchUsers}
               className="px-5 py-3 bg-gray-800/80 hover:bg-gray-700 border border-gray-700 rounded-xl transition-all flex items-center gap-2"
             >
               <RefreshCw className={`w - 4 h - 4 ${loading ? 'animate-spin' : ''} `} />
               Refresh
-            </button>
-            <button
+            </motion.button>
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
               onClick={() => setShowModal(true)}
               className="px-5 py-3 btn-premium-blue"
             >
               <Plus className="w-4 h-4 relative z-10" />
               <span>Add User</span>
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -389,12 +390,12 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                       <div className="flex flex-col items-center gap-3">
                         <Users className="w-12 h-12 text-gray-600" />
                         <span>No users found</span>
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                           onClick={() => setShowModal(true)}
                           className="mt-2 text-blue-400 hover:text-blue-300 transition"
                         >
                           Create your first user
-                        </button>
+                        </motion.button>
                       </div>
                     </td>
                   </tr>
@@ -421,7 +422,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
+                          <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={() => handleToggleUser(user.id, user.disabled)}
                             className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                             title={user.disabled ? 'Enable' : 'Disable'}
@@ -431,14 +432,14 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                             ) : (
                               <ToggleRight className="w-5 h-5 text-green-400" />
                             )}
-                          </button>
-                          <button
+                          </motion.button>
+                          <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={() => handleDeleteUser(user.id)}
                             className="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-red-400"
                             title="Delete"
                           >
                             <Trash2 className="w-5 h-5" />
-                          </button>
+                          </motion.button>
                         </div>
                       </td>
                     </tr>
@@ -515,7 +516,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               )}
 
               <div className="flex gap-3 pt-2">
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                   type="button"
                   onClick={() => {
                     setShowModal(false);
@@ -525,8 +526,8 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl transition-all font-medium"
                 >
                   Cancel
-                </button>
-                <button
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                   type="submit"
                   disabled={formLoading}
                   className="flex-1 px-4 py-3 btn-premium-blue"
@@ -536,7 +537,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   ) : (
                     <span>Create User</span>
                   )}
-                </button>
+                </motion.button>
               </div>
             </form>
           </div>

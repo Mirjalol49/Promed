@@ -306,18 +306,18 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                             <div className="w-full flex flex-col overflow-y-auto bg-white p-6 relative no-scrollbar">
                                 <div className="flex justify-center mb-8">
                                     <div className="bg-gray-100 p-1.5 rounded-xl flex w-full relative shadow-inner mb-8">
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => setMode('income')}
                                             className="flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm text-gray-500 hover:text-gray-700 hover:bg-white/50"
                                         >
                                             <span className="relative z-10">{t('income') || 'Kirim'}</span>
-                                        </button>
-                                        <button
+                                        </motion.button>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => setMode('expense')}
                                             className="flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm btn-glossy-red"
                                         >
                                             <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
-                                        </button>
+                                        </motion.button>
                                     </div>
                                 </div>
 
@@ -380,18 +380,18 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                 <div className="w-full md:w-[35%] bg-blue-50/20 p-8 flex flex-col border-b md:border-b-0 md:border-r border-blue-100/50 relative shrink-0">
                                     <div className="flex justify-center mb-10">
                                         <div className="bg-slate-100 p-1.5 rounded-xl flex w-full relative shadow-inner border border-slate-200/60 mb-6">
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 onClick={() => setMode('income')}
                                                 className="flex-1 py-2.5 text-sm font-bold rounded-lg transition-all shadow-sm btn-glossy-emerald"
                                             >
                                                 <span className="relative z-10">{t('income') || 'Kirim'}</span>
-                                            </button>
-                                            <button
+                                            </motion.button>
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 onClick={() => setMode('expense')}
                                                 className="flex-1 py-2.5 text-sm font-bold rounded-lg transition-all shadow-sm text-slate-400 hover:text-slate-600 hover:bg-white/50"
                                             >
                                                 <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
-                                            </button>
+                                            </motion.button>
                                         </div>
                                     </div>
                                     <div className="flex-1 flex flex-col justify-center items-center mb-10">
@@ -494,12 +494,12 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                                                     </div>
                                                                 )}
 
-                                                                <button
+                                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                                     onClick={() => removeSplit(i)}
                                                                     className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
                                                                 >
                                                                     <Trash2 size={16} />
-                                                                </button>
+                                                                </motion.button>
                                                             </div>
                                                         </motion.div>
                                                     );
@@ -541,24 +541,24 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                     <div className="p-4 border-t border-gray-50 bg-white relative z-20">
                                         {!isStaffPickerOpen ? (
                                             <div className="flex gap-3">
-                                                <button onClick={() => addSplit(false)} className="flex-1 py-3.5 flex items-center justify-center gap-2 text-white font-bold bg-gradient-to-b from-blue-500 to-blue-600 shadow-sm hover:shadow-md hover:from-blue-400 hover:to-blue-600 border border-transparent rounded-xl transition-all text-sm group active:scale-95"><User size={18} className="group-hover:scale-110 transition-transform" /><span>+ {t('staff') || 'Xodimlar'}</span></button>
-                                                <button onClick={() => addSplit(true)} className="flex-1 py-3.5 flex items-center justify-center gap-2 text-white font-bold bg-gradient-to-b from-rose-500 to-rose-600 shadow-sm hover:shadow-md hover:from-rose-400 hover:to-rose-600 border border-transparent rounded-xl transition-all text-sm group active:scale-95"><Percent size={18} className="group-hover:scale-110 transition-transform" /><span>+ {t('tax_exp') || 'Tax/Expense'}</span></button>
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => addSplit(false)} className="flex-1 py-3.5 flex items-center justify-center gap-2 text-white font-bold bg-gradient-to-b from-blue-500 to-blue-600 shadow-sm hover:shadow-md hover:from-blue-400 hover:to-blue-600 border border-transparent rounded-xl transition-all text-sm group active:scale-95"><User size={18} className="group-hover:scale-110 transition-transform" /><span>+ {t('staff') || 'Xodimlar'}</span></motion.button>
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => addSplit(true)} className="flex-1 py-3.5 flex items-center justify-center gap-2 text-white font-bold bg-gradient-to-b from-rose-500 to-rose-600 shadow-sm hover:shadow-md hover:from-rose-400 hover:to-rose-600 border border-transparent rounded-xl transition-all text-sm group active:scale-95"><Percent size={18} className="group-hover:scale-110 transition-transform" /><span>+ {t('tax_exp') || 'Tax/Expense'}</span></motion.button>
                                             </div>
                                         ) : (
                                             <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-blue-100 shadow-2xl shadow-blue-500/10 rounded-2xl p-3 z-50 animate-in fade-in slide-in-from-bottom-2">
                                                 <div className="flex items-center gap-2 mb-2 p-1 border-b border-gray-50">
                                                     <Search size={16} className="text-blue-500 ml-1" />
                                                     <input autoFocus type="text" value={staffSearch} onChange={e => setStaffSearch(e.target.value)} className="flex-1 bg-transparent px-2 py-1 text-sm font-bold text-gray-900 outline-none placeholder-gray-300" placeholder={t('search_staff') || "Search staff..."} />
-                                                    <button onClick={() => setIsStaffPickerOpen(false)} className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors"><X size={16} /></button>
+                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => setIsStaffPickerOpen(false)} className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors"><X size={16} /></motion.button>
                                                 </div>
                                                 <div className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar">
                                                     {filteredStaff.map(staff => (
-                                                        <button key={staff.id} onClick={() => handleStaffSelect(staff.id)} className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-blue-50 hover:text-blue-600 text-left transition-colors group">
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} key={staff.id} onClick={() => handleStaffSelect(staff.id)} className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-blue-50 hover:text-blue-600 text-left transition-colors group">
                                                             <div className="relative">
                                                                 <Avatar src={staff.imageUrl} alt={staff.fullName} fallback={<User size={14} />} className="w-8 h-8 rounded-full border border-gray-100 group-hover:border-blue-200" />
                                                             </div>
                                                             <div><div className="font-bold text-xs text-gray-800 group-hover:text-blue-700">{staff.fullName}</div></div>
-                                                        </button>
+                                                        </motion.button>
                                                     ))}
                                                 </div>
                                             </div>
@@ -570,14 +570,14 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                     </div>
                     {/* ── FOOTER ── */}
                     <div className="px-8 py-5 border-t border-gray-50 flex items-center justify-end gap-3 shrink-0 bg-white">
-                        <button onClick={onClose} className="px-6 py-3 rounded-2xl font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors text-sm">
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="px-6 py-3 rounded-2xl font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors text-sm">
                             {t('cancel') || 'Bekor qilish'}
-                        </button>
+                        </motion.button>
                         <motion.button whileTap={{ scale: 0.98 }} onClick={handleSubmit} disabled={loading || !amount || (mode === 'income' && isOverBudget)} className={`px-10 py-4 rounded-xl font-bold text-white text-lg shadow-xl shadow-blue-600/40 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-b from-blue-400 to-blue-700 hover:from-blue-400 hover:to-blue-600 ring-1 ring-white/20`}>
                             {loading ? <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (t('save') || 'Saqlash')}
                         </motion.button>
                     </div>
-                    <button onClick={onClose} className="md:hidden absolute top-4 right-4 z-50 p-2 bg-white rounded-full shadow-sm text-gray-500"><X size={20} /></button>
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="md:hidden absolute top-4 right-4 z-50 p-2 bg-white rounded-full shadow-sm text-gray-500"><X size={20} /></motion.button>
                 </motion.div>
             </div >
         </Portal >

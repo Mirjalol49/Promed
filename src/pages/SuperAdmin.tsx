@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 import { createSystemUser } from '../lib/adminService';
 import { subscribeToAllProfiles } from '../lib/userService';
@@ -10,13 +11,13 @@ const PasswordReveal: React.FC<{ value: string }> = ({ value }) => {
             <span className="font-mono text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 min-w-[100px] text-center ">
                 {show ? value : '••••••'}
             </span>
-            <button
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 onClick={() => setShow(!show)}
                 className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-promed-primary transition-colors"
                 title={show ? "Yashirish" : "Ko'rsatish"}
             >
                 {show ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+            </motion.button>
         </div>
     );
 };
@@ -155,13 +156,13 @@ export const SuperAdmin: React.FC = () => {
                     </h1>
                     <p className="text-white/70 mt-1 font-medium italic opacity-80">Manage system access and creating new accounts</p>
                 </div>
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                     onClick={() => setShowForm(!showForm)}
                     className="relative z-10 btn-premium-blue !py-4 !px-8"
                 >
                     <UserPlus className="w-5 h-5 relative z-10" />
                     <span>Provision Node</span>
-                </button>
+                </motion.button>
             </div>
 
             {/* Status Message */}
@@ -229,21 +230,21 @@ export const SuperAdmin: React.FC = () => {
                             </select>
                         </div>
                         <div className="md:col-span-2 flex justify-end gap-3 mt-4">
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 type="button"
                                 onClick={() => setShowForm(false)}
                                 className="px-6 py-3 text-slate-500 hover:bg-slate-50 rounded-xl font-medium transition-colors"
                             >
                                 Cancel
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 type="submit"
                                 disabled={loading}
                                 className="btn-premium-blue px-10 py-4"
                             >
                                 <span>{loading ? 'Creating...' : 'Establish Registry'}</span>
                                 <ChevronRight className="w-4 h-4 relative z-10" />
-                            </button>
+                            </motion.button>
                         </div>
                     </form>
                 </div>
@@ -290,45 +291,45 @@ export const SuperAdmin: React.FC = () => {
                         <div className="space-y-2 md:col-span-2">
                             <label className="text-sm font-medium text-slate-500">Account Status</label>
                             <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl">
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     type="button"
                                     onClick={() => setEditingUser({ ...editingUser, status: 'active' })}
                                     className={`flex-1 py-3 rounded-xl text-xs font-black transition-all duration-300 ${editingUser.status === 'active' ? 'bg-white text-green-600 ' : 'text-slate-400'}`}
                                 >
                                     ACTIVE
-                                </button>
-                                <button
+                                </motion.button>
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     type="button"
                                     onClick={() => setEditingUser({ ...editingUser, status: 'frozen' })}
                                     className={`flex-1 py-3 rounded-xl text-xs font-black transition-all duration-300 ${editingUser.status === 'frozen' ? 'bg-white text-amber-600 ' : 'text-slate-400'}`}
                                 >
                                     FROZEN
-                                </button>
-                                <button
+                                </motion.button>
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     type="button"
                                     onClick={() => setEditingUser({ ...editingUser, status: 'banned' })}
                                     className={`flex-1 py-3 rounded-xl text-xs font-black transition-all duration-300 ${editingUser.status === 'banned' ? 'bg-white text-red-600 ' : 'text-slate-400'}`}
                                 >
                                     BANNED
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
                         <div className="md:col-span-2 flex justify-end gap-3 mt-4">
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 type="button"
                                 onClick={() => setEditingUser(null)}
                                 className="px-6 py-3 text-slate-500 hover:bg-slate-50 rounded-xl font-medium transition-colors"
                             >
                                 Cancel
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 type="submit"
                                 disabled={loading}
                                 className="btn-premium-blue px-8 py-3"
                             >
                                 <span>{loading ? 'Saving...' : 'Save Changes'}</span>
                                 <ChevronRight className="w-4 h-4 relative z-10" />
-                            </button>
+                            </motion.button>
                         </div>
                     </form>
                 </div>
@@ -398,13 +399,13 @@ export const SuperAdmin: React.FC = () => {
                                                     Frozen
                                                 </span>
                                             )}
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 onClick={() => startEdit(user)}
                                                 className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-promed-primary transition-colors"
                                                 title="Tahrirlash"
                                             >
                                                 <Settings size={18} />
-                                            </button>
+                                            </motion.button>
                                         </div>
                                     </td>
                                 </tr>

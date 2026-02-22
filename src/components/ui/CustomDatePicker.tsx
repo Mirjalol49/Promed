@@ -97,25 +97,25 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
     const renderHeader = () => {
         return (
             <div className="flex items-center justify-between mb-4 px-2">
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                     type="button"
                     onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
                     className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-colors"
                     aria-label="Previous month"
                 >
                     <ChevronLeft className="w-5 h-5" />
-                </button>
+                </motion.button>
                 <span className="text-slate-800 font-bold capitalize text-sm md:text-base">
                     {format(currentMonth, 'MMMM yyyy', { locale })}
                 </span>
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                     type="button"
                     onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
                     className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-colors"
                     aria-label="Next month"
                 >
                     <ChevronRight className="w-5 h-5" />
-                </button>
+                </motion.button>
             </div>
         );
     };
@@ -162,7 +162,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                         key={day.toString()}
                         className={`p-0.5 md:p-1 relative`}
                     >
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             type="button"
                             onClick={() => {
                                 onChange(cloneDay);
@@ -183,7 +183,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                             {isTodayDate && !isSelected && (
                                 <span className="absolute bottom-1 w-1 h-1 bg-blue-600 rounded-full" />
                             )}
-                        </button>
+                        </motion.button>
                     </div>
                 );
                 day = addDays(day, 1);
@@ -290,7 +290,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                     {label}
                 </label>
             )}
-            <button
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 aria-haspopup="dialog"
@@ -310,7 +310,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                     {value ? format(value, 'dd MMMM yyyy', { locale }) : (placeholder || t('select_date') || 'Sanani tanlang')}
                 </span>
                 <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />
-            </button>
+            </motion.button>
 
             {/* Render Portal */}
             {typeof document !== 'undefined' && createPortal(dropdownContent, document.body)}

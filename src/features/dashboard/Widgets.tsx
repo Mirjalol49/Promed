@@ -167,7 +167,7 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
 
         <div className="w-full sm:w-auto">
           <div className="grid grid-cols-2 gap-1 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50 backdrop-blur-sm relative w-full">
-            <button
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
               onClick={() => setFilter('Operation')}
               className={`relative px-2 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 overflow-hidden w-full ${filter === 'Operation'
                 ? 'text-white shadow-[0_4px_14px_0_rgba(244,63,94,0.39)] bg-gradient-to-r from-rose-500 to-rose-600 border border-rose-400/50'
@@ -181,8 +181,8 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
                 <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-80" />
               )}
               <span className="relative z-10 truncate block">{t('filter_operations')}</span>
-            </button>
-            <button
+            </motion.button>
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
               onClick={() => setFilter('Injection')}
               className={`relative px-2 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 overflow-hidden w-full ${filter === 'Injection'
                 ? 'text-white shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] bg-gradient-to-r from-promed-primary to-indigo-600 border border-indigo-400/50'
@@ -190,7 +190,7 @@ export const InjectionAppointmentWidget: React.FC<InjectionAppointmentProps> = (
                 }`}
             >
               <span className="relative z-10 truncate block">{t('filter_injections')}</span>
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
@@ -367,9 +367,9 @@ export const SurgeryFloorWidget: React.FC<SurgeryFloorProps> = ({ patients }) =>
       </div>
 
       <div className="p-4 mt-auto border-t border-slate-100 bg-slate-50/30">
-        <button className="w-full py-2.5 text-sm font-bold text-slate-500 hover:text-promed.primary transition-colors flex items-center justify-center gap-2">
+        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} className="w-full py-2.5 text-sm font-bold text-slate-500 hover:text-promed.primary transition-colors flex items-center justify-center gap-2">
           {t('view_floor_map')} <ArrowRight size={14} />
-        </button>
+        </motion.button>
       </div>
     </div>
   );
@@ -427,15 +427,15 @@ export const InjectionRadarWidget: React.FC<InjectionRadarProps> = ({ patients, 
               </div>
             </div>
             <div className="flex space-x-1 ml-2">
-              <button className="p-2 text-slate-400 hover:text-promed-primary hover:bg-promed-light rounded-lg transition-colors border border-transparent hover:border-promed-primary/10 flex items-center justify-center">
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} className="p-2 text-slate-400 hover:text-promed-primary hover:bg-promed-light rounded-lg transition-colors border border-transparent hover:border-promed-primary/10 flex items-center justify-center">
                 <Phone className="w-3.5 h-3.5 text-slate-400 opacity-60 hover:opacity-100 transition-opacity" />
-              </button>
-              <button
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 onClick={() => onCheck(item.patientId)}
                 className="p-2 text-promed-muted hover:text-promed-primary hover:bg-promed-bg rounded-lg transition-colors border border-transparent hover:border-promed-primary/10"
               >
                 <Check size={14} />
-              </button>
+              </motion.button>
             </div>
           </div>
         )) : (
@@ -666,7 +666,7 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
           <h3 className="text-lg font-bold text-promed-text tracking-tight">{t('todays_appointments')}</h3>
           <p className="text-sm text-promed-muted font-medium mt-0.5">{t('upcoming_schedule')}</p>
         </div>
-        <button className="text-sm text-promed-primary font-bold hover:bg-promed-bg px-3 py-1.5 rounded-lg transition">{t('see_all')}</button>
+        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} className="text-sm text-promed-primary font-bold hover:bg-promed-bg px-3 py-1.5 rounded-lg transition">{t('see_all')}</motion.button>
       </div>
 
       <div className="space-y-3 flex-1">

@@ -43,12 +43,12 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onConfirm, t
                             className="relative bg-white rounded-[32px] shadow-apple w-full max-w-sm overflow-hidden p-6 md:p-8 flex flex-col items-center text-center border border-slate-100 max-h-[85vh] overflow-y-auto"
                         >
                             {/* Close Button */}
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={onClose}
                                 className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors"
                             >
                                 <X size={20} />
-                            </button>
+                            </motion.button>
 
                             {/* Delete Icon */}
                             <div className="relative mb-4 pt-2 w-24 h-24 md:w-32 md:h-32">
@@ -71,18 +71,18 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onConfirm, t
 
                             {/* Modern Tactile Buttons */}
                             <div className="w-full grid grid-cols-2 gap-2">
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={onClose}
                                     className="h-12 flex items-center justify-center bg-white border border-slate-200 text-slate-700 text-[15px] font-bold rounded-xl hover:bg-slate-50 transition-all active:scale-[0.98] shadow-sm whitespace-nowrap px-1"
                                 >
                                     {t('delete_modal_cancel')}
-                                </button>
-                                <button
+                                </motion.button>
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={onConfirm}
                                     className="h-12 flex items-center justify-center bg-red-500 text-white text-[15px] font-bold rounded-xl transition-all hover:bg-red-600 active:scale-[0.98] shadow-md shadow-red-500/20 whitespace-nowrap px-1"
                                 >
                                     {t('delete_modal_confirm')}
-                                </button>
+                                </motion.button>
                             </div>
                         </motion.div>
                     </div>

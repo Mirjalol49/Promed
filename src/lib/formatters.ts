@@ -14,7 +14,7 @@ export const formatCompactNumber = (number: number): string => {
         return sign + (abs / 1e3).toFixed(1).replace(/\.0$/, '') + 'k';
     }
 
-    return sign + abs.toString();
+    return sign + (Number.isInteger(abs) ? abs.toString() : Number(abs.toFixed(2)).toString());
 };
 
 export const formatCurrency = (amount: number, currency: 'USD' | 'UZS' = 'UZS') => {

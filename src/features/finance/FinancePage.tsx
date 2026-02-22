@@ -359,7 +359,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                 {/* PREMIUM TAB SWITCHER */}
                 <div className="bg-white/90 p-1.5 rounded-2xl flex items-center relative gap-1 border border-slate-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-xl self-start md:self-center">
                     {(['overview', 'transactions'] as const).map((tab) => (
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             key={tab}
                             onClick={() => setView(tab)}
                             className={`
@@ -382,19 +382,19 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                 {tab === 'overview' ? <LayoutGrid className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
                                 {tab === 'overview' ? (t('overview') || 'Umumiy') : (t('transactions') || 'Tranzaksiyalar')}
                             </span>
-                        </button>
+                        </motion.button>
                     ))}
                 </div >
 
                 <div className="flex items-center gap-3 self-end md:self-auto">
                     {!isViewer && (
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={() => { setInitialPatientId(undefined); setIsModalOpen(true); }}
                             className="btn-glossy-blue !w-auto !py-3 px-6 flex items-center gap-2"
                         >
                             <Plus className="w-5 h-5 stroke-[3]" />
                             <span className="relative z-10">{t('add_transaction') || 'Tranzaksiya'}</span>
-                        </button>
+                        </motion.button>
                     )}
                 </div>
             </div >
@@ -513,7 +513,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                             const labelKey = f === 'week' ? 'weekly' : f === 'month' ? 'monthly' : 'yearly';
                                             const isActive = dateFilter === f;
                                             return (
-                                                <button
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                     key={f}
                                                     onClick={() => handleDateFilterChange(f)}
                                                     className={`
@@ -535,7 +535,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                                     <span className="relative z-10">
                                                         {t(labelKey) || (f === 'all' ? 'Yillik' : f)}
                                                     </span>
-                                                </button>
+                                                </motion.button>
                                             );
                                         })}
                                     </div>
@@ -573,18 +573,18 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                             />
                         </div>
                         <div className="flex items-center gap-2 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/50">
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => setLayout('grid')}
                                 className={`p-3 rounded-xl transition-all duration-300 ${layout === 'grid' ? 'bg-white shadow-md text-promed-primary scale-105' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}
                             >
                                 <LayoutGrid className="w-5 h-5" />
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => setLayout('list')}
                                 className={`p-3 rounded-xl transition-all duration-300 ${layout === 'list' ? 'bg-white shadow-md text-promed-primary scale-105' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}
                             >
                                 <List className="w-5 h-5" />
-                            </button>
+                            </motion.button>
                         </div>
                     </div>
 
@@ -695,7 +695,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                                     <td className="px-8 py-5 text-right font-bold text-slate-500">{formatCurrency(totalCost)}</td>
                                                     <td className="px-8 py-5 text-right font-bold text-rose-500">{formatCurrency(remaining)}</td>
                                                     <td className="px-8 py-5 text-center">
-                                                        <button
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                             onClick={() => {
                                                                 setInitialPatientId(patient.id);
                                                                 setIsModalOpen(true);
@@ -703,7 +703,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                                             className="text-slate-300 hover:text-promed-primary transition-colors p-2 hover:bg-promed-light rounded-xl"
                                                         >
                                                             <Plus className="w-5 h-5 stroke-[3]" />
-                                                        </button>
+                                                        </motion.button>
                                                     </td>
                                                 </tr>
                                             );
@@ -716,25 +716,25 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                         {/* Patients Pagination Controls */}
                         {totalPatientPages > 1 && (
                             <div className="flex justify-center items-center gap-4 mt-8 pb-8">
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => setPatientsPage(p => Math.max(1, p - 1))}
                                     disabled={patientsPage === 1}
                                     className="bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 font-bold px-4 py-2 rounded-xl shadow-sm border border-slate-200 transition-all flex items-center gap-2"
                                 >
                                     <ChevronRight className="w-5 h-5 rotate-180" />
                                     {t('prev_page') || 'Previous'}
-                                </button>
+                                </motion.button>
                                 <span className="text-slate-500 font-medium">
                                     {t('page_of')?.replace('{current}', patientsPage.toString()).replace('{total}', totalPatientPages.toString()) || `Page ${patientsPage} of ${totalPatientPages}`}
                                 </span>
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => setPatientsPage(p => Math.min(totalPatientPages, p + 1))}
                                     disabled={patientsPage === totalPatientPages}
                                     className="bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 font-bold px-4 py-2 rounded-xl shadow-sm border border-slate-200 transition-all flex items-center gap-2"
                                 >
                                     {t('next_page') || 'Next'}
                                     <ChevronRight className="w-5 h-5" />
-                                </button>
+                                </motion.button>
                             </div>
                         )}
                     </div>
@@ -926,16 +926,16 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                             </div>
                                             <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                                                 {!isViewer && !tx.returned && !tx.isVoided && tx.amount !== 0 && (
-                                                    <button
+                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                         onClick={() => handleReturn(tx.id)}
                                                         className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all transform hover:scale-105 active:scale-95"
                                                         title="Return Transaction"
                                                     >
                                                         <RotateCcw className="w-5 h-5" />
-                                                    </button>
+                                                    </motion.button>
                                                 )}
                                                 {!isViewer && (
-                                                    <button
+                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                         onClick={() => tx.isVoided ? handleRestore(tx.id) : handleDelete(tx.id)}
                                                         className={`p-2 rounded-lg transition-all transform hover:scale-105 active:scale-95 ${tx.isVoided
                                                             ? 'text-slate-400 hover:text-blue-500 hover:bg-blue-50'
@@ -944,7 +944,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                                         title={tx.isVoided ? "Restore Transaction" : "Delete Transaction"}
                                                     >
                                                         {tx.isVoided ? <RotateCcw className="w-5 h-5" /> : <Trash2 className="w-5 h-5" />}
-                                                    </button>
+                                                    </motion.button>
                                                 )}
                                             </div>
                                         </div>
@@ -955,13 +955,13 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                 {totalTransactionPages > 1 && (
                                     <div className="flex justify-center py-6">
                                         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 onClick={() => setTransactionsPage(p => Math.max(1, p - 1))}
                                                 disabled={transactionsPage === 1}
                                                 className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
                                             >
                                                 <ChevronRight className="w-5 h-5 rotate-180" />
-                                            </button>
+                                            </motion.button>
 
                                             <div className="flex items-center gap-1.5 px-2">
                                                 <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
@@ -973,13 +973,13 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                                 </span>
                                             </div>
 
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 onClick={() => setTransactionsPage(p => Math.min(totalTransactionPages, p + 1))}
                                                 disabled={transactionsPage === totalTransactionPages}
                                                 className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
                                             >
                                                 <ChevronRight className="w-5 h-5" />
-                                            </button>
+                                            </motion.button>
                                         </div>
                                     </div>
                                 )}

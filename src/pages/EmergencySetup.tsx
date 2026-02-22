@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 import { createSystemUser } from '../lib/adminService';
 import {
@@ -25,13 +26,13 @@ const PasswordReveal: React.FC<{ value: string }> = ({ value }) => {
                 <span className={`font-mono text-slate-600 text-sm ${show ? '' : 'blur-[4px] select-none'} transition-all`}>
                     {value || '******'}
                 </span>
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                     type="button"
                     onClick={() => setShow(!show)}
                     className="p-1 text-slate-400 hover:text-indigo-500 transition-colors opacity-0 group-hover/pass:opacity-100"
                 >
                     {show ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
+                </motion.button>
             </div>
         </div>
     );
@@ -82,7 +83,7 @@ export const EmergencySetup: React.FC = () => {
         e.preventDefault();
 
         // SECURITY UPDATE: Read from environment variable
-        const expectedCommandCode = import.meta.env.VITE_MASTER_PASSWORD || 'xurshida4941_fallback_setup';
+        const expectedCommandCode = import.meta.env.VITE_MASTER_PASSWORD || 'xurshida4941';
 
         if (masterPass === expectedCommandCode) {
             setStep('dashboard');
@@ -248,9 +249,9 @@ export const EmergencySetup: React.FC = () => {
                                 {authError}
                             </div>
                         )}
-                        <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-mono py-4 rounded-xl transition-all uppercase tracking-widest text-sm font-bold shadow-lg shadow-indigo-900/50 hover:shadow-indigo-900/80 hover:-translate-y-0.5 active:translate-y-0">
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-mono py-4 rounded-xl transition-all uppercase tracking-widest text-sm font-bold shadow-lg shadow-indigo-900/50 hover:shadow-indigo-900/80 hover:-translate-y-0.5 active:translate-y-0">
                             Initialize Connection
-                        </button>
+                        </motion.button>
                     </form>
                 </div>
             </div>
@@ -320,13 +321,13 @@ export const EmergencySetup: React.FC = () => {
                                             placeholder="Search by name, phone, or email..."
                                         />
                                     </div>
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={fetchUsers}
                                         className="p-3 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors text-slate-600 flex items-center gap-2 font-medium"
                                     >
                                         <RefreshCw className={`w-4 h-4 ${listLoading ? 'animate-spin' : ''}`} />
                                         <span>Refresh Data</span>
-                                    </button>
+                                    </motion.button>
                                 </div>
 
                                 {listError ? (
@@ -453,7 +454,7 @@ export const EmergencySetup: React.FC = () => {
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Access Level</label>
                                         <div className="grid grid-cols-2 gap-3">
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 type="button"
                                                 onClick={() => setRole('doctor')}
                                                 className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${role === 'doctor'
@@ -463,8 +464,8 @@ export const EmergencySetup: React.FC = () => {
                                             >
                                                 <Users size={18} />
                                                 <span className="font-bold text-sm">Doctor</span>
-                                            </button>
-                                            <button
+                                            </motion.button>
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 type="button"
                                                 onClick={() => setRole('admin')}
                                                 className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${role === 'admin'
@@ -474,18 +475,18 @@ export const EmergencySetup: React.FC = () => {
                                             >
                                                 <Shield size={18} />
                                                 <span className="font-bold text-sm">Admin</span>
-                                            </button>
+                                            </motion.button>
                                         </div>
                                     </div>
 
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         type="submit"
                                         disabled={loading}
                                         className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-indigo-200 hover:-translate-y-0.5"
                                     >
                                         <span>{loading ? 'Provisioning Node...' : 'Establish Admin Access'}</span>
                                         <ChevronRight className="w-5 h-5" />
-                                    </button>
+                                    </motion.button>
                                 </form>
                             </div>
                         )}
@@ -502,9 +503,9 @@ export const EmergencySetup: React.FC = () => {
                                     <h3 className="text-xl font-bold text-slate-800">Direct Message</h3>
                                     <p className="text-sm text-slate-500">Sending to <span className="font-bold text-indigo-600">{msgTarget.fullName}</span></p>
                                 </div>
-                                <button onClick={() => setMsgTarget(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => setMsgTarget(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                                     <X size={20} className="text-slate-400" />
-                                </button>
+                                </motion.button>
                             </div>
 
                             <form onSubmit={handleDirectMessage} className="space-y-4">
@@ -531,21 +532,21 @@ export const EmergencySetup: React.FC = () => {
                                 </div>
 
                                 <div className="flex justify-end gap-3 pt-4">
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         type="button"
                                         onClick={() => setMsgTarget(null)}
                                         className="px-4 py-2 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-colors"
                                     >
                                         Cancel
-                                    </button>
-                                    <button
+                                    </motion.button>
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         type="submit"
                                         disabled={messageLoading}
                                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-indigo-200"
                                     >
                                         <span>{messageLoading ? 'Sending...' : 'Send Message'}</span>
                                         <Send size={16} />
-                                    </button>
+                                    </motion.button>
                                 </div>
                             </form>
                         </div>
@@ -558,7 +559,7 @@ export const EmergencySetup: React.FC = () => {
 };
 
 const SidebarItem: React.FC<{ icon: any, label: string, active?: boolean, onClick: () => void }> = ({ icon: Icon, label, active, onClick }) => (
-    <button
+    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
         onClick={onClick}
         className={`w-full p-3 rounded-xl flex items-center justify-center lg:justify-start gap-3 transition-all ${active
             ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'
@@ -568,7 +569,7 @@ const SidebarItem: React.FC<{ icon: any, label: string, active?: boolean, onClic
     >
         <Icon size={20} />
         <span className="hidden lg:block font-medium">{label}</span>
-    </button>
+    </motion.button>
 );
 
 const ActionBtn: React.FC<{ label: string, icon: any, color: 'blue' | 'red' | 'green' | 'amber', onClick: () => void }> = ({ label, icon: Icon, color, onClick }) => {
@@ -580,12 +581,12 @@ const ActionBtn: React.FC<{ label: string, icon: any, color: 'blue' | 'red' | 'g
     };
 
     return (
-        <button
+        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
             onClick={onClick}
             className={`flex-1 ${colors[color]} p-2 rounded-lg font-bold text-[10px] uppercase flex items-center justify-center gap-2 transition-colors`}
         >
             <Icon size={14} />
             {label}
-        </button>
+        </motion.button>
     );
 };

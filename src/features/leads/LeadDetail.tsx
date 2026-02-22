@@ -314,7 +314,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                             <div className="flex items-center gap-0.5 md:gap-1 flex-shrink-0">
                                 {!isViewer && (
                                     <>
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             ref={reminderButtonRef}
                                             onClick={() => {
                                                 setReminderEditingId(null);
@@ -333,32 +333,32 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                             title="Set Reminder"
                                         >
                                             <Clock size={18} className="md:w-5 md:h-5" />
-                                        </button>
-                                        <button
+                                        </motion.button>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => onEdit(lead)}
                                             className="p-2 md:p-2.5 text-white/70 hover:text-white hover:bg-white/15 rounded-xl transition-all"
                                             title="Edit"
                                         >
                                             <Edit2 size={18} className="md:w-5 md:h-5" />
-                                        </button>
-                                        <button
+                                        </motion.button>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => onDelete(lead)}
                                             className="p-2 md:p-2.5 text-white/70 hover:text-rose-200 hover:bg-rose-500/30 rounded-xl transition-all"
                                             title="Delete"
                                         >
                                             <Trash2 size={18} className="md:w-5 md:h-5" />
-                                        </button>
+                                        </motion.button>
 
                                         <div className="w-px h-6 md:h-8 bg-white/20 mx-1 md:mx-2" />
                                     </>
                                 )}
 
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={onClose}
                                     className="p-1.5 md:p-2 text-white/50 hover:text-white hover:bg-white/15 rounded-xl transition-all"
                                 >
                                     <X size={20} className="md:w-[22px] md:h-[22px]" />
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
                     </div>
@@ -374,7 +374,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                 <div className="flex-shrink-0 min-w-[200px] md:min-w-0 md:mb-6" ref={statusRef}>
                                     <label className="hidden md:block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">{t('status')}</label>
                                     <div className="relative">
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => {
                                                 if (isViewer) return;
                                                 if (!isStatusOpen && statusRef.current) {
@@ -392,7 +392,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                 <span className="font-semibold text-xs md:text-sm">{getStatusLabel(lead.status)}</span>
                                             </div>
                                             {!isViewer && <ChevronDown size={14} className={`md:w-4 md:h-4 transition-transform ${isStatusOpen ? 'rotate-180' : ''}`} />}
-                                        </button>
+                                        </motion.button>
 
                                         <AnimatePresence>
                                             {isStatusOpen && !isViewer && (
@@ -413,7 +413,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                             const colors = STATUS_COLORS[key];
                                                             const isActive = key === lead.status;
                                                             return (
-                                                                <button
+                                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                                     key={key}
                                                                     role="menuitem"
                                                                     onClick={() => handleStatusChange(key)}
@@ -439,7 +439,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                             <Check size={10} className="text-white" strokeWidth={4} />
                                                                         </div>
                                                                     )}
-                                                                </button>
+                                                                </motion.button>
                                                             );
                                                         })}
                                                     </div>
@@ -551,7 +551,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                     <span className="text-[10px] md:text-xs font-bold uppercase tracking-wide" style={{ color: '#0044FF' }}>{t('reminder') || 'Eslatma'}</span>
                                                                 </div>
                                                                 {!completionEventId && !event.metadata?.isCompleted && (
-                                                                    <button
+                                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
                                                                             setCompletionEventId(event.id);
@@ -561,7 +561,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                     >
                                                                         <Check size={12} strokeWidth={3} className="md:w-[14px] md:h-[14px] group-hover/done:scale-110 transition-transform" />
                                                                         <span>{t('complete')}</span>
-                                                                    </button>
+                                                                    </motion.button>
                                                                 )}
                                                             </div>
 
@@ -570,7 +570,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                     <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
                                                                         <div className="flex items-center justify-between">
                                                                             <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">{t('remind_result')}</h4>
-                                                                            <button
+                                                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                                                 onClick={() => {
                                                                                     setCompletionEventId(null);
                                                                                     setCompletionNote('');
@@ -578,7 +578,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                                 className="text-slate-400 hover:text-slate-600 transition-colors"
                                                                             >
                                                                                 <X size={14} />
-                                                                            </button>
+                                                                            </motion.button>
                                                                         </div>
                                                                         <textarea
                                                                             value={completionNote}
@@ -593,7 +593,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                             autoFocus
                                                                         />
                                                                         <div className="pt-2">
-                                                                            <button
+                                                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                                                 onClick={async () => {
                                                                                     await clearReminder(lead.id, completionNote);
                                                                                     await leadService.updateTimelineEvent(lead.id, event.id, {
@@ -605,7 +605,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                                 className="w-full btn-glossy-blue !py-3.5 !text-sm !font-bold !rounded-xl shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
                                                                             >
                                                                                 {t('confirm')}
-                                                                            </button>
+                                                                            </motion.button>
                                                                         </div>
                                                                     </div>
                                                                 ) : (
@@ -668,7 +668,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                 <Edit2 size={14} />
                                                 <span className="text-xs font-bold uppercase tracking-wide">Editing message...</span>
                                             </div>
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 onClick={() => {
                                                     setEditingEventId(null);
                                                     setNewNote('');
@@ -676,7 +676,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                 className="p-1 hover:bg-blue-100 rounded-full text-blue-600 transition-colors"
                                             >
                                                 <X size={16} />
-                                            </button>
+                                            </motion.button>
                                         </div>
                                     )}
                                     <div className="p-3 md:p-4 pb-6 md:pb-4">
@@ -704,13 +704,13 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                 className={`flex-1 px-4 py-3 bg-slate-50 border-0 rounded-2xl text-slate-800 text-sm focus:bg-white focus:ring-2 transition-all resize-none min-h-[48px] max-h-[150px] placeholder:text-slate-400 font-medium ${editingEventId ? 'focus:ring-emerald-500/20' : 'focus:ring-blue-500/20'}`}
                                                 style={{ height: '48px', overflowY: 'hidden' }}
                                             />
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 type="submit"
                                                 disabled={!newNote.trim()}
                                                 className={`w-12 h-12 md:w-auto md:h-[48px] md:px-6 flex items-center justify-center text-white rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shrink-0 ${editingEventId ? 'bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 active:scale-95'}`}
                                             >
                                                 {editingEventId ? <Check size={20} strokeWidth={2.5} /> : <Send size={20} strokeWidth={2.5} className="ml-0.5 md:ml-0" />}
-                                            </button>
+                                            </motion.button>
                                         </form>
                                     </div>
                                 </div>
@@ -729,7 +729,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                 style={{ top: contextMenu.y, left: contextMenu.x }}
                                 className="fixed z-[60] bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 min-w-[220px] flex flex-col gap-0.5"
                             >
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => {
                                         if (contextMenu.content) {
                                             navigator.clipboard.writeText(contextMenu.content);
@@ -742,13 +742,13 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                 >
                                     <Copy size={18} className="text-slate-400" />
                                     {t('copy') || 'Copy'}
-                                </button>
+                                </motion.button>
 
                                 {!isViewer && (
                                     <>
                                         <div className="my-1.5 h-px bg-slate-100 w-full" />
 
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => {
                                                 if (contextMenu.type === 'reminder') {
                                                     setReminderEditingId(contextMenu.eventId);
@@ -775,8 +775,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                         >
                                             <Edit2 size={18} className="text-slate-400" />
                                             {t('edit') || 'Edit'}
-                                        </button>
-                                        <button
+                                        </motion.button>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => {
                                                 if (contextMenu.eventId) {
                                                     setDeleteModalEventId(contextMenu.eventId);
@@ -786,7 +786,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                             className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full text-left"
                                         >
                                             {t('delete') || 'Delete'}
-                                        </button>
+                                        </motion.button>
                                     </>
                                 )}
                             </motion.div>

@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React from 'react';
 import { LucideIcon, X } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -95,13 +96,13 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
                         {/* Actions */}
                         <div className="grid grid-cols-2 gap-3 w-full">
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={onClose}
                                 className="btn-premium-white h-12 text-base"
                             >
                                 {cancelText || t('cancel')}
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={onConfirm}
                                 className={`h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98] 
                                     ${variant === 'primary' ? 'btn-premium-blue' :
@@ -110,17 +111,17 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                             >
                                 <Icon size={18} className="relative z-10 opacity-90" />
                                 <span>{confirmText || t('confirm')}</span>
-                            </button>
+                            </motion.button>
                         </div>
                     </div>
 
                     {/* Close Button */}
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={onClose}
                         className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
                     >
                         <X size={20} />
-                    </button>
+                    </motion.button>
                 </div>
             </div>
         </Portal>

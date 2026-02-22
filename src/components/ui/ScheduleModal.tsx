@@ -126,15 +126,15 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
             <div className="animate-fade-in">
                 {/* Month Nav */}
                 <div className="flex items-center justify-between mb-4 px-1">
-                    <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
                         <ChevronLeft size={20} className="text-slate-500" />
-                    </button>
+                    </motion.button>
                     <span className="font-semibold text-slate-900">
                         {format(currentMonth, "MMMM yyyy")}
                     </span>
-                    <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
                         <ChevronRight size={20} className="text-slate-500" />
-                    </button>
+                    </motion.button>
                 </div>
 
                 {/* Weekday Headers */}
@@ -154,7 +154,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
                         const isTodayDate = isDateToday(dateObj);
 
                         return (
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 key={i}
                                 onClick={() => onCalendarDateClick(dateObj)}
                                 className={`
@@ -165,7 +165,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
                                 `}
                             >
                                 {format(dateObj, dateFormat)}
-                            </button>
+                            </motion.button>
                         );
                     })}
                 </div>
@@ -196,20 +196,20 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <h3 className="font-medium text-[17px] tracking-tight flex items-center gap-2 text-slate-900">
                         {showCalendar ? (
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => setShowCalendar(false)}
                                 className="flex items-center gap-1 text-[#3390EC] hover:text-[#3390EC]/80 transition-colors -ml-1"
                             >
                                 <ChevronLeft size={18} />
                                 {t('back')}
-                            </button>
+                            </motion.button>
                         ) : (
                             t('schedule_message_title')
                         )}
                     </h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-50 hover:bg-slate-100 p-1 rounded-full">
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-50 hover:bg-slate-100 p-1 rounded-full">
                         <X size={18} />
-                    </button>
+                    </motion.button>
                 </div>
 
                 {/* Content */}
@@ -219,7 +219,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
                         <>
                             {/* Date Tabs */}
                             <div className="flex bg-slate-100 rounded-xl p-1 mb-6 border border-slate-300 relative isolate">
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => handleDateSelect('today')}
                                     className={`relative flex-1 py-2 text-sm rounded-lg transition-colors duration-200 z-10 font-bold ${activeTab === 'today' ? 'text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'}`}
                                 >
@@ -232,9 +232,9 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
                                         />
                                     )}
                                     <span className="relative z-10 drop-shadow-sm">{t('schedule_today')}</span>
-                                </button>
+                                </motion.button>
 
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => handleDateSelect('tomorrow')}
                                     className={`relative flex-1 py-2 text-sm rounded-lg transition-colors duration-200 z-10 font-bold ${activeTab === 'tomorrow' ? 'text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'}`}
                                 >
@@ -247,10 +247,10 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
                                         />
                                     )}
                                     <span className="relative z-10 drop-shadow-sm">{t('schedule_tomorrow')}</span>
-                                </button>
+                                </motion.button>
 
                                 {/* Calendar Trigger */}
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => { setShowCalendar(true); setCurrentMonth(selectedDate); }}
                                     className={`relative px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center justify-center z-10 ${activeTab === 'custom' ? 'text-white' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'}`}
                                     title={t('pick_date')}
@@ -264,7 +264,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
                                         />
                                     )}
                                     <span className="relative z-10 drop-shadow-sm"><CalendarIcon size={18} /></span>
-                                </button>
+                                </motion.button>
                             </div>
 
                             {/* Time Inputs */}
@@ -298,7 +298,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
                             </div>
 
                             {/* Send Button */}
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => {
                                     const now = new Date();
                                     if (selectedDate < now) {
@@ -316,7 +316,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
                                     {activeTab === 'tomorrow' && `${t('schedule_send_tomorrow')} ${formatTime(selectedDate)}`}
                                     {activeTab === 'custom' && `${t('schedule_send_date')} ${formatDateTab()} ${t('schedule_at')} ${formatTime(selectedDate)}`}
                                 </span>
-                            </button>
+                            </motion.button>
                         </>
                     ) : (
                         renderCalendar()

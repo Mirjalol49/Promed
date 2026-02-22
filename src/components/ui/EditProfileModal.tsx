@@ -205,9 +205,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 {/* Header */}
                 <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10 backdrop-blur-sm">
                     <h3 className="text-xl font-bold text-slate-800 tracking-tight">{t('edit_profile')}</h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition rounded-lg p-1 hover:bg-slate-100">
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="text-slate-400 hover:text-slate-600 transition rounded-lg p-1 hover:bg-slate-100">
                         <X size={20} />
-                    </button>
+                    </motion.button>
                 </div>
 
                 {/* Body */}
@@ -242,7 +242,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('select_language')}</h4>
                         <div className="grid grid-cols-3 gap-2">
                             {languages.map((lang) => (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     key={lang.code}
                                     onClick={() => setLanguage(lang.code as any)}
                                     className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-bold transition-all border ${language === lang.code
@@ -251,7 +251,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                         }`}
                                 >
                                     {lang.label}
-                                </button>
+                                </motion.button>
                             ))}
                         </div>
                     </div>
@@ -269,12 +269,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                     <p className="text-xs text-slate-500 leading-tight mt-0.5 pr-2">{t('lock_hint')}</p>
                                 </div>
                             </div>
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => onToggleLock(!isLockEnabled)}
                                 className={`w-11 h-6 rounded-full flex items-center p-0.5 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-promed-primary ${isLockEnabled ? 'bg-promed-primary' : 'bg-slate-200'}`}
                             >
                                 <div className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${isLockEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-                            </button>
+                            </motion.button>
                         </div>
                     </div>
 
@@ -291,12 +291,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                     <p className="text-xs text-slate-500 leading-tight mt-0.5 pr-2">{t('sound_hint') || 'Play sound effects for notifications and actions'}</p>
                                 </div>
                             </div>
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={toggleSound}
                                 className={`w-11 h-6 rounded-full flex items-center p-0.5 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-promed-primary ${soundEnabled ? 'bg-promed-primary' : 'bg-slate-200'}`}
                             >
                                 <div className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${soundEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-                            </button>
+                            </motion.button>
                         </div>
                     </div>
 
@@ -343,9 +343,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                         ))}
                                     </div>
                                     <div className="flex justify-end">
-                                        <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="text-promed-primary hover:text-promed-dark transition flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-promed-light/50 px-2 py-1 rounded-md">
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="text-promed-primary hover:text-promed-dark transition flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-promed-light/50 px-2 py-1 rounded-md">
                                             {showCurrentPass ? <><EyeOff size={14} /> {t('hide')}</> : <><Eye size={14} /> {t('show')}</>}
-                                        </button>
+                                        </motion.button>
                                     </div>
                                 </div>
 
@@ -369,9 +369,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <p className="text-[10px] text-slate-400 font-medium italic">{t('lock_hint')}</p>
-                                        <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="text-promed-primary hover:text-promed-dark transition flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-promed-light/50 px-2 py-1 rounded-md">
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} type="button" onClick={() => setShowNewPass(!showNewPass)} className="text-promed-primary hover:text-promed-dark transition flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-promed-light/50 px-2 py-1 rounded-md">
                                             {showNewPass ? <><EyeOff size={14} /> {t('hide')}</> : <><Eye size={14} /> {t('show')}</>}
-                                        </button>
+                                        </motion.button>
                                     </div>
                                 </div>
                             </>
@@ -381,7 +381,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     {/* Danger Zone */}
                     <div className="pt-6 border-t border-slate-100 mt-4">
                         <h4 className="text-[11px] font-bold text-red-500/60 uppercase tracking-wider mb-3">{t('danger_zone')}</h4>
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={() => setIsLogoutModalOpen(true)}
                             className="w-full flex items-center justify-between p-4 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 rounded-xl transition-all group"
                         >
@@ -395,22 +395,22 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                 </div>
                             </div>
                             <ChevronDown size={16} className="text-red-500/30 -rotate-90" />
-                        </button>
+                        </motion.button>
                     </div>
                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center justify-end p-6 border-t border-slate-100 space-x-3">
-                    <button onClick={onClose} className="px-5 py-2.5 text-sm text-slate-500 hover:text-slate-800 font-semibold transition hover:bg-slate-50 rounded-xl">
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="px-5 py-2.5 text-sm text-slate-500 hover:text-slate-800 font-semibold transition hover:bg-slate-50 rounded-xl">
                         {t('cancel')}
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={handleSave}
                         disabled={isSaving}
                         className="btn-premium-blue disabled:opacity-50"
                     >
                         <span>{isSaving ? t('saving') : t('save')}</span>
-                    </button>
+                    </motion.button>
                 </div>
 
                 <ConfirmationModal

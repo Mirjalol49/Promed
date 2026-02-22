@@ -143,7 +143,7 @@ const Layout: React.FC<LayoutProps> = ({
     <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900 font-sans">
 
       {/* Sidebar (Desktop Only - lg and up) */}
-      <aside className="hidden lg:flex flex-col w-[260px] bg-white/80 backdrop-blur-2xl h-full border-r border-slate-200/60 z-40 relative shadow-[5px_0_30px_-10px_rgba(0,0,0,0.03)]">
+      <aside className="hidden lg:flex flex-col w-[260px] bg-white/80 backdrop-blur-xl h-full border-r border-slate-200/50 z-40 relative shadow-[5px_0_30px_-10px_rgba(0,0,0,0.03)]">
         {/* Logo */}
         <div className="p-4 md:p-6 flex items-center justify-end md:justify-between">
           <div className="hidden md:flex items-center space-x-3 text-slate-900">
@@ -175,16 +175,16 @@ const Layout: React.FC<LayoutProps> = ({
         <div className="p-4 mt-auto border-t border-slate-100 bg-premium-card space-y-2">
 
           {isLockEnabled && (
-            <button
+            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
               onClick={onLock}
               className="w-full flex items-center space-x-3 text-slate-900 hover:bg-promed-primary/10 px-4 py-3 rounded-2xl font-medium transition active:scale-95 group"
             >
               <Lock size={20} />
               <span className="text-base font-sans font-medium group-hover:font-semibold transition-all duration-200">{t('lock_app')}</span>
-            </button>
+            </motion.button>
           )}
 
-          <button
+          <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
             onClick={() => {
               onNavigate('SETTINGS');
               setIsSidebarOpen(false);
@@ -203,7 +203,7 @@ const Layout: React.FC<LayoutProps> = ({
               size={20}
               className="ml-auto text-slate-900 transition-colors"
             />
-          </button>
+          </motion.button>
         </div>
       </aside>
 
@@ -218,12 +218,12 @@ const Layout: React.FC<LayoutProps> = ({
             <div className="flex items-center gap-4">
 
               {/* Mobile Burger Menu Button */}
-              <button
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="lg:hidden p-2 -ml-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
               >
                 <Menu size={24} />
-              </button>
+              </motion.button>
 
               {/* Logo (Mobile/Tablet) */}
               <div className="flex items-center lg:hidden gap-2">
@@ -274,17 +274,17 @@ const Layout: React.FC<LayoutProps> = ({
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="fixed inset-y-0 left-0 w-[280px] bg-white/95 backdrop-blur-2xl z-50 lg:hidden shadow-2xl flex flex-col"
+              className="fixed inset-y-0 left-0 w-[280px] bg-white/80 backdrop-blur-xl border-r border-slate-200/50 z-50 lg:hidden shadow-2xl flex flex-col"
             >
               {/* Drawer Header */}
               <div className="p-6 flex items-center justify-between border-b border-slate-100">
                 <img src={logoImg} alt="Promed Logo" className="w-32 h-auto object-contain" />
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
                 >
                   <X size={24} />
-                </button>
+                </motion.button>
               </div>
 
               {/* Drawer Nav */}
@@ -309,7 +309,7 @@ const Layout: React.FC<LayoutProps> = ({
               {/* Drawer Footer */}
               <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-2">
                 {isLockEnabled && (
-                  <button
+                  <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                     onClick={() => {
                       onLock();
                       setIsMobileMenuOpen(false);
@@ -318,10 +318,10 @@ const Layout: React.FC<LayoutProps> = ({
                   >
                     <Lock size={20} />
                     <span className="text-base font-sans font-medium">{t('lock_app')}</span>
-                  </button>
+                  </motion.button>
                 )}
 
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                   onClick={() => {
                     onNavigate('SETTINGS');
                     setIsMobileMenuOpen(false);
@@ -336,7 +336,7 @@ const Layout: React.FC<LayoutProps> = ({
                     <p className="text-xs text-slate-500 truncate">{userEmail}</p>
                   </div>
                   <Settings size={18} className="text-slate-400" />
-                </button>
+                </motion.button>
               </div>
             </motion.div>
           </>

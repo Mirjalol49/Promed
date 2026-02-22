@@ -28,10 +28,10 @@ export const BannedScreen: React.FC<BannedScreenProps> = ({ onLogout }) => {
                     {t('banned_contact_btn')}
                 </a>
 
-                <button onClick={onLogout} className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors">
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onLogout} className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors">
                     <LogOut className="w-5 h-5" />
                     {t('banned_logout')}
-                </button>
+                </motion.button>
 
                 <div className="mt-4 text-sm text-gray-400">
                     Admin: +998 93 748 91 41

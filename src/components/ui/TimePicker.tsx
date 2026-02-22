@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { useState, useRef, useEffect } from 'react';
 import { Clock, ChevronDown } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -115,7 +116,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                         {/* Hours */}
                         <div className="flex-1 overflow-y-auto no-scrollbar py-[60px] text-center space-y-1 scroll-smooth">
                             {hours.map(h => (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     key={h}
                                     id={selectedHour === h ? 'selected-hour' : undefined}
                                     onClick={() => handleTimeChange(h, selectedMinute)}
@@ -128,7 +129,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                                     `}
                                 >
                                     {h.toString().padStart(2, '0')}
-                                </button>
+                                </motion.button>
                             ))}
                         </div>
 
@@ -137,7 +138,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                         {/* Minutes */}
                         <div className="flex-1 overflow-y-auto no-scrollbar py-[60px] text-center space-y-1 scroll-smooth">
                             {minutes.map(m => (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     key={m}
                                     id={selectedMinute === m ? 'selected-minute' : undefined}
                                     onClick={() => handleTimeChange(selectedHour, m)}
@@ -150,17 +151,17 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                                     `}
                                 >
                                     {m.toString().padStart(2, '0')}
-                                </button>
+                                </motion.button>
                             ))}
                         </div>
                     </div>
 
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={() => setIsOpen(false)}
                         className="btn-premium-blue w-full rounded-xl py-3 text-sm shadow-lg shadow-promed-primary/20"
                     >
                         {t('set_time')}
-                    </button>
+                    </motion.button>
 
                 </div>
             )}

@@ -371,7 +371,7 @@ export const RolesPage: React.FC = () => {
                     />
                 </div>
 
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                     onClick={() => {
                         setEditingUser(null);
                         setFormData({ fullName: '', phone: '+998', password: '', role: 'viewer' });
@@ -381,7 +381,7 @@ export const RolesPage: React.FC = () => {
                 >
                     <Plus size={20} className="stroke-[3]" />
                     <span>{t('add_user') || 'Add User'}</span>
-                </button>
+                </motion.button>
             </div>
 
             {/* Content */}
@@ -491,7 +491,7 @@ export const RolesPage: React.FC = () => {
                                                     }
                                                 </div>
                                             </div>
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 onClick={(e) => togglePasswordVisibility(user.id, e)}
                                                 className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90
                                                     ${isPasswordVisible
@@ -501,7 +501,7 @@ export const RolesPage: React.FC = () => {
                                                 title={isPasswordVisible ? (t('hide') || 'Hide') : (t('show') || 'Show')}
                                             >
                                                 {isPasswordVisible ? <EyeOff size={15} /> : <Eye size={15} />}
-                                            </button>
+                                            </motion.button>
                                         </div>
 
                                         {/* Access Row */}
@@ -518,13 +518,13 @@ export const RolesPage: React.FC = () => {
                                         {/* Delete — hidden until hover */}
                                         {user.id !== userId && ( // Prevent deleting own account
                                             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                                <button
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                     onClick={(e) => handleDeleteUser(user, e)}
                                                     className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 active:scale-90"
                                                     title={t('remove') || 'Remove'}
                                                 >
                                                     <Trash2 size={16} />
-                                                </button>
+                                                </motion.button>
                                             </div>
                                         )}
                                     </div>
@@ -557,9 +557,9 @@ export const RolesPage: React.FC = () => {
                                     <h2 className="text-lg font-bold text-slate-800 tracking-tight">
                                         {editingUser ? (t('edit_user') || 'Edit User') : (t('add_user_title') || 'Add New User')}
                                     </h2>
-                                    <button onClick={handleCloseModal} className="w-8 h-8 bg-slate-200/80 hover:bg-slate-300/80 text-slate-500 hover:text-slate-700 rounded-full flex items-center justify-center transition-all active:scale-95">
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={handleCloseModal} className="w-8 h-8 bg-slate-200/80 hover:bg-slate-300/80 text-slate-500 hover:text-slate-700 rounded-full flex items-center justify-center transition-all active:scale-95">
                                         <X size={16} strokeWidth={2.5} />
-                                    </button>
+                                    </motion.button>
                                 </div>
 
                                 {/* Body — Scrollable */}
@@ -585,13 +585,13 @@ export const RolesPage: React.FC = () => {
                                                         )}
                                                     </div>
 
-                                                    <button
+                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                         type="button"
                                                         onClick={() => fileInputRef.current?.click()}
                                                         className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-md border-[3px] border-white transition-transform hover:scale-110 active:scale-95"
                                                     >
                                                         <Plus size={14} strokeWidth={3} />
-                                                    </button>
+                                                    </motion.button>
 
                                                     <input
                                                         ref={fileInputRef}
@@ -619,7 +619,7 @@ export const RolesPage: React.FC = () => {
                                                     const isSelected = formData.role === role.value;
                                                     const Icon = role.icon;
                                                     return (
-                                                        <button
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                             key={role.value}
                                                             type="button"
                                                             onClick={() => setFormData({ ...formData, role: role.value })}
@@ -640,7 +640,7 @@ export const RolesPage: React.FC = () => {
                                                                     <Check size={11} className="text-white stroke-[3]" />
                                                                 </div>
                                                             )}
-                                                        </button>
+                                                        </motion.button>
                                                     );
                                                 })}
                                             </div>
@@ -703,14 +703,14 @@ export const RolesPage: React.FC = () => {
                                             </div>
 
                                             {/* Submit Button */}
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 type="submit"
                                                 disabled={isCreating}
                                                 className="w-full btn-glossy-blue !py-3.5 !rounded-xl text-sm font-bold shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-[0.98] transition-all mt-6"
                                             >
                                                 {isCreating ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} className="stroke-[3]" />}
                                                 {editingUser ? (t('save_changes') || 'Save Changes') : (t('create_account') || 'Create Account')}
-                                            </button>
+                                            </motion.button>
                                         </form>
                                     </div>
                                 </div>

@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -129,12 +130,12 @@ const StaffModal = ({
                         <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight">
                             {initialData ? t('edit_staff') : t('add_new_staff')}
                         </h2>
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={onClose}
                             className="bg-white/50 hover:bg-white text-slate-500 hover:text-slate-700 rounded-full p-2 transition-all"
                         >
                             <X size={20} />
-                        </button>
+                        </motion.button>
                     </div>
 
                     {/* Scrollable Content */}
@@ -164,13 +165,13 @@ const StaffModal = ({
                                         </div>
                                     </div>
 
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
                                         className="absolute bottom-1 right-1 w-9 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-md border-[3px] border-white transition-transform hover:scale-110 active:scale-95"
                                     >
                                         <Plus size={18} strokeWidth={3} />
-                                    </button>
+                                    </motion.button>
 
                                     <input
                                         ref={fileInputRef}
@@ -216,7 +217,7 @@ const StaffModal = ({
                                 <div className="space-y-1.5 relative z-10">
                                     <label className="text-sm font-bold text-slate-700 ml-1">{t('role')}</label>
                                     <div className="relative" ref={roleRef}>
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             type="button"
                                             onClick={() => setIsRoleOpen(!isRoleOpen)}
                                             className={`w-full bg-white shadow-sm border rounded-xl py-3 px-4 text-slate-900 font-bold flex items-center justify-between outline-none transition-all ${isRoleOpen ? 'bg-white border-blue-500 ring-4 ring-blue-500/10' : 'border-transparent hover:border-slate-200'}`}
@@ -225,14 +226,14 @@ const StaffModal = ({
                                                 {t(`role_${formData.role}`) || formData.role}
                                             </span>
                                             <ChevronDown size={18} className={`text-slate-400 transition-transform duration-200 ${isRoleOpen ? 'rotate-180' : ''}`} />
-                                        </button>
+                                        </motion.button>
 
                                         {isRoleOpen && (
                                             <div
                                                 className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100"
                                             >
                                                 {roles.map((r) => (
-                                                    <button
+                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                         key={r}
                                                         type="button"
                                                         onClick={() => {
@@ -243,7 +244,7 @@ const StaffModal = ({
                                                     >
                                                         <span className="capitalize">{t(`role_${r}`) || r}</span>
                                                         {formData.role === r && <Check size={16} className="text-blue-600" />}
-                                                    </button>
+                                                    </motion.button>
                                                 ))}
                                             </div>
                                         )}
@@ -309,14 +310,14 @@ const StaffModal = ({
                                                 }
 
                                                 return (
-                                                    <button
+                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                         key={s}
                                                         type="button"
                                                         onClick={() => setFormData({ ...formData, status: s as any })}
                                                         className={`flex-1 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${activeClass}`}
                                                     >
                                                         {t(`status_${s}`)?.split(' ')[0] || s}
-                                                    </button>
+                                                    </motion.button>
                                                 );
                                             })}
                                         </div>
@@ -340,14 +341,14 @@ const StaffModal = ({
 
                     {/* Footer */}
                     <div className="p-4 md:p-6 border-t border-white/50 bg-slate-200 flex justify-end gap-3 rounded-b-3xl">
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             type="button"
                             onClick={onClose}
                             className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200/50 hover:text-slate-700 transition-colors"
                         >
                             {t('cancel')}
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={handleSubmit}
                             disabled={loading}
                             className="btn-glossy-blue !w-auto !px-8 !py-3 !rounded-xl text-sm font-bold shadow-blue-500/20"
@@ -360,7 +361,7 @@ const StaffModal = ({
                                     {initialData ? t('update_staff') : t('save_staff')}
                                 </span>
                             )}
-                        </button>
+                        </motion.button>
                     </div>
                 </div>
             </div>
@@ -501,12 +502,12 @@ const PaySalaryModal = ({
                             </div>
                             <h3 className="text-xl font-bold text-slate-900">{t('pay_salary') || 'Pay Salary'}</h3>
                         </div>
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={onClose}
                             className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-400 rounded-full transition-colors"
                         >
                             <X size={18} />
-                        </button>
+                        </motion.button>
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-6 space-y-5">
@@ -533,7 +534,7 @@ const PaySalaryModal = ({
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('select_staff') || 'Select Staff'}</label>
                                 <div className="relative" ref={dropdownRef}>
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         type="button"
                                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                         className={`w-full bg-slate-50/50 border rounded-2xl py-3 px-4 flex items-center gap-3 transition-all outline-none cursor-pointer ${isDropdownOpen ? 'border-blue-400 shadow-[0_0_0_3px_rgba(59,130,246,0.06)] bg-white' : 'border-slate-200/80 hover:border-slate-300 hover:bg-white'}`}
@@ -567,7 +568,7 @@ const PaySalaryModal = ({
                                         >
                                             <ChevronLeft size={16} className="-rotate-90" />
                                         </div>
-                                    </button>
+                                    </motion.button>
 
                                     {isDropdownOpen && (
                                         <div
@@ -580,7 +581,7 @@ const PaySalaryModal = ({
                                                 visibleOptions.map((staff, idx) => {
                                                     const isSelected = staff.id === selectedStaffId;
                                                     return (
-                                                        <button
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                             key={staff.id}
                                                             type="button"
                                                             onClick={() => handleSelectStaff(staff.id)}
@@ -610,7 +611,7 @@ const PaySalaryModal = ({
                                                                     <Check size={12} className="text-white stroke-[3]" />
                                                                 </div>
                                                             )}
-                                                        </button>
+                                                        </motion.button>
                                                     );
                                                 })
                                             )}
@@ -681,7 +682,7 @@ const PaySalaryModal = ({
                         </div>
 
                         {/* Submit */}
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             type="submit"
                             disabled={loading || !selectedStaffId || !amount}
                             className="btn-glossy-emerald w-full !py-4 text-base uppercase tracking-wide flex items-center justify-center gap-2.5 shadow-lg"
@@ -694,7 +695,7 @@ const PaySalaryModal = ({
                                     {t('pay_salary') || 'Pay Salary'}
                                 </>
                             )}
-                        </button>
+                        </motion.button>
                     </form>
                 </div>
             </div>
@@ -901,13 +902,13 @@ const StaffDetail = ({
         <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             {/* Navigation */}
             <div className="flex items-center justify-between">
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                     onClick={onBack}
                     className="flex items-center space-x-2 text-slate-500 hover:text-slate-800 transition mb-2 font-bold hover:-translate-x-1 duration-200 px-1"
                 >
                     <ChevronLeft size={20} />
                     <span>{t('back_to_list') || 'Back to List'}</span>
-                </button>
+                </motion.button>
             </div>
 
             {/* Header Info - Professional Layered Design */}
@@ -957,30 +958,30 @@ const StaffDetail = ({
                     {/* Actions */}
                     <div className="flex items-center gap-3 w-full md:w-auto">
                         {onDelete && (
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={onDelete}
                                 className="w-12 h-12 flex items-center justify-center bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 rounded-2xl transition-all shadow-sm"
                                 title={t('delete_staff') || 'Delete Staff'}
                             >
                                 <Trash2 size={20} strokeWidth={2} />
-                            </button>
+                            </motion.button>
                         )}
                         {onEdit && (
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={onEdit}
                                 className="flex-1 md:flex-none h-12 px-6 bg-slate-200 border border-slate-300 hover:bg-slate-300 hover:border-slate-400 text-slate-900 font-bold rounded-2xl text-sm transition-all active:scale-[0.98]"
                             >
                                 {t('edit') || 'Edit'}
-                            </button>
+                            </motion.button>
                         )}
                         {onPay && (
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={onPay}
                                 className="btn-glossy-emerald flex-1 md:flex-none md:w-auto h-12 px-8 rounded-2xl uppercase tracking-wide shadow-lg shadow-emerald-500/20"
                             >
                                 <Banknote size={18} className="stroke-[2.5]" />
                                 <span className="font-black text-xs md:text-sm">{t('pay_salary') || "Oylik To'lash"}</span>
-                            </button>
+                            </motion.button>
                         )}
                     </div>
                 </div>
@@ -1129,21 +1130,21 @@ const StaffDetail = ({
 
                                                             {/* Delete/Restore Buttons */}
                                                             {isVoided ? (
-                                                                <button
+                                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                                     onClick={(e) => { e.stopPropagation(); handleRestoreTransaction(payment.id); }}
                                                                     className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors bg-white border border-slate-200 shadow-sm flex-shrink-0"
                                                                     title={t('restore') || 'Restore'}
                                                                 >
                                                                     <RotateCcw size={16} strokeWidth={2.5} />
-                                                                </button>
+                                                                </motion.button>
                                                             ) : (
-                                                                <button
+                                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                                     onClick={(e) => { e.stopPropagation(); handleDeleteTransaction(payment.id); }}
                                                                     className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-500 hover:bg-white hover:border-rose-200 border border-transparent transition-all shadow-none hover:shadow-sm opacity-100 sm:opacity-0 sm:group-hover:opacity-100 flex-shrink-0"
                                                                     title={t('delete') || 'Delete'}
                                                                 >
                                                                     <Trash2 size={16} strokeWidth={2.5} />
-                                                                </button>
+                                                                </motion.button>
                                                             )}
                                                         </div>
                                                     </div>
@@ -1301,13 +1302,13 @@ export const StaffPage = () => {
                         <div className="flex items-center gap-3">
 
                             {!isViewer && (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
                                     className="btn-glossy-blue !w-auto !py-3 px-6 flex items-center gap-2.5 transition-all duration-300 self-start md:self-auto hover:scale-[1.01] hover:-translate-y-px active:scale-99"
                                 >
                                     <Plus size={18} className="stroke-[3]" />
                                     <span className="text-sm uppercase tracking-wider">{t('add_staff') || 'Add Staff'}</span>
-                                </button>
+                                </motion.button>
                             )}
                         </div>
                     </div>
@@ -1328,12 +1329,12 @@ export const StaffPage = () => {
                                 <Search size={22} className="group-focus-within:scale-110 transition-transform" />
                             </div>
                             {searchQuery && (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => setSearchQuery('')}
                                     className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20"
                                 >
                                     <X size={14} strokeWidth={3} />
-                                </button>
+                                </motion.button>
                             )}
                         </div>
 
@@ -1442,7 +1443,7 @@ export const StaffPage = () => {
                                                 {/* Pay Button */}
                                                 {/* Pay Button - Hidden for Viewer */}
                                                 {!isViewer && (
-                                                    <button
+                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             setPayModalStaffId(staff.id);
@@ -1452,7 +1453,7 @@ export const StaffPage = () => {
                                                     >
                                                         <Banknote size={18} className="stroke-[2.5]" />
                                                         {t('pay_salary') || "Oylik To'lash"}
-                                                    </button>
+                                                    </motion.button>
                                                 )}
                                             </div>
                                         </div>

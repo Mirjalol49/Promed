@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { useState, useMemo } from 'react';
 import { CalendarWidget, CalendarEvent, EventType } from './CalendarWidget';
 import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
@@ -175,7 +176,7 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                         {/* Segmented Control */}
                         <div className="flex bg-slate-100/80 p-1 rounded-xl relative">
                             {/* Bugun Tab */}
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => setSelectedDate(new Date())}
                                 className={`relative z-10 px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-300 ${selectedDate && isToday(selectedDate)
                                     ? 'bg-blue-600 text-white shadow-md'
@@ -183,10 +184,10 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                     }`}
                             >
                                 {t('today') || 'Bugun'}
-                            </button>
+                            </motion.button>
 
                             {/* Kelgusi Tab */}
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => setSelectedDate(null)}
                                 className={`relative z-10 px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-300 ${!selectedDate || (selectedDate && !isToday(selectedDate))
                                     // Logic: If null (default upcoming) OR if a specific date is selected that is NOT today (e.g. tomorrow), 
@@ -199,7 +200,7 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                     }`}
                             >
                                 {t('upcoming') || 'Kelgusi'}
-                            </button>
+                            </motion.button>
                         </div>
                     </div>
 

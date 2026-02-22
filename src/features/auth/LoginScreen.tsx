@@ -301,18 +301,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       {/* Language Selector */}
       <div className="absolute top-6 right-6 z-50">
         <div className="relative">
-          <button
+          <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
             onClick={() => setShowLanguageMenu(!showLanguageMenu)}
             className="flex items-center gap-2 px-3 py-2 bg-white/10 border border-white/10 rounded-xl text-white hover:bg-white/20 shadow-sm transition-all backdrop-blur-sm"
           >
             <span className="text-lg">{languages.find(l => l.code === language)?.flag}</span>
             <span className="text-sm font-bold">{languages.find(l => l.code === language)?.name}</span>
-          </button>
+          </motion.button>
 
           {showLanguageMenu && (
             <div className="absolute top-full right-0 mt-2 w-40 bg-promed-dark/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50">
               {languages.map((lang) => (
-                <button
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                   key={lang.code}
                   onClick={() => {
                     setLanguage(lang.code);
@@ -322,7 +322,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 >
                   <span className="text-xl">{lang.flag}</span>
                   <span className="font-medium text-sm">{lang.name}</span>
-                </button>
+                </motion.button>
               ))}
             </div>
           )}
@@ -369,13 +369,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 <div className="h-4" />
               </div>
 
-              <button type="submit" disabled={loading} className="btn-glossy-blue group w-full py-4 rounded-2xl text-lg shadow-xl shadow-blue-500/20 active:scale-95 transition-all mt-4">
+              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} type="submit" disabled={loading} className="btn-glossy-blue group w-full py-4 rounded-2xl text-lg shadow-xl shadow-blue-500/20 active:scale-95 transition-all mt-4">
                 {loading ? (
                   <div className="w-6 h-6 border-[3px] border-white/30 border-t-white rounded-full animate-spin mx-auto" />
                 ) : (
                   <span>{t('login_btn')}</span>
                 )}
-              </button>
+              </motion.button>
 
               {error && (
                 <div className="mt-4 p-4 rounded-2xl bg-red-500/20 border border-red-500/30 backdrop-blur-md flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-2 shadow-lg shadow-red-900/20">

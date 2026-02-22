@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import EmojiPicker, { EmojiStyle, Theme } from 'emoji-picker-react';
@@ -881,12 +882,12 @@ match /patients/{patientId}/messages/{messageId} {
 }`}
                                 </code>
                             </div>
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => window.open('https://console.firebase.google.com', '_blank')}
                                 className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition"
                             >
                                 Open Firebase Console
-                            </button>
+                            </motion.button>
                         </div>
                     </div>
                 )}
@@ -903,12 +904,12 @@ match /patients/{patientId}/messages/{messageId} {
                         <div className="px-3 py-3 md:px-6 md:py-4 bg-white border-b border-slate-200 shadow-sm z-20 sticky top-0">
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={() => setSelectedPatientId(null)}
                                         className="md:hidden p-1.5 -ml-1 text-slate-500 hover:bg-slate-100 rounded-full transition-colors flex-shrink-0"
                                     >
                                         <ChevronDown className="rotate-90" size={22} />
-                                    </button>
+                                    </motion.button>
                                     <ProfileAvatar src={selectedPatient.profileImage} alt={selectedPatient.fullName} size={40} className="rounded-full shadow-sm flex-shrink-0 md:!w-11 md:!h-11" />
                                     <div className="min-w-0 flex-1">
                                         <h3 className="font-bold text-slate-800 text-base md:text-lg flex items-center gap-1.5 truncate">
@@ -928,20 +929,20 @@ match /patients/{patientId}/messages/{messageId} {
                                 </div>
 
                                 <div className="flex bg-slate-200 p-0.5 md:p-1 rounded-lg border border-slate-300 flex-shrink-0">
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={() => setIsScheduledView(false)}
                                         className={`px-2 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-black rounded-md transition-all ${!isScheduledView ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
                                     >
                                         {t('tab_chat')}
-                                    </button>
-                                    <button
+                                    </motion.button>
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={() => setIsScheduledView(true)}
                                         className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-black rounded-md transition-all ${isScheduledView ? 'bg-white text-promed-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
                                     >
                                         <CalendarClock size={12} className="hidden sm:block md:w-[14px] md:h-[14px]" />
                                         <span className="hidden sm:inline">{t('tab_scheduled')}</span>
                                         <CalendarClock size={14} className="sm:hidden" />
-                                    </button>
+                                    </motion.button>
                                 </div>
                             </div>
                         </div>
@@ -992,7 +993,7 @@ match /patients/{patientId}/messages/{messageId} {
                                 </div>
                                 <div className="flex items-center gap-1">
                                     {/* Unpin Button */}
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleTogglePin(currentPinned);
@@ -1001,7 +1002,7 @@ match /patients/{patientId}/messages/{messageId} {
                                         title="Unpin"
                                     >
                                         <X size={16} />
-                                    </button>
+                                    </motion.button>
                                 </div>
                             </div>
                         )}
@@ -1022,12 +1023,12 @@ match /patients/{patientId}/messages/{messageId} {
                             >
                                 {hasMore && !loadingMore && !isScheduledView && (
                                     <div className="flex justify-center pb-4">
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={loadMoreMessages}
                                             className="text-xs text-slate-500 bg-white/60 hover:bg-white px-3 py-1 rounded-full shadow-sm transition-colors"
                                         >
                                             {t('load_more') || "Load previous messages"}
-                                        </button>
+                                        </motion.button>
                                     </div>
                                 )}
                                 {loadingMore && (
@@ -1206,12 +1207,12 @@ match /patients/{patientId}/messages/{messageId} {
                             {/* Scroll Bottom Button */}
                             {
                                 showScrollButton && (
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
                                         className="absolute bottom-4 right-4 bg-slate-500/50 hover:bg-slate-600/60 backdrop-blur-sm text-white p-2 rounded-full shadow-lg transition-all duration-300 animate-fade-in z-20"
                                     >
                                         <ChevronDown size={24} />
-                                    </button>
+                                    </motion.button>
                                 )
                             }
                         </div >
@@ -1255,12 +1256,12 @@ match /patients/{patientId}/messages/{messageId} {
                                                 <span className="text-slate-600 text-xs truncate max-w-[150px] sm:max-w-[200px] md:max-w-xs font-black">{replyingToMessage.text}</span>
                                             </div>
                                         </div>
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => setReplyingToMessage(null)}
                                             className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
                                         >
                                             <X size={16} />
-                                        </button>
+                                        </motion.button>
                                     </div>
                                 )
                             }
@@ -1276,7 +1277,7 @@ match /patients/{patientId}/messages/{messageId} {
                                                 <span className="text-slate-600 text-xs truncate max-w-[200px] md:max-w-xs font-black">{messages.find(m => m.id === editingMessageId)?.text}</span>
                                             </div>
                                         </div>
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => {
                                                 setEditingMessageId(null);
                                                 setMessageInput('');
@@ -1284,7 +1285,7 @@ match /patients/{patientId}/messages/{messageId} {
                                             className="p-1 hover:bg-promed-light rounded-full text-slate-400 hover:text-promed-primary transition-colors"
                                         >
                                             <X size={18} />
-                                        </button>
+                                        </motion.button>
                                     </div>
                                 )
                             }
@@ -1314,7 +1315,7 @@ match /patients/{patientId}/messages/{messageId} {
                                             className="fixed z-50 bg-[#1C1C1E]/90 backdrop-blur-md text-white rounded-lg shadow-2xl py-1 w-48 border border-white/10 animate-scale-in origin-bottom-right"
                                             style={{ top: sendButtonContextMenu.y - 110, left: sendButtonContextMenu.x - 180 }}
                                         >
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 onClick={() => {
                                                     setSendButtonContextMenu(null);
                                                     setIsScheduleModalOpen(true);
@@ -1323,8 +1324,8 @@ match /patients/{patientId}/messages/{messageId} {
                                             >
                                                 <CalendarClock size={16} />
                                                 <span className="text-sm font-medium">Schedule Message</span>
-                                            </button>
-                                            <button
+                                            </motion.button>
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 onClick={() => {
                                                     setSendButtonContextMenu(null);
                                                     handleSendMessage(); // Just send normally? Or send silent? 
@@ -1334,19 +1335,19 @@ match /patients/{patientId}/messages/{messageId} {
                                             >
                                                 <BellOff size={16} />
                                                 <span className="text-sm font-medium">Send Without Sound</span>
-                                            </button>
+                                            </motion.button>
                                         </div>
                                     </>
                                 )}
 
                                 {/* 1. Emoji (Left) */}
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                     className={`p-2.5 rounded-xl hover:bg-white transition-all flex-shrink-0 ${showEmojiPicker ? 'text-blue-500 bg-white shadow-sm' : 'text-slate-400'}`}
                                     disabled={isSending}
                                 >
                                     <Smile size={24} />
-                                </button>
+                                </motion.button>
 
                                 {/* 2. Input (Middle) */}
                                 <textarea
@@ -1378,7 +1379,7 @@ match /patients/{patientId}/messages/{messageId} {
                                 />
 
                                 {/* 3. Send Button (Right) */}
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     ref={sendButtonRef}
                                     onClick={(e) => {
                                         if (!isSending && messageInput.trim()) {
@@ -1420,7 +1421,7 @@ match /patients/{patientId}/messages/{messageId} {
                                     ) : (
                                         <Send size={20} className={!messageInput.trim() ? "" : "ml-0.5"} fill={!messageInput.trim() ? "none" : "currentColor"} />
                                     )}
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
                     </>
@@ -1479,7 +1480,7 @@ match /patients/{patientId}/messages/{messageId} {
                                     onMouseDown={(e) => e.stopPropagation()}
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={(e) => {
                                             setMsgContextMenu(null);
                                             setReplyingToMessage(targetMsg);
@@ -1489,8 +1490,8 @@ match /patients/{patientId}/messages/{messageId} {
                                     >
                                         <Reply size={18} className="text-slate-400" />
                                         <span>{t('reply')}</span>
-                                    </button>
-                                    <button
+                                    </motion.button>
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={async (e) => {
                                             setMsgContextMenu(null);
                                             try {
@@ -1515,8 +1516,8 @@ match /patients/{patientId}/messages/{messageId} {
                                     >
                                         <Copy size={18} className="text-slate-400" />
                                         <span>{t('copy')}</span>
-                                    </button>
-                                    <button
+                                    </motion.button>
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={async (e) => {
                                             // Debug alert removed, relying on console
                                             setMsgContextMenu(null);
@@ -1531,11 +1532,11 @@ match /patients/{patientId}/messages/{messageId} {
                                     >
                                         {targetMsg.isPinned ? <PinOff size={18} className="text-blue-500" /> : <Pin size={18} className="text-slate-400" />}
                                         <span>{targetMsg.isPinned ? t('unpin') : t('pin')}</span>
-                                    </button>
+                                    </motion.button>
                                     {targetMsg.sender === 'doctor' && (
                                         <>
                                             <div className="h-px bg-slate-100 my-1 mx-2" />
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 onClick={(e) => {
                                                     setMsgContextMenu(null);
                                                     setEditingMessageId(targetMsg.id);
@@ -1553,8 +1554,8 @@ match /patients/{patientId}/messages/{messageId} {
                                             >
                                                 <Edit2 size={18} className="text-slate-400" />
                                                 <span>{t('edit')}</span>
-                                            </button>
-                                            <button
+                                            </motion.button>
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 onClick={(e) => {
                                                     setMsgContextMenu(null);
                                                     setMessageToDelete(targetMsg);
@@ -1564,7 +1565,7 @@ match /patients/{patientId}/messages/{messageId} {
                                             >
                                                 <Trash2 size={18} className="text-red-400" />
                                                 <span>{t('delete')}</span>
-                                            </button>
+                                            </motion.button>
                                         </>
                                     )}
                                 </div>

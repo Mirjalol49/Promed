@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     Users,
@@ -225,13 +226,13 @@ export const AdminDashboard: React.FC = () => {
                                 <p className="text-xl font-mono font-bold text-promed-primary">99.9%</p>
                             </div>
                         </div>
-                        <button
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={() => setShowInviteModal(true)}
                             className="btn-premium-blue !px-8 !py-4"
                         >
                             <UserPlus size={20} className="relative z-10" />
                             <span>Provision New Clinic</span>
-                        </button>
+                        </motion.button>
                     </div>
                 </div>
             </div>
@@ -239,7 +240,7 @@ export const AdminDashboard: React.FC = () => {
             {/* Tab Switcher */}
             <div className="flex justify-center">
                 <div className="bg-slate-100/50 backdrop-blur-md p-1.5 rounded-[24px] flex gap-1 border border-slate-200/50 ">
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={() => setActiveTab('registry')}
                         className={`px-8 py-3 rounded-[18px] text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300 flex items-center gap-2.5 ${activeTab === 'registry'
                             ? 'bg-promed-primary text-white scale-[1.02]'
@@ -248,8 +249,8 @@ export const AdminDashboard: React.FC = () => {
                     >
                         <Users size={16} strokeWidth={2.5} />
                         System Registry
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={() => setActiveTab('broadcast')}
                         className={`px-8 py-3 rounded-[18px] text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300 flex items-center gap-2.5 ${activeTab === 'broadcast'
                             ? 'bg-promed-primary text-white scale-[1.02]'
@@ -258,7 +259,7 @@ export const AdminDashboard: React.FC = () => {
                     >
                         <Megaphone size={16} strokeWidth={2.5} />
                         Global Broadcast
-                    </button>
+                    </motion.button>
                 </div>
             </div>
 
@@ -327,13 +328,13 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
 
                                 <div className="flex gap-4 pt-8">
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={() => setShowInviteModal(false)}
                                         className="flex-1 py-5 bg-slate-100 text-promed-muted font-black uppercase tracking-widest text-[11px] rounded-[24px] hover:bg-slate-200 transition-all active:scale-95"
                                     >
                                         Abort
-                                    </button>
-                                    <button
+                                    </motion.button>
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         onClick={handleCreateAccount}
                                         disabled={isCreating}
                                         className="flex-[2] btn-premium-blue !py-5"
@@ -346,7 +347,7 @@ export const AdminDashboard: React.FC = () => {
                                                 <span>Finalize Provisioning</span>
                                             </>
                                         )}
-                                    </button>
+                                    </motion.button>
                                 </div>
                             </div>
                         </div>
@@ -433,7 +434,7 @@ export const AdminDashboard: React.FC = () => {
                                             <td className="px-8 py-5 text-right">
                                                 <div className="flex items-center justify-end gap-2">
 
-                                                    <button
+                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                         onClick={() => handleToggleFreeze(profile)}
                                                         className={`p-2.5 rounded-xl transition-all duration-200 ${profile.status === 'frozen'
                                                             ? 'bg-promed-bg text-promed-primary hover:bg-promed-primary hover:text-white'
@@ -442,7 +443,7 @@ export const AdminDashboard: React.FC = () => {
                                                         title={profile.status === 'frozen' ? 'Unfreeze Account' : 'Freeze Account/Access'}
                                                     >
                                                         {profile.status === 'frozen' ? <Unlock size={18} /> : <ShieldAlert size={18} />}
-                                                    </button>
+                                                    </motion.button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -459,10 +460,10 @@ export const AdminDashboard: React.FC = () => {
                                 <span className="opacity-60">Quantum Security Protocol Active</span>
                             </div>
                             <div className="flex items-center gap-3">
-                                <button onClick={() => window.location.reload()} className="group/sync px-4 py-2 bg-promed-bg hover:bg-promed-light text-promed-muted hover:text-promed-primary rounded-xl border border-promed-primary/10 transition-all flex items-center gap-3 active:scale-95 ">
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => window.location.reload()} className="group/sync px-4 py-2 bg-promed-bg hover:bg-promed-light text-promed-muted hover:text-promed-primary rounded-xl border border-promed-primary/10 transition-all flex items-center gap-3 active:scale-95 ">
                                     <RefreshCw size={14} className={`${loading ? 'animate-spin' : 'group-hover/sync:rotate-180'} transition-transform duration-500`} />
                                     <span className="text-[10px] font-black uppercase tracking-widest">Protocol Re-Sync</span>
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
                     </div>
@@ -493,18 +494,18 @@ export const AdminDashboard: React.FC = () => {
                                 <div>
                                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Target Audience</label>
                                     <div className="flex bg-promed-bg p-1 rounded-xl border border-promed-primary/10">
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => setTargetAudience('all')}
                                             className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${targetAudience === 'all' ? 'bg-white shadow-sm text-promed-primary' : 'text-slate-400 hover:text-slate-600'}`}
                                         >
                                             All Users
-                                        </button>
-                                        <button
+                                        </motion.button>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => setTargetAudience('specific')}
                                             className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${targetAudience === 'specific' ? 'bg-white shadow-sm text-promed-primary' : 'text-slate-400 hover:text-slate-600'}`}
                                         >
                                             Specific Users
-                                        </button>
+                                        </motion.button>
                                     </div>
 
                                     {targetAudience === 'specific' && (
@@ -541,7 +542,7 @@ export const AdminDashboard: React.FC = () => {
                                             { id: 'congratulations', label: 'Congratulations', color: 'bg-emerald-500' },
                                             { id: 'message', label: 'General Message', color: 'bg-promed-primary' }
                                         ].map(cat => (
-                                            <button
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 key={cat.id}
                                                 // @ts-ignore
                                                 onClick={() => setNotificationCategory(cat.id)}
@@ -552,7 +553,7 @@ export const AdminDashboard: React.FC = () => {
                                                 <div className={`w-3 h-3 rounded-full ${cat.color}`} />
                                                 <span className={`text-xs font-bold ${notificationCategory === cat.id ? 'text-promed-text' : 'text-slate-500'}`}>{cat.label}</span>
                                                 {notificationCategory === cat.id && <div className="ml-auto w-2 h-2 rounded-full bg-promed-primary" />}
-                                            </button>
+                                            </motion.button>
                                         ))}
                                     </div>
                                 </div>
@@ -582,14 +583,14 @@ export const AdminDashboard: React.FC = () => {
                             </div>
 
                             <div className="flex gap-3 pt-2">
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={handleClearAlerts}
                                     className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition flex items-center justify-center gap-2 active:scale-95"
                                 >
                                     <Trash size={16} />
                                     <span>Clear</span>
-                                </button>
-                                <button
+                                </motion.button>
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={handleBroadcast}
                                     disabled={isBroadcasting}
                                     className="flex-[2] btn-premium-blue !py-4"
@@ -602,7 +603,7 @@ export const AdminDashboard: React.FC = () => {
                                             <span>{t('transmit')}</span>
                                         </>
                                     )}
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
                     </div>
@@ -680,12 +681,12 @@ export const AdminDashboard: React.FC = () => {
                                     </div>
 
                                     <div className="pt-8">
-                                        <button
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => setSelectedProfile(null)}
                                             className="w-full py-5 bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[11px] rounded-[24px] hover:bg-slate-200 transition-all active:scale-95 border border-slate-200/50"
                                         >
                                             Close Registry Node
-                                        </button>
+                                        </motion.button>
                                     </div>
                                 </div>
                             </div>

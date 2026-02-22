@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 import {
     format,
@@ -74,18 +75,18 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
                     {format(currentMonth, 'MMMM yyyy', { locale: currentLocale })}
                 </h3>
                 <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 gap-1">
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={prevMonth}
                         className="p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all text-slate-400 hover:text-slate-800 active:scale-95"
                     >
                         <ChevronLeft size={18} strokeWidth={2.5} />
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={nextMonth}
                         className="p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all text-slate-400 hover:text-slate-800 active:scale-95"
                     >
                         <ChevronRight size={18} strokeWidth={2.5} />
-                    </button>
+                    </motion.button>
                 </div>
             </div>
 
@@ -117,7 +118,7 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
 
                     return (
                         <div key={day.toString()} className="flex justify-center relative group">
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => onDateSelect(day)}
                                 className={`
                   w-10 h-10 rounded-xl flex flex-col items-center justify-center text-sm font-bold relative transition-all duration-300
@@ -149,7 +150,7 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
                                         <div className="w-1.5 h-1.5 rounded-full bg-white/90" />
                                     </div>
                                 )}
-                            </button>
+                            </motion.button>
                         </div>
                     );
                 })}

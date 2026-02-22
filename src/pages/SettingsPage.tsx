@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Lock, Mail, User, LogOut, Shield, Eye, EyeOff, Volume2, VolumeX, Phone } from 'lucide-react';
@@ -221,12 +222,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                         </div>
                     </div>
 
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={() => document.getElementById('file-upload-settings')?.click()}
                         className="mt-4 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-promed-primary transition-colors flex items-center gap-2"
                     >
                         {t('upload_image')}
-                    </button>
+                    </motion.button>
 
                     <input
                         id="file-upload-settings"
@@ -245,7 +246,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                         <label className="text-footnote font-semibold text-[rgba(60,60,67,0.6)] uppercase tracking-wider mb-2 block">{t('select_language')}</label>
                         <div className="grid grid-cols-3 gap-2">
                             {['en', 'uz', 'ru'].map((lang) => (
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     key={lang}
                                     onClick={() => setLanguage(lang as any)}
                                     className={`py-3 px-4 rounded-xl text-callout font-bold transition-all duration-200 ${language === lang
@@ -254,7 +255,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                                         }`}
                                 >
                                     {lang === 'en' ? 'English' : lang === 'uz' ? "O'zbek" : 'Русский'}
-                                </button>
+                                </motion.button>
                             ))}
                         </div>
                     </div>
@@ -274,7 +275,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                                     <p className="text-xs text-slate-500 font-medium">{t('sound_hint') || 'Play sound effects'}</p>
                                 </div>
                             </div>
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 type="button"
                                 onClick={toggleSound}
                                 className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 border ${soundEnabled
@@ -282,7 +283,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                                     : 'bg-slate-200 border-transparent shadow-inner'}`}
                             >
                                 <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 shadow-sm z-20 ${soundEnabled ? 'left-8' : 'left-1'}`} />
-                            </button>
+                            </motion.button>
                         </div>
                     </div>
 
@@ -332,13 +333,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                                     <p className="text-xs text-slate-500 font-medium">{t('lock_hint')}</p>
                                 </div>
                             </div>
-                            <button
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 type="button"
                                 onClick={() => setLockEnabled(!lockEnabled)}
                                 className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 ${lockEnabled ? 'gel-blue-style w-14 h-7 rounded-full border-none' : 'bg-slate-200 '}`}
                             >
                                 <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 shadow-sm z-20 ${lockEnabled ? 'left-8' : 'left-1'}`} />
-                            </button>
+                            </motion.button>
                         </div>
 
                         {/* Current PIN (Required for Sync) */}
@@ -348,14 +349,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                                     {t('current_password') || "Joriy Parol"}
                                 </label>
                                 <div className="flex items-center gap-2">
-                                    <button
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         type="button"
                                         onClick={() => setShowCurrentPin(!showCurrentPin)}
                                         className="flex items-center gap-2 text-[10px] font-black text-promed-primary uppercase tracking-widest hover:bg-promed-light px-3 py-1.5 rounded-lg transition-all"
                                     >
                                         {showCurrentPin ? <EyeOff size={14} /> : <Eye size={14} />}
                                         <span>{showCurrentPin ? t('hide') : t('show')}</span>
-                                    </button>
+                                    </motion.button>
                                 </div>
                             </div>
                             <div className="flex gap-2 sm:gap-3 justify-start">
@@ -405,14 +406,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                         <div className="flex items-center justify-between mb-4">
                             <label className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">{t('new_password')}</label>
                             <div className="flex items-center gap-2">
-                                <button
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     type="button"
                                     onClick={() => setShowNewPin(!showNewPin)}
                                     className="flex items-center gap-2 text-[10px] font-black text-promed-primary uppercase tracking-widest hover:bg-promed-light px-3 py-1.5 rounded-lg transition-all"
                                 >
                                     {showNewPin ? <EyeOff size={14} /> : <Eye size={14} />}
                                     <span>{showNewPin ? t('hide') : t('show')}</span>
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
 
@@ -460,21 +461,21 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
 
                 {/* Action Buttons */}
                 <div className="pt-4 flex items-center justify-between border-t border-gray-100">
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={() => setShowLogoutModal(true)}
                         className="px-6 py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition flex items-center gap-2"
                     >
                         <LogOut size={18} />
                         {t('logout')}
-                    </button>
+                    </motion.button>
 
-                    <button
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                         onClick={handleSave}
                         disabled={loading || imageUploading}
                         className="btn-premium-blue min-w-[150px] sm:min-w-[180px] shadow-lg disabled:opacity-70"
                     >
                         <span className="relative z-10">{loading ? t('saving') : t('save')}</span>
-                    </button>
+                    </motion.button>
                 </div>
             </div>
 
