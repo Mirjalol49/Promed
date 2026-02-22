@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
-import thinkingMascot from "../../components/mascot/thinking_mascot.png";
+import emptyMascot from '../../assets/images/mascots/empty.png';
 
 interface EmptyStateJourneyProps {
     onAdd: () => void;
@@ -18,15 +18,27 @@ export const EmptyStateJourney: React.FC<EmptyStateJourneyProps> = ({ onAdd }) =
             <div className="relative mb-4">
 
 
-                {/* Mascot */}
-                <motion.img
+                {/* Mascot with entrance → then smooth float */}
+                <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.5, type: "spring", stiffness: 260, damping: 20 }}
-                    src={thinkingMascot}
-                    alt="Thinking Koala"
-                    className="w-40 h-40 object-contain drop-shadow-xl relative z-10"
-                />
+                    transition={{ type: 'spring', stiffness: 260, damping: 20, duration: 0.5 }}
+                >
+                    <motion.img
+                        src={emptyMascot}
+                        alt="Empty"
+                        initial={{ y: 0 }}
+                        animate={{ y: -8 }}
+                        transition={{
+                            duration: 2.8,
+                            repeat: Infinity,
+                            repeatType: 'mirror',
+                            ease: [0.45, 0, 0.55, 1],
+                            delay: 0.4,
+                        }}
+                        className="w-40 h-40 object-contain drop-shadow-xl relative z-10"
+                    />
+                </motion.div>
             </div>
 
             {/* Text Content */}

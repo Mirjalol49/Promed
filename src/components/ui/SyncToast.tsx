@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Lottie from 'lottie-react';
-import happyMascot from '../../components/mascot/happy_mascot.png';
-import sadMascot from '../../components/mascot/upset_mascot.png';
-import injectionMascot from '../../components/mascot/injection_mascot.png';
-import thinkingMascot from '../../components/mascot/thinking_mascot.png';
-import successAnimation from '../../assets/images/toaster/success.json';
-import deleteAnimation from '../../assets/images/toaster/delete.json';
 
 import { ToastAction } from '../../contexts/ToastContext';
 
@@ -24,13 +17,6 @@ interface SyncToastProps {
 const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title, message, type = 'success', mascot, duration = 5000, action, onClose }, ref) => {
     const [isPaused, setIsPaused] = useState(false);
     const [progress, setProgress] = useState(100);
-    const [showAnimation, setShowAnimation] = useState(false);
-
-    // Initial delay for animation to start AFTER the bubble has begun appearing
-    useEffect(() => {
-        const timer = setTimeout(() => setShowAnimation(true), 150);
-        return () => clearTimeout(timer);
-    }, []);
 
     // Smooth Progress Bar Logic with Pause Support
     useEffect(() => {
@@ -86,8 +72,6 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
 
         if (isDelete) {
             return {
-                animation: deleteAnimation,
-                mascotSide: 'right',
                 titleColor: 'text-emerald-600',
                 progressColor: 'bg-emerald-500',
                 id: 'delete'
@@ -96,8 +80,6 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
 
         if (isInjection) {
             return {
-                mascotImg: injectionMascot,
-                mascotSide: 'left',
                 titleColor: 'text-promed-primary',
                 progressColor: 'bg-promed-primary',
                 id: 'injection'
@@ -108,33 +90,24 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
             case 'error':
             case 'warning':
                 return {
-                    mascotImg: sadMascot,
-                    mascotSide: 'right',
                     titleColor: 'text-rose-600',
                     progressColor: 'bg-rose-500',
                     id: 'error'
                 };
             case 'success':
                 return {
-                    animation: successAnimation,
-                    mascotSide: 'right',
                     titleColor: 'text-emerald-600',
                     progressColor: 'bg-emerald-500',
                     id: 'success'
                 };
             default:
                 return {
-                    mascotImg: thinkingMascot,
-                    mascotSide: 'right',
                     titleColor: 'text-amber-500',
                     progressColor: 'bg-amber-500',
                     id: 'info'
                 };
         }
     }, [title, message, type]);
-
-    const activeMascot = mascot || config.mascotImg;
-    const isRight = config.mascotSide === 'right';
 
     // Premium Shadow & Gloss Effects
     const glowColor = React.useMemo(() => ({
@@ -189,45 +162,6 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
             onMouseLeave={() => setIsPaused(false)}
         >
             <div className="relative group">
-                {/* GROUNDED MASCOT POSITIONING - Now sitting on the bottom corner */}
-                {(activeMascot || config.animation) && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.5, y: 20 }}
-                        animate={{
-                            opacity: 1,
-                            scale: 1,
-                            y: 0,
-                            transition: {
-                                type: "spring",
-                                stiffness: 400,
-                                damping: 15,
-                                delay: 0.1
-                            }
-                        }}
-                        className={`absolute z-30 pointer-events-none bg-transparent shadow-none ${isRight ? '-right-4 -bottom-4' : '-left-4 -bottom-4'}`}
-                    >
-                        {config.animation && !mascot ? (
-                            <div className="w-20 h-20 md:w-24 md:h-24 bg-transparent shadow-none">
-                                {showAnimation && (
-                                    <Lottie
-                                        key={`${id}-${config.id}`}
-                                        animationData={config.animation}
-                                        loop={true}
-                                        autoplay={true}
-                                        style={{ background: 'transparent' }}
-                                    />
-                                )}
-                            </div>
-                        ) : (
-                            <img
-                                src={activeMascot}
-                                alt="Mascot"
-                                className="w-16 h-16 object-contain bg-transparent"
-                            />
-                        )}
-                    </motion.div>
-                )}
-
                 {/* MAIN BUBBLE */}
                 <div className={`relative ${glowColor} shadow-[0_15px_40px_rgba(0,0,0,0.1)] rounded-[22px] overflow-visible`}>
                     <div className="bg-white/90 backdrop-blur-xl rounded-[22px] min-w-[280px] md:min-w-[340px] max-w-[90vw] relative z-10 overflow-hidden border border-white/80 shadow-inner ring-1 ring-black/5 transition-all duration-300">
@@ -236,7 +170,7 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
                             {/* Visual Accent Strip */}
                             <div className={`w-1.5 ${config.progressColor} opacity-90`} />
 
-                            <div className={`flex-1 p-5 md:p-6 flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-2 md:gap-4 ${isRight ? 'pr-5 md:pr-28' : 'pl-5 md:pl-28'}`}>
+                            <div className={`flex-1 p-5 md:p-6 flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-2 md:gap-4 pr-10 md:pr-10`}>
                                 <div className="flex-1 min-w-0">
                                     <h3 className={`font-black text-[15px] md:text-base leading-tight tracking-tight mb-1 ${config.titleColor} text-center md:text-left`}>
                                         {title}

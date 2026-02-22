@@ -117,7 +117,7 @@ const Bar3DItem: React.FC<{
                         >
                             <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.12) 25%, transparent 60%)` }} />
                             <div className="absolute left-0 top-0 bottom-0 w-[3px] pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.05) 100%)' }} />
-                            <div className="absolute right-0 top-0 bottom-0 w-[3px] pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.1) 100%)' }} />
+                            <div className="absolute right-0 top-0 bottom-0 w-[2px] pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.01) 0%, rgba(0,0,0,0.05) 100%)' }} />
                         </div>
 
                         {/* ▌ RIGHT SIDE face */}
@@ -134,8 +134,8 @@ const Bar3DItem: React.FC<{
                                 zIndex: 2,
                             }}
                         >
-                            <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.08) 100%)' }} />
-                            <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-black/5 pointer-events-none" />
+                            <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.04) 100%)' }} />
+                            <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-white/10 pointer-events-none" />
                         </div>
 
                         {/* ▌ TOP face */}
@@ -195,48 +195,43 @@ const Group3D: React.FC<{
     const groupMaxPct = chartMax > 0 ? (groupMaxVal / chartMax) : 0;
 
     const renderTooltip = () => (
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
             {isHovered && (
                 <motion.div
                     initial={safe ? { opacity: 0 } : { opacity: 0, y: 15, scale: 0.9 }}
                     animate={safe ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
                     exit={safe ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                    className={`absolute bottom-full mb-6 pointer-events-none z-[100] min-w-[200px] ${alignEdge === 'left' ? 'left-0' : alignEdge === 'right' ? 'right-0' : 'left-1/2 -translate-x-1/2'
+                    className={`absolute bottom-full mb-4 pointer-events-none z-[100] min-w-[200px] ${alignEdge === 'left' ? 'left-0' : alignEdge === 'right' ? 'right-0' : 'left-1/2 -translate-x-1/2'
                         }`}
-                    style={{ bottom: `${56 + (groupMaxPct * maxH) + depth + 16}px` }}
+                    style={{ bottom: `${(groupMaxPct * maxH) + depth + 14}px` }}
                 >
-                    <div className="bg-white/95 backdrop-blur-xl border border-slate-100 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.15)] rounded-2xl p-5 relative overflow-hidden">
-                        {/* Aesthetic gradient border dynamically placed */}
-                        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-400 via-blue-500 to-rose-400 opacity-80" />
+                    <div className="bg-white/95 backdrop-blur-xl border border-slate-200/50 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.22)] rounded-2xl p-4 relative isolate">
+                        {/* 1. Seamless Gradient - Kept inside the card */}
+                        <div className="w-full h-1.5 bg-gradient-to-r from-emerald-400 via-blue-500 to-rose-400 rounded-full opacity-90 shadow-sm mb-3" />
 
-                        <p className="text-slate-500 font-black text-[11px] mb-4 uppercase tracking-[0.15em] border-b border-slate-100/80 pb-3">{group.fullLabel || group.label}</p>
-                        <div className="flex flex-col gap-3.5">
-                            {[
-                                { key: 'Kirim', val: group.kirim, c: PALETTE.green },
-                                { key: 'Xarajat', val: group.xarajat, c: PALETTE.rose },
-                                { key: 'Sof Foyda', val: group.sof, c: PALETTE.blue }
-                            ].map(item => (
-                                <div key={item.key} className="flex items-center justify-between gap-6 whitespace-nowrap">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className="w-2.5 h-2.5 rounded-full ring-[3px] shadow-sm ring-white" style={{ backgroundColor: item.c.dot }} />
-                                        <span className="text-[13px] font-bold text-slate-600">
-                                            {item.key}
+                        <div className="relative z-20">
+                            <p className="text-slate-500 font-bold text-[10px] mb-3 uppercase tracking-[0.15em] border-b border-slate-100/80 pb-2.5">{group.fullLabel || group.label}</p>
+                            <div className="flex flex-col gap-2.5">
+                                {[
+                                    { key: 'Kirim', val: group.kirim, c: PALETTE.green },
+                                    { key: 'Xarajat', val: group.xarajat, c: PALETTE.rose },
+                                    { key: 'Sof Foyda', val: group.sof, c: PALETTE.blue }
+                                ].map(item => (
+                                    <div key={item.key} className="flex items-center justify-between gap-6 whitespace-nowrap">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-2.5 h-2.5 rounded-full ring-[3px] shadow-sm ring-white" style={{ backgroundColor: item.c.dot }} />
+                                            <span className="text-[13px] font-bold text-slate-600">
+                                                {item.key}
+                                            </span>
+                                        </div>
+                                        <span className="text-[15px] font-black tracking-tight" style={{ color: item.c.label }}>
+                                            {formatCurrency(item.val)}
                                         </span>
                                     </div>
-                                    <span className="text-[15px] font-black tracking-tight" style={{ color: item.c.label }}>
-                                        {formatCurrency(item.val)}
-                                    </span>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                        {/* Triangle tail dynamically positioned */}
-                        <div
-                            className={`absolute top-full -mt-[1px] border-[8px] border-transparent border-t-white ${alignEdge === 'left' ? 'left-[45px] -translate-x-1/2' :
-                                alignEdge === 'right' ? 'right-[45px] translate-x-1/2' : 'left-1/2 -translate-x-1/2'
-                                }`}
-                            style={{ filter: 'drop-shadow(0 4px 4px rgba(0,0,0,0.05))' }}
-                        />
                     </div>
                 </motion.div>
             )}
@@ -263,7 +258,7 @@ const Group3D: React.FC<{
             {/* X-Axis Dynamic Label */}
             <div className="mt-4 md:mt-5 flex items-center justify-center h-10 md:h-8 w-full relative">
                 <span
-                    className={`absolute top-0 text-[9px] md:text-[10px] font-bold text-[#64748B] tracking-tight uppercase select-none transition-colors duration-300 group-hover:text-slate-800 break-words flex
+                    className={`absolute top-0 text-[10px] font-bold text-[#64748B] tracking-tight uppercase select-none transition-colors duration-300 group-hover:text-slate-800 break-words flex
                         ${isDense ? 'scale-90 md:scale-100 origin-top' : ''}
                         ${alignEdge === 'left' ? 'left-0 justify-start text-left w-[120%]' : alignEdge === 'right' ? 'right-0 justify-end text-right w-[120%]' : 'left-1/2 -translate-x-1/2 justify-center text-center w-[130%]'}
                     `}
@@ -326,7 +321,7 @@ export const Chart3D: React.FC<Chart3DProps> = ({ data, maxBarHeight = 220 }) =>
     return (
         <div className="w-full flex flex-col items-center">
             {/* Global Legend */}
-            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 mb-8 mt-2">
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 mb-1 mt-2">
                 {[
                     { label: 'Kirim', c: PALETTE.green },
                     { label: 'Xarajat', c: PALETTE.rose },
@@ -343,17 +338,17 @@ export const Chart3D: React.FC<Chart3DProps> = ({ data, maxBarHeight = 220 }) =>
 
             {/* Interactive Chart & Grid Area */}
             {/* Added a highly responsive overflow layout for data-heavy charts on mobile */}
-            <div className="w-full overflow-x-auto custom-scrollbar pb-3 relative z-10 flex">
+            <div className="w-full overflow-x-auto custom-scrollbar pb-3 pt-16 relative z-10 flex">
 
                 {/* 1. Y-Axis Container (Sticky to viewport) */}
-                <div className="sticky left-0 z-30 bg-white/95 backdrop-blur-xl w-[45px] md:w-[60px] flex-shrink-0 shadow-[8px_0_16px_-8px_rgba(0,0,0,0.06)] border-r border-slate-100/60">
+                <div className="sticky left-0 z-30 bg-white/95 backdrop-blur-xl w-[55px] md:w-[70px] flex-shrink-0 border-r border-slate-100">
                     <div className="absolute inset-x-0 pointer-events-none" style={{ bottom: depth + 36, height: maxBarHeight }}>
                         {ticks.map((tPct) => {
                             const tickValue = chartMax * tPct;
                             return (
-                                <div key={tPct} className="absolute w-full flex items-center pr-1 md:pr-2" style={{ bottom: `${tPct * 100}%` }}>
+                                <div key={tPct} className="absolute w-full flex items-center pr-3 md:pr-5" style={{ bottom: `${tPct * 100}%` }}>
                                     <div className="ml-auto flex shrink-0">
-                                        <span className="text-[#64748B] text-[9px] md:text-[11px] font-black tracking-wide bg-white/40 px-0.5 rounded">
+                                        <span className="text-[#64748B] text-[9px] md:text-[11px] font-bold tracking-wide bg-white/40 px-0.5 rounded">
                                             {tickValue === 0 ? '0' : formatCompactNumber(tickValue)}
                                         </span>
                                     </div>
@@ -368,7 +363,7 @@ export const Chart3D: React.FC<Chart3DProps> = ({ data, maxBarHeight = 220 }) =>
                     {/* Horizontal Grid Lines */}
                     <div className="absolute inset-x-0 pointer-events-none" style={{ bottom: depth + 36, height: maxBarHeight, left: 0 }}>
                         {ticks.map((tPct) => (
-                            <div key={tPct} className="absolute w-full border-t border-[#E2E8F0] opacity-80" style={{ bottom: `${tPct * 100}%`, borderTopStyle: 'dashed', borderTopWidth: 1.5 }} />
+                            <div key={tPct} className="absolute w-full border-t border-slate-200 opacity-40" style={{ bottom: `${tPct * 100}%`, borderTopStyle: 'dashed', borderTopWidth: 1 }} />
                         ))}
                     </div>
 

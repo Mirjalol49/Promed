@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import Lottie from 'lottie-react';
-import loadingAnimation from '../../assets/images/mascots/loading.json';
+import { Loader2 } from 'lucide-react';
 
 interface ImageUploadingOverlayProps {
     language: 'uz' | 'en' | 'ru';
@@ -63,12 +62,8 @@ export const ImageUploadingOverlay: React.FC<ImageUploadingOverlayProps & { show
                         </div>
                     </div>
                 ) : (
-                    <div className={`${showText ? 'w-16 h-16' : 'w-20 h-20'}`}>
-                        <Lottie
-                            animationData={loadingAnimation}
-                            loop={true}
-                            autoplay={true}
-                        />
+                    <div className={`${showText ? 'w-16 h-16' : 'w-20 h-20'} flex items-center justify-center`}>
+                        <Loader2 className="w-10 h-10 animate-spin text-white opacity-80" />
                     </div>
                 )}
 

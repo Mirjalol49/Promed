@@ -2,8 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useScrollLock } from '../../hooks/useScrollLock';
-import Lottie from 'lottie-react';
-import deleteAnimation from '../../assets/images/mascots/delete.json';
+import deleteMascot from '../../assets/images/mascots/delete.png';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Portal } from './Portal';
 
@@ -50,12 +49,15 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onConfirm, t
                                 <X size={20} />
                             </motion.button>
 
-                            {/* Delete Icon */}
-                            <div className="relative mb-4 pt-2 w-24 h-24 md:w-32 md:h-32">
-                                <Lottie
-                                    animationData={deleteAnimation}
-                                    loop={true}
-                                    autoplay={true}
+                            {/* Delete Mascot Image */}
+                            <div className="relative mb-2 pt-2">
+                                <motion.img
+                                    src={deleteMascot}
+                                    alt="Delete"
+                                    initial={{ scale: 0.7, opacity: 0, y: 10 }}
+                                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                                    transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.05 }}
+                                    className="w-28 h-28 md:w-36 md:h-36 object-contain drop-shadow-md"
                                 />
                             </div>
 

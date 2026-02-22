@@ -1,10 +1,10 @@
-import Lottie from 'lottie-react';
-import loadingAnimation from '../../assets/images/mascots/loading.json';
 import { Loader2 } from 'lucide-react';
+import Lottie from 'lottie-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import loadingAnimation from '../../assets/images/mascots/loading.json';
 
 interface LoadingSpinnerProps {
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
     message?: string;
     fullScreen?: boolean;
 }
@@ -21,20 +21,24 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     const { t } = useLanguage();
 
     const sizeClasses = {
-        sm: 'w-5 h-5',
-        md: 'w-8 h-8',
-        lg: 'w-12 h-12',
-        xl: 'w-16 h-16'
+        sm: 'w-12 h-12',
+        md: 'w-24 h-24',
+        lg: 'w-32 h-32',
+        xl: 'w-40 h-40',
+        xxl: 'w-48 h-48'
     };
+
+    const containerSize = sizeClasses[size] || sizeClasses.md;
 
     const spinner = (
         <div className="flex flex-col items-center justify-center text-center">
-            {/* Animated spinner */}
-            <div className="w-32 h-32 md:w-40 md:h-40 relative">
+            {/* Animated Mascot Spinner */}
+            <div className={`flex items-center justify-center ${containerSize}`}>
                 <Lottie
                     animationData={loadingAnimation}
                     loop={true}
                     autoplay={true}
+                    className="w-full h-full"
                 />
             </div>
 
@@ -60,12 +64,8 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
  * Inline loading state for buttons
  */
 export const ButtonLoader: React.FC = () => (
-    <div className="w-10 h-10 -my-2">
-        <Lottie
-            animationData={loadingAnimation}
-            loop={true}
-            autoplay={true}
-        />
+    <div className="w-5 h-5 flex items-center justify-center text-white">
+        <Loader2 className="w-4 h-4 animate-spin [animation-duration:800ms]" />
     </div>
 );
 

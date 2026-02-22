@@ -12,8 +12,7 @@ import {
     Users, Plus, Trash2, Shield, Eye, EyeOff, Phone, Key, Loader2, X, Check, Calendar, Camera, type LucideIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Lottie from 'lottie-react';
-import emptyAnimation from '../assets/images/mascots/empty.json';
+
 import { PinInput } from '../components/ui/PinInput';
 import DeleteModal from '../components/ui/DeleteModal';
 import { EmptyState } from '../components/ui/EmptyState';

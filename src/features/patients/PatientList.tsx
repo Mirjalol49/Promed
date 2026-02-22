@@ -65,8 +65,6 @@ import { useAccount } from '../../contexts/AccountContext';
 import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
 
 import { useReliableUpload } from '../../hooks/useReliableUpload';
-import Lottie from 'lottie-react';
-import loadingAnimation from '../../assets/images/mascots/loading.json';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
 import { PatientListSkeleton } from '../../components/ui/Skeletons';
 

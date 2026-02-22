@@ -1,7 +1,6 @@
 import React from 'react';
-import Lottie from 'lottie-react';
 import { motion } from 'framer-motion';
-import emptyAnimation from '../../assets/images/mascots/empty.json';
+import emptyMascot from '../../assets/images/mascots/empty.png';
 
 interface EmptyStateProps {
     message: string;
@@ -26,23 +25,19 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
                 {/* Decorative Glow */}
                 <div className="absolute inset-0 bg-blue-400/5 blur-[50px] rounded-full" />
 
-                <motion.div
-                    animate={{
-                        y: [0, -6, 0]
-                    }}
+                <motion.img
+                    src={emptyMascot}
+                    alt="Empty"
+                    initial={{ y: 0 }}
+                    animate={{ y: -8 }}
                     transition={{
-                        duration: 4,
+                        duration: 2.8,
                         repeat: Infinity,
-                        ease: "easeInOut"
+                        repeatType: 'mirror',
+                        ease: [0.45, 0, 0.55, 1],
                     }}
-                    className="w-32 h-32 md:w-40 md:h-40 relative z-10"
-                >
-                    <Lottie
-                        animationData={emptyAnimation}
-                        loop={true}
-                        autoplay={true}
-                    />
-                </motion.div>
+                    className="w-32 h-32 md:w-40 md:h-40 object-contain relative z-10 drop-shadow-md"
+                />
             </div>
 
             <div className="max-w-md relative z-10">

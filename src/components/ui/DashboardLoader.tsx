@@ -2,8 +2,8 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import Lottie from 'lottie-react';
-import loadingAnimation from '../../assets/images/mascots/loading.json';
 import { useLanguage } from '../../contexts/LanguageContext';
+import loadingAnimation from '../../assets/images/mascots/loading.json';
 
 export const DashboardLoader: React.FC = () => {
     // SSR Check
@@ -24,12 +24,17 @@ export const DashboardLoader: React.FC = () => {
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.5, ease: "backOut" }}
-                        className="relative z-10 w-40 h-40 md:w-56 md:h-56"
+                        className="relative z-10 w-40 h-40 md:w-56 md:h-56 flex items-center justify-center"
                     >
                         <Lottie
                             animationData={loadingAnimation}
                             loop={true}
                             autoplay={true}
+                            className="w-full h-full"
+                            style={{ maxWidth: '100%', maxHeight: '100%' }}
+                            rendererSettings={{
+                                preserveAspectRatio: 'xMidYMid meet'
+                            }}
                         />
                     </motion.div>
                 </div>

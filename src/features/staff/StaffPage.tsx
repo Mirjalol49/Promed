@@ -22,8 +22,7 @@ import { ProBadge } from '../../components/ui/ProBadge';
 import { Portal } from '../../components/ui/Portal';
 import { CustomDatePicker } from '../../components/ui/CustomDatePicker';
 import { format } from 'date-fns';
-import Lottie from 'lottie-react';
-import emptyAnimation from '../../assets/images/mascots/empty.json';
+
 import { StaffSkeleton } from '../../components/ui/Skeletons';
 import DeleteModal from '../../components/ui/DeleteModal';
 

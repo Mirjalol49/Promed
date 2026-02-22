@@ -15,8 +15,7 @@ import {
 } from 'lucide-react';
 import { format, isSameDay, isToday, addDays } from 'date-fns';
 import { uz, ru, enUS } from 'date-fns/locale';
-import Lottie from 'lottie-react';
-import dateAnimation from '../../assets/images/mascots/date.json';
+import calendarMascot from '../../assets/images/mascots/calendar.png';
 
 interface DashboardSchedulerProps {
     patients: Patient[];
@@ -316,9 +315,19 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                 <div
                                     className="flex flex-col items-center justify-center h-[300px] text-slate-400 px-6 text-center"
                                 >
-                                    <div className="w-32 h-32 mb-2">
-                                        <Lottie animationData={dateAnimation} loop={true} />
-                                    </div>
+                                    <motion.img
+                                        src={calendarMascot}
+                                        alt="No events"
+                                        initial={{ y: 0 }}
+                                        animate={{ y: -8 }}
+                                        transition={{
+                                            duration: 2.8,
+                                            repeat: Infinity,
+                                            repeatType: 'mirror',
+                                            ease: [0.45, 0, 0.55, 1],
+                                        }}
+                                        className="w-28 h-28 md:w-32 md:h-32 object-contain drop-shadow-md mb-2"
+                                    />
                                     <p className="font-bold text-base md:text-lg text-slate-500 leading-snug max-w-[240px] md:max-w-none mx-auto">
                                         {t('no_events_day') || 'No events for this day'}
                                     </p>
