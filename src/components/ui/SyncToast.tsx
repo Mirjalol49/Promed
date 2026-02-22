@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Lottie from 'lottie-react';
+import successAnimation from '../../assets/images/mascots/success.json';
+import trashAnimation from '../../assets/images/mascots/trash.json';
 
 import { ToastAction } from '../../contexts/ToastContext';
 
@@ -17,6 +20,13 @@ interface SyncToastProps {
 const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title, message, type = 'success', mascot, duration = 5000, action, onClose }, ref) => {
     const [isPaused, setIsPaused] = useState(false);
     const [progress, setProgress] = useState(100);
+    const [showAnimation, setShowAnimation] = useState(false);
+
+    useEffect(() => {
+        // Delay Lottie rendering slightly to prevent layout calculation lag when the toast first appears
+        const t = setTimeout(() => setShowAnimation(true), 50);
+        return () => clearTimeout(t);
+    }, []);
 
     // Smooth Progress Bar Logic with Pause Support
     useEffect(() => {
@@ -74,7 +84,8 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
             return {
                 titleColor: 'text-emerald-600',
                 progressColor: 'bg-emerald-500',
-                id: 'delete'
+                id: 'delete',
+                animation: trashAnimation
             };
         }
 
@@ -82,7 +93,8 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
             return {
                 titleColor: 'text-promed-primary',
                 progressColor: 'bg-promed-primary',
-                id: 'injection'
+                id: 'injection',
+                animation: null
             };
         }
 
@@ -92,19 +104,22 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
                 return {
                     titleColor: 'text-rose-600',
                     progressColor: 'bg-rose-500',
-                    id: 'error'
+                    id: 'error',
+                    animation: null
                 };
             case 'success':
                 return {
                     titleColor: 'text-emerald-600',
                     progressColor: 'bg-emerald-500',
-                    id: 'success'
+                    id: 'success',
+                    animation: successAnimation
                 };
             default:
                 return {
                     titleColor: 'text-amber-500',
                     progressColor: 'bg-amber-500',
-                    id: 'info'
+                    id: 'info',
+                    animation: null
                 };
         }
     }, [title, message, type]);
@@ -170,8 +185,21 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
                             {/* Visual Accent Strip */}
                             <div className={`w-1.5 ${config.progressColor} opacity-90`} />
 
-                            <div className={`flex-1 p-5 md:p-6 flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-2 md:gap-4 pr-10 md:pr-10`}>
-                                <div className="flex-1 min-w-0">
+                            <div className={`flex-1 p-5 md:p-6 flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-3 md:gap-4 pr-10 md:pr-10`}>
+                                {config.animation && (
+                                    <div className="w-14 h-14 md:w-16 md:h-16 flex-shrink-0 flex items-center justify-center -mt-1 md:-mt-2 -mb-2 md:-mb-3 -ml-2">
+                                        {showAnimation && (
+                                            <Lottie
+                                                animationData={config.animation}
+                                                loop={true}
+                                                autoplay={true}
+                                                className="w-full h-full drop-shadow-sm"
+                                            />
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="flex-1 min-w-0 flex flex-col justify-center">
                                     <h3 className={`font-black text-[15px] md:text-base leading-tight tracking-tight mb-1 ${config.titleColor} text-center md:text-left`}>
                                         {title}
                                     </h3>
