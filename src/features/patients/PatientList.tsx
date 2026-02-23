@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import confetti from "canvas-confetti";
 import { useAppSounds } from '../../hooks/useAppSounds';
 import { motion, AnimatePresence } from 'framer-motion';
+import Lottie from 'lottie-react';
+import loadingAnimation from '../../assets/images/mascots/loading.json';
 import { ProBadge } from '../../components/ui/ProBadge';
 import {
   Calendar,
