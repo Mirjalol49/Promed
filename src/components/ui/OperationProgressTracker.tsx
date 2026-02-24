@@ -9,6 +9,7 @@ import { useAccount } from '../../contexts/AccountContext';
 import { subscribeToStaff } from '../../lib/staffService';
 import { Staff } from '../../types';
 import ConfirmationModal from './ConfirmationModal';
+import { subscribeToTracker, updateTracker, OperationTrackerState } from '../../lib/operationTrackerService';
 
 interface Step {
     id: string;
@@ -29,23 +30,37 @@ const STORAGE_KEY_PREFIX = 'promed_op_tracker_';
 export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ patientId }) => {
     const { t, language } = useLanguage();
     const { accountId } = useAccount();
-    // 1. Sticky State for persistency
-    const [state, setState] = useState<OperationState>(() => {
-        const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}${patientId}`);
-        if (saved) {
-            try { return JSON.parse(saved); } catch (e) { }
-        }
-        return {
-            steps: [],
-            status: 'setup',
-            currentStepIndex: 0,
-            stepStartTime: null
-        };
+
+    // 1. Firebase Persistency
+    const [state, setState] = useState<OperationState>({
+        steps: [],
+        status: 'setup',
+        currentStepIndex: 0,
+        stepStartTime: null
     });
 
     useEffect(() => {
-        localStorage.setItem(`${STORAGE_KEY_PREFIX}${patientId}`, JSON.stringify(state));
-    }, [state, patientId]);
+        const unsubscribe = subscribeToTracker(patientId, (data) => {
+            if (data) {
+                // Ignore identical updates to prevent infinite loops / re-rendering issues
+                setState(prev => {
+                    if (JSON.stringify(prev) === JSON.stringify(data)) return prev;
+                    return data as OperationState;
+                });
+            }
+        });
+        return () => unsubscribe();
+    }, [patientId]);
+
+    const setSharedState = (updater: OperationState | ((prev: OperationState) => OperationState)) => {
+        setState(prev => {
+            const nextState = typeof updater === 'function' ? updater(prev) : updater;
+            if (JSON.stringify(prev) !== JSON.stringify(nextState)) {
+                updateTracker(patientId, nextState as OperationTrackerState).catch(console.error);
+            }
+            return nextState;
+        });
+    };
 
     const [newTitle, setNewTitle] = useState('');
     const [newDoctor, setNewDoctor] = useState('');
@@ -92,13 +107,13 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
 
                 if (elapsed >= totalDuration) {
                     if (state.currentStepIndex + 1 < state.steps.length) {
-                        setState(prev => ({
+                        setSharedState(prev => ({
                             ...prev,
                             currentStepIndex: prev.currentStepIndex + 1,
                             stepStartTime: currentTime
                         }));
                     } else {
-                        setState(prev => ({
+                        setSharedState(prev => ({
                             ...prev,
                             status: 'completed',
                             stepStartTime: null
@@ -119,7 +134,7 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
 
         if (totalMin <= 0) return;
 
-        setState(prev => ({
+        setSharedState(prev => ({
             ...prev,
             steps: [...prev.steps, {
                 id: `step_${Date.now()}`,
@@ -135,7 +150,7 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
     };
 
     const removeStep = (id: string) => {
-        setState(prev => ({
+        setSharedState(prev => ({
             ...prev,
             steps: prev.steps.filter(s => s.id !== id)
         }));
@@ -143,7 +158,7 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
 
     const startOperation = () => {
         if (state.steps.length === 0) return;
-        setState(prev => ({
+        setSharedState(prev => ({
             ...prev,
             status: 'running',
             currentStepIndex: 0,
@@ -152,7 +167,7 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
     };
 
     const confirmResetOperation = () => {
-        setState({
+        setSharedState({
             steps: [],
             status: 'setup',
             currentStepIndex: 0,
@@ -164,13 +179,13 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
     const completeCurrentStepEarly = () => {
         // Force completion of current step right now
         if (state.currentStepIndex + 1 < state.steps.length) {
-            setState(prev => ({
+            setSharedState(prev => ({
                 ...prev,
                 currentStepIndex: prev.currentStepIndex + 1,
                 stepStartTime: Date.now()
             }));
         } else {
-            setState(prev => ({
+            setSharedState(prev => ({
                 ...prev,
                 status: 'completed',
                 stepStartTime: null
