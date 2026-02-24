@@ -73,7 +73,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
     const [staffList, setStaffList] = useState<Staff[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddingPayment, setIsAddingPayment] = useState(false);
-    const [filterCategory, setFilterCategory] = useState<'all' | 'surgery' | 'injection'>('all');
+    const [filterCategory, setFilterCategory] = useState<'all' | 'income' | 'expense' | 'surgery' | 'injection'>('all');
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
     const [deleteItem, setDeleteItem] = useState<TimelineItem | null>(null);
 
@@ -183,9 +183,9 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
         const unsub = subscribeToTransactions(accountId, (allTransactions) => {
             const patientTx = allTransactions.filter(t => t.patientId === patient.id);
             patientTx.sort((a, b) => {
-                const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
-                const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
-                return dateB.getTime() - dateA.getTime();
+                const strA = `${a.date}T${a.time || '00:00'}`;
+                const strB = `${b.date}T${b.time || '00:00'}`;
+                return strB.localeCompare(strA);
             });
             setTransactions(patientTx);
             setLoading(false);
@@ -211,37 +211,48 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
             t.type === 'expense' && !splitIds.has(t.id) && !t.description?.startsWith('[Split]')
         );
 
-        const filteredIncomes = filterCategory === 'all'
-            ? incomes
-            : incomes.filter(t => t.category === filterCategory);
+        // Build income items if category allows
+        let incomeItems: TimelineItem[] = [];
+        let expenseItems: TimelineItem[] = [];
 
-        const incomeItems: TimelineItem[] = filteredIncomes.map(income => {
-            const relatedSplits = allSplits.filter(s =>
-                s.date === income.date &&
-                s.time === income.time &&
-                s.patientId === income.patientId
-            );
-            const totalSplitAmount = relatedSplits.reduce((sum, s) => sum + Number(s.amount), 0);
-            const clinicAmount = Math.max(0, Number(income.amount) - totalSplitAmount);
-            const clinicPercent = Number(income.amount) > 0
-                ? Math.round((clinicAmount / Number(income.amount)) * 100) : 100;
+        if (filterCategory === 'all' || filterCategory === 'income' || filterCategory === 'surgery' || filterCategory === 'injection') {
+            const filteredIncomes = (filterCategory === 'all' || filterCategory === 'income')
+                ? incomes
+                : incomes.filter(t => t.category === filterCategory);
 
-            return { kind: 'income', data: { income, splits: relatedSplits, clinicAmount, clinicPercent } };
-        });
+            incomeItems = filteredIncomes.map(income => {
+                const relatedSplits = allSplits.filter(s =>
+                    s.date === income.date &&
+                    s.time === income.time &&
+                    s.patientId === income.patientId
+                );
+                const totalSplitAmount = relatedSplits.reduce((sum, s) => sum + Number(s.amount), 0);
+                const clinicAmount = Math.max(0, Number(income.amount) - totalSplitAmount);
+                const clinicPercent = Number(income.amount) > 0
+                    ? Math.round((clinicAmount / Number(income.amount)) * 100) : 100;
 
-        const expenseItems: TimelineItem[] = standaloneExpenses.map(exp => ({
-            kind: 'expense',
-            data: exp
-        }));
+                return { kind: 'income', data: { income, splits: relatedSplits, clinicAmount, clinicPercent } };
+            });
+        }
 
-        // Merge and sort by date+time descending
+        if (filterCategory === 'all' || filterCategory === 'expense') {
+            expenseItems = standaloneExpenses.map(exp => ({
+                kind: 'expense',
+                data: exp
+            }));
+        }
+
+        // Merge and sort by date+time descending using robust string comparison
         const all = [...incomeItems, ...expenseItems];
         all.sort((a, b) => {
             const txA = a.kind === 'income' ? a.data.income : a.data;
             const txB = b.kind === 'income' ? b.data.income : b.data;
-            const dA = new Date(`${txA.date}T${txA.time || '00:00'}`);
-            const dB = new Date(`${txB.date}T${txB.time || '00:00'}`);
-            return dB.getTime() - dA.getTime();
+            const strA = `${txA.date}T${txA.time || '00:00'}`;
+            const strB = `${txB.date}T${txB.time || '00:00'}`;
+            if (strA === strB) {
+                return txB.id.localeCompare(txA.id);
+            }
+            return strB.localeCompare(strA);
         });
         return all;
     }, [dateFilteredTransactions, filterCategory]);
@@ -437,7 +448,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
 
                         {/* Category Filters */}
                         <div className="relative inline-flex items-center bg-white/90 rounded-2xl p-1.5 border border-slate-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-xl">
-                            {(['all', 'surgery', 'injection'] as const).map(cat => (
+                            {(['all', 'income', 'expense', 'surgery', 'injection'] as const).map(cat => (
                                 <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     key={cat}
                                     onClick={() => setFilterCategory(cat)}

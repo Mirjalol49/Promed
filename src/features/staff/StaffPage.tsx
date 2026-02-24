@@ -58,6 +58,7 @@ const StaffModal = ({
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [isRoleOpen, setIsRoleOpen] = useState(false);
+    const [isSalaryEnabled, setIsSalaryEnabled] = useState(initialData?.salary ? true : false);
     const roleRef = useRef<HTMLDivElement>(null);
 
     // Close role dropdown on outside click
@@ -80,6 +81,7 @@ const StaffModal = ({
                 firstName: initialData.fullName.split(' ')[0] || '',
                 lastName: initialData.fullName.split(' ').slice(1).join(' ') || ''
             });
+            setIsSalaryEnabled(initialData.salary != null && initialData.salary > 0);
         } else {
             setFormData({
                 firstName: '',
@@ -91,6 +93,7 @@ const StaffModal = ({
                 status: 'active',
                 notes: ''
             });
+            setIsSalaryEnabled(false);
         }
         setImageFile(null);
     }, [initialData, isOpen]);
@@ -101,7 +104,11 @@ const StaffModal = ({
         e.preventDefault();
         setLoading(true);
         try {
-            await onSave(formData, imageFile || undefined);
+            const finalData = { ...formData };
+            if (!isSalaryEnabled) {
+                delete (finalData as any).salary;
+            }
+            await onSave(finalData, imageFile || undefined);
             onClose();
         } catch (error: any) {
             console.error(error);
@@ -122,16 +129,16 @@ const StaffModal = ({
                 />
 
                 {/* Modal Container */}
-                <div className="bg-slate-200 rounded-3xl w-full max-w-2xl shadow-2xl relative z-10 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+                <div className="bg-[#dcecf7] rounded-3xl w-full max-w-2xl shadow-2xl relative z-10 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
 
                     {/* Header */}
-                    <div className="px-5 md:px-8 py-4 md:py-5 flex items-center justify-between bg-slate-200 sticky top-0 z-20 rounded-t-3xl border-b border-white/50">
+                    <div className="px-5 md:px-8 py-4 md:py-5 flex items-center justify-between bg-white sticky top-0 z-20 rounded-t-3xl border-b border-white/50">
                         <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight">
                             {initialData ? t('edit_staff') : t('add_new_staff')}
                         </h2>
                         <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={onClose}
-                            className="bg-white/50 hover:bg-white text-slate-500 hover:text-slate-700 rounded-full p-2 transition-all"
+                            className="bg-white/50 hover:bg-white text-slate-500 hover:text-slate-700 rounded-full p-2 transition-all shadow-sm"
                         >
                             <X size={20} />
                         </motion.button>
@@ -183,7 +190,7 @@ const StaffModal = ({
                                     />
                                 </div>
                                 <p className="mt-3 text-xs font-semibold text-slate-400">
-                                    {t('upload_photo') || 'Upload Photo'}
+                                    {t('upload_photo') || 'Upload Photo'} <span className="text-slate-300 font-normal">({t('optional') || 'Optional'})</span>
                                 </p>
                             </div>
 
@@ -276,13 +283,20 @@ const StaffModal = ({
 
                                 {/* Salary & Status Row */}
                                 <div className={initialData ? "space-y-1.5" : "space-y-1.5 col-span-2"}>
-                                    <label className="text-sm font-bold text-slate-700 ml-1">{t('salary')}</label>
-                                    <div className="relative">
+                                    <div className="flex items-center justify-between ml-1 mb-1.5">
+                                        <label className="text-sm font-bold text-slate-700">{t('salary')}</label>
+                                        <label className="relative inline-flex items-center cursor-pointer shadow-sm rounded-full bg-white">
+                                            <input type="checkbox" className="sr-only peer" checked={isSalaryEnabled} onChange={(e) => setIsSalaryEnabled(e.target.checked)} />
+                                            <div className="w-10 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 ring-1 ring-inset ring-slate-400/20 shadow-inner"></div>
+                                        </label>
+                                    </div>
+                                    <div className={`relative transition-all duration-300 ${isSalaryEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">UZS</div>
                                         <input
                                             type="text"
                                             inputMode="numeric"
-                                            className="w-full bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl py-3 pl-12 pr-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                                            disabled={!isSalaryEnabled}
+                                            className="w-full bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl py-3 pl-12 pr-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none disabled:bg-slate-50 disabled:text-slate-400"
                                             value={formData.salary ? new Intl.NumberFormat('uz-UZ').format(Number(formData.salary)) : ''}
                                             onChange={e => {
                                                 const val = e.target.value.replace(/[^0-9]/g, '');
@@ -339,11 +353,11 @@ const StaffModal = ({
                     </div>
 
                     {/* Footer */}
-                    <div className="p-4 md:p-6 border-t border-white/50 bg-slate-200 flex justify-end gap-3 rounded-b-3xl">
+                    <div className="p-4 md:p-6 border-t border-white/50 bg-white flex justify-end gap-3 rounded-b-3xl">
                         <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             type="button"
                             onClick={onClose}
-                            className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200/50 hover:text-slate-700 transition-colors"
+                            className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-white/50 hover:text-slate-700 transition-colors"
                         >
                             {t('cancel')}
                         </motion.button>
@@ -973,7 +987,7 @@ const StaffDetail = ({
                                 {t('edit') || 'Edit'}
                             </motion.button>
                         )}
-                        {onPay && (
+                        {onPay && staff.salary != null && (
                             <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={onPay}
                                 className="btn-glossy-emerald flex-1 md:flex-none md:w-auto h-12 px-8 rounded-2xl uppercase tracking-wide shadow-lg shadow-emerald-500/20"
@@ -999,18 +1013,20 @@ const StaffDetail = ({
                         </div>
                     </div>
 
-                    <div className="bg-slate-200 rounded-2xl p-4 flex items-center justify-between group border border-slate-300 hover:border-slate-400 transition-colors">
-                        <div>
-                            <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">{t('salary') || 'Salary'}</p>
-                            <p className="text-2xl font-black text-slate-900 tracking-tight leading-none">
-                                {staff.salary?.toLocaleString()}
-                                <span className="text-sm font-bold text-slate-600 ml-1.5">{staff.currency}</span>
-                            </p>
+                    {staff.salary != null && (
+                        <div className="bg-slate-200 rounded-2xl p-4 flex items-center justify-between group border border-slate-300 hover:border-slate-400 transition-colors">
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">{t('salary') || 'Salary'}</p>
+                                <p className="text-2xl font-black text-slate-900 tracking-tight leading-none">
+                                    {staff.salary?.toLocaleString()}
+                                    <span className="text-sm font-bold text-slate-600 ml-1.5">{staff.currency}</span>
+                                </p>
+                            </div>
+                            <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-slate-500 group-hover:text-emerald-600 transition-colors ring-1 ring-slate-200">
+                                <Banknote size={20} strokeWidth={2} />
+                            </div>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-slate-500 group-hover:text-emerald-600 transition-colors ring-1 ring-slate-200">
-                            <Banknote size={20} strokeWidth={2} />
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
@@ -1175,7 +1191,7 @@ export const StaffPage = () => {
     const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
     const [loading, setLoading] = useState(true);
     const [payModalStaffId, setPayModalStaffId] = useState<string | null>(null);
-    const [staffPayments, setStaffPayments] = useState<Record<string, number>>({});
+
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
 
@@ -1198,29 +1214,7 @@ export const StaffPage = () => {
         return () => unsub();
     }, [accountId]);
 
-    // Track monthly payments for each staff member
-    useEffect(() => {
-        if (staffList.length === 0) return;
-        const unsubscribers: (() => void)[] = [];
-        staffList.forEach(staff => {
-            const unsub = getStaffPaymentHistory(
-                staff.id,
-                (payments) => {
-                    const now = new Date();
-                    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-                    const thisMonthTotal = payments
-                        .filter(p => {
-                            const d = new Date(p.date);
-                            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === currentMonthKey;
-                        })
-                        .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-                    setStaffPayments(prev => ({ ...prev, [staff.id]: thisMonthTotal }));
-                }
-            );
-            unsubscribers.push(unsub);
-        });
-        return () => unsubscribers.forEach(u => u());
-    }, [staffList]);
+
 
     const handleSave = async (data: StaffFormData, imageFile?: File) => {
         try {
@@ -1234,21 +1228,28 @@ export const StaffPage = () => {
             const { firstName, lastName, ...sanitizedData } = data;
             const finalFullName = `${firstName || ''} ${lastName || ''}`.trim();
 
+            const payload: any = {
+                ...sanitizedData,
+                fullName: finalFullName
+            };
+            if (imageUrl) {
+                payload.imageUrl = imageUrl;
+            }
+
+            // Firebase throws errors if any field is undefined, and null can trigger SDK cache crashes on hot reload. Clean the payload object.
+            Object.keys(payload).forEach(key => {
+                if (payload[key] === undefined || payload[key] === null) {
+                    delete payload[key];
+                }
+            });
+
             if (editingStaff) {
-                await updateStaff(editingStaff.id, {
-                    ...sanitizedData,
-                    fullName: finalFullName,
-                    imageUrl
-                });
+                await updateStaff(editingStaff.id, payload);
                 success(t('staff_updated_title') || 'Updated', t('staff_updated_msg') || 'Staff member updated successfully');
             } else {
-                await addStaff({
-                    ...sanitizedData,
-                    fullName: finalFullName,
-                    accountId,
-                    imageUrl,
-                    joinDate: new Date().toISOString()
-                } as Staff);
+                payload.accountId = accountId;
+                payload.joinDate = new Date().toISOString();
+                await addStaff(payload as Staff);
                 success(t('staff_added_title') || 'Added', t('staff_added_msg') || 'New staff member added');
             }
             setIsModalOpen(false);

@@ -141,7 +141,7 @@ export interface Staff {
   role: StaffRole;
   phone: string;
   email?: string;
-  salary: number; // Monthly salary or fixed rate
+  salary?: number; // Monthly salary or fixed rate, optional
   currency: 'USD' | 'UZS';
   status: 'active' | 'on_leave' | 'terminated';
   imageUrl?: string;
@@ -163,6 +163,7 @@ export type TransactionCategory =
   | 'food'          // Expense
   | 'utility'       // Expense
   | 'tax'           // Expense
+  | 'pills'         // Expense
   | 'other';        // Both
 
 

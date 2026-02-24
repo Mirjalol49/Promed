@@ -113,6 +113,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
 
     // Expense-specific
     const [expenseDescription, setExpenseDescription] = useState('');
+    const [expenseCategory, setExpenseCategory] = useState<TransactionCategory>('other');
 
     // Staff + Splits (income only)
     const [staffList, setStaffList] = useState<Staff[]>([]);
@@ -135,6 +136,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
             setNote('');
             setCategory('surgery');
             setExpenseDescription('');
+            setExpenseCategory('other');
             setSplits([]);
             setIsStaffPickerOpen(false);
             setStaffSearch('');
@@ -260,12 +262,12 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                     amount,
                     currency: 'UZS',
                     type: 'expense',
-                    category: 'other' as TransactionCategory,
-                    description: expenseDescription || (t('expense') || 'Xarajat'),
+                    category: expenseCategory,
+                    description: expenseDescription || (t(expenseCategory) || t('expense') || 'Xarajat'),
                     date: dateStr,
                     time
                 });
-                success(t('expense') || 'Expense', `${formatWithSpaces(amount)} UZS — ${expenseDescription || (t('expense') || 'Xarajat')}`);
+                success(t('expense') || 'Expense', `${formatWithSpaces(amount)} UZS — ${expenseDescription || (t(expenseCategory) || t('expense') || 'Xarajat')}`);
             }
 
             onClose();
@@ -287,6 +289,12 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
         { value: 'injection', label: t('injection') },
         { value: 'consultation', label: t('consultation') },
         { value: 'other', label: t('other') }
+    ];
+
+    const expenseCategoryOptions = [
+        { value: 'food', label: t('food') || 'Food/Lunch' },
+        { value: 'pills', label: t('pills') || 'Pills/Medicine' },
+        { value: 'other', label: t('other') || 'Other' }
     ];
 
     if (!isOpen) return null;
@@ -348,7 +356,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                             <div className="font-bold text-gray-900">{patient.fullName}</div>
                                         </div>
                                     </div>
-                                    <div className="p-4 flex items-center gap-4 relative group hover:bg-gray-50 transition-colors cursor-pointer bg-white rounded-b-2xl">
+                                    <div className="p-4 border-b border-gray-100 flex items-center gap-4 relative group hover:bg-gray-50 transition-colors cursor-pointer bg-white">
                                         <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 shrink-0"><Calendar size={18} /></div>
                                         <div className="flex-1">
                                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('date') || 'Sana'}</div>
@@ -356,6 +364,17 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                             <div className="font-bold text-gray-900">{format(date, 'dd MMMM yyyy', { locale: currentLocale })}</div>
                                         </div>
                                         <div className="absolute inset-0 opacity-0"><CustomDatePicker value={date} onChange={setDate} centered /></div>
+                                    </div>
+                                    <div className="p-4 flex items-center justify-between gap-4 relative group hover:bg-gray-50 transition-colors cursor-pointer bg-white rounded-b-2xl">
+                                        <div className="flex items-center gap-4 min-w-0">
+                                            <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 shrink-0"><Search size={18} /></div>
+                                            <div className="min-w-0">
+                                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('category') || 'Kategoriya'}</div>
+                                                <div className="font-bold text-gray-900 capitalize truncate">{t(expenseCategory) || expenseCategory}</div>
+                                            </div>
+                                        </div>
+                                        <ChevronDown size={18} className="text-gray-300" />
+                                        <div className="absolute inset-0 opacity-0"><CustomSelect options={expenseCategoryOptions} value={expenseCategory} onChange={(val) => setExpenseCategory(val as TransactionCategory)} minimal /></div>
                                     </div>
                                 </div>
 
