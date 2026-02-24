@@ -100,22 +100,37 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
             setNow(currentTime);
 
             // Automatically advance when timer runs out
-            const currentStep = state.steps[state.currentStepIndex];
-            if (currentStep && state.stepStartTime) {
-                const elapsed = currentTime - state.stepStartTime;
-                const totalDuration = currentStep.durationMinutes * 60 * 1000;
+            if (state.stepStartTime) {
+                let currentIdx = state.currentStepIndex;
+                let startTime = state.stepStartTime;
+                let changed = false;
 
-                if (elapsed >= totalDuration) {
-                    if (state.currentStepIndex + 1 < state.steps.length) {
+                while (currentIdx < state.steps.length) {
+                    const step = state.steps[currentIdx];
+                    const elapsed = currentTime - startTime;
+                    const totalDuration = step.durationMinutes * 60 * 1000;
+
+                    if (elapsed >= totalDuration) {
+                        currentIdx++;
+                        startTime += totalDuration; // Fast-forward baseline by exact step length
+                        changed = true;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (changed) {
+                    if (currentIdx < state.steps.length) {
                         setSharedState(prev => ({
                             ...prev,
-                            currentStepIndex: prev.currentStepIndex + 1,
-                            stepStartTime: currentTime
+                            currentStepIndex: currentIdx,
+                            stepStartTime: startTime
                         }));
                     } else {
                         setSharedState(prev => ({
                             ...prev,
                             status: 'completed',
+                            currentStepIndex: prev.steps.length > 0 ? prev.steps.length - 1 : 0,
                             stepStartTime: null
                         }));
                     }
