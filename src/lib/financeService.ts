@@ -41,10 +41,15 @@ export const subscribeToTransactions = (
 
 export const addTransaction = async (data: Omit<Transaction, 'id' | 'createdAt'>) => {
     try {
-        const docRef = await addDoc(collection(db, COLLECTION_NAME), {
-            ...data,
-            createdAt: new Date().toISOString() // Use server timestamp ideally, but ISO string fine for MVP
-        });
+        const docRef = await Promise.race([
+            addDoc(collection(db, COLLECTION_NAME), {
+                ...data,
+                createdAt: new Date().toISOString() // Use server timestamp ideally, but ISO string fine for MVP
+            }),
+            new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error("Firebase Transaction add timeout")), 12000)
+            )
+        ]);
         return docRef.id;
     } catch (error) {
         console.error("Error adding transaction:", error);

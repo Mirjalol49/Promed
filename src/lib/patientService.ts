@@ -141,7 +141,13 @@ export const addPatient = async (
   console.log("💾 DB INSERT START:", { account_id: dbPatient.account_id, full_name: dbPatient.full_name });
 
   try {
-    const docRef = await addDoc(collection(db, "patients"), dbPatient);
+    const docRef = await Promise.race([
+      addDoc(collection(db, "patients"), dbPatient),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Firestore operation timed out. Please check your connection.")), 12000)
+      )
+    ]);
+
     console.log("🟢 DB INSERT SUCCESS, ID:", docRef.id);
 
     // Store in cache
@@ -183,7 +189,12 @@ export const updatePatient = async (
 
   const docRef = doc(db, "patients", patientId);
   try {
-    await updateDoc(docRef, dbUpdates);
+    await Promise.race([
+      updateDoc(docRef, dbUpdates),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Firestore update operation timed out.")), 12000)
+      )
+    ]);
     console.log("✅ [updatePatient] DB Write Success for", patientId);
   } catch (e) {
     console.error("❌ [updatePatient] DB Write Failed:", e);

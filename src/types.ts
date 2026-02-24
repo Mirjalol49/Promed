@@ -31,7 +31,8 @@ export interface Patient {
   email?: string;
   operationDate: string; // ISO Date string
   profileImage?: string; // URL or base64
-  beforeImage?: string; // URL or base64
+  beforeImage?: string | string[]; // Backwards compatibility for single string, now supports multiple
+  beforeImages?: string[]; // Optional alternative structure array for multiple before images
   afterImages: PatientImage[]; // Updated structure
   injections: Injection[];
   status: 'Active' | 'Recovered' | 'Observation';

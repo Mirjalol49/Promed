@@ -56,13 +56,17 @@ export const useReliableUpload = () => {
                 // Let's use uploadBytesResumable for parity.
 
                 // Note: We can't easily await a resumable upload in a loop without wrapping it.
-                await new Promise<void>((resolve, reject) => {
-                    // We intentionally don't assign to a var to cancel, relying on scope.
-                    uploadBytes(storageRef, file, {
-                        cacheControl: 'public,max-age=3600',
-                        contentType: file.type
-                    }).then(() => resolve()).catch(reject);
-                });
+                await Promise.race([
+                    new Promise<void>((resolve, reject) => {
+                        uploadBytes(storageRef, file, {
+                            cacheControl: 'public,max-age=3600',
+                            contentType: file.type
+                        }).then(() => resolve()).catch(reject);
+                    }),
+                    new Promise<never>((_, reject) =>
+                        setTimeout(() => reject(new Error("Timeout during file upload chunk")), 8000)
+                    )
+                ]);
 
                 // 4. Get Public URL
                 const publicUrl = await getDownloadURL(storageRef);

@@ -65,6 +65,7 @@ import { useAccount } from '../../contexts/AccountContext';
 
 // Re-importing to force build update
 import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
+import { OperationProgressTracker } from '../../components/ui/OperationProgressTracker';
 
 import { useReliableUpload } from '../../hooks/useReliableUpload';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
@@ -919,13 +920,13 @@ export const PatientDetail: React.FC<{
                   </div>
                   <span>{t('before_operation')}</span>
                 </h3>
-                <div className="aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer relative group border border-slate-200" onClick={() => setSelectedImage(patient.beforeImage || null)}>
-                  {patient.beforeImage ? (
+                <div className="aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer relative group border border-slate-200" onClick={() => setSelectedImage((patient.beforeImage as string) || null)}>
+                  {(patient.beforeImage as string) ? (
                     <>
-                      {isVideoUrl(patient.beforeImage) ? (
+                      {isVideoUrl((patient.beforeImage as string)) ? (
                         <div className="relative w-full h-full flex items-center justify-center bg-black/5">
                           <video
-                            src={patient.beforeImage}
+                            src={(patient.beforeImage as string)}
                             className="w-full h-full object-cover opacity-90"
                             muted
                             playsInline
@@ -942,10 +943,10 @@ export const PatientDetail: React.FC<{
                           </div>
                         </div>
                       ) : (
-                        <ImageWithFallback src={patient.beforeImage} optimisticId={`${patient.id}_before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
+                        <ImageWithFallback src={(patient.beforeImage as string)} optimisticId={`${patient.id}_before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
                       )}
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/40 via-transparent to-transparent h-1/2 group-hover:from-black/60 transition-all duration-300 flex items-end justify-center pb-4 opacity-0 group-hover:opacity-100">
-                        <p className="text-white text-xs font-bold uppercase tracking-widest">{isVideoUrl(patient.beforeImage) ? t('play_video') || "Play Video" : t('view_photo') || "View Photo"}</p>
+                        <p className="text-white text-xs font-bold uppercase tracking-widest">{isVideoUrl((patient.beforeImage as string)) ? t('play_video') || "Play Video" : t('view_photo') || "View Photo"}</p>
                       </div>
                     </>
                   ) : (
@@ -1047,8 +1048,10 @@ export const PatientDetail: React.FC<{
               </div>
             </div>
 
-            {/* Right Col: Injection Timeline */}
-            <div className="lg:col-span-2">
+            {/* Right Col: Operation Tracker & Injection Timeline */}
+            <div className="lg:col-span-2 space-y-8">
+              <OperationProgressTracker patientId={patient.id} />
+
               <InjectionTimeline
                 injections={patient.injections}
                 onAddInjection={openAddInjection}
@@ -1079,7 +1082,7 @@ export const PatientDetail: React.FC<{
               <div className="max-w-full max-h-[90vh] rounded-xl overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-300 bg-black/20 relative" onClick={e => e.stopPropagation()}>
                 {(() => {
                   const matchedImg = patient.afterImages.find(img => img.url === selectedImage);
-                  const isVideo = (matchedImg?.type === 'video') || isVideoUrl(selectedImage) || (patient.beforeImage === selectedImage && isVideoUrl(patient.beforeImage));
+                  const isVideo = (matchedImg?.type === 'video') || isVideoUrl(selectedImage) || ((patient.beforeImage as string) === selectedImage && isVideoUrl((patient.beforeImage as string)));
 
                   return isVideo ? (
                     <>
@@ -1474,11 +1477,11 @@ export const AddPatientForm: React.FC<{
 
                     {beforeImage ? (
                       <div className="relative w-full h-44 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group">
-                        {(beforeImageFile && isVideoFile(beforeImageFile)) || (!beforeImageFile && isVideoUrl(beforeImage)) ? (
-                          <VideoPreview src={beforeImage} />
+                        {(beforeImageFile && isVideoFile(beforeImageFile)) || (!beforeImageFile && isVideoUrl(beforeImage as string)) ? (
+                          <VideoPreview src={beforeImage as string} />
                         ) : (
                           <div className="w-full h-full relative group/img">
-                            <ImageWithFallback src={beforeImage} className="w-full h-full object-cover" alt="Before" />
+                            <ImageWithFallback src={beforeImage as string} className="w-full h-full object-cover" alt="Before" />
                             <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors pointer-events-none" />
                           </div>
                         )}

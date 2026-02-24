@@ -5,10 +5,10 @@ import { Plus } from 'lucide-react';
 import emptyMascot from '../../assets/images/mascots/empty.png';
 
 interface EmptyStateJourneyProps {
-    onAdd: () => void;
+    onAdd?: () => void;
 }
 
-export const EmptyStateJourney: React.FC<EmptyStateJourneyProps> = ({ onAdd }) => {
+export const EmptyStateJourney: React.FC<EmptyStateJourneyProps> = () => {
     return (
         <div className="w-full flex flex-col items-center justify-center relative overflow-hidden py-10">
             {/* Indigo Blob Background */}
@@ -51,23 +51,6 @@ export const EmptyStateJourney: React.FC<EmptyStateJourneyProps> = ({ onAdd }) =
                 <h3 className="text-xl font-black text-slate-800 mb-0 tracking-tight">Hozircha Bo'sh</h3>
             </motion.div>
 
-            {/* Action Button */}
-            <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                    opacity: { delay: 0.4, duration: 0.5 },
-                    y: { delay: 0.4, duration: 0.5 },
-                    default: { type: "spring", stiffness: 400, damping: 10 }
-                }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onAdd}
-                className="btn-premium-blue !px-6 !py-3 !text-base shadow-lg shadow-blue-500/30"
-            >
-                <Plus size={20} className="relative z-10" />
-                <span>Inyeksiya Qo'shish</span>
-            </motion.button>
         </div>
     );
 };

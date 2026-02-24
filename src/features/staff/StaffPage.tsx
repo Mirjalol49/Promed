@@ -1179,6 +1179,16 @@ export const StaffPage = () => {
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
 
+    // Keep selectedStaff synchronized with the live real-time array from Firestore
+    useEffect(() => {
+        if (selectedStaff) {
+            const freshStaff = staffList.find(s => s.id === selectedStaff.id);
+            if (freshStaff && JSON.stringify(freshStaff) !== JSON.stringify(selectedStaff)) {
+                setSelectedStaff(freshStaff);
+            }
+        }
+    }, [staffList, selectedStaff]);
+
     useEffect(() => {
         if (!accountId) return;
         const unsub = subscribeToStaff(accountId, (data) => {
