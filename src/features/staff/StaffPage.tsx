@@ -1188,7 +1188,7 @@ const StaffDetail = ({
 
                             {/* Dropdown */}
                             {isMonthPickerOpen && (
-                                <div className="absolute top-full right-0 mt-2 z-[60] w-[260px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="absolute top-full left-0 md:right-0 md:left-auto mt-2 z-[60] w-[260px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                                     {/* Year Navigation */}
                                     <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-white">
                                         <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
