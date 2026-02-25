@@ -116,6 +116,7 @@ service cloud.firestore {
     }
 
     // Patients
+    // Note: profile_image, before_image, and after_images are optional and not required to create/save.
     match /patients/{patientId} {
       allow read: if isAuthenticated() && canViewPatients() && (resource == null || belongsToAccount(resource));
       allow write: if isAuthenticated() && canEditPatients() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));
@@ -168,6 +169,7 @@ service cloud.firestore {
     }
 
     // Staff
+    // Note: imageUrl is strictly optional and not required to add staff.
     match /staff/{staffId} {
       allow read: if isAuthenticated() && (isAdminOrDoctor() || getRole() == 'viewer' || getRole() == 'nurse') && (resource == null || belongsToAccount(resource));
       allow write: if isAuthenticated() && isAdminOrDoctor() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));

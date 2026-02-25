@@ -1258,6 +1258,7 @@ export const AddPatientForm: React.FC<{
     const error = validateForm();
     if (error) {
       setValidationError(error);
+      setIsSubmitting(false); // Reset loading state when validation fails
       return;
     }
     setValidationError(null);
