@@ -1578,6 +1578,20 @@ export const StaffPage = () => {
         s.role.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const [staffListPage, setStaffListPage] = useState(1);
+    const STAFF_LIST_ITEMS_PER_PAGE = 9;
+
+    const paginatedStaff = useMemo(() => {
+        const startIndex = (staffListPage - 1) * STAFF_LIST_ITEMS_PER_PAGE;
+        return filteredStaff.slice(startIndex, startIndex + STAFF_LIST_ITEMS_PER_PAGE);
+    }, [filteredStaff, staffListPage]);
+
+    const totalStaffListPages = Math.ceil(filteredStaff.length / STAFF_LIST_ITEMS_PER_PAGE);
+
+    useEffect(() => {
+        setStaffListPage(1);
+    }, [searchQuery, staffList.length]);
+
     return (
         <div className="h-full flex flex-col p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6 relative z-10">
             {selectedStaff ? (
@@ -1665,108 +1679,117 @@ export const StaffPage = () => {
                                 />
                             </div>
                             :
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-                                {filteredStaff.map((staff) => (
-                                    <div
-                                        key={staff.id}
-                                        onClick={() => setSelectedStaff(staff)}
-                                        className="bg-white rounded-[2rem] border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative group overflow-visible cursor-pointer"
-                                    >
-
-
-                                        {/* Top accent gradient - Simplified for accessibility */}
+                            <>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                                    {paginatedStaff.map((staff) => (
                                         <div
+                                            key={staff.id}
                                             onClick={() => setSelectedStaff(staff)}
-                                            className="h-24 relative overflow-hidden bg-slate-100 cursor-pointer rounded-t-[2rem]"
-                                        />
-
-                                        {/* Avatar */}
-                                        <div
-                                            onClick={() => setSelectedStaff(staff)}
-                                            className="flex justify-center -mt-12 relative z-10 cursor-pointer"
+                                            className="bg-white rounded-[2rem] border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative group overflow-visible cursor-pointer"
                                         >
-                                            <div className="relative">
-                                                <div className="w-[88px] h-[88px] rounded-[1.5rem] overflow-hidden bg-white shadow-lg ring-[4px] ring-white">
-                                                    {staff.imageUrl ? (
-                                                        <img src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-gradient-to-br from-blue-50 to-indigo-50 text-3xl">
-                                                            {staff.fullName.charAt(0)}
+
+
+                                            {/* Top accent gradient - Simplified for accessibility */}
+                                            <div
+                                                onClick={() => setSelectedStaff(staff)}
+                                                className="h-24 relative overflow-hidden bg-slate-100 cursor-pointer rounded-t-[2rem]"
+                                            />
+
+                                            {/* Avatar */}
+                                            <div
+                                                onClick={() => setSelectedStaff(staff)}
+                                                className="flex justify-center -mt-12 relative z-10 cursor-pointer"
+                                            >
+                                                <div className="relative">
+                                                    <div className="w-[88px] h-[88px] rounded-[1.5rem] overflow-hidden bg-white shadow-lg ring-[4px] ring-white">
+                                                        {staff.imageUrl ? (
+                                                            <img src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-gradient-to-br from-blue-50 to-indigo-50 text-3xl">
+                                                                {staff.fullName.charAt(0)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    {/* Status Indicator with white border */}
+                                                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-[3.5px] border-white flex items-center justify-center shadow-sm z-20 ${staff.status === 'active' ? 'bg-emerald-500' :
+                                                        staff.status === 'on_leave' ? 'bg-amber-400' : 'bg-slate-300'
+                                                        }`}>
+                                                        {staff.status === 'active' && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Content */}
+                                            <div className="px-6 pt-4 pb-6">
+                                                {/* Name + Role */}
+                                                <div className="text-center mb-6" onClick={() => setSelectedStaff(staff)}>
+                                                    <h3 className="font-bold text-slate-900 text-lg leading-tight truncate capitalize group-hover:text-blue-600 transition-colors duration-200 cursor-pointer">
+                                                        {staff.fullName}
+                                                    </h3>
+                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1.5">
+                                                        {t(`role_${staff.role}`) || staff.role}
+                                                    </p>
+                                                </div>
+
+                                                {/* Clean Data Layout */}
+                                                {/* Data & Actions */}
+                                                <div className="space-y-4">
+                                                    {/* Salary */}
+                                                    {staff.salary != null && staff.salary > 0 && (
+                                                        <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 rounded-lg bg-white text-emerald-600 flex items-center justify-center shadow-sm">
+                                                                    <Banknote size={16} className="stroke-[2.5]" />
+                                                                </div>
+                                                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('salary')}</span>
+                                                            </div>
+                                                            <div className="font-bold text-slate-900">
+                                                                {staff.salary?.toLocaleString()} <span className="text-[10px] text-slate-400 font-extrabold ml-0.5">UZS</span>
+                                                            </div>
                                                         </div>
                                                     )}
-                                                </div>
-                                                {/* Status Indicator with white border */}
-                                                <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-[3.5px] border-white flex items-center justify-center shadow-sm z-20 ${staff.status === 'active' ? 'bg-emerald-500' :
-                                                    staff.status === 'on_leave' ? 'bg-amber-400' : 'bg-slate-300'
-                                                    }`}>
-                                                    {staff.status === 'active' && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
-                                                </div>
-                                            </div>
-                                        </div>
 
-                                        {/* Content */}
-                                        <div className="px-6 pt-4 pb-6">
-                                            {/* Name + Role */}
-                                            <div className="text-center mb-6" onClick={() => setSelectedStaff(staff)}>
-                                                <h3 className="font-bold text-slate-900 text-lg leading-tight truncate capitalize group-hover:text-blue-600 transition-colors duration-200 cursor-pointer">
-                                                    {staff.fullName}
-                                                </h3>
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1.5">
-                                                    {t(`role_${staff.role}`) || staff.role}
-                                                </p>
-                                            </div>
-
-                                            {/* Clean Data Layout */}
-                                            {/* Data & Actions */}
-                                            <div className="space-y-4">
-                                                {/* Salary */}
-                                                {staff.salary != null && staff.salary > 0 && (
+                                                    {/* Phone (Full Width) */}
                                                     <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-lg bg-white text-emerald-600 flex items-center justify-center shadow-sm">
-                                                                <Banknote size={16} className="stroke-[2.5]" />
+                                                            <div className="w-8 h-8 rounded-lg bg-white text-blue-600 flex items-center justify-center shadow-sm">
+                                                                <Phone size={16} className="stroke-[2.5]" />
                                                             </div>
-                                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('salary')}</span>
+                                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('phone')}</span>
                                                         </div>
-                                                        <div className="font-bold text-slate-900">
-                                                            {staff.salary?.toLocaleString()} <span className="text-[10px] text-slate-400 font-extrabold ml-0.5">UZS</span>
+                                                        <div className="font-bold text-slate-900 text-sm">
+                                                            {staff.phone || '—'}
                                                         </div>
                                                     </div>
-                                                )}
 
-                                                {/* Phone (Full Width) */}
-                                                <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-white text-blue-600 flex items-center justify-center shadow-sm">
-                                                            <Phone size={16} className="stroke-[2.5]" />
-                                                        </div>
-                                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('phone')}</span>
-                                                    </div>
-                                                    <div className="font-bold text-slate-900 text-sm">
-                                                        {staff.phone || '—'}
-                                                    </div>
+                                                    {/* Pay Button */}
+                                                    {/* Pay Button - Hidden for Viewer */}
+                                                    {!isViewer && staff.salary != null && staff.salary > 0 && (
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setPayModalStaffId(staff.id);
+                                                                setIsPayModalOpen(true);
+                                                            }}
+                                                            className="btn-glossy-emerald uppercase"
+                                                        >
+                                                            <Banknote size={18} className="stroke-[2.5]" />
+                                                            {t('pay_salary') || "Oylik To'lash"}
+                                                        </motion.button>
+                                                    )}
                                                 </div>
-
-                                                {/* Pay Button */}
-                                                {/* Pay Button - Hidden for Viewer */}
-                                                {!isViewer && staff.salary != null && staff.salary > 0 && (
-                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setPayModalStaffId(staff.id);
-                                                            setIsPayModalOpen(true);
-                                                        }}
-                                                        className="btn-glossy-emerald uppercase"
-                                                    >
-                                                        <Banknote size={18} className="stroke-[2.5]" />
-                                                        {t('pay_salary') || "Oylik To'lash"}
-                                                    </motion.button>
-                                                )}
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                                {totalStaffListPages > 1 && (
+                                    <Pagination
+                                        currentPage={staffListPage}
+                                        totalPages={totalStaffListPages}
+                                        onPageChange={setStaffListPage}
+                                    />
+                                )}
+                            </>
                     }
 
 

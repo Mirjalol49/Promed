@@ -17,6 +17,7 @@ import { Portal } from '../../components/ui/Portal';
 import { ReminderPopover } from './ReminderPopover';
 import DeleteModal from '../../components/ui/DeleteModal';
 import { useReminder } from '../../hooks/useReminder';
+import { Pagination } from '../../components/ui/Pagination';
 
 // Status color configuration - only 4 statuses to match Kanban tabs
 const STATUS_COLORS: Record<LeadStatus, { color: string; bg: string }> = {
@@ -58,8 +59,10 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     const [completionEventId, setCompletionEventId] = useState<string | null>(null); // Changed from boolean to ID
     const [completionNote, setCompletionNote] = useState('');
     const [deleteModalEventId, setDeleteModalEventId] = useState<string | null>(null);
-
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, eventId: string, type: 'note' | 'reminder', content?: string, date?: Date } | null>(null);
+
+    const [timelinePage, setTimelinePage] = useState(1);
+    const TIMELINE_ITEMS_PER_PAGE = 8;
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const reminderButtonRef = useRef<HTMLButtonElement>(null);
@@ -96,6 +99,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
         const unsubscribe = leadService.subscribeToTimeline(lead.id, (events) => {
             setTimeline([...events].reverse());
             setIsLoadingTimeline(false);
+            setTimelinePage(1); // Reset page on new data
         });
         return () => unsubscribe();
     }, [lead.id]);
@@ -517,7 +521,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                     <div className="absolute left-[15px] md:left-[19px] top-2 bottom-2 w-[2px] md:w-[3px] bg-slate-200 rounded-full" />
 
                                     {/* Timeline Events */}
-                                    {timeline.map((event) => (
+                                    {timeline.slice((timelinePage - 1) * TIMELINE_ITEMS_PER_PAGE, timelinePage * TIMELINE_ITEMS_PER_PAGE).map((event) => (
                                         <div key={event.id} className="flex gap-3 md:gap-4 relative group">
                                             {/* Icon/Avatar */}
                                             <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-white z-10 shrink-0 ring-4 ring-white ${getTimelineColor(event)}`}>
@@ -657,6 +661,13 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                         </div>
                                     ))}
                                 </div>
+                                {Math.ceil(timeline.length / Math.max(1, TIMELINE_ITEMS_PER_PAGE)) > 1 && (
+                                    <Pagination
+                                        currentPage={timelinePage}
+                                        totalPages={Math.ceil(timeline.length / Math.max(1, TIMELINE_ITEMS_PER_PAGE))}
+                                        onPageChange={setTimelinePage}
+                                    />
+                                )}
                             </div>
 
                             {/* Add Note Input - Sticky at Bottom */}
