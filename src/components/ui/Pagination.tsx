@@ -28,30 +28,30 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
     };
 
     return (
-        <div className="flex justify-center items-center py-6 w-full mt-4">
+        <div className="flex justify-center items-center pt-6 pb-2 w-full mt-6 border-t border-slate-200/60">
             <div className="flex items-center gap-2.5">
                 <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="w-10 h-10 flex items-center justify-center text-slate-400 bg-white border border-slate-100/80 shadow-sm hover:text-blue-600 hover:border-blue-200 rounded-[14px] disabled:opacity-40 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all"
+                    className="w-11 h-11 flex items-center justify-center text-slate-400 bg-white border border-slate-200/70 shadow-sm hover:text-blue-600 hover:border-blue-300 hover:bg-slate-50 rounded-[14px] disabled:opacity-40 disabled:hover:text-slate-400 disabled:hover:border-slate-200/70 disabled:hover:bg-white transition-all"
                 >
-                    <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
+                    <ChevronLeft className="w-5 h-5 ml-[-1px]" strokeWidth={2.5} />
                 </motion.button>
 
                 {getPages().map((page, idx) => (
                     <React.Fragment key={idx}>
                         {page === '...' ? (
-                            <span className="w-10 h-10 flex items-center justify-center text-slate-400 font-bold">
+                            <span className="w-10 h-11 flex items-center justify-center text-slate-400 font-bold">
                                 ...
                             </span>
                         ) : (
                             <motion.button
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => onPageChange(page as number)}
-                                className={`w-10 h-10 flex items-center justify-center font-bold text-[14px] rounded-full transition-all ${currentPage === page
-                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
-                                        : 'bg-white text-slate-700 border border-slate-100/80 shadow-sm hover:border-blue-200 hover:text-blue-600'
+                                className={`w-11 h-11 flex items-center justify-center font-bold text-[15px] rounded-[14px] transition-all ${currentPage === page
+                                        ? 'btn-premium-blue-sq !p-0 !rounded-[14px] drop-shadow-md'
+                                        : 'bg-white text-slate-700 border border-slate-200/70 shadow-sm hover:border-blue-300 hover:text-blue-600 hover:bg-slate-50'
                                     }`}
                             >
                                 {page}
@@ -64,9 +64,9 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
                     whileTap={{ scale: 0.95 }}
                     onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
-                    className="w-10 h-10 flex items-center justify-center text-slate-400 bg-white border border-slate-100/80 shadow-sm hover:text-blue-600 hover:border-blue-200 rounded-[14px] disabled:opacity-40 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all"
+                    className="w-11 h-11 flex items-center justify-center text-slate-400 bg-white border border-slate-200/70 shadow-sm hover:text-blue-600 hover:border-blue-300 hover:bg-slate-50 rounded-[14px] disabled:opacity-40 disabled:hover:text-slate-400 disabled:hover:border-slate-200/70 disabled:hover:bg-white transition-all"
                 >
-                    <ChevronRight className="w-5 h-5" strokeWidth={2.5} />
+                    <ChevronRight className="w-5 h-5 mr-[-1px]" strokeWidth={2.5} />
                 </motion.button>
             </div>
         </div>
