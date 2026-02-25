@@ -28,7 +28,7 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
     };
 
     return (
-        <div className="flex justify-center items-center pt-6 pb-2 w-full mt-6 border-t border-slate-200/60">
+        <div className="flex justify-center items-center pt-6 pb-6 w-full mt-6 border-t border-slate-200/60">
             <div className="flex items-center gap-2.5">
                 <motion.button
                     whileTap={{ scale: 0.95 }}
@@ -50,8 +50,8 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => onPageChange(page as number)}
                                 className={`w-11 h-11 flex items-center justify-center font-bold text-[15px] rounded-[14px] transition-all ${currentPage === page
-                                        ? 'btn-premium-blue-sq !p-0 !rounded-[14px] drop-shadow-md'
-                                        : 'bg-white text-slate-700 border border-slate-200/70 shadow-sm hover:border-blue-300 hover:text-blue-600 hover:bg-slate-50'
+                                    ? 'btn-premium-blue-sq !p-0 !rounded-[14px] drop-shadow-md'
+                                    : 'bg-white text-slate-700 border border-slate-200/70 shadow-sm hover:border-blue-300 hover:text-blue-600 hover:bg-slate-50'
                                     }`}
                             >
                                 {page}
