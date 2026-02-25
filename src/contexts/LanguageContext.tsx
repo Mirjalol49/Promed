@@ -657,9 +657,11 @@ export const translations = {
     hours_short: "Hrs",
     start_operation: "Start Operation",
     add: "Add",
-
-
-
+    seans_n: "Seans {n}",
+    seans_1: "Seans 1",
+    add_seans: "Add Seans",
+    delete_seans: "Delete Seans",
+    delete_seans_desc: "Are you sure you want to delete this session? This action cannot be undone.",
   },
   uz: {
     loading: "Yuklanmoqda...",
@@ -1338,6 +1340,11 @@ export const translations = {
     hours_short: "Soat",
     start_operation: "Amaliyotni Boshlash",
     add: "Qo'shish",
+    seans_n: "{n}-Seans",
+    seans_1: "1-Seans",
+    add_seans: "Seans Qo'shish",
+    delete_seans: "Seansni O'chirish",
+    delete_seans_desc: "Haqiqatan ham bu seansni o'chirib tashlamoqchimisiz? Ushbu amalni bekor qilib bo'lmaydi.",
     success: "Muvaffaqiyatli",
     copied_to_clipboard: "Nusxalandi",
   },
@@ -1937,6 +1944,11 @@ export const translations = {
     hours_short: "Час",
     start_operation: "Начать Операцию",
     add: "Добавить",
+    seans_n: "Сеанс {n}",
+    seans_1: "Сеанс 1",
+    add_seans: "Добавить сеанс",
+    delete_seans: "Удалить сеанс",
+    delete_seans_desc: "Вы уверены, что хотите удалить этот сеанс? Это действие нельзя отменить.",
 
     staff_delete_popup_title: "Удалить сотрудника?",
     staff_delete_popup_desc: "Вы уверены, что хотите удалить этого сотрудника? Это действие нельзя отменить.",

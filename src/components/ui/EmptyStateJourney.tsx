@@ -3,12 +3,15 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import emptyMascot from '../../assets/images/mascots/empty.png';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface EmptyStateJourneyProps {
     onAdd?: () => void;
 }
 
 export const EmptyStateJourney: React.FC<EmptyStateJourneyProps> = () => {
+    const { t } = useLanguage();
+
     return (
         <div className="w-full flex flex-col items-center justify-center relative overflow-hidden py-10">
             {/* Indigo Blob Background */}
@@ -36,7 +39,7 @@ export const EmptyStateJourney: React.FC<EmptyStateJourneyProps> = () => {
                             ease: [0.45, 0, 0.55, 1],
                             delay: 0.4,
                         }}
-                        className="w-40 h-40 object-contain drop-shadow-xl relative z-10"
+                        className="w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-xl relative z-10"
                     />
                 </motion.div>
             </div>
@@ -48,7 +51,7 @@ export const EmptyStateJourney: React.FC<EmptyStateJourneyProps> = () => {
                 transition={{ delay: 0.3 }}
                 className="text-center mb-6 relative z-10"
             >
-                <h3 className="text-xl font-black text-slate-800 mb-0 tracking-tight">Hozircha Bo'sh</h3>
+                <h3 className="text-xl font-black text-slate-800 mb-0 tracking-tight">{t('empty_state_peace') || "Hozircha Bo'sh"}</h3>
             </motion.div>
 
         </div>

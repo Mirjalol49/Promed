@@ -23,6 +23,7 @@ import { CustomSelect } from '../../components/ui/CustomSelect';
 import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
 import { ProBadge } from '../../components/ui/ProBadge';
 import { Portal } from '../../components/ui/Portal';
+import { Pagination } from '../../components/ui/Pagination';
 import { CustomDatePicker } from '../../components/ui/CustomDatePicker';
 import { format } from 'date-fns';
 
@@ -288,10 +289,13 @@ const StaffModal = ({
                                 <div className={initialData ? "space-y-1.5" : "space-y-1.5 col-span-2"}>
                                     <div className="flex items-center justify-between ml-1 mb-1.5">
                                         <label className="text-sm font-bold text-slate-700">{t('salary')}</label>
-                                        <label className="relative inline-flex items-center cursor-pointer shadow-sm rounded-full bg-white">
-                                            <input type="checkbox" className="sr-only peer" checked={isSalaryEnabled} onChange={(e) => setIsSalaryEnabled(e.target.checked)} />
-                                            <div className="w-10 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 ring-1 ring-inset ring-slate-400/20 shadow-inner"></div>
-                                        </label>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            type="button"
+                                            onClick={() => setIsSalaryEnabled(!isSalaryEnabled)}
+                                            className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 ${isSalaryEnabled ? 'gel-blue-style border-none shadow-sm' : 'bg-slate-200'}`}
+                                        >
+                                            <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 shadow-sm z-20 ${isSalaryEnabled ? 'left-8' : 'left-1'}`} />
+                                        </motion.button>
                                     </div>
                                     <div className={`relative transition-all duration-300 ${isSalaryEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">UZS</div>
@@ -756,6 +760,13 @@ const StaffDetail = ({
     const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
     const [filterCategory, setFilterCategory] = useState<'all' | 'income' | 'expense' | 'salary' | 'food' | 'other'>('all');
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filterCategory, selectedMonth]);
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
@@ -916,6 +927,12 @@ const StaffDetail = ({
         const dateB = new Date(b.createdAt || `${b.date}T${b.time || '00:00'}`).getTime();
         return dateB - dateA;
     });
+
+    const totalPages = Math.ceil(sortedPayments.length / ITEMS_PER_PAGE);
+    const paginatedSortedPayments = useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return sortedPayments.slice(start, start + ITEMS_PER_PAGE);
+    }, [sortedPayments, currentPage]);
 
     const { totalIncome, totalExpense } = useMemo(() => {
         let inc = 0;
@@ -1304,7 +1321,7 @@ const StaffDetail = ({
                                 if (selectedMonth !== 'all' && selectedMonth !== monthKey) return null;
 
                                 const filteredMonthPayments = monthData.payments
-                                    .filter(p => sortedPayments.some(sp => sp.id === p.id))
+                                    .filter(p => paginatedSortedPayments.some(sp => sp.id === p.id))
                                     .sort((a, b) => {
                                         const dateA = new Date(a.createdAt || `${a.date}T${a.time || '00:00'}`).getTime();
                                         const dateB = new Date(b.createdAt || `${b.date}T${b.time || '00:00'}`).getTime();
@@ -1431,6 +1448,14 @@ const StaffDetail = ({
                                     </div>
                                 );
                             })}
+
+                            {totalPages > 1 && (
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={setCurrentPage}
+                                />
+                            )}
                         </div>
                     )}
                 </div>

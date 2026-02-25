@@ -2,28 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Activity, Play, Square, User, Clock, CheckCircle2,
-    Trash2, Plus, Stethoscope, Check, Timer, ChevronDown, RotateCcw
+    Trash2, Plus, Stethoscope, Check, Timer, ChevronDown, RotateCcw, X
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAccount } from '../../contexts/AccountContext';
 import { subscribeToStaff } from '../../lib/staffService';
 import { Staff } from '../../types';
 import ConfirmationModal from './ConfirmationModal';
-import { subscribeToTracker, updateTracker, OperationTrackerState } from '../../lib/operationTrackerService';
-
-interface Step {
-    id: string;
-    title: string;
-    doctor: string;
-    durationMinutes: number;
-}
-
-interface OperationState {
-    steps: Step[];
-    status: 'setup' | 'running' | 'completed';
-    currentStepIndex: number;
-    stepStartTime: number | null;
-}
+import { subscribeToTracker, updateTracker, OperationTrackerData, OperationSession, TrackerStep } from '../../lib/operationTrackerService';
+import { subscribeToTransactions } from '../../lib/financeService';
+import { Transaction } from '../../types';
+import { formatWithSpaces } from '../../lib/formatters';
 
 const STORAGE_KEY_PREFIX = 'promed_op_tracker_';
 
@@ -31,42 +20,70 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
     const { t, language } = useLanguage();
     const { accountId } = useAccount();
 
-    // 1. Firebase Persistency
-    const [state, setState] = useState<OperationState>({
-        steps: [],
-        status: 'setup',
-        currentStepIndex: 0,
-        stepStartTime: null
+    const [dataState, setDataState] = useState<OperationTrackerData>({
+        activeSessionId: 'session_1',
+        sessions: [{
+            id: 'session_1',
+            name: 'Seans 1',
+            steps: [],
+            status: 'setup',
+            currentStepIndex: 0,
+            stepStartTime: null
+        }]
     });
+
+    const state = dataState.sessions.find(s => s.id === dataState.activeSessionId) || dataState.sessions[0];
+
+
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+    useEffect(() => {
+        if (!accountId) return;
+        const unsub = subscribeToTransactions(accountId, (allTx) => {
+            setTransactions(allTx.filter(t => t.patientId === patientId && t.type === 'expense' && !t.isVoided && !t.returned));
+        });
+        return () => unsub();
+    }, [accountId, patientId]);
 
     useEffect(() => {
         const unsubscribe = subscribeToTracker(patientId, (data) => {
             if (data) {
-                // Ignore identical updates to prevent infinite loops / re-rendering issues
-                setState(prev => {
+                setDataState(prev => {
                     if (JSON.stringify(prev) === JSON.stringify(data)) return prev;
-                    return data as OperationState;
+                    return data;
                 });
             }
         });
         return () => unsubscribe();
     }, [patientId]);
 
-    const setSharedState = (updater: OperationState | ((prev: OperationState) => OperationState)) => {
-        setState(prev => {
-            const nextState = typeof updater === 'function' ? updater(prev) : updater;
-            if (JSON.stringify(prev) !== JSON.stringify(nextState)) {
-                updateTracker(patientId, nextState as OperationTrackerState).catch(console.error);
+    const setSharedState = (updater: OperationSession | ((prev: OperationSession) => OperationSession)) => {
+        setDataState(prevData => {
+            const currentSession = prevData.sessions.find(s => s.id === prevData.activeSessionId) || prevData.sessions[0];
+            const nextSessionState = typeof updater === 'function' ? updater(currentSession) : updater;
+
+            const nextSessions = prevData.sessions.map(s =>
+                s.id === prevData.activeSessionId ? nextSessionState : s
+            );
+
+            const nextDataState = {
+                ...prevData,
+                sessions: nextSessions
+            };
+
+            if (JSON.stringify(prevData) !== JSON.stringify(nextDataState)) {
+                updateTracker(patientId, nextDataState).catch(console.error);
             }
-            return nextState;
+            return nextDataState;
         });
     };
 
     const [newTitle, setNewTitle] = useState('');
-    const [newDoctor, setNewDoctor] = useState('');
+    const [newDoctors, setNewDoctors] = useState<string[]>([]);
     const [durationHours, setDurationHours] = useState('');
     const [now, setNow] = useState(Date.now());
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+    const [isDeleteSessionModalOpen, setIsDeleteSessionModalOpen] = useState(false);
 
     // For Staff Dropdown
     const [staffList, setStaffList] = useState<Staff[]>([]);
@@ -154,13 +171,13 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
             steps: [...prev.steps, {
                 id: `step_${Date.now()}`,
                 title: newTitle,
-                doctor: newDoctor || t('doctor_staff') || 'TBD',
+                doctor: newDoctors.length > 0 ? newDoctors.join(', ') : t('doctor_staff') || 'TBD',
                 durationMinutes: totalMin
             }]
         }));
 
         setNewTitle('');
-        setNewDoctor('');
+        setNewDoctors([]);
         setDurationHours('');
     };
 
@@ -182,13 +199,38 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
     };
 
     const confirmResetOperation = () => {
-        setSharedState({
+        setSharedState(prev => ({
+            ...prev,
             steps: [],
             status: 'setup',
             currentStepIndex: 0,
             stepStartTime: null
-        });
+        }));
         setIsResetModalOpen(false);
+    };
+
+    const confirmDeleteSession = () => {
+        setDataState(prev => {
+            const nextSessions = prev.sessions.filter(s => s.id !== prev.activeSessionId);
+            const nextDataState = {
+                ...prev,
+                sessions: nextSessions.length > 0 ? nextSessions : [{
+                    id: `session_${Date.now()}`,
+                    name: 'Seans 1',
+                    steps: [],
+                    status: 'setup' as const,
+                    currentStepIndex: 0,
+                    stepStartTime: null
+                }],
+                activeSessionId: nextSessions.length > 0 ? nextSessions[0].id : `session_${Date.now()}`
+            };
+            if (nextSessions.length === 0) {
+                nextDataState.activeSessionId = nextDataState.sessions[0].id;
+            }
+            updateTracker(patientId, nextDataState as OperationTrackerData).catch(console.error);
+            return nextDataState as OperationTrackerData;
+        });
+        setIsDeleteSessionModalOpen(false);
     };
 
     const completeCurrentStepEarly = () => {
@@ -253,8 +295,8 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                         onClick={() => setIsDoctorDropdownOpen(!isDoctorDropdownOpen)}
                         className={`w-full bg-white border transition-all rounded-lg px-3 py-2 text-sm flex items-center justify-between outline-none text-left ${isDoctorDropdownOpen ? 'border-promed-primary ring-2 ring-promed-primary/20' : 'border-slate-200 hover:border-slate-300'}`}
                     >
-                        <span className={`truncate ${newDoctor ? 'text-slate-900 font-medium' : 'text-slate-400'}`}>
-                            {newDoctor || (t('select_staff') || 'Select Staff')}
+                        <span className={`truncate ${newDoctors.length > 0 ? 'text-slate-900 font-medium' : 'text-slate-400'}`}>
+                            {newDoctors.length > 0 ? newDoctors.join(', ') : (t('select_staff') || 'Select Staff')}
                         </span>
                         <ChevronDown size={14} className={`flex-shrink-0 text-slate-400 transition-transform duration-200 ${isDoctorDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
@@ -274,9 +316,13 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                         <button
                                             key={staff.id}
                                             type="button"
-                                            onClick={() => {
-                                                setNewDoctor(staff.fullName);
-                                                setIsDoctorDropdownOpen(false);
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                if (newDoctors.includes(staff.fullName)) {
+                                                    setNewDoctors(newDoctors.filter(d => d !== staff.fullName));
+                                                } else {
+                                                    setNewDoctors([...newDoctors, staff.fullName]);
+                                                }
                                             }}
                                             className="w-full text-left px-3 py-2.5 hover:bg-slate-50 flex items-center gap-3 transition-colors group"
                                         >
@@ -294,7 +340,7 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                                 <div className="text-sm font-semibold text-slate-700 truncate group-hover:text-blue-600 transition-colors">{staff.fullName}</div>
                                                 <div className="text-[10px] text-slate-400 uppercase tracking-widest">{t(`role_${staff.role}`) || staff.role}</div>
                                             </div>
-                                            {newDoctor === staff.fullName && (
+                                            {newDoctors.includes(staff.fullName) && (
                                                 <Check size={14} className="text-blue-600 flex-shrink-0" />
                                             )}
                                         </button>
@@ -444,7 +490,7 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                     const totalDurationMs = step.durationMinutes * 60 * 1000;
                     const progressPercent = isCurrent ? Math.min(100, (elapsed / totalDurationMs) * 100) : (isPast ? 100 : 0);
 
-                    const staffMember = staffList.find(s => s.fullName === step.doctor);
+                    const doctorNames = step.doctor ? step.doctor.split(',').map(n => n.trim()).filter(Boolean) : [];
 
                     return (
                         <div key={step.id} className="flex items-stretch group">
@@ -467,26 +513,53 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                             <div className={`flex-1 pb-6 ${isFuture ? 'opacity-50 grayscale' : ''}`}>
                                 <div className={`bg-white border rounded-2xl p-4 md:p-5 shadow-sm overflow-hidden transition-all duration-300 ${isCurrent ? 'border-blue-200 ring-1 ring-blue-50 hover:shadow-md' : isPast ? 'border-emerald-100 bg-emerald-50/10' : 'border-slate-100 border-dashed'}`}>
                                     <div className="flex justify-between items-start gap-4">
-                                        <div className="flex items-start gap-3.5">
-                                            {/* Doctor Avatar */}
-                                            <div className={`w-11 h-11 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm border-[2px] ${isCurrent ? 'border-blue-100 ring-2 ring-blue-50' : 'border-white ring-1 ring-slate-100'}`}>
-                                                {staffMember?.imageUrl ? (
-                                                    <img src={staffMember.imageUrl} alt={step.doctor} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-sm font-black text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
-                                                        {step.doctor ? step.doctor.charAt(0) : <User size={16} />}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className="pt-0.5">
+                                        <div className="flex items-start gap-3.5 w-full">
+                                            <div className="pt-0.5 w-full">
                                                 <h4 className={`text-base font-black tracking-tight ${isCurrent ? 'text-blue-900' : 'text-slate-800'}`}>{step.title}</h4>
-                                                <div className="text-[13px] flex items-center gap-1.5 mt-1 font-bold text-slate-600">
-                                                    {step.doctor}
-                                                    {staffMember && staffMember.role && (
-                                                        <span className="text-[9px] uppercase tracking-widest text-slate-400 ml-1 bg-slate-100/80 px-1.5 py-0.5 rounded border border-slate-200/50">
-                                                            {t(`role_${staffMember.role}`) || staffMember.role}
-                                                        </span>
+
+                                                <div className="flex flex-col gap-2 mt-2">
+                                                    {doctorNames.map((dName, dIdx) => {
+                                                        const dStaff = staffList.find(s => s.fullName === dName);
+                                                        const dSplits = dStaff ? transactions.filter(t => t.staffId === dStaff.id).sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime()) : [];
+                                                        const dLatestSplit = dSplits.length > 0 ? dSplits[0] : null;
+
+                                                        return (
+                                                            <div key={dIdx} className="flex items-center gap-2.5">
+                                                                <div className={`w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm border-[1.5px] ${isCurrent ? 'border-blue-100 ring-1 ring-blue-50' : 'border-white ring-1 ring-slate-100'}`}>
+                                                                    {dStaff?.imageUrl ? (
+                                                                        <img src={dStaff.imageUrl} alt={dName} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
+                                                                            {dName.charAt(0)}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex flex-wrap items-center gap-1.5 font-bold text-slate-600 text-[13px]">
+                                                                    <span>{dName}</span>
+                                                                    {dStaff && dStaff.role && (
+                                                                        <span className="text-[9px] uppercase tracking-widest text-slate-400 ml-1 bg-slate-100/80 px-1.5 py-0.5 rounded border border-slate-200/50">
+                                                                            {t(`role_${dStaff.role}`) || dStaff.role}
+                                                                        </span>
+                                                                    )}
+                                                                    {dLatestSplit && dLatestSplit.amount > 0 && (
+                                                                        <span className="text-[12px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 ml-1.5 flex items-center gap-1 shadow-sm ring-1 ring-emerald-500/10">
+                                                                            {formatWithSpaces(dLatestSplit.amount)} {dLatestSplit.currency || 'UZS'}
+                                                                            <span className="text-[9px] font-bold opacity-50 ml-0.5">({new Date(dLatestSplit.createdAt || dLatestSplit.date).toLocaleDateString()})</span>
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    {doctorNames.length === 0 && (
+                                                        <div className="flex items-center gap-2.5">
+                                                            <div className={`w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm border-[1.5px] ${isCurrent ? 'border-blue-100 ring-1 ring-blue-50' : 'border-white ring-1 ring-slate-100'}`}>
+                                                                <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
+                                                                    <User size={12} />
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-[13px] font-bold text-slate-500">{t('doctor_staff') || 'TBD'}</span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
@@ -539,13 +612,68 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
 
     return (
         <div className="bg-white rounded-2xl p-6 shadow-apple border border-slate-200 mb-6">
-            <div className="flex justify-between items-center mb-5">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-4">
                 <h3 className="font-bold text-slate-800 flex items-center gap-3">
                     <div className="p-2 bg-blue-50 rounded-lg text-blue-600 border border-blue-100">
                         <Activity size={20} />
                     </div>
                     {t('operation_progress') || 'Operation Progress'}
                 </h3>
+
+                {/* Session Tabs */}
+                <div className="flex items-center w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0">
+                    <div className="flex bg-slate-100 rounded-lg p-1 space-x-1 border border-slate-200">
+                        {dataState.sessions.map((session, index) => (
+                            <div key={session.id} className={`flex items-center rounded-md transition-all ${dataState.activeSessionId === session.id ? 'bg-white shadow-sm border border-slate-200/60' : 'hover:bg-slate-200/50'}`}>
+                                <button
+                                    onClick={() => {
+                                        const newData = { ...dataState, activeSessionId: session.id };
+                                        setDataState(newData);
+                                        updateTracker(patientId, newData).catch(console.error);
+                                    }}
+                                    className={`px-3 py-1.5 text-[12px] font-bold whitespace-nowrap ${dataState.activeSessionId === session.id
+                                        ? 'text-blue-600'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                >
+                                    {index === 0 ? t('seans_1') || 'Seans 1' : t('seans_n')?.replace('{n}', `${index + 1}`) || `Seans ${index + 1}`}
+                                </button>
+                                {dataState.sessions.length > 1 && dataState.activeSessionId === session.id && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setIsDeleteSessionModalOpen(true); }}
+                                        className="pr-1.5 pl-0.5 text-slate-400 hover:text-red-500 transition-colors rounded-sm"
+                                        title={t('delete_seans') || "Delete Seans"}
+                                    >
+                                        <X size={14} strokeWidth={2.5} />
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                        <button
+                            onClick={() => {
+                                const newId = `session_${Date.now()}`;
+                                const newData = {
+                                    ...dataState,
+                                    activeSessionId: newId,
+                                    sessions: [...dataState.sessions, {
+                                        id: newId,
+                                        name: `Seans ${dataState.sessions.length + 1}`,
+                                        steps: [],
+                                        status: 'setup',
+                                        currentStepIndex: 0,
+                                        stepStartTime: null
+                                    } as OperationSession]
+                                };
+                                setDataState(newData);
+                                updateTracker(patientId, newData).catch(console.error);
+                            }}
+                            className="px-2 py-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition flex items-center justify-center shrink-0"
+                            title={t('add_seans') || "Add Seans"}
+                        >
+                            <Plus size={16} strokeWidth={3} />
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div className="overflow-hidden">
@@ -563,6 +691,18 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                 variant="danger"
                 cancelText={t('cancel')}
                 confirmText={t('reset')}
+            />
+
+            <ConfirmationModal
+                isOpen={isDeleteSessionModalOpen}
+                onClose={() => setIsDeleteSessionModalOpen(false)}
+                onConfirm={confirmDeleteSession}
+                title={t('delete_seans') || 'Delete Seans'}
+                description={t('delete_seans_desc') || 'Are you sure you want to delete this session? This action cannot be undone.'}
+                icon={Trash2}
+                variant="danger"
+                cancelText={t('cancel')}
+                confirmText={t('delete') || 'Delete'}
             />
         </div>
     );

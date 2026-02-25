@@ -58,6 +58,7 @@ import { ImageUploadingOverlay } from '../../components/ui/ImageUploadingOverlay
 import { InjectionTimeline } from '../../components/ui/InjectionTimeline';
 import { AnimateIcon } from '../../components/ui/AnimateIcon';
 import { PatientFinanceStats } from './PatientFinanceStats';
+import { Pagination } from '../../components/ui/Pagination';
 import { useRBAC } from '../../hooks/useRBAC';
 import { SCOPES } from '../../config/permissions';
 import { useAccount } from '../../contexts/AccountContext';
@@ -558,49 +559,12 @@ export const PatientList: React.FC<{
       </div>
 
       {/* --- Pagination Footer --- */}
-      {patients.length > 0 && (
-        <div className="flex items-center justify-center border-t border-slate-100 p-6 bg-white">
-          <div className="flex items-center gap-3">
-            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-              onClick={handlePrevPage}
-              disabled={currentPage === 1}
-              className="btn-premium-white !p-2.5"
-              aria-label={t('previous_page') || "Previous Page"}
-            >
-              <ChevronLeft size={20} className="relative z-10 opacity-70" />
-            </motion.button>
-
-            <div className="flex items-center gap-1.5 px-2">
-              {getPageNumbers().map((page, idx) => (
-                typeof page === 'number' ? (
-                  <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                    key={idx}
-                    onClick={() => setCurrentPage(page)}
-                    className={`min-w-[38px] h-10 flex items-center justify-center rounded-xl text-sm font-bold transition-all ${currentPage === page
-                      ? 'btn-premium-blue-sq !p-0 shadow-promed-primary/20'
-                      : 'btn-premium-white !p-0 !min-w-[38px]'
-                      }`}
-                  >
-                    <span className="relative z-10">{page}</span>
-                  </motion.button>
-                ) : (
-                  <span key={idx} className="w-10 h-10 flex items-center justify-center text-slate-400 text-sm font-black tracking-widest">
-                    {page}
-                  </span>
-                )
-              ))}
-            </div>
-
-            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-              className="btn-premium-white !p-2.5"
-              aria-label={t('next_page') || "Next Page"}
-            >
-              <ChevronRight size={20} className="relative z-10 opacity-70" />
-            </motion.button>
-          </div>
-        </div>
+      {patients.length > 0 && totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       )}
     </div>
   );

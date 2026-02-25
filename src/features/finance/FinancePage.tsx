@@ -23,6 +23,7 @@ import DeleteModal from '../../components/ui/DeleteModal';
 import { Tooltip } from '../../components/ui/Tooltip';
 import { formatCompactNumber, formatCurrency } from '../../lib/formatters';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { Pagination } from '../../components/ui/Pagination';
 
 
 import { TransactionModal } from './TransactionModal';
@@ -714,29 +715,11 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                         )}
 
                         {/* Patients Pagination Controls */}
-                        {totalPatientPages > 1 && (
-                            <div className="flex justify-center items-center gap-4 mt-8 pb-8">
-                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                    onClick={() => setPatientsPage(p => Math.max(1, p - 1))}
-                                    disabled={patientsPage === 1}
-                                    className="bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 font-bold px-4 py-2 rounded-xl shadow-sm border border-slate-200 transition-all flex items-center gap-2"
-                                >
-                                    <ChevronRight className="w-5 h-5 rotate-180" />
-                                    {t('prev_page') || 'Previous'}
-                                </motion.button>
-                                <span className="text-slate-500 font-medium">
-                                    {t('page_of')?.replace('{current}', patientsPage.toString()).replace('{total}', totalPatientPages.toString()) || `Page ${patientsPage} of ${totalPatientPages}`}
-                                </span>
-                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                    onClick={() => setPatientsPage(p => Math.min(totalPatientPages, p + 1))}
-                                    disabled={patientsPage === totalPatientPages}
-                                    className="bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 font-bold px-4 py-2 rounded-xl shadow-sm border border-slate-200 transition-all flex items-center gap-2"
-                                >
-                                    {t('next_page') || 'Next'}
-                                    <ChevronRight className="w-5 h-5" />
-                                </motion.button>
-                            </div>
-                        )}
+                        <Pagination
+                            currentPage={patientsPage}
+                            totalPages={totalPatientPages}
+                            onPageChange={setPatientsPage}
+                        />
                     </div>
                 </div>
             ) : (
@@ -952,37 +935,11 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                 ))}
 
                                 {/* Transactions Pagination - KISS Method */}
-                                {totalTransactionPages > 1 && (
-                                    <div className="flex justify-center py-6">
-                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
-                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                onClick={() => setTransactionsPage(p => Math.max(1, p - 1))}
-                                                disabled={transactionsPage === 1}
-                                                className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
-                                            >
-                                                <ChevronRight className="w-5 h-5 rotate-180" />
-                                            </motion.button>
-
-                                            <div className="flex items-center gap-1.5 px-2">
-                                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                                                    {transactionsPage}
-                                                </span>
-                                                <div className="w-[1px] h-3 bg-slate-100" />
-                                                <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none">
-                                                    {totalTransactionPages}
-                                                </span>
-                                            </div>
-
-                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                onClick={() => setTransactionsPage(p => Math.min(totalTransactionPages, p + 1))}
-                                                disabled={transactionsPage === totalTransactionPages}
-                                                className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
-                                            >
-                                                <ChevronRight className="w-5 h-5" />
-                                            </motion.button>
-                                        </div>
-                                    </div>
-                                )}
+                                <Pagination
+                                    currentPage={transactionsPage}
+                                    totalPages={totalTransactionPages}
+                                    onPageChange={setTransactionsPage}
+                                />
                             </div>
                         ) : (
                             <div className="h-full flex flex-col items-center justify-center text-center p-8">

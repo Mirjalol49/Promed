@@ -8,16 +8,23 @@ export interface TrackerStep {
     durationMinutes: number;
 }
 
-export interface OperationTrackerState {
+export interface OperationSession {
+    id: string;
+    name: string;
     steps: TrackerStep[];
     status: 'setup' | 'running' | 'completed';
     currentStepIndex: number;
     stepStartTime: number | null;
 }
 
+export interface OperationTrackerData {
+    activeSessionId: string;
+    sessions: OperationSession[];
+}
+
 export const subscribeToTracker = (
     patientId: string,
-    onData: (data: OperationTrackerState | null) => void,
+    onData: (data: OperationTrackerData | null) => void,
     onError?: (error: any) => void
 ) => {
     try {
@@ -27,7 +34,23 @@ export const subscribeToTracker = (
             trackerRef,
             (docSnap) => {
                 if (docSnap.exists()) {
-                    onData(docSnap.data() as OperationTrackerState);
+                    const data = docSnap.data();
+                    if (data.sessions) {
+                        onData(data as OperationTrackerData);
+                    } else {
+                        // Migrate old flat format to new session format
+                        onData({
+                            activeSessionId: 'session_1',
+                            sessions: [{
+                                id: 'session_1',
+                                name: 'Seans 1',
+                                steps: data.steps || [],
+                                status: data.status || 'setup',
+                                currentStepIndex: data.currentStepIndex || 0,
+                                stepStartTime: data.stepStartTime || null
+                            }]
+                        });
+                    }
                 } else {
                     onData(null);
                 }
@@ -43,7 +66,7 @@ export const subscribeToTracker = (
     }
 };
 
-export const updateTracker = async (patientId: string, state: OperationTrackerState) => {
+export const updateTracker = async (patientId: string, state: OperationTrackerData) => {
     try {
         const trackerRef = doc(db, 'operationTrackers', patientId);
         await setDoc(trackerRef, state);
