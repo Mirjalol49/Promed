@@ -203,142 +203,137 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                         </div>
                     </div>
 
-                    <div className={`flex-1 pr-2 custom-scrollbar space-y-3 ${displayedGroups.length > 2 ? 'overflow-y-auto' : 'overflow-hidden'}`}>
-                        <div className={`flex-1 pr-2 -mr-2 space-y-4 transition-colors pb-4 ${displayedGroups.length > 2 ? 'overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent hover:scrollbar-thumb-slate-300' : 'overflow-hidden'} ${displayedGroups.length === 0 ? 'flex flex-col justify-center h-full' : ''}`}>
+                    <div className={`flex-1 pr-2 -mr-2 space-y-4 pb-2 transition-colors ${displayedGroups.length > 2 ? 'overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent hover:scrollbar-thumb-slate-300' : 'overflow-hidden'} ${displayedGroups.length === 0 ? 'flex flex-col justify-center h-full' : ''}`}>
 
-                            {displayedGroups.length > 0 ? (
-                                displayedGroups.map((group, index) => {
-                                    const { primaryEvent, secondaryEvents, totalSessions, patientId } = group;
-                                    const showHeader = !selectedDate && (index === 0 || !isSameDay(primaryEvent.date, displayedGroups[index - 1]?.primaryEvent.date));
+                        {displayedGroups.length > 0 ? (
+                            displayedGroups.map((group, index) => {
+                                const { primaryEvent, secondaryEvents, totalSessions, patientId } = group;
+                                const showHeader = !selectedDate && (index === 0 || !isSameDay(primaryEvent.date, displayedGroups[index - 1]?.primaryEvent.date));
 
-                                    return (
-                                        <React.Fragment key={patientId}>
-                                            {showHeader && (
-                                                <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm pt-4 pb-2 pl-2 mb-4 border-b-2 border-slate-100 flex items-center gap-3">
-                                                    <div className="h-1.5 w-1.5 rounded-full bg-promed-primary ring-4 ring-promed-primary/10"></div>
-                                                    <h4 className="text-sm font-black text-slate-600 uppercase tracking-widest">
-                                                        {isToday(primaryEvent.date) ? t('today') : format(primaryEvent.date, 'EEEE, d MMMM', { locale: currentLocale })}
-                                                    </h4>
-                                                </div>
-                                            )}
+                                return (
+                                    <React.Fragment key={patientId}>
+                                        {showHeader && (
+                                            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm pt-4 pb-2 pl-2 mb-4 border-b-2 border-slate-100 flex items-center gap-3">
+                                                <div className="h-1.5 w-1.5 rounded-full bg-promed-primary ring-4 ring-promed-primary/10"></div>
+                                                <h4 className="text-sm font-black text-slate-600 uppercase tracking-widest">
+                                                    {isToday(primaryEvent.date) ? t('today') : format(primaryEvent.date, 'EEEE, d MMMM', { locale: currentLocale })}
+                                                </h4>
+                                            </div>
+                                        )}
 
-                                            <div
-                                                className={`group relative rounded-2xl bg-white border transition-all duration-300 overflow-hidden
+                                        <div
+                                            className={`group relative rounded-2xl bg-white border transition-all duration-300 overflow-hidden
                                                         border-indigo-50 shadow-sm hover:border-promed-primary/40 hover:shadow-md
                                                     `}
+                                        >
+                                            {/* Primary Card Content */}
+                                            <div
+                                                onClick={() => {
+                                                    onViewPatient(patientId, primaryEvent.injectionId);
+                                                }}
+                                                className="flex items-stretch cursor-pointer relative"
                                             >
-                                                {/* Primary Card Content */}
-                                                <div
-                                                    onClick={() => {
-                                                        onViewPatient(patientId, primaryEvent.injectionId);
-                                                    }}
-                                                    className="flex items-stretch cursor-pointer relative"
-                                                >
-                                                    {/* Left Time Panel */}
-                                                    <div className={`w-[60px] md:w-[80px] flex items-center justify-center flex-shrink-0 transition-colors gel-blue-style`}>
-                                                        <span className="text-sm md:text-lg font-black text-white tracking-tight tabular-nums drop-shadow-sm">
-                                                            {format(primaryEvent.date, 'HH:mm')}
-                                                        </span>
-                                                    </div>
+                                                {/* Left Time Panel */}
+                                                <div className={`w-[60px] md:w-[80px] flex items-center justify-center flex-shrink-0 transition-colors gel-blue-style`}>
+                                                    <span className="text-sm md:text-lg font-black text-white tracking-tight tabular-nums drop-shadow-sm">
+                                                        {format(primaryEvent.date, 'HH:mm')}
+                                                    </span>
+                                                </div>
 
-                                                    {/* Right Content */}
-                                                    <div className="flex-1 flex items-center p-3 md:p-5 min-w-0">
-                                                        <div className="flex-1 min-w-0 pr-2 md:pr-4">
-                                                            <div className="flex items-center gap-3 md:gap-4 mb-0.5">
-                                                                <div className="relative flex-shrink-0">
-                                                                    <ProfileAvatar
-                                                                        src={primaryEvent.patientImage}
-                                                                        alt={primaryEvent.name}
-                                                                        size={44}
-                                                                        className="ring-2 ring-white shadow-sm"
-                                                                        rounded="rounded-2xl"
-                                                                        fallbackType="user"
-                                                                    />
-                                                                    {/* Session Badge */}
-                                                                    {totalSessions > 1 && (
-                                                                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ring-white shadow-sm z-10">
-                                                                            +{totalSessions - 1}
+                                                {/* Right Content */}
+                                                <div className="flex-1 flex items-center p-3 md:p-5 min-w-0">
+                                                    <div className="flex-1 min-w-0 pr-2 md:pr-4">
+                                                        <div className="flex items-center gap-3 md:gap-4 mb-0.5">
+                                                            <div className="relative flex-shrink-0">
+                                                                <ProfileAvatar
+                                                                    src={primaryEvent.patientImage}
+                                                                    alt={primaryEvent.name}
+                                                                    size={44}
+                                                                    className="ring-2 ring-white shadow-sm"
+                                                                    rounded="rounded-2xl"
+                                                                    fallbackType="user"
+                                                                />
+                                                                {/* Session Badge */}
+                                                                {totalSessions > 1 && (
+                                                                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ring-white shadow-sm z-10">
+                                                                        +{totalSessions - 1}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="flex items-center gap-1 min-w-0">
+                                                                    <span className="font-bold text-slate-900 truncate text-sm md:text-base">
+                                                                        {primaryEvent.name}
+                                                                    </span>
+                                                                    {primaryEvent.tier === 'pro' && (
+                                                                        <div className="flex-shrink-0 ml-1">
+                                                                            <ProBadge size={20} />
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <div className="min-w-0 flex-1">
-                                                                    <div className="flex items-center gap-1 min-w-0">
-                                                                        <span className="font-bold text-slate-900 truncate text-sm md:text-base">
-                                                                            {primaryEvent.name}
-                                                                        </span>
-                                                                        {primaryEvent.tier === 'pro' && (
-                                                                            <div className="flex-shrink-0 ml-1">
-                                                                                <ProBadge size={20} />
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    <p className="text-[11px] md:text-xs text-slate-600 font-medium truncate mt-0.5">
-                                                                        {primaryEvent.subtitle}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Actions */}
-                                                        <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-3">
-                                                            <span className={`
-                                                                    hidden xl:flex px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider scale-95 origin-right
-                                                                    ${primaryEvent.type === 'Operation' ? 'bg-rose-50 text-rose-700' : 'bg-blue-50 text-blue-700'}
-                                                                `}>
-                                                                {t(primaryEvent.type.toLowerCase()) || primaryEvent.type}
-                                                            </span>
-
-                                                            <div
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    onViewPatient(patientId, primaryEvent.injectionId);
-                                                                }}
-                                                                className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${primaryEvent.type === 'Operation'
-                                                                    ? 'bg-rose-50 text-rose-500 group-hover:bg-rose-500 group-hover:text-white'
-                                                                    : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
-                                                                    }`}
-                                                            >
-                                                                <ChevronRight size={18} strokeWidth={2.5} className="md:w-5 md:h-5" />
+                                                                <p className="text-[11px] md:text-xs text-slate-600 font-medium truncate mt-0.5">
+                                                                    {primaryEvent.subtitle}
+                                                                </p>
                                                             </div>
                                                         </div>
                                                     </div>
+
+                                                    {/* Actions */}
+                                                    <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-3">
+                                                        <span className={`
+                                                                    hidden xl:flex px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider scale-95 origin-right
+                                                                    ${primaryEvent.type === 'Operation' ? 'bg-rose-50 text-rose-700' : 'bg-blue-50 text-blue-700'}
+                                                                `}>
+                                                            {t(primaryEvent.type.toLowerCase()) || primaryEvent.type}
+                                                        </span>
+
+                                                        <div
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onViewPatient(patientId, primaryEvent.injectionId);
+                                                            }}
+                                                            className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${primaryEvent.type === 'Operation'
+                                                                ? 'bg-rose-50 text-rose-500 group-hover:bg-rose-500 group-hover:text-white'
+                                                                : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
+                                                                }`}
+                                                        >
+                                                            <ChevronRight size={18} strokeWidth={2.5} className="md:w-5 md:h-5" />
+                                                        </div>
+                                                    </div>
                                                 </div>
-
-
-
-
                                             </div>
-                                        </React.Fragment>
-                                    );
-                                })
-                            ) : (
-                                <div
-                                    className="flex flex-col items-center justify-center h-[300px] text-slate-400 px-6 text-center"
-                                >
-                                    <motion.img
-                                        src={calendarMascot}
-                                        alt="No events"
-                                        initial={{ y: 0 }}
-                                        animate={{ y: -8 }}
-                                        transition={{
-                                            duration: 2.8,
-                                            repeat: Infinity,
-                                            repeatType: 'mirror',
-                                            ease: [0.45, 0, 0.55, 1],
-                                        }}
-                                        className="w-28 h-28 md:w-32 md:h-32 object-contain drop-shadow-md mb-2"
-                                    />
-                                    <p className="font-bold text-base md:text-lg text-slate-500 leading-snug max-w-[240px] md:max-w-none mx-auto">
-                                        {t('no_events_day') || 'No events for this day'}
-                                    </p>
-                                </div>
-                            )}
 
-                        </div>
+
+
+
+                                        </div>
+                                    </React.Fragment>
+                                );
+                            })
+                        ) : (
+                            <div
+                                className="flex flex-col items-center justify-center h-[300px] text-slate-400 px-6 text-center"
+                            >
+                                <motion.img
+                                    src={calendarMascot}
+                                    alt="No events"
+                                    initial={{ y: 0 }}
+                                    animate={{ y: -8 }}
+                                    transition={{
+                                        duration: 2.8,
+                                        repeat: Infinity,
+                                        repeatType: 'mirror',
+                                        ease: [0.45, 0, 0.55, 1],
+                                    }}
+                                    className="w-28 h-28 md:w-32 md:h-32 object-contain drop-shadow-md mb-2"
+                                />
+                                <p className="font-bold text-base md:text-lg text-slate-500 leading-snug max-w-[240px] md:max-w-none mx-auto">
+                                    {t('no_events_day') || 'No events for this day'}
+                                </p>
+                            </div>
+                        )}
+
                     </div>
-                    {displayedGroups.length > 2 && (
-                        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none rounded-b-3xl z-10" />
-                    )}
                 </div>
             </div>
 
