@@ -358,17 +358,17 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
             {/* ── Transaction History ── */}
             <div className="flex flex-col gap-5">
                 {/* Header */}
-                <div className="bg-white rounded-[2rem] px-6 md:px-8 py-5 border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
-                    <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
-                        <div className="p-2 bg-promed-light rounded-xl">
+                <div className="bg-white rounded-[2rem] px-5 sm:px-6 md:px-8 py-5 border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-stretch md:items-center gap-5 md:gap-6">
+                    <h3 className="text-xl font-black text-slate-800 flex items-center justify-center md:justify-start gap-3">
+                        <div className="p-2 bg-promed-light rounded-xl shrink-0">
                             <Wallet className="text-promed-primary w-5 h-5" />
                         </div>
-                        {t('transaction_history')}
+                        <span className="truncate">{t('transaction_history')}</span>
                     </h3>
 
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-col items-center md:flex-row md:items-center gap-3 w-full md:w-auto min-w-0">
                         {/* Custom Month Picker */}
-                        <div className="relative" ref={monthPickerRef}>
+                        <div className="relative w-full max-w-[280px] sm:max-w-sm mx-auto md:w-auto md:mx-0 flex justify-center md:block" ref={monthPickerRef}>
                             {/* Trigger Button */}
                             <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => {
@@ -379,7 +379,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                     }
                                     setIsMonthPickerOpen(!isMonthPickerOpen);
                                 }}
-                                className={`flex items-center gap-2.5 pl-3.5 pr-4 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200 border ${selectedMonth
+                                className={`flex items-center justify-center gap-2.5 pl-3.5 pr-4 py-2.5 w-full md:w-auto rounded-2xl text-sm font-bold transition-all duration-200 border ${selectedMonth
                                     ? 'bg-promed-primary/5 border-promed-primary/20 text-promed-primary hover:bg-promed-primary/10'
                                     : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'
                                     } ${isMonthPickerOpen ? 'ring-2 ring-promed-primary/20 shadow-lg shadow-promed-primary/5' : ''}`}
@@ -398,7 +398,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
 
                             {/* Dropdown */}
                             {isMonthPickerOpen && (
-                                <div className="absolute top-full left-0 mt-2 z-50 w-[280px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-2xl shadow-slate-900/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 md:translate-x-0 md:left-0 mt-2 z-50 w-[280px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-2xl shadow-slate-900/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                                     {/* Year Navigation */}
                                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
                                         <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
@@ -465,12 +465,12 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                         </div>
 
                         {/* Category Filters */}
-                        <div className="relative inline-flex items-center bg-white/90 rounded-2xl p-1.5 border border-slate-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-xl">
+                        <div className="relative flex items-center bg-white/90 rounded-2xl p-1.5 border border-slate-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-xl overflow-x-auto no-scrollbar w-full max-w-[calc(100vw-3rem)] sm:max-w-[400px] md:max-w-none justify-start md:justify-center mx-auto md:mx-0">
                             {(['all', 'income', 'expense', 'surgery', 'injection'] as const).map(cat => (
                                 <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     key={cat}
                                     onClick={() => setFilterCategory(cat)}
-                                    className={`relative z-10 flex items-center px-5 py-2.5 rounded-xl text-[13px] font-bold transition-colors duration-300 ${filterCategory === cat ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
+                                    className={`relative z-10 flex items-center shrink-0 min-w-max whitespace-nowrap px-5 py-2.5 rounded-xl text-[13px] font-bold transition-colors duration-300 ${filterCategory === cat ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
                                 >
                                     {filterCategory === cat && (
                                         <motion.div
@@ -894,9 +894,9 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
 
                                                                 {/* ── Summary Footer ── */}
                                                                 <div className="mx-4 mb-4 mt-2 flex items-center justify-between px-6 py-5 bg-slate-50 rounded-2xl border border-slate-100/80">
-                                                                    <span className="text-base font-black text-slate-800 uppercase tracking-widest pl-14">{t('total') || 'JAMI'}</span>
+                                                                    <span className="text-base font-black text-slate-800 uppercase tracking-widest">{t('total') || 'JAMI'}</span>
                                                                     <div className="flex items-baseline gap-1">
-                                                                        <span className="text-2xl font-black text-slate-900 tabular-nums tracking-tight">{formatWithSpaces(income.amount)}</span>
+                                                                        <span className="text-2xl font-black text-emerald-600 tabular-nums tracking-tight">{formatWithSpaces(income.amount)}</span>
                                                                         <span className="text-xs font-bold text-slate-400 uppercase">UZS</span>
                                                                     </div>
                                                                 </div>

@@ -213,9 +213,9 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                 return (
                                     <React.Fragment key={patientId}>
                                         {showHeader && (
-                                            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm pt-4 pb-2 pl-2 mb-4 border-b-2 border-slate-100 flex items-center gap-3">
+                                            <div className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl py-3 px-3 -mx-3 mb-4 border-b border-slate-200/50 flex items-center gap-3 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.05)] translate-y-[-1px]">
                                                 <div className="h-1.5 w-1.5 rounded-full bg-promed-primary ring-4 ring-promed-primary/10"></div>
-                                                <h4 className="text-sm font-black text-slate-600 uppercase tracking-widest">
+                                                <h4 className="text-[13px] font-black text-slate-700 uppercase tracking-widest">
                                                     {isToday(primaryEvent.date) ? t('today') : format(primaryEvent.date, 'EEEE, d MMMM', { locale: currentLocale })}
                                                 </h4>
                                             </div>
