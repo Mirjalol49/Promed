@@ -83,16 +83,16 @@ export const PinInput: React.FC<PinInputProps> = ({
                             peer
                             outline-none focus:outline-none 
                             w-12 h-14 sm:w-14 sm:h-16 
-                            bg-white 
+                            bg-white focus:bg-slate-50
                             border-[2px] 
                             ${error
-                                ? 'border-rose-500 focus:border-rose-600 ring-rose-300 shake'
-                                : 'border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15'
+                                ? 'border-rose-500 focus:border-rose-500 focus:ring-[3px] focus:ring-rose-500 focus:ring-offset-[2px] focus:ring-offset-white focus:scale-[0.95] focus:shadow-[inset_0_2px_8px_rgba(0,0,0,0.1)] shake'
+                                : 'border-slate-200 focus:border-sky-500 focus:ring-[3px] focus:ring-sky-500 focus:ring-offset-[2px] focus:ring-offset-white focus:scale-[0.95] focus:shadow-[inset_0_2px_8px_rgba(0,0,0,0.1)]'
                             }
-                            ${digit ? 'border-slate-300' : ''}
+                            ${digit ? 'border-sky-300 bg-sky-50/50' : ''}
                             rounded-[18px] 
                             text-center text-transparent cursor-pointer 
-                            transition-all duration-200
+                            transition-all duration-200 ease-out
                             shadow-sm
                             caret-transparent select-none
                             relative z-10
@@ -103,7 +103,7 @@ export const PinInput: React.FC<PinInputProps> = ({
                     {/* Blinking Cursor for Focus State */}
                     {!digit && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-                            <div className="w-[3px] h-6 bg-blue-500 opacity-0 peer-focus:opacity-100 peer-focus:animate-pulse rounded-full transition-opacity duration-200" />
+                            <div className="w-[3px] h-6 bg-sky-400 opacity-0 peer-focus:opacity-100 peer-focus:animate-pulse rounded-full transition-opacity duration-200 shadow-sm shadow-sky-400/50" />
                         </div>
                     )}
 

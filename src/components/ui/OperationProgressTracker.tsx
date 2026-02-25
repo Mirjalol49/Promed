@@ -317,14 +317,21 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                         />
                     </div>
                 </div>
-                <button
+                <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
                     onClick={addStep}
                     disabled={!newTitle || !durationHours}
-                    className="h-[38px] px-4 bg-slate-900 border border-slate-800 text-white rounded-lg flex items-center justify-center gap-2 hover:bg-slate-800 transition active:scale-[0.98] disabled:opacity-50"
+                    className="relative overflow-hidden shrink-0 h-[40px] px-6 text-white rounded-xl flex items-center justify-center gap-2 font-bold shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed group transition-all duration-300"
+                    style={{
+                        background: (!newTitle || !durationHours) ? '#cbd5e1' : 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
+                        boxShadow: (!newTitle || !durationHours) ? 'none' : '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
+                    }}
                 >
-                    <Plus size={16} />
-                    <span className="text-sm font-medium">{t('add') || 'Add'}</span>
-                </button>
+                    <Plus size={16} className="group-hover:rotate-90 transition-transform duration-300" strokeWidth={2.5} />
+                    <span className="text-sm tracking-wide">{t('add') || 'Add'}</span>
+                </motion.button>
             </div>
 
             <div className="space-y-2">
@@ -373,13 +380,20 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
 
             {state.steps.length > 0 && (
                 <div className="flex justify-end pt-2 border-t border-slate-100">
-                    <button
+                    <motion.button
+                        whileTap={{ scale: 0.96 }}
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
                         onClick={startOperation}
-                        className="items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex gap-2 rounded-xl hover:shadow-md hover:from-blue-700 hover:to-indigo-700 transition active:scale-[0.98] font-semibold text-sm"
+                        className="relative overflow-hidden h-[44px] px-8 text-white rounded-xl flex items-center justify-center gap-2 font-bold shadow-md hover:shadow-lg group transition-all duration-300"
+                        style={{
+                            background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
+                            boxShadow: '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
+                        }}
                     >
-                        <Play size={16} fill="currentColor" />
-                        {t('start_operation') || 'Start Operation'}
-                    </button>
+                        <Play size={18} fill="currentColor" className="group-hover:scale-110 transition-transform duration-300" />
+                        <span className="text-[15px] tracking-wide">{t('start_operation') || 'Start Operation'}</span>
+                    </motion.button>
                 </div>
             )}
         </div>

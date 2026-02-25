@@ -109,7 +109,10 @@ service cloud.firestore {
     // Profiles
     match /profiles/{userId} {
       allow create: if isAuthenticated();
-      allow read, update, delete: if isAuthenticated() && (request.auth.uid == userId || isAdminOrDoctor());
+      allow read, update, delete: if isAuthenticated() && (
+        request.auth.uid == userId || 
+        (isAdminOrDoctor() && belongsToAccount(resource))
+      );
     }
 
     // Patients
@@ -119,15 +122,31 @@ service cloud.firestore {
       
       // Messages Subcollection (Fix for Permission Denied)
       match /messages/{messageId} {
-        allow read: if isAuthenticated() && canViewPatients();
-        allow write: if isAuthenticated() && canEditPatients();
+        allow read: if isAuthenticated() && canViewPatients() && belongsToAccount(get(/databases/$(database)/documents/patients/$(patientId)));
+        allow write: if isAuthenticated() && canEditPatients() && belongsToAccount(get(/databases/$(database)/documents/patients/$(patientId)));
       }
     }
 
     // Outbound Messages (Bot Queue)
     match /outbound_messages/{msgId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && canEditPatients();
+      allow read: if isAuthenticated() && canViewPatients() && 
+        belongsToAccount(get(/databases/$(database)/documents/patients/$(resource.data.patientId)));
+      allow write: if isAuthenticated() && canEditPatients() && 
+        (
+          belongsToAccount(get(/databases/$(database)/documents/patients/$(request.resource.data.patientId))) ||
+          (resource != null && belongsToAccount(get(/databases/$(database)/documents/patients/$(resource.data.patientId))))
+        );
+    }
+    
+    // Outbound Tasks (Bot Queue)
+    match /outbound_tasks/{taskId} {
+      allow read: if isAuthenticated() && canViewPatients() && 
+        belongsToAccount(get(/databases/$(database)/documents/patients/$(resource.data.patientId)));
+      allow write: if isAuthenticated() && canEditPatients() && 
+        (
+          belongsToAccount(get(/databases/$(database)/documents/patients/$(request.resource.data.patientId))) ||
+          (resource != null && belongsToAccount(get(/databases/$(database)/documents/patients/$(resource.data.patientId))))
+        );
     }
 
     // Leads (Clients)
@@ -137,8 +156,8 @@ service cloud.firestore {
       
       // Timeline subcollection (reminders, notes, status changes)
       match /timeline/{eventId} {
-        allow read: if isAuthenticated() && canViewLeads();
-        allow write: if isAuthenticated() && canEditLeads();
+        allow read: if isAuthenticated() && canViewLeads() && belongsToAccount(get(/databases/$(database)/documents/leads/$(leadId)));
+        allow write: if isAuthenticated() && canEditLeads() && belongsToAccount(get(/databases/$(database)/documents/leads/$(leadId)));
       }
     }
 
@@ -160,7 +179,10 @@ service cloud.firestore {
     }
     // Operation Trackers
     match /operationTrackers/{patientId} {
-      allow read, write: if isAuthenticated() && canViewPatients();
+      allow read: if isAuthenticated() && canViewPatients() && 
+        belongsToAccount(get(/databases/$(database)/documents/patients/$(patientId)));
+      allow write: if isAuthenticated() && canEditPatients() && 
+        belongsToAccount(get(/databases/$(database)/documents/patients/$(patientId)));
     }
     
     match /{document=**} {

@@ -131,20 +131,21 @@ export const generateSalaryDescription = (staffName: string, month: string) => {
 
 // Get payment history for a specific staff member
 export const getStaffPaymentHistory = (
+    accountId: string,
     staffId: string,
     onUpdate: (payments: Transaction[]) => void,
     onError?: (error: any) => void
 ) => {
-    if (!staffId) return () => { };
+    if (!staffId || !accountId) return () => { };
 
-    // Simplified query - ONLY filter by staffId (no orderBy, no other where clauses)
-    // This requires NO composite index - just the automatic single-field index on staffId
+    // Simply filtering by accountId and staffId
     const q = query(
         collection(db, COLLECTION_NAME),
+        where("accountId", "==", accountId),
         where("staffId", "==", staffId)
     );
 
-    console.log('[getStaffPaymentHistory] Querying for staffId:', staffId);
+    console.log('[getStaffPaymentHistory] Querying for accountId:', accountId, 'staffId:', staffId);
 
     return onSnapshot(q, (snapshot) => {
         // Filter for salary payments and sort client-side
@@ -153,13 +154,10 @@ export const getStaffPaymentHistory = (
                 id: doc.id,
                 ...doc.data()
             }) as Transaction)
-            .filter(payment =>
-                payment.type === 'expense' &&
-                payment.category === 'salary'
-            )
             .sort((a, b) => {
-                // Sort by date descending (newest first)
-                return new Date(b.date).getTime() - new Date(a.date).getTime();
+                const dateA = new Date(a.createdAt || `${a.date}T${a.time || '00:00'}`).getTime();
+                const dateB = new Date(b.createdAt || `${b.date}T${b.time || '00:00'}`).getTime();
+                return dateB - dateA;
             });
 
         console.log(`[getStaffPaymentHistory] Found ${payments.length} payments for staffId:`, staffId);

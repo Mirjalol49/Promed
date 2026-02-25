@@ -34,8 +34,8 @@ type DateFilter = 'all' | 'month' | 'week';
 // --- Utility: Format Currency Removed (Imported) ---
 
 // --- Constants ---
-const incomeCategories: TransactionCategory[] = ['surgery', 'consultation', 'injection'];
-const expenseCategories: TransactionCategory[] = ['salary', 'tax'];
+const incomeCategories: TransactionCategory[] = ['surgery', 'consultation', 'injection', 'shampoo'];
+const expenseCategories: TransactionCategory[] = ['salary', 'tax', 'rent', 'marketing', 'equipment', 'food', 'pills'];
 
 
 

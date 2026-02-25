@@ -236,7 +236,11 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
         }
 
         if (filterCategory === 'all' || filterCategory === 'expense') {
-            expenseItems = standaloneExpenses.map(exp => ({
+            const filteredExpenses = (filterCategory === 'all' || filterCategory === 'expense')
+                ? standaloneExpenses
+                : standaloneExpenses.filter(t => t.category === filterCategory);
+
+            expenseItems = filteredExpenses.map(exp => ({
                 kind: 'expense',
                 data: exp
             }));

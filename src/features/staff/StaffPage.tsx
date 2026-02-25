@@ -3,19 +3,22 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAccount } from '../../contexts/AccountContext';
-import { Staff, StaffRole } from '../../types';
+import { Staff, StaffRole, Patient } from '../../types';
 import { subscribeToStaff, addStaff, updateStaff, deleteStaff } from '../../lib/staffService';
+import { subscribeToPatients } from '../../lib/patientService';
 import { uploadImage, setOptimisticImage, getOptimisticImage } from '../../lib/imageService';
 import { getStaffPaymentHistory, addTransaction, deleteTransaction, restoreTransaction } from '../../lib/financeService';
 import { useToast } from '../../contexts/ToastContext';
 import {
     Users, Plus, Search, Phone, Mail, DollarSign, Trash2, Edit2,
     MoreVertical, Calendar, Briefcase, User, X, ChevronLeft, ChevronDown, Activity,
-    Clock, Camera, PlusCircle, Loader2, Check, ArrowLeft, Banknote, ChevronRight, RotateCcw
+    Clock, Camera, PlusCircle, Loader2, Check, ArrowLeft, Banknote, ChevronRight, RotateCcw,
+    ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
 
 import { EmptyState } from '../../components/ui/EmptyState';
+import { AddStaffExpenseModal } from './AddStaffExpenseModal';
 import { CustomSelect } from '../../components/ui/CustomSelect';
 import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
 import { ProBadge } from '../../components/ui/ProBadge';
@@ -201,7 +204,7 @@ const StaffModal = ({
                                     <label className="text-sm font-bold text-slate-700 ml-1">{t('first_name')}</label>
                                     <input
                                         required
-                                        className="w-full bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl py-3 px-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-400"
+                                        className="w-full bg-white border border-slate-400 rounded-xl py-3 px-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-400"
                                         value={formData.firstName}
                                         onChange={e => setFormData({ ...formData, firstName: e.target.value })}
                                         placeholder="Mirjalol"
@@ -212,7 +215,7 @@ const StaffModal = ({
                                     <label className="text-sm font-bold text-slate-700 ml-1">{t('last_name')}</label>
                                     <input
                                         required
-                                        className="w-full bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl py-3 px-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-400"
+                                        className="w-full bg-white border border-slate-400 rounded-xl py-3 px-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-400"
                                         value={formData.lastName}
                                         onChange={e => setFormData({ ...formData, lastName: e.target.value })}
                                         placeholder="Shamsiddinov"
@@ -226,7 +229,7 @@ const StaffModal = ({
                                         <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             type="button"
                                             onClick={() => setIsRoleOpen(!isRoleOpen)}
-                                            className={`w-full bg-white shadow-sm border rounded-xl py-3 px-4 text-slate-900 font-bold flex items-center justify-between outline-none transition-all ${isRoleOpen ? 'bg-white border-blue-500 ring-4 ring-blue-500/10' : 'border-transparent hover:border-slate-200'}`}
+                                            className={`w-full bg-white border rounded-xl py-3 px-4 text-slate-900 font-bold flex items-center justify-between outline-none transition-all ${isRoleOpen ? 'bg-white border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-400'}`}
                                         >
                                             <span className="flex items-center gap-2 capitalize">
                                                 {t(`role_${formData.role}`) || formData.role}
@@ -262,7 +265,7 @@ const StaffModal = ({
                                     <label className="text-sm font-bold text-slate-700 ml-1">{t('phone')}</label>
                                     <input
                                         required
-                                        className="w-full bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl py-3 px-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-400"
+                                        className="w-full bg-white border border-slate-400 rounded-xl py-3 px-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-400"
                                         value={formData.phone}
                                         onChange={e => {
                                             let val = e.target.value;
@@ -296,7 +299,7 @@ const StaffModal = ({
                                             type="text"
                                             inputMode="numeric"
                                             disabled={!isSalaryEnabled}
-                                            className="w-full bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl py-3 pl-12 pr-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                                            className="w-full bg-white border border-slate-400 rounded-xl py-3 pl-12 pr-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none disabled:bg-slate-50 disabled:text-slate-400 disabled:shadow-none disabled:border-transparent"
                                             value={formData.salary ? new Intl.NumberFormat('uz-UZ').format(Number(formData.salary)) : ''}
                                             onChange={e => {
                                                 const val = e.target.value.replace(/[^0-9]/g, '');
@@ -310,7 +313,7 @@ const StaffModal = ({
                                 {initialData && (
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-bold text-slate-700 ml-1">{t('status')}</label>
-                                        <div className="flex bg-white shadow-sm p-1.5 rounded-xl border border-transparent gap-1.5 h-[52px]">
+                                        <div className="flex bg-white p-1.5 rounded-xl border border-slate-400 gap-1.5 h-[52px]">
                                             {['active', 'on_leave', 'terminated'].map((s) => {
                                                 const isActive = formData.status === s;
                                                 let activeClass = '';
@@ -342,7 +345,7 @@ const StaffModal = ({
                             <div className="space-y-1.5">
                                 <label className="text-sm font-bold text-slate-700 ml-1">{t('notes')}</label>
                                 <textarea
-                                    className="w-full bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl py-3 px-4 text-slate-900 font-medium placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none"
+                                    className="w-full bg-white border border-slate-400 rounded-xl py-3 px-4 text-slate-900 font-medium placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none"
                                     rows={3}
                                     value={formData.notes || ''}
                                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
@@ -732,20 +735,75 @@ const StaffDetail = ({
     onDelete?: () => void;
 }) => {
     const { t, language } = useLanguage();
+    const { accountId } = useAccount();
+    const [patientList, setPatientList] = useState<Patient[]>([]);
+
+    useEffect(() => {
+        if (!accountId) return;
+        const unsub = subscribeToPatients(accountId, (data) => setPatientList(data));
+        return () => unsub();
+    }, [accountId]);
+
     // Removed tabs, single view logic
     const [payments, setPayments] = useState<any[]>([]);
     const [loadingPayments, setLoadingPayments] = useState(true);
     const [selectedMonth, setSelectedMonth] = useState<string>('all');
+    const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+    const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+    const monthPickerRef = useRef<HTMLDivElement>(null);
     const [showStatusMenu, setShowStatusMenu] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
+    const [filterCategory, setFilterCategory] = useState<'all' | 'income' | 'expense' | 'salary' | 'food' | 'other'>('all');
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
+                setIsMonthPickerOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const MONTH_NAMES_SHORT = useMemo(() => {
+        const d = new Date(2025, 0, 1);
+        const formatStr = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US';
+        return Array.from({ length: 12 }).map((_, i) => {
+            d.setMonth(i);
+            const raw = d.toLocaleDateString(formatStr, { month: 'short' });
+            return raw.charAt(0).toUpperCase() + raw.slice(1).replace('.', '');
+        });
+    }, [language]);
+
+    const handleSelectMonth = (monthIndex: number) => {
+        const mm = String(monthIndex + 1).padStart(2, '0');
+        setSelectedMonth(`${pickerYear}-${mm}`);
+        setIsMonthPickerOpen(false);
+    };
+
+    const handleClearMonth = () => {
+        setSelectedMonth('all');
+        setIsMonthPickerOpen(false);
+    };
+
+    const selectedMonthLabel = selectedMonth === 'all'
+        ? t('date_filter_all') || t('all_months') || 'Barcha vaqtlar'
+        : (() => {
+            const [y, m] = selectedMonth.split('-');
+            if (!y || !m) return selectedMonth;
+            const monthName = MONTH_NAMES_SHORT[parseInt(m) - 1];
+            return `${monthName}, ${y}`;
+        })();
 
     const { success, error: toastError } = useToast();
 
     // Fetch payments
     useEffect(() => {
-        if (!staff?.id) return;
+        if (!staff?.id || !accountId) return;
         setLoadingPayments(true);
         const unsub = getStaffPaymentHistory(
+            accountId,
             staff.id,
             (data: any[]) => {
                 setPayments(data);
@@ -756,8 +814,10 @@ const StaffDetail = ({
                 setLoadingPayments(false);
             }
         );
-        return () => unsub();
-    }, [staff?.id]);
+        return () => {
+            setTimeout(() => unsub(), 0);
+        };
+    }, [staff?.id, accountId]);
 
     const handleDeleteTransaction = async (paymentId: string) => {
         if (!window.confirm(t('delete_confirmation') || 'Are you sure?')) return;
@@ -831,11 +891,47 @@ const StaffDetail = ({
     }, [payments, language]);
 
     const months = Object.keys(paymentsByMonth).sort().reverse();
-    const filteredPayments = selectedMonth === 'all'
-        ? payments
-        : paymentsByMonth[selectedMonth]?.payments || [];
 
-    const sortedPayments = [...filteredPayments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const filteredPayments = useMemo(() => {
+        let list = selectedMonth === 'all'
+            ? payments
+            : paymentsByMonth[selectedMonth]?.payments || [];
+
+        if (filterCategory !== 'all') {
+            if (filterCategory === 'income') {
+                // For staff, salary and splits (which the clinic marks as expense) are their income
+                list = list.filter(p => p.type === 'income' || p.category === 'salary');
+            } else if (filterCategory === 'expense') {
+                // Everything else (like food or deductions) is staff expense
+                list = list.filter(p => p.type === 'expense' && p.category !== 'salary');
+            } else {
+                list = list.filter(p => p.category === filterCategory);
+            }
+        }
+        return list;
+    }, [payments, selectedMonth, filterCategory, paymentsByMonth]);
+
+    const sortedPayments = [...filteredPayments].sort((a, b) => {
+        const dateA = new Date(a.createdAt || `${a.date}T${a.time || '00:00'}`).getTime();
+        const dateB = new Date(b.createdAt || `${b.date}T${b.time || '00:00'}`).getTime();
+        return dateB - dateA;
+    });
+
+    const { totalIncome, totalExpense } = useMemo(() => {
+        let inc = 0;
+        let exp = 0;
+        sortedPayments.forEach((p) => {
+            if (!p.isVoided) {
+                const isIncome = p.type === 'income' || p.category === 'salary';
+                if (isIncome) {
+                    inc += Number(p.amount) || 0;
+                } else {
+                    exp += Number(p.amount) || 0;
+                }
+            }
+        });
+        return { totalIncome: inc, totalExpense: exp };
+    }, [sortedPayments]);
 
     // Calculate payment statistics for current month
     const paymentStats = useMemo(() => {
@@ -890,26 +986,6 @@ const StaffDetail = ({
         };
     }, [payments, staff.salary, t, language]);
 
-    const monthOptions = useMemo(() => {
-        const uniqueMonths = [...months];
-        const opts = [
-            { value: 'all', label: t('all_time') || 'All Time' }
-        ];
-
-        uniqueMonths.forEach(m => {
-            try {
-                const date = new Date(m + '-01');
-                opts.push({
-                    value: m,
-                    label: capitalize(date.toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US', { month: 'long', year: 'numeric' }))
-                });
-            } catch (e) {
-                opts.push({ value: m, label: m });
-            }
-        });
-
-        return opts;
-    }, [months, t, language]);
 
     return (
         <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -969,28 +1045,30 @@ const StaffDetail = ({
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                        {onDelete && (
-                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                onClick={onDelete}
-                                className="w-12 h-12 flex items-center justify-center bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 rounded-2xl transition-all shadow-sm"
-                                title={t('delete_staff') || 'Delete Staff'}
-                            >
-                                <Trash2 size={20} strokeWidth={2} />
-                            </motion.button>
-                        )}
+                    <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 w-full md:w-auto">
                         {onEdit && (
                             <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={onEdit}
-                                className="flex-1 md:flex-none h-12 px-6 bg-slate-200 border border-slate-300 hover:bg-slate-300 hover:border-slate-400 text-slate-900 font-bold rounded-2xl text-sm transition-all active:scale-[0.98]"
+                                className="flex-1 lg:flex-none h-12 px-6 flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 hover:text-blue-600 font-bold rounded-2xl text-sm transition-all shadow-sm group"
                             >
+                                <Edit2 size={18} strokeWidth={2.5} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
                                 {t('edit') || 'Edit'}
                             </motion.button>
                         )}
-                        {onPay && staff.salary != null && (
+                        {onDelete && (
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                onClick={onDelete}
+                                className="flex-1 lg:flex-none h-12 px-6 flex items-center justify-center gap-2 bg-white/50 border border-slate-200 text-rose-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 hover:shadow-sm font-bold rounded-2xl text-sm transition-all"
+                                title={t('delete') || 'Delete'}
+                            >
+                                <Trash2 size={18} strokeWidth={2.5} />
+                                {t('delete') || "O'chirish"}
+                            </motion.button>
+                        )}
+                        {onPay && staff.salary != null && staff.salary > 0 && (
                             <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={onPay}
-                                className="btn-glossy-emerald flex-1 md:flex-none md:w-auto h-12 px-8 rounded-2xl uppercase tracking-wide shadow-lg shadow-emerald-500/20"
+                                className="w-full lg:w-auto btn-glossy-emerald h-12 px-8 flex items-center justify-center gap-2 rounded-2xl uppercase tracking-wide shadow-lg shadow-emerald-500/20"
                             >
                                 <Banknote size={18} className="stroke-[2.5]" />
                                 <span className="font-black text-xs md:text-sm">{t('pay_salary') || "Oylik To'lash"}</span>
@@ -1001,29 +1079,29 @@ const StaffDetail = ({
 
                 {/* 2. Bottom Row: Stats/Metrics - Phone & Salary */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-slate-200 rounded-2xl p-4 flex items-center justify-between group border border-slate-300 hover:border-slate-400 transition-colors">
-                        <div>
-                            <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">{t('phone') || 'Phone'}</p>
-                            <p className="text-lg font-bold text-slate-800 tracking-tight">
+                    <div className="bg-white rounded-[1.5rem] p-4 flex items-center justify-between group border border-slate-200 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:border-slate-300 transition-all duration-300">
+                        <div className="flex-1 min-w-0 pr-4">
+                            <p className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-1.5">{t('phone') || 'Phone'}</p>
+                            <p className="text-xl font-bold text-slate-800 tracking-tight truncate group-hover:text-blue-600 transition-colors">
                                 {staff.phone.replace(/(\+998)(\d{2})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5')}
                             </p>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-slate-500 group-hover:text-blue-600 transition-colors ring-1 ring-slate-200">
-                            <Phone size={20} strokeWidth={2} />
+                        <div className="w-12 h-12 flex-shrink-0 rounded-2xl bg-blue-50/50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm border border-blue-100/50">
+                            <Phone size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-300" />
                         </div>
                     </div>
 
-                    {staff.salary != null && (
-                        <div className="bg-slate-200 rounded-2xl p-4 flex items-center justify-between group border border-slate-300 hover:border-slate-400 transition-colors">
-                            <div>
-                                <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">{t('salary') || 'Salary'}</p>
-                                <p className="text-2xl font-black text-slate-900 tracking-tight leading-none">
+                    {staff.salary != null && staff.salary > 0 && (
+                        <div className="bg-white rounded-[1.5rem] p-4 flex items-center justify-between group border border-slate-200 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:border-slate-300 transition-all duration-300">
+                            <div className="flex-1 min-w-0 pr-4">
+                                <p className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-1.5">{t('salary') || 'Salary'}</p>
+                                <p className="text-2xl font-black text-slate-900 tracking-tight leading-none truncate overflow-visible">
                                     {staff.salary?.toLocaleString()}
-                                    <span className="text-sm font-bold text-slate-600 ml-1.5">{staff.currency}</span>
+                                    <span className="text-sm font-bold text-slate-400 ml-1.5 uppercase tracking-wide">{staff.currency}</span>
                                 </p>
                             </div>
-                            <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-slate-500 group-hover:text-emerald-600 transition-colors ring-1 ring-slate-200">
-                                <Banknote size={20} strokeWidth={2} />
+                            <div className="w-12 h-12 flex-shrink-0 rounded-2xl bg-emerald-50/50 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300 shadow-sm border border-emerald-100/50">
+                                <Banknote size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-300" />
                             </div>
                         </div>
                     )}
@@ -1032,45 +1110,208 @@ const StaffDetail = ({
 
             {/* Timeline (High Density Ledger) */}
             <div className="space-y-3">
-                <div className="flex items-center justify-between px-1 md:px-2">
-                    <h3 className="font-bold text-base md:text-lg text-slate-900 flex items-center gap-2">
-                        {t('payment_history') || 'Payment History'}
-                        {payments.length > 0 && (
-                            <span className="bg-slate-100 text-slate-500 text-xs font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
-                                {payments.length}
-                            </span>
-                        )}
-                    </h3>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-1 md:px-2 gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 w-full md:w-auto">
+                        <h3 className="font-bold text-base md:text-lg text-slate-900 flex items-center gap-2 shrink-0">
+                            {t('payment_history') || 'Payment History'}
+                            {payments.length > 0 && (
+                                <span className="bg-slate-100 text-slate-500 text-xs font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
+                                    {payments.length}
+                                </span>
+                            )}
+                        </h3>
 
-                    {/* Month Filter Dropdown */}
-                    <div className="w-36 md:w-56 h-9 md:h-10 bg-white border border-slate-200 rounded-lg md:rounded-xl relative z-20 text-xs md:text-sm">
-                        <CustomSelect
-                            options={monthOptions}
-                            value={selectedMonth}
-                            onChange={setSelectedMonth}
-                            minimal={true}
-                        />
+                        {/* Transaction Categories Filter */}
+                        <div className="flex items-center overflow-x-auto bg-white rounded-lg p-1 border border-slate-200 no-scrollbar max-w-[calc(100vw-32px)]">
+                            {(['all', 'income', 'expense', 'salary', 'food', 'other'] as const).map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setFilterCategory(cat)}
+                                    className={`!px-4 !py-1.5 shrink-0 text-[11px] font-bold rounded-md transition-colors ${filterCategory === cat
+                                        ? `${cat === 'expense' ? 'bg-rose-500 hover:bg-rose-600' : cat === 'income' ? 'bg-emerald-500 hover:bg-emerald-600' : 'btn-premium-blue'} text-white shadow-sm`
+                                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                                        }`}
+                                >
+                                    {cat === 'all' ? t('finance_filter_all') || t('filter_all') || 'All' : t(cat) || cat}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full md:w-auto mt-1 md:mt-0 relative">
+                        {/* Custom Month Picker */}
+                        <div className="relative" ref={monthPickerRef}>
+                            {/* Trigger Button */}
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                onClick={() => {
+                                    if (!isMonthPickerOpen && selectedMonth && selectedMonth !== 'all') {
+                                        setPickerYear(parseInt(selectedMonth.split('-')[0]));
+                                    } else if (!isMonthPickerOpen) {
+                                        setPickerYear(new Date().getFullYear());
+                                    }
+                                    setIsMonthPickerOpen(!isMonthPickerOpen);
+                                }}
+                                className={`flex items-center gap-2 pl-3.5 pb-1 pt-1 pr-3 rounded-[0.55rem] text-[13px] font-bold transition-all duration-200 border h-9 ${selectedMonth && selectedMonth !== 'all'
+                                    ? 'bg-blue-50/50 border-blue-200 text-blue-600 hover:bg-blue-50'
+                                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                                    } ${isMonthPickerOpen ? 'ring-2 ring-blue-500/20 shadow-sm shadow-blue-500/5 !border-blue-400' : ''}`}
+                            >
+                                <span className="whitespace-nowrap tabular-nums">{selectedMonthLabel}</span>
+                                {selectedMonth !== 'all' ? (
+                                    <span
+                                        onClick={(e) => { e.stopPropagation(); handleClearMonth(); }}
+                                        className="ml-0.5 p-0.5 rounded-full hover:bg-blue-100 transition-colors cursor-pointer text-blue-400 hover:text-blue-600"
+                                    >
+                                        <X size={14} strokeWidth={3} />
+                                    </span>
+                                ) : (
+                                    <ChevronDown size={14} strokeWidth={2.5} className="ml-1 text-slate-400" />
+                                )}
+                            </motion.button>
+
+                            {/* Dropdown */}
+                            {isMonthPickerOpen && (
+                                <div className="absolute top-full right-0 mt-2 z-[60] w-[260px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {/* Year Navigation */}
+                                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-white">
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            onClick={() => setPickerYear(y => y - 1)}
+                                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all active:scale-90"
+                                        >
+                                            <ChevronLeft size={16} strokeWidth={2.5} />
+                                        </motion.button>
+                                        <span className="text-base font-black text-slate-800 tracking-tight">{pickerYear}</span>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            onClick={() => setPickerYear(y => y + 1)}
+                                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all active:scale-90"
+                                        >
+                                            <ChevronRight size={16} strokeWidth={2.5} />
+                                        </motion.button>
+                                    </div>
+
+                                    {/* Month Grid */}
+                                    <div className="grid grid-cols-3 gap-1.5 p-3">
+                                        {MONTH_NAMES_SHORT.map((name, idx) => {
+                                            const mm = String(idx + 1).padStart(2, '0');
+                                            const value = `${pickerYear}-${mm}`;
+                                            const isActive = selectedMonth === value;
+                                            const isCurrentMonth = new Date().getFullYear() === pickerYear && new Date().getMonth() === idx;
+
+                                            return (
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                    key={idx}
+                                                    onClick={() => handleSelectMonth(idx)}
+                                                    className={`relative py-3 px-1 rounded-xl text-[13px] font-bold transition-all duration-150 ${isActive
+                                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-1 ring-blue-600 z-10'
+                                                        : isCurrentMonth
+                                                            ? 'bg-blue-50/50 text-blue-600 hover:bg-blue-50 font-black ring-[1.5px] ring-blue-200'
+                                                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                                                        }`}
+                                                >
+                                                    {name}
+                                                </motion.button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Footer */}
+                                    <div className="px-4 pb-3 flex items-center gap-2">
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            onClick={handleClearMonth}
+                                            className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all"
+                                        >
+                                            {t('clear') || 'Tozalash'}
+                                        </motion.button>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            onClick={() => {
+                                                const now = new Date();
+                                                setPickerYear(now.getFullYear());
+                                                handleSelectMonth(now.getMonth());
+                                            }}
+                                            className="flex-1 py-2.5 rounded-xl text-xs font-extrabold text-blue-600 hover:bg-blue-50 transition-all bg-transparent"
+                                        >
+                                            {t('this_month') || 'Shu oy'}
+                                        </motion.button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => setIsAddExpenseModalOpen(true)}
+                            className="h-9 px-4 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap shadow-sm shadow-emerald-500/20"
+                        >
+                            {t('add_transaction') || "Qo'shish"}
+                        </button>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    {/* Visual Summary */}
+                    {sortedPayments.length > 0 && !loadingPayments && (
+                        <div className="flex flex-col sm:flex-row items-stretch gap-4 px-4 md:px-6 py-4 border-b border-slate-100 bg-white/50">
+                            {/* Income Card */}
+                            <div
+                                className="flex-1 flex items-center gap-3 md:gap-4 shadow-[0_4px_12px_-4px_rgba(16,185,129,0.3)] px-4 py-3 md:px-5 md:py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden"
+                                style={{ background: 'linear-gradient(180deg, #10B981 0%, #059669 100%)' }}
+                            >
+                                <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+                                <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0 border border-white/30 backdrop-blur-md z-10 group-hover:scale-105 transition-transform">
+                                    <ArrowUpRight className="w-5 h-5 md:w-6 md:h-6 text-white stroke-[2.5] drop-shadow-sm" />
+                                </div>
+                                <div className="flex flex-col min-w-0 z-10 text-white justify-center">
+                                    <span className="text-emerald-50 font-bold text-[10px] md:text-[11px] uppercase tracking-wider mb-0.5 opacity-90">{t('total_income') || 'Jami Daromad'}</span>
+                                    <span className="font-black text-lg md:text-xl leading-none truncate block drop-shadow-sm tracking-tight">
+                                        +{totalIncome.toLocaleString()} {t('currency') || 'UZS'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Expense Card */}
+                            <div
+                                className="flex-1 flex items-center gap-3 md:gap-4 shadow-[0_4px_12px_-4px_rgba(244,63,94,0.3)] px-4 py-3 md:px-5 md:py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden"
+                                style={{ background: 'linear-gradient(180deg, #F43F5E 0%, #E11D48 100%)' }}
+                            >
+                                <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+                                <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0 border border-white/30 backdrop-blur-md z-10 group-hover:scale-105 transition-transform">
+                                    <ArrowDownRight className="w-5 h-5 md:w-6 md:h-6 text-white stroke-[2.5] drop-shadow-sm" />
+                                </div>
+                                <div className="flex flex-col min-w-0 z-10 text-white justify-center">
+                                    <span className="text-rose-50 font-bold text-[10px] md:text-[11px] uppercase tracking-wider mb-0.5 opacity-90">{t('total_expenses') || 'Jami Xarajatlar'}</span>
+                                    <span className="font-black text-lg md:text-xl leading-none truncate block drop-shadow-sm tracking-tight">
+                                        -{totalExpense.toLocaleString()} {t('currency') || 'UZS'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {loadingPayments ? (
                         <div className="flex justify-center py-16">
                             <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
                         </div>
                     ) : sortedPayments.length === 0 ? (
-                        <div className="text-center py-16">
+                        <div className="text-center py-16 flex-1">
                             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Banknote className="text-slate-300" size={32} />
                             </div>
                             <p className="text-slate-500 font-medium">{t('no_payments_found') || 'No payments recorded yet'}</p>
                         </div>
                     ) : (
-                        <div className="min-w-full">
+                        <div className="min-w-full flex-1">
                             {months.map(monthKey => {
                                 const monthData = paymentsByMonth[monthKey];
                                 if (!monthData || monthData.payments.length === 0) return null;
                                 if (selectedMonth !== 'all' && selectedMonth !== monthKey) return null;
+
+                                const filteredMonthPayments = monthData.payments
+                                    .filter(p => sortedPayments.some(sp => sp.id === p.id))
+                                    .sort((a, b) => {
+                                        const dateA = new Date(a.createdAt || `${a.date}T${a.time || '00:00'}`).getTime();
+                                        const dateB = new Date(b.createdAt || `${b.date}T${b.time || '00:00'}`).getTime();
+                                        return dateB - dateA;
+                                    });
+
+                                if (filteredMonthPayments.length === 0) return null;
 
                                 return (
                                     <div key={monthKey}>
@@ -1079,45 +1320,66 @@ const StaffDetail = ({
                                             <h4 className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600 transition-colors">
                                                 {monthData.label}
                                             </h4>
-                                            <span className="text-[9px] md:text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">{monthData.payments.length} {t('records') || 'records'}</span>
+                                            <span className="text-[9px] md:text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">{filteredMonthPayments.length} {t('records') || 'records'}</span>
                                         </div>
 
                                         {/* Ledger List */}
                                         <div className="space-y-2 px-3 md:px-6 pb-4 md:pb-6">
-                                            {monthData.payments.map((payment, idx) => {
+                                            {filteredMonthPayments.map((payment, idx) => {
                                                 const isVoided = !!payment.isVoided;
+                                                const patient = payment.patientId ? patientList.find(p => p.id === payment.patientId) : null;
+                                                const isIncome = payment.type === 'income' || payment.category === 'salary';
                                                 return (
                                                     <div
                                                         key={payment.id}
-                                                        className={`rounded-xl md:rounded-2xl p-3 md:p-4 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-0 sm:justify-between transition-colors group cursor-default border ${isVoided
-                                                            ? 'bg-slate-100 border-slate-200 opacity-60'
-                                                            : 'bg-slate-200/60 border-slate-300/60 hover:bg-slate-200 hover:border-slate-400'
+                                                        className={`rounded-[1.25rem] md:rounded-[1.5rem] p-3 md:p-4 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-0 sm:justify-between transition-colors group cursor-default border shadow-sm ${isVoided
+                                                            ? 'bg-slate-50 border-slate-200/50 opacity-60'
+                                                            : 'bg-white border-slate-200/60 hover:bg-slate-50 hover:border-slate-300/80'
                                                             }`}
                                                     >
                                                         {/* Top/Left: Icon & Info */}
-                                                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                            <div className={`w-9 h-9 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center border shadow-sm flex-shrink-0 transition-transform duration-300 ${isVoided
-                                                                ? 'bg-slate-50 text-slate-400 border-slate-100'
-                                                                : 'bg-white text-emerald-600 border-slate-200 group-hover:scale-110'
-                                                                }`}>
-                                                                <Banknote size={16} className="stroke-[2.5] md:w-[18px] md:h-[18px]" />
-                                                            </div>
-                                                            <div className="flex flex-col gap-0.5 min-w-0">
-                                                                <p className={`font-bold text-[13px] md:text-sm leading-tight capitalize transition-colors truncate ${isVoided
+                                                        <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
+                                                            {patient ? (
+                                                                <div className={`relative flex-shrink-0 transition-transform duration-300 ${!isVoided ? 'group-hover:scale-105' : ''}`}>
+                                                                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-[1rem] overflow-hidden border-2 shadow-sm ${isVoided ? 'border-slate-200 opacity-60 grayscale' : 'border-white ring-1 ring-slate-100'}`}>
+                                                                        {patient.profileImage ? (
+                                                                            <img src={patient.profileImage} alt={patient.fullName} className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            <div className={`w-full h-full flex items-center justify-center font-bold text-sm md:text-base ${isIncome ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                                                {patient.fullName.charAt(0).toUpperCase()}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    {isVoided && (
+                                                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-slate-200 rounded-full border border-white flex items-center justify-center">
+                                                                            <X size={10} className="text-slate-500" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-[1rem] flex items-center justify-center border shadow-sm flex-shrink-0 transition-transform duration-300 ${isVoided
+                                                                    ? 'bg-slate-50 text-slate-400 border-slate-100'
+                                                                    : `bg-white border-slate-200 group-hover:scale-110 ${isIncome ? 'text-emerald-600' : 'text-rose-600'}`
+                                                                    }`}>
+                                                                    <Banknote size={20} className="stroke-[2.5]" />
+                                                                </div>
+                                                            )}
+                                                            <div className="flex flex-col gap-0.5 md:gap-1 min-w-0">
+                                                                <p className={`font-bold text-[14px] md:text-base leading-tight capitalize transition-colors truncate ${isVoided
                                                                     ? 'text-slate-400 line-through decoration-slate-300'
-                                                                    : 'text-slate-900 group-hover:text-blue-600'
+                                                                    : 'text-slate-900 group-hover:text-amber-600'
                                                                     }`}>
                                                                     {payment.description.startsWith('[Split]')
-                                                                        ? `${t('split_from') || '[Split] '}${payment.description.replace('[Split]', '').trim()}`
+                                                                        ? `${t('split_from') || '[Bo\'linma]'} ${patient ? patient.fullName + ' - ' : ''}${payment.description.replace('[Split]', '').trim()}`
                                                                         : (t(payment.description) || payment.description)}
                                                                 </p>
-                                                                <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-xs text-slate-500 font-medium flex-wrap">
+                                                                <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-slate-500 font-medium flex-wrap">
                                                                     <span>{new Date(payment.date).toLocaleDateString()}</span>
-                                                                    <span className="w-1 h-1 rounded-full bg-slate-400" />
+                                                                    <span className="w-1 h-1 rounded-full bg-slate-400 opacity-50" />
                                                                     <span>{payment.time || '—'}</span>
                                                                     {isVoided && (
-                                                                        <span className="px-1.5 py-0.5 rounded bg-slate-200 text-[9px] font-bold uppercase text-slate-500 tracking-wider">
-                                                                            {t('voided') || 'VOIDED'}
+                                                                        <span className="px-1.5 py-0.5 rounded bg-slate-200 text-[10px] font-bold uppercase text-slate-500 tracking-wider ml-1">
+                                                                            {t('voided') || 'BEKOR QILINGAN'}
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -1173,6 +1435,12 @@ const StaffDetail = ({
                     )}
                 </div>
             </div>
+            <AddStaffExpenseModal
+                isOpen={isAddExpenseModalOpen}
+                onClose={() => setIsAddExpenseModalOpen(false)}
+                staffId={staff.id}
+                staffName={staff.fullName}
+            />
         </div>
     );
 };
@@ -1211,7 +1479,9 @@ export const StaffPage = () => {
             setStaffList(data);
             setLoading(false);
         });
-        return () => unsub();
+        return () => {
+            setTimeout(() => unsub(), 0);
+        };
     }, [accountId]);
 
 
@@ -1425,17 +1695,19 @@ export const StaffPage = () => {
                                             {/* Data & Actions */}
                                             <div className="space-y-4">
                                                 {/* Salary */}
-                                                <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-white text-emerald-600 flex items-center justify-center shadow-sm">
-                                                            <Banknote size={16} className="stroke-[2.5]" />
+                                                {staff.salary != null && staff.salary > 0 && (
+                                                    <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-lg bg-white text-emerald-600 flex items-center justify-center shadow-sm">
+                                                                <Banknote size={16} className="stroke-[2.5]" />
+                                                            </div>
+                                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('salary')}</span>
                                                         </div>
-                                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('salary')}</span>
+                                                        <div className="font-bold text-slate-900">
+                                                            {staff.salary?.toLocaleString()} <span className="text-[10px] text-slate-400 font-extrabold ml-0.5">UZS</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="font-bold text-slate-900">
-                                                        {staff.salary?.toLocaleString()} <span className="text-[10px] text-slate-400 font-extrabold ml-0.5">UZS</span>
-                                                    </div>
-                                                </div>
+                                                )}
 
                                                 {/* Phone (Full Width) */}
                                                 <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
@@ -1452,7 +1724,7 @@ export const StaffPage = () => {
 
                                                 {/* Pay Button */}
                                                 {/* Pay Button - Hidden for Viewer */}
-                                                {!isViewer && (
+                                                {!isViewer && staff.salary != null && staff.salary > 0 && (
                                                     <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();

@@ -123,26 +123,46 @@ const userSessions = {};
 
 // --- SECURITY ---
 const ALLOWED_USER_IDS = [1907166652, 123456789];
-const SCAM_REGEX = /(tonplay|free\s*spin|bonus\s*\d+|crypto\s*giveaway)/i;
+const SCAM_REGEX = /(tonplay|free\s*spin|bonus\s*\d+|crypto\s*giveaway|bitcoin|usdt|invest|airdrop|http.*telegram\.me|http.*t\.me|http.*whatsapp|click\s*here|virus)/i;
+const DANGEROUS_EXTENSIONS = /\.(exe|bat|cmd|vbs|vbe|js|jse|wsf|wsh|msc|scr|reg|pif|apk|dll|msi)$/i;
 
 bot.use(async (ctx, next) => {
     const user = ctx.from;
     if (!user) return next();
-    console.log(`🛡️ Access Check: User ${user.first_name} (${user.id})`);
-    await next();
-});
 
-bot.use(async (ctx, next) => {
+    // Block common scam vector: forwarded messages from unknown channels
+    if (ctx.message && ctx.message.forward_from_chat) {
+        try { await ctx.deleteMessage(); } catch (e) { }
+        return;
+    }
+
     const message = ctx.message || ctx.editedMessage;
     if (!message) return next();
+
+    // 1. Text Scam / Phishing Detection
     const content = (message.text || "") + (message.caption || "");
     if (SCAM_REGEX.test(content)) {
+        console.log(`🛡️ Scam detected and blocked from ${user.first_name} (${user.id})`);
         try {
             await ctx.deleteMessage();
             if (ctx.chat.type !== 'private') await ctx.banChatMember(message.from.id);
         } catch (e) { console.error(e); }
         return;
     }
+
+    // 2. Malware & Virus Document Block
+    if (message.document) {
+        const fileName = message.document.file_name || "";
+        if (DANGEROUS_EXTENSIONS.test(fileName)) {
+            console.log(`☢️ VIRUS/MALWARE BLOCK: Prevented malicious file upload => ${fileName}`);
+            try {
+                await ctx.deleteMessage();
+                await ctx.reply("❌ Xavfsizlik qoidalari: Zararli fayllar yuborish qat'iyan man etiladi! \n\n(Security Alert: Malicious file types are strictly blocked.)");
+            } catch (e) { console.error(e); }
+            return;
+        }
+    }
+
     await next();
 });
 

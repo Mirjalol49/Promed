@@ -61,7 +61,9 @@ export const createSystemUser = async (data: {
             avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.fullName)}&background=random`,
             is_disabled: false,
             lock_password: data.password,
-            lock_enabled: true
+            lock_enabled: true,
+            account_id: user.uid,
+            accountId: user.uid
         });
 
         // Create clean phone number by removing spaces

@@ -426,7 +426,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
                                 <div className="absolute inset-0 opacity-0">
                                     <CustomSelect
-                                        options={(type === 'income' ? ['surgery', 'consultation', 'injection', 'other'] : ['salary', 'tax', 'rent', 'marketing', 'equipment', 'other']).map(c => ({ value: c, label: t(c) || c }))}
+                                        options={(type === 'income' ? ['surgery', 'consultation', 'injection', 'shampoo', 'other'] : ['salary', 'tax', 'rent', 'marketing', 'equipment', 'food', 'pills', 'other']).map(c => ({ value: c, label: t(c) || c }))}
                                         value={formData.category}
                                         onChange={(v) => {
                                             const newCategory = v as TransactionCategory;
@@ -477,8 +477,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                         {/* --- DYNAMIC CONTEXTUAL INPUTS --- */}
                         <div className="space-y-6 flex-1">
 
-                            {/* 1. PATIENT SELECTOR (Type: Income + Category: surgery/consultation/injection) */}
-                            {(type === 'income' && formData.category !== 'other') && (
+                            {/* 1. PATIENT SELECTOR (Type: Income + Category: surgery/consultation/injection OR Type: Expense + Category: pills) */}
+                            {((type === 'income' && formData.category !== 'other' && formData.category !== 'shampoo') || (type === 'expense' && formData.category === 'pills')) && (
                                 <div className="animate-in fade-in slide-in-from-top-4 duration-300">
                                     <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('patient') || 'BEMOR'}</label>
                                     <div className="relative group bg-white border border-slate-200 shadow-sm rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all h-[64px]">
@@ -516,8 +516,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                                 </div>
                             )}
 
-                            {/* 2. STAFF SELECTOR (Type: Expense + Category: Salary) */}
-                            {(type === 'expense' && formData.category === 'salary') && (
+                            {/* 2. STAFF SELECTOR (Type: Expense + Category: Salary/Food) */}
+                            {(type === 'expense' && (formData.category === 'salary' || formData.category === 'food')) && (
                                 <div className="animate-in fade-in slide-in-from-top-4 duration-300">
                                     <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('staff_member_label') || 'XODIM'}</label>
                                     <div className="relative bg-white border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-rose-300 hover:shadow-sm transition-all h-[64px]">
@@ -570,7 +570,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                         <div className="mt-8">
                             <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={handleSubmit}
-                                disabled={loading || !formData.amount || (type === 'income' && formData.category !== 'other' && !formData.patientId) || (type === 'expense' && formData.category === 'salary' && !formData.staffId)}
+                                disabled={loading || !formData.amount || (type === 'income' && formData.category !== 'other' && formData.category !== 'shampoo' && !formData.patientId) || (type === 'expense' && formData.category === 'pills' && !formData.patientId) || (type === 'expense' && (formData.category === 'salary' || formData.category === 'food') && !formData.staffId)}
                                 className={`
                                     w-full !py-4 text-base uppercase tracking-wide shadow-lg
                                     ${type === 'income' ? 'btn-glossy-emerald' : 'btn-glossy-red'}

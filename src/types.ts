@@ -156,6 +156,7 @@ export type TransactionCategory =
   | 'surgery'       // Income
   | 'consultation'  // Income
   | 'injection'     // Income
+  | 'shampoo'       // Income
   | 'salary'        // Expense
   | 'rent'          // Expense
   | 'equipment'     // Expense
