@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -25,29 +24,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const [isMobile, setIsMobile] = useState(false);
 
     // Parse initial date or use today
     const initialDate = value ? new Date(value) : new Date();
     const [currentMonth, setCurrentMonth] = useState(new Date(initialDate.getFullYear(), initialDate.getMonth(), 1));
-
-    // Detect mobile viewport
-    useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768);
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
-
-    // Prevent body scroll on mobile when picker is open
-    useEffect(() => {
-        if (isOpen && isMobile) {
-            document.body.style.overflow = 'hidden';
-            return () => {
-                document.body.style.overflow = '';
-            };
-        }
-    }, [isOpen, isMobile]);
 
     // Close on click outside
     useEffect(() => {
@@ -188,36 +168,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 </div>
             </div>
 
-            <AnimatePresence>
-                {isOpen && (
-                    isMobile ? (
-                        typeof document !== 'undefined' && createPortal(
-                            <div className="fixed inset-0 z-[100000] bg-black/20 backdrop-blur-sm" onClick={() => setIsOpen(false)}>
-                                <motion.div
-                                    id={portalId}
-                                    initial={{ opacity: 0, y: 100 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 100 }}
-                                    transition={{ duration: 0.25, ease: "easeOut" }}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl border-t border-slate-200 overflow-hidden pb-6 safe-area-bottom"
-                                >
-                                    <div className="flex justify-center pt-3 pb-2">
-                                        <div className="w-10 h-1 bg-slate-300 rounded-full" />
-                                    </div>
-                                    <div className="px-4 pb-4">
-                                        {renderDropdownContent()}
-                                    </div>
-                                </motion.div>
-                            </div>, document.body
-                        )
-                    ) : (
-                        <div id={portalId} className="absolute z-50 mt-2 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 w-72 animate-in fade-in zoom-in-95 duration-200 left-0 sm:left-auto">
-                            {renderDropdownContent()}
-                        </div>
-                    )
-                )}
-            </AnimatePresence>
+            {isOpen && (
+                <div id={portalId} className="absolute z-[100] mt-2 bg-white rounded-3xl shadow-xl border border-slate-100 p-5 w-full min-w-[300px] animate-in fade-in zoom-in-95 duration-200 slide-in-from-top-2 left-0 sm:left-auto">
+                    {renderDropdownContent()}
+                </div>
+            )}
         </div>
     );
 };
