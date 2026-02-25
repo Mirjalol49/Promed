@@ -1653,7 +1653,7 @@ export const AddPatientForm: React.FC<{
             {validationError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm font-medium">
                 <X size={16} className="flex-shrink-0" />
-                <span>{validationError}</span>
+                <span>{t(validationError)}</span>
               </div>
             )}
             <div className="grid grid-cols-2 md:flex md:justify-end gap-3 md:gap-4">
