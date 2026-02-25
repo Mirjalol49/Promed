@@ -388,24 +388,24 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-sm"
+                            className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-sm gap-2"
                         >
-                            <div className="flex items-center gap-3">
-                                <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-6 h-6 shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
                                     {idx + 1}
                                 </div>
-                                <div>
-                                    <h4 className="text-sm font-semibold text-slate-800">{step.title}</h4>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        <span className="text-[11px] text-slate-500 flex items-center gap-1"><User size={10} />{step.doctor}</span>
-                                        <span className="text-[10px] text-slate-300">•</span>
-                                        <span className="text-[11px] text-slate-500 flex items-center gap-1"><Clock size={10} />{formatDuration(step.durationMinutes)}</span>
+                                <div className="min-w-0 flex-1">
+                                    <h4 className="text-sm font-semibold text-slate-800 truncate">{step.title}</h4>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                        <span className="text-[11px] text-slate-500 flex items-center gap-1 min-w-0"><User size={10} className="shrink-0" /><span className="truncate max-w-[120px]">{step.doctor}</span></span>
+                                        <span className="text-[10px] text-slate-300 shrink-0">•</span>
+                                        <span className="text-[11px] text-slate-500 flex items-center gap-1 shrink-0"><Clock size={10} />{formatDuration(step.durationMinutes)}</span>
                                     </div>
                                 </div>
                             </div>
                             <button
                                 onClick={() => removeStep(step.id)}
-                                className="text-slate-400 hover:text-red-500 transition-colors p-2"
+                                className="text-slate-400 hover:text-red-500 transition-colors p-2 shrink-0 bg-slate-50 rounded-lg"
                                 aria-label="Remove step"
                             >
                                 <Trash2 size={16} />
@@ -447,9 +447,9 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
 
     const renderRunning = () => (
         <div className="space-y-4 animate-in fade-in duration-300">
-            <div className="flex justify-between items-center mb-6 pl-1 pr-1">
-                <div className="flex items-center gap-2">
-                    <div className="relative flex h-3 w-3">
+            <div className="flex flex-wrap justify-between items-center mb-5 md:mb-6 pl-1 pr-1 gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                    <div className="relative flex shrink-0 h-3 w-3">
                         {state.status === 'running' ? (
                             <>
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
@@ -459,21 +459,21 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                             <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                         )}
                     </div>
-                    <span className={`text-sm font-bold uppercase tracking-widest ${state.status === 'running' ? 'text-blue-600' : 'text-emerald-600'}`}>
+                    <span className={`text-sm font-bold uppercase tracking-widest truncate ${state.status === 'running' ? 'text-blue-600' : 'text-emerald-600'}`}>
                         {state.status === 'running' ? (t('operation_active') || 'Operation Active') : (t('operation_successful') || 'Operation Successful')}
                     </span>
                 </div>
                 {state.status === 'running' ? (
                     <button
                         onClick={() => setIsResetModalOpen(true)}
-                        className="text-xs font-bold text-slate-400 hover:text-red-500 flex items-center gap-1.5 transition-colors uppercase tracking-wider bg-slate-50 hover:bg-red-50 px-3 py-1.5 rounded-lg"
+                        className="shrink-0 text-xs font-bold text-slate-400 hover:text-red-500 flex items-center gap-1.5 transition-colors uppercase tracking-wider bg-slate-50 hover:bg-red-50 px-3 py-1.5 rounded-lg"
                     >
                         <Square size={12} fill="currentColor" /> {t('stop') || 'Stop'}
                     </button>
                 ) : (
                     <button
                         onClick={() => setIsResetModalOpen(true)}
-                        className="text-xs font-bold text-slate-400 hover:text-blue-600 flex items-center gap-1.5 transition-colors uppercase tracking-wider bg-slate-50 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
+                        className="shrink-0 text-xs font-bold text-slate-400 hover:text-blue-600 flex items-center gap-1.5 transition-colors uppercase tracking-wider bg-slate-50 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
                     >
                         {t('reset_tracker') || 'Reset Tracker'}
                     </button>
@@ -510,21 +510,48 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                             </div>
 
                             {/* Content Column */}
-                            <div className={`flex-1 pb-6 ${isFuture ? 'opacity-50 grayscale' : ''}`}>
+                            <div className={`flex-1 min-w-0 pb-6 ${isFuture ? 'opacity-50 grayscale' : ''}`}>
                                 <div className={`bg-white border rounded-2xl p-4 md:p-5 shadow-sm overflow-hidden transition-all duration-300 ${isCurrent ? 'border-blue-200 ring-1 ring-blue-50 hover:shadow-md' : isPast ? 'border-emerald-100 bg-emerald-50/10' : 'border-slate-100 border-dashed'}`}>
-                                    <div className="flex justify-between items-start gap-4">
-                                        <div className="flex items-start gap-3.5 w-full">
-                                            <div className="pt-0.5 w-full">
-                                                <h4 className={`text-base font-black tracking-tight ${isCurrent ? 'text-blue-900' : 'text-slate-800'}`}>{step.title}</h4>
+                                    <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
 
-                                                <div className="flex flex-col gap-2 mt-2">
+                                        {/* Left Side: Title & Doctors */}
+                                        <div className="flex items-start w-full min-w-0">
+                                            <div className="pt-0.5 w-full min-w-0">
+                                                <div className="flex justify-between items-start gap-2">
+                                                    <h4 className={`text-base font-black tracking-tight truncate ${isCurrent ? 'text-blue-900' : 'text-slate-800'}`}>{step.title}</h4>
+
+                                                    {/* Mobile Only: Status Badge inline with title */}
+                                                    <div className="sm:hidden shrink-0 mt-0.5">
+                                                        {isCurrent ? (
+                                                            <div className="flex flex-col items-end gap-1.5">
+                                                                <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 font-mono font-bold tracking-tight shadow-sm text-[11px]">
+                                                                    <Timer size={12} className="animate-pulse" />
+                                                                    {formatTimeLeft(elapsed, step.durationMinutes)}
+                                                                </div>
+                                                                <button onClick={completeCurrentStepEarly} className="text-[9px] uppercase tracking-wider font-bold text-slate-400 hover:text-blue-600 transition-colors focus:outline-none rounded">
+                                                                    {t('skip') || 'Skip'} &rarr;
+                                                                </button>
+                                                            </div>
+                                                        ) : isPast ? (
+                                                            <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-100 shadow-sm">
+                                                                <CheckCircle2 size={12} /> {t('done') || 'Done'}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-[10px] font-bold tracking-wide text-slate-400 flex items-center gap-1 px-2 py-1 bg-slate-50 rounded-lg border border-slate-100">
+                                                                <Clock size={11} /> {formatDuration(step.durationMinutes)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col gap-2 mt-3">
                                                     {doctorNames.map((dName, dIdx) => {
                                                         const dStaff = staffList.find(s => s.fullName === dName);
                                                         const dSplits = dStaff ? transactions.filter(t => t.staffId === dStaff.id).sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime()) : [];
                                                         const dLatestSplit = dSplits.length > 0 ? dSplits[0] : null;
 
                                                         return (
-                                                            <div key={dIdx} className="flex items-center gap-2.5">
+                                                            <div key={dIdx} className="flex items-center gap-2.5 min-w-0">
                                                                 <div className={`w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm border-[1.5px] ${isCurrent ? 'border-blue-100 ring-1 ring-blue-50' : 'border-white ring-1 ring-slate-100'}`}>
                                                                     {dStaff?.imageUrl ? (
                                                                         <img src={dStaff.imageUrl} alt={dName} className="w-full h-full object-cover" />
@@ -534,17 +561,16 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <div className="flex flex-wrap items-center gap-1.5 font-bold text-slate-600 text-[13px]">
-                                                                    <span>{dName}</span>
+                                                                <div className="flex flex-wrap items-center gap-1.5 font-bold text-slate-600 text-[13px] min-w-0">
+                                                                    <span className="truncate max-w-full">{dName}</span>
                                                                     {dStaff && dStaff.role && (
-                                                                        <span className="text-[9px] uppercase tracking-widest text-slate-400 ml-1 bg-slate-100/80 px-1.5 py-0.5 rounded border border-slate-200/50">
+                                                                        <span className="text-[9px] uppercase tracking-widest text-slate-400 bg-slate-100/80 px-1.5 py-0.5 rounded border border-slate-200/50 shrink-0">
                                                                             {t(`role_${dStaff.role}`) || dStaff.role}
                                                                         </span>
                                                                     )}
                                                                     {dLatestSplit && dLatestSplit.amount > 0 && (
-                                                                        <span className="text-[12px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 ml-1.5 flex items-center gap-1 shadow-sm ring-1 ring-emerald-500/10">
+                                                                        <span className="text-[12px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 flex items-center gap-1 shadow-sm ring-1 ring-emerald-500/10 shrink-0">
                                                                             {formatWithSpaces(dLatestSplit.amount)} {dLatestSplit.currency || 'UZS'}
-                                                                            <span className="text-[9px] font-bold opacity-50 ml-0.5">({new Date(dLatestSplit.createdAt || dLatestSplit.date).toLocaleDateString()})</span>
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -565,26 +591,28 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                             </div>
                                         </div>
 
-                                        {/* Status Badge or Timer */}
-                                        {isCurrent ? (
-                                            <div className="text-right flex flex-col items-end gap-2">
-                                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 font-mono font-bold tracking-tight shadow-sm">
-                                                    <Timer size={14} className="animate-pulse" />
-                                                    {formatTimeLeft(elapsed, step.durationMinutes)}
+                                        {/* Desktop Only: Status Badge or Timer */}
+                                        <div className="hidden sm:flex text-right flex-col items-end gap-2 shrink-0">
+                                            {isCurrent ? (
+                                                <>
+                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 font-mono font-bold tracking-tight shadow-sm">
+                                                        <Timer size={14} className="animate-pulse" />
+                                                        {formatTimeLeft(elapsed, step.durationMinutes)}
+                                                    </div>
+                                                    <button onClick={completeCurrentStepEarly} className="text-[10px] uppercase tracking-wider font-bold text-slate-400 hover:text-blue-600 transition-colors focus:outline-none rounded">
+                                                        {t('skip') || 'Skip'} &rarr;
+                                                    </button>
+                                                </>
+                                            ) : isPast ? (
+                                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-100 shadow-sm">
+                                                    <CheckCircle2 size={14} /> {t('done') || 'Done'}
                                                 </div>
-                                                <button onClick={completeCurrentStepEarly} className="text-[10px] uppercase tracking-wider font-bold text-slate-400 hover:text-blue-600 transition-colors focus:outline-none rounded">
-                                                    {t('skip') || 'Skip'} &rarr;
-                                                </button>
-                                            </div>
-                                        ) : isPast ? (
-                                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-100 shadow-sm">
-                                                <CheckCircle2 size={14} /> {t('done') || 'Done'}
-                                            </div>
-                                        ) : (
-                                            <div className="text-xs font-bold tracking-wide text-slate-400 flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                                                <Clock size={13} /> {formatDuration(step.durationMinutes)}
-                                            </div>
-                                        )}
+                                            ) : (
+                                                <div className="text-xs font-bold tracking-wide text-slate-400 flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
+                                                    <Clock size={13} /> {formatDuration(step.durationMinutes)}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Perfect Progress Bar */}
