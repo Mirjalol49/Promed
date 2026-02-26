@@ -68,22 +68,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
 
     return (
-        <div className="relative">
+        <div className="relative w-full max-w-full overflow-x-hidden">
             {/* Tour Guide */}
             <TourGuide />
 
 
 
-            <div className="space-y-10 p-2 sm:p-4">
+            <div className="space-y-10 p-2 sm:p-4 w-full">
                 {/* Vitals Strip */}
-                <div className="space-y-4">
+                <div className="space-y-4 w-full">
                     <h3 className="text-lg font-bold text-promed-text tracking-tight flex items-center gap-2 px-2">
                         <div className="p-2 bg-promed-primary/10 rounded-xl border border-promed-primary/10 ">
                             <Activity className="w-5 h-5 text-promed-primary" />
                         </div>
                         {t('overview')}
                     </h3>
-                    <div id="stats-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                    <div id="stats-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 w-full">
                         {/* 1. Revenue (Financials First) - HIDDEN FOR NURSE */}
                         {role !== 'nurse' && (
                             <StatCard
@@ -134,9 +134,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
 
                 {/* Dashboard Grid */}
-                <div className="grid grid-cols-1 gap-8">
+                <div className="grid grid-cols-1 gap-8 w-full min-w-0">
                     {/* Main: Upcoming Schedule */}
-                    <div className="relative min-h-[500px]">
+                    <div className="relative min-h-[500px] w-full min-w-0">
                         <DashboardScheduler
                             patients={patients}
                             onViewPatient={onPatientSelect}

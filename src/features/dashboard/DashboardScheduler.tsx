@@ -158,27 +158,27 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
     }, [selectedDate, t, currentLocale]);
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div className="lg:col-span-7 xl:col-span-8 h-full">
-                <div className="relative bg-white rounded-3xl p-6 shadow-apple border border-slate-100 h-full min-h-[420px] max-h-[500px] flex flex-col group/list">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 items-start w-full">
+            <div className="lg:col-span-7 xl:col-span-8 h-full min-w-0 w-full">
+                <div className="relative bg-white rounded-3xl p-4 md:p-6 shadow-apple border border-slate-100 h-full min-h-[420px] max-h-[500px] flex flex-col group/list overflow-hidden w-full">
 
-                    <div className="flex justify-between items-center mb-6 flex-shrink-0 z-20 relative">
-                        <div>
-                            <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-                                <span className="bg-promed-primary/10 p-2 rounded-xl text-promed-primary">
-                                    <Calendar size={20} />
-                                </span>
+                    <div className="flex justify-between items-center mb-4 md:mb-6 flex-shrink-0 z-20 relative px-1">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-blue-50/80 p-2.5 rounded-2xl border border-blue-100/50 text-blue-500 shadow-sm flex items-center justify-center">
+                                <Calendar size={22} strokeWidth={2.5} />
+                            </div>
+                            <h2 className="text-xl font-black text-slate-800 tracking-tight">
                                 {t('schedule') || 'Jadval'}
                             </h2>
                         </div>
 
                         {/* Segmented Control */}
-                        <div className="flex bg-slate-100/80 p-1 rounded-xl relative">
+                        <div className="flex bg-slate-100/80 p-1.5 rounded-2xl shadow-inner border border-slate-200/50">
                             {/* Bugun Tab */}
                             <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => setSelectedDate(new Date())}
-                                className={`relative z-10 px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-300 ${selectedDate && isToday(selectedDate)
-                                    ? 'bg-blue-600 text-white shadow-md'
+                                className={`relative z-10 px-5 py-2 text-xs font-bold rounded-xl transition-all duration-300 ${selectedDate && isToday(selectedDate)
+                                    ? 'bg-white text-blue-600 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.1)] border border-slate-200/50'
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
@@ -188,13 +188,8 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                             {/* Kelgusi Tab */}
                             <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => setSelectedDate(null)}
-                                className={`relative z-10 px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-300 ${!selectedDate || (selectedDate && !isToday(selectedDate))
-                                    // Logic: If null (default upcoming) OR if a specific date is selected that is NOT today (e.g. tomorrow), 
-                                    // we might want to highlight this or just treat specific non-today dates as "not Bugun".
-                                    // For exact "Kelgusi" tab behavior (Show All List), strictly check !selectedDate.
-                                    // But if user selects tomorrow from calendar, this tab setup might be confusing. 
-                                    // Let's stick to the requested behavior: "Kelgusi" implies the "Upcoming List" view which corresponds to selectedDate === null.
-                                    ? (!selectedDate ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700')
+                                className={`relative z-10 px-5 py-2 text-xs font-bold rounded-xl transition-all duration-300 ${!selectedDate || (selectedDate && !isToday(selectedDate))
+                                    ? (!selectedDate ? 'bg-white text-blue-600 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.1)] border border-slate-200/50' : 'text-slate-500 hover:text-slate-700')
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
@@ -203,7 +198,7 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                         </div>
                     </div>
 
-                    <div className={`flex-1 pr-2 -mr-2 space-y-4 pb-2 transition-colors ${displayedGroups.length > 2 ? 'overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent hover:scrollbar-thumb-slate-300' : 'overflow-hidden'} ${displayedGroups.length === 0 ? 'flex flex-col justify-center h-full' : ''}`}>
+                    <div className={`flex-1 pr-2 space-y-4 pb-2 transition-colors px-1 ${displayedGroups.length > 2 ? 'overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent hover:scrollbar-thumb-slate-300' : 'overflow-hidden'} ${displayedGroups.length === 0 ? 'flex flex-col justify-center h-full' : ''}`}>
 
                         {displayedGroups.length > 0 ? (
                             displayedGroups.map((group, index) => {
@@ -213,9 +208,9 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                 return (
                                     <React.Fragment key={patientId}>
                                         {showHeader && (
-                                            <div className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl py-3 px-3 -mx-3 mb-4 border-b border-slate-200/50 flex items-center gap-3 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.05)] translate-y-[-1px]">
-                                                <div className="h-1.5 w-1.5 rounded-full bg-promed-primary ring-4 ring-promed-primary/10"></div>
-                                                <h4 className="text-[13px] font-black text-slate-700 uppercase tracking-widest">
+                                            <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md pt-5 pb-3 mb-4 border-b border-slate-100 flex items-center gap-3">
+                                                <div className="h-2 w-2 rounded-full bg-blue-500 ring-4 ring-blue-500/20"></div>
+                                                <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">
                                                     {isToday(primaryEvent.date) ? t('today') : format(primaryEvent.date, 'EEEE, d MMMM', { locale: currentLocale })}
                                                 </h4>
                                             </div>
@@ -234,7 +229,7 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                                 className="flex items-stretch cursor-pointer relative"
                                             >
                                                 {/* Left Time Panel */}
-                                                <div className={`w-[60px] md:w-[80px] flex items-center justify-center flex-shrink-0 transition-colors gel-blue-style`}>
+                                                <div className="w-[60px] md:w-[80px] flex items-center justify-center flex-shrink-0 transition-colors gel-blue-style">
                                                     <span className="text-sm md:text-lg font-black text-white tracking-tight tabular-nums drop-shadow-sm">
                                                         {format(primaryEvent.date, 'HH:mm')}
                                                     </span>
@@ -337,12 +332,12 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                 </div>
             </div>
 
-            <div className="lg:col-span-5 xl:col-span-4">
+            <div className="lg:col-span-5 xl:col-span-4 min-w-0 w-full">
                 <CalendarWidget
                     events={calendarEvents}
                     selectedDate={selectedDate}
                     onDateSelect={handleDateSelect}
-                    className="shadow-apple border border-slate-100 h-full min-h-[420px]"
+                    className="shadow-apple border border-slate-100 h-full min-h-[420px] w-full relative z-10"
                 />
             </div>
         </div>
