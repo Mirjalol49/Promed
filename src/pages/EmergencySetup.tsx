@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '../lib/firebase';
+import { auth, db, functions } from '../lib/firebase';
 import { useToast } from '../contexts/ToastContext';
 import ToastContainer from '../components/ui/ToastContainer';
 import { SystemAlertBanner } from '../components/layout/SystemAlertBanner';
@@ -98,8 +98,14 @@ export const EmergencySetup: React.FC = () => {
         setListLoading(true);
         setListError('');
         try {
-            const querySnapshot = await getDocs(collection(db, 'profiles'));
-            const fetchedUsers = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const currentUser = auth.currentUser;
+            let profilesQuery = collection(db, 'profiles') as any;
+
+            // In EmergencySetup (System Admin console), we want to see ALL users.
+            // Firestore Security rules will reject this query if the currentUser is not a system admin!
+
+            const querySnapshot = await getDocs(profilesQuery);
+            const fetchedUsers = querySnapshot.docs.map((doc: any) => ({ id: doc.id, ...(doc.data() as any) }));
             setUsers(fetchedUsers);
             if (fetchedUsers.length === 0) setListError('No users found.');
         } catch (err: any) {

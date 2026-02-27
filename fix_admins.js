@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { getFirestore, collection, getDocs, setDoc, doc } from "firebase/firestore";
+import { getFirestore, collection, getDocs } from "firebase/firestore";
 
 const firebaseConfig = {
     apiKey: "AIzaSyD_FGKU1Lzdp-DJRr7tgXehH2JmuAZKMYc",
@@ -16,17 +16,12 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 async function main() {
-    await signInWithEmailAndPassword(auth, "superadmin@graft.local", "xurshida4941");
-
+    // Attempt anonymous or no login - if it fails, we will know.
     const q = collection(db, "profiles");
     const snap = await getDocs(q);
-    console.log("Total Profiles:", snap.size);
-
     snap.forEach(d => {
-        const data = d.data();
-        console.log(`| Name: ${data.fullName || data.full_name || 'N/A'} | Role: ${data.role} | UID: ${d.id} | acc_id: ${data.account_id} | accId: ${data.accountId}`);
+        console.log(`Email: ${d.data().email} - Role: ${d.data().role}`);
     });
-
     process.exit(0);
 }
 main().catch(console.error);

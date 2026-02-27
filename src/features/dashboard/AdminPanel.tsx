@@ -167,10 +167,21 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     console.log('[AdminPanel] Fetching users from Firestore...');
 
     try {
-      const querySnapshot = await getDocs(collection(db, "profiles"));
+      const currentUser = auth.currentUser;
+      let profilesQuery = collection(db, 'profiles') as any;
 
-      const mappedUsers = querySnapshot.docs.map(doc => {
-        const u = doc.data();
+      if (currentUser) {
+        const { query, where } = await import('firebase/firestore');
+        const isSystemAdmin = ['mirjalolreactjs@gmail.com', 'admin@graft.com', 'superadmin@graft.local'].includes(currentUser.email || '');
+        if (!isSystemAdmin) {
+          profilesQuery = query(collection(db, 'profiles'), where('account_id', '==', currentUser.uid));
+        }
+      }
+
+      const querySnapshot = await getDocs(profilesQuery);
+
+      const mappedUsers = querySnapshot.docs.map((doc: any) => {
+        const u = doc.data() as any;
         return {
           id: doc.id,
           username: u.username || u.phone || 'N/A', // Fallback for old users

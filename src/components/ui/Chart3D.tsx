@@ -194,49 +194,58 @@ const Group3D: React.FC<{
     const groupMaxVal = Math.max(group.kirim, group.xarajat, group.sof);
     const groupMaxPct = chartMax > 0 ? (groupMaxVal / chartMax) : 0;
 
-    const renderTooltip = () => (
-        <AnimatePresence mode="wait">
-            {isHovered && (
-                <motion.div
-                    initial={safe ? { opacity: 0 } : { opacity: 0, y: 15, scale: 0.9 }}
-                    animate={safe ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-                    exit={safe ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                    className={`absolute bottom-full mb-4 pointer-events-none z-[100] min-w-[200px] ${alignEdge === 'left' ? 'left-0' : alignEdge === 'right' ? 'right-0' : 'left-1/2 -translate-x-1/2'
-                        }`}
-                    style={{ bottom: `${(groupMaxPct * maxH) + depth + 14}px` }}
-                >
-                    <div className="bg-white/95 backdrop-blur-xl border border-slate-200/50 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.22)] rounded-2xl p-4 relative isolate">
-                        {/* 1. Seamless Gradient - Kept inside the card */}
-                        <div className="w-full h-1.5 bg-gradient-to-r from-emerald-400 via-blue-500 to-rose-400 rounded-full opacity-90 shadow-sm mb-3" />
+    const renderTooltip = () => {
+        // If the bar is tall (over 50%), flip the tooltip to render downwards so it doesn't get cut off by the container
+        const shouldFlip = groupMaxPct > 0.5;
 
-                        <div className="relative z-20">
-                            <p className="text-slate-500 font-bold text-[10px] mb-3 uppercase tracking-[0.15em] border-b border-slate-100/80 pb-2.5">{group.fullLabel || group.label}</p>
-                            <div className="flex flex-col gap-2.5">
-                                {[
-                                    { key: 'Kirim', val: group.kirim, c: PALETTE.green },
-                                    { key: 'Xarajat', val: group.xarajat, c: PALETTE.rose },
-                                    { key: 'Sof Foyda', val: group.sof, c: PALETTE.blue }
-                                ].map(item => (
-                                    <div key={item.key} className="flex items-center justify-between gap-6 whitespace-nowrap">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-2.5 h-2.5 rounded-full ring-[3px] shadow-sm ring-white" style={{ backgroundColor: item.c.dot }} />
-                                            <span className="text-[13px] font-bold text-slate-600">
-                                                {item.key}
+        return (
+            <AnimatePresence mode="wait">
+                {isHovered && (
+                    <motion.div
+                        initial={safe ? { opacity: 0 } : { opacity: 0, y: shouldFlip ? -15 : 15, scale: 0.9 }}
+                        animate={safe ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+                        exit={safe ? { opacity: 0 } : { opacity: 0, y: shouldFlip ? -10 : 10, scale: 0.95 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                        className={`absolute pointer-events-none z-[100] min-w-[200px] ${alignEdge === 'left' ? 'left-0' : alignEdge === 'right' ? 'right-0' : 'left-1/2 -translate-x-1/2'
+                            } ${shouldFlip ? 'mt-4' : 'mb-4 bottom-full'}`}
+                        style={
+                            shouldFlip
+                                ? { top: `${Math.max(0, maxH - (groupMaxPct * maxH))}px` }
+                                : { bottom: `${(groupMaxPct * maxH) + depth + 14}px` }
+                        }
+                    >
+                        <div className="bg-white/95 backdrop-blur-xl border border-slate-200/50 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.22)] rounded-2xl p-4 relative isolate">
+                            {/* 1. Seamless Gradient - Kept inside the card */}
+                            <div className="w-full h-1.5 bg-gradient-to-r from-emerald-400 via-blue-500 to-rose-400 rounded-full opacity-90 shadow-sm mb-3" />
+
+                            <div className="relative z-20">
+                                <p className="text-slate-500 font-bold text-[10px] mb-3 uppercase tracking-[0.15em] border-b border-slate-100/80 pb-2.5">{group.fullLabel || group.label}</p>
+                                <div className="flex flex-col gap-2.5">
+                                    {[
+                                        { key: 'Kirim', val: group.kirim, c: PALETTE.green },
+                                        { key: 'Xarajat', val: group.xarajat, c: PALETTE.rose },
+                                        { key: 'Sof Foyda', val: group.sof, c: PALETTE.blue }
+                                    ].map(item => (
+                                        <div key={item.key} className="flex items-center justify-between gap-6 whitespace-nowrap">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-2.5 h-2.5 rounded-full ring-[3px] shadow-sm ring-white" style={{ backgroundColor: item.c.dot }} />
+                                                <span className="text-[13px] font-bold text-slate-600">
+                                                    {item.key}
+                                                </span>
+                                            </div>
+                                            <span className="text-[15px] font-black tracking-tight" style={{ color: item.c.label }}>
+                                                {formatCurrency(item.val)}
                                             </span>
                                         </div>
-                                        <span className="text-[15px] font-black tracking-tight" style={{ color: item.c.label }}>
-                                            {formatCurrency(item.val)}
-                                        </span>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
-    );
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        );
+    };
 
     return (
         <div
@@ -268,7 +277,7 @@ const Group3D: React.FC<{
                     ) : group.label}
                 </span>
             </div>
-        </div>
+        </div >
     );
 };
 
