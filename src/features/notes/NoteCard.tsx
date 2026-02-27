@@ -42,7 +42,7 @@ const accentColorMap: Record<string, { border: string, badgeBg: string, badgeTex
     }
 };
 
-export const NoteCard = React.forwardRef<HTMLDivElement, NoteCardProps>(({ note, onEdit, onDelete }, ref) => {
+export const NoteCard = React.memo(React.forwardRef<HTMLDivElement, NoteCardProps>(({ note, onEdit, onDelete }, ref) => {
     const { t } = useLanguage();
 
     // Default to yellow if color is missing, invalid, or removed (like blue/purple)
@@ -155,6 +155,6 @@ export const NoteCard = React.forwardRef<HTMLDivElement, NoteCardProps>(({ note,
             </div>
         </motion.div>
     );
-});
+}));
 
 NoteCard.displayName = "NoteCard";

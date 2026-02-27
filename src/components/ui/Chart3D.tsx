@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCompactNumber, formatCurrency } from '../../lib/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /* ─────────────────────────── Types ─────────────────────────── */
 export interface Group3DData {
@@ -64,6 +66,132 @@ const getReducedMotion = () =>
 
 const SKEW = 45;
 
+/* ────────────────── Portal Tooltip (mobile-safe) ────────────────── */
+const TOOLTIP_W = 240;
+const TOOLTIP_H = 160;
+const TOOLTIP_MARGIN = 12;
+
+interface TooltipPortalProps {
+    anchorRef: React.RefObject<HTMLElement>;
+    visible: boolean;
+    group: Group3DData;
+    labels: { kirim: string; xarajat: string; sof: string };
+    /** Extend the hover zone into the tooltip itself to prevent flicker */
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
+}
+
+const TooltipPortal: React.FC<TooltipPortalProps> = ({ anchorRef, visible, group, labels, onMouseEnter, onMouseLeave }) => {
+    const [pos, setPos] = useState<{ top: number; left: number; transformOrigin: string } | null>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+    const safe = getReducedMotion();
+
+    const updatePos = useCallback(() => {
+        if (!anchorRef.current || !visible) return;
+        const rect = anchorRef.current.getBoundingClientRect();
+        const vpW = window.innerWidth;
+
+        // Use viewport-relative coordinates (position: fixed)
+        // Prefer above the bar group; fall back to below if not enough room
+        // Center-x and above-y
+        let left = rect.left + rect.width / 2;
+
+        // Measure or estimate dynamic toolkit dimensions
+        const vpH = window.innerHeight;
+
+        // Use a more realistic dynamic width for clamping (max-w is 100vw-32px)
+        const estimatedW = Math.min(320, vpW - 32);
+        const estimatedH = 180;
+
+        let top = rect.top - estimatedH - TOOLTIP_MARGIN;
+        let transformOrigin: string;
+
+        if (top < 20) {
+            top = rect.bottom + TOOLTIP_MARGIN;
+            transformOrigin = 'top center';
+        } else {
+            transformOrigin = 'bottom center';
+        }
+
+        const margin = 12;
+
+        // Clamp left so the centered tooltip doesn't bleed off sides
+        left = Math.max(estimatedW / 2 + margin, Math.min(vpW - estimatedW / 2 - margin, left));
+
+        setPos({ top, left, transformOrigin });
+    }, [anchorRef, visible]);
+
+    useEffect(() => {
+        if (visible) {
+            updatePos();
+            window.addEventListener('scroll', updatePos, { passive: true });
+            window.addEventListener('resize', updatePos, { passive: true });
+        }
+        return () => {
+            window.removeEventListener('scroll', updatePos);
+            window.removeEventListener('resize', updatePos);
+        };
+    }, [visible, updatePos]);
+
+    if (typeof document === 'undefined') return null;
+
+    return createPortal(
+        <AnimatePresence>
+            {visible && pos && (
+                <motion.div
+                    ref={tooltipRef as any}
+                    key="chart-tooltip"
+                    initial={{ opacity: 0, scale: 0.95, y: 10, x: '-50%' }}
+                    animate={{ opacity: 1, scale: 1, y: 0, x: '-50%' }}
+                    exit={safe ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 4 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+                    onMouseEnter={onMouseEnter}
+                    onMouseLeave={onMouseLeave}
+                    style={{
+                        position: 'fixed',
+                        top: pos.top,
+                        left: pos.left,
+                        zIndex: 9999,
+                        pointerEvents: 'none',
+                    }}
+                >
+                    <div className="bg-white/95 backdrop-blur-xl border border-slate-200/60 rounded-2xl p-4 shadow-2xl overflow-hidden min-w-[200px] max-w-[calc(100vw-32px)]">
+                        {/* Rainbow accent bar */}
+                        <div className="w-full h-1.5 bg-gradient-to-r from-emerald-400 via-blue-500 to-rose-400 rounded-full opacity-90 shadow-sm mb-3" />
+
+                        <p className="text-slate-400 font-bold text-[10px] mb-3 uppercase tracking-[0.15em] border-b border-slate-100 pb-2.5 truncate">
+                            {group.fullLabel || group.label}
+                        </p>
+
+                        <div className="flex flex-col gap-2.5">
+                            {[
+                                { key: labels.kirim, val: group.kirim, c: PALETTE.green },
+                                { key: labels.xarajat, val: group.xarajat, c: PALETTE.rose },
+                                { key: labels.sof, val: group.sof, c: PALETTE.blue },
+                            ].map(item => (
+                                <div key={item.key} className="flex items-center justify-between gap-4 whitespace-nowrap">
+                                    <div className="flex items-center gap-2.5">
+                                        <div
+                                            className="w-2.5 h-2.5 rounded-full ring-[3px] shadow-sm ring-white flex-shrink-0"
+                                            style={{ backgroundColor: item.c.dot }}
+                                        />
+                                        <span className="text-[13px] font-bold text-slate-600">{item.key}</span>
+                                    </div>
+                                    <span className="text-[13px] font-black tracking-tight" style={{ color: item.c.label }}>
+                                        {formatCurrency(item.val)}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>,
+        document.body
+    );
+};
+
+
 /* ─────────────────────── Single 3D Bar ─────────────────────── */
 const Bar3DItem: React.FC<{
     value: number;
@@ -85,16 +213,15 @@ const Bar3DItem: React.FC<{
                     width: barW + depth,
                     display: 'flex',
                     alignItems: 'flex-end',
-                    paddingBottom: depth, // lift up for floor shadow
+                    paddingBottom: depth,
                 }}
                 animate={isGroupHovered ? { y: -5, scale: 1.02 } : { y: 0, scale: 1 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             >
                 <div
                     className="relative"
-                    style={{ width: barW, height: `${Math.max(1, pct)}%` }} // Minimum 1% height so it visually exists
+                    style={{ width: barW, height: `${Math.max(1, pct)}%` }}
                 >
-                    {/* Animate In Wrapper */}
                     <motion.div
                         className="w-full absolute bottom-0 origin-bottom"
                         initial={safe ? { height: '100%' } : { height: '0%' }}
@@ -102,7 +229,7 @@ const Bar3DItem: React.FC<{
                         transition={{
                             delay: 0.1 + idx * 0.08,
                             duration: 0.65,
-                            ease: [0.34, 1.2, 0.64, 1], // bouncy spring
+                            ease: [0.34, 1.2, 0.64, 1],
                         }}
                     >
                         {/* ▌ FRONT face */}
@@ -157,7 +284,7 @@ const Bar3DItem: React.FC<{
                     </motion.div>
                 </div>
 
-                {/* ▌ Floor shadow  */}
+                {/* ▌ Floor shadow */}
                 <motion.div
                     className="absolute bottom-[2px] left-[-4px] pointer-events-none rounded-full transition-all duration-300"
                     style={{
@@ -187,75 +314,61 @@ const Group3D: React.FC<{
     gap: number;
     alignEdge?: 'left' | 'center' | 'right';
     isDense?: boolean;
-}> = ({ group, chartMax, maxH, barW, depth, gap, alignEdge = 'center', isDense }) => {
+    labels: { kirim: string; xarajat: string; sof: string };
+}> = ({ group, chartMax, maxH, barW, depth, gap, alignEdge = 'center', isDense, labels }) => {
     const [isHovered, setIsHovered] = useState(false);
-    const safe = getReducedMotion();
+    const anchorRef = useRef<HTMLDivElement>(null);
+    // Debounce ref — prevents flicker when cursor briefly clips sub-element boundaries
+    const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const groupMaxVal = Math.max(group.kirim, group.xarajat, group.sof);
-    const groupMaxPct = chartMax > 0 ? (groupMaxVal / chartMax) : 0;
+    const handleEnter = useCallback(() => {
+        if (leaveTimerRef.current) {
+            clearTimeout(leaveTimerRef.current);
+            leaveTimerRef.current = null;
+        }
+        setIsHovered(true);
+    }, []);
 
-    const renderTooltip = () => {
-        // If the bar is tall (over 50%), flip the tooltip to render downwards so it doesn't get cut off by the container
-        const shouldFlip = groupMaxPct > 0.5;
+    const handleLeave = useCallback(() => {
+        leaveTimerRef.current = setTimeout(() => {
+            setIsHovered(false);
+        }, 80);
+    }, []);
 
-        return (
-            <AnimatePresence mode="wait">
-                {isHovered && (
-                    <motion.div
-                        initial={safe ? { opacity: 0 } : { opacity: 0, y: shouldFlip ? -15 : 15, scale: 0.9 }}
-                        animate={safe ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-                        exit={safe ? { opacity: 0 } : { opacity: 0, y: shouldFlip ? -10 : 10, scale: 0.95 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                        className={`absolute pointer-events-none z-[100] min-w-[200px] ${alignEdge === 'left' ? 'left-0' : alignEdge === 'right' ? 'right-0' : 'left-1/2 -translate-x-1/2'
-                            } ${shouldFlip ? 'mt-4' : 'mb-4 bottom-full'}`}
-                        style={
-                            shouldFlip
-                                ? { top: `${Math.max(0, maxH - (groupMaxPct * maxH))}px` }
-                                : { bottom: `${(groupMaxPct * maxH) + depth + 14}px` }
-                        }
-                    >
-                        <div className="bg-white/95 backdrop-blur-xl border border-slate-200/50 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.22)] rounded-2xl p-4 relative isolate">
-                            {/* 1. Seamless Gradient - Kept inside the card */}
-                            <div className="w-full h-1.5 bg-gradient-to-r from-emerald-400 via-blue-500 to-rose-400 rounded-full opacity-90 shadow-sm mb-3" />
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+        };
+    }, []);
 
-                            <div className="relative z-20">
-                                <p className="text-slate-500 font-bold text-[10px] mb-3 uppercase tracking-[0.15em] border-b border-slate-100/80 pb-2.5">{group.fullLabel || group.label}</p>
-                                <div className="flex flex-col gap-2.5">
-                                    {[
-                                        { key: 'Kirim', val: group.kirim, c: PALETTE.green },
-                                        { key: 'Xarajat', val: group.xarajat, c: PALETTE.rose },
-                                        { key: 'Sof Foyda', val: group.sof, c: PALETTE.blue }
-                                    ].map(item => (
-                                        <div key={item.key} className="flex items-center justify-between gap-6 whitespace-nowrap">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-2.5 h-2.5 rounded-full ring-[3px] shadow-sm ring-white" style={{ backgroundColor: item.c.dot }} />
-                                                <span className="text-[13px] font-bold text-slate-600">
-                                                    {item.key}
-                                                </span>
-                                            </div>
-                                            <span className="text-[15px] font-black tracking-tight" style={{ color: item.c.label }}>
-                                                {formatCurrency(item.val)}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        );
-    };
+    // Close tooltip on outside touch/scroll
+    useEffect(() => {
+        if (!isHovered) return;
+        const onOutside = () => setIsHovered(false);
+        window.addEventListener('touchstart', onOutside, { passive: true, once: true });
+        return () => window.removeEventListener('touchstart', onOutside);
+    }, [isHovered]);
 
     return (
         <div
+            ref={anchorRef as any}
             className="relative flex flex-col items-center group cursor-pointer flex-1"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            onTouchStart={() => setIsHovered(true)}
-            onTouchEnd={() => setIsHovered(false)}
+            onMouseEnter={handleEnter}
+            onMouseLeave={handleLeave}
+            onTouchStart={(e) => { e.stopPropagation(); setIsHovered(v => !v); }}
         >
-            {renderTooltip()}
+            {/* Portal tooltip — escapes all overflow/clip contexts.
+                onMouseEnter/Leave are passed so hovering the floating card
+                cancels the leave timer — tooltip + bar = one unified hover zone. */}
+            <TooltipPortal
+                anchorRef={anchorRef as React.RefObject<HTMLElement>}
+                visible={isHovered}
+                group={group}
+                labels={labels}
+                onMouseEnter={handleEnter}
+                onMouseLeave={handleLeave}
+            />
 
             {/* Bars Box container */}
             <div className="flex items-end justify-center w-full" style={{ height: maxH + depth, gap: `${gap}px` }}>
@@ -277,42 +390,44 @@ const Group3D: React.FC<{
                     ) : group.label}
                 </span>
             </div>
-        </div >
+        </div>
     );
 };
 
+
 /* ────────────────────── Main Component ─────────────────────── */
 export const Chart3D: React.FC<Chart3DProps> = ({ data, maxBarHeight = 220 }) => {
+    const { t } = useLanguage();
 
-    // Dynamic Bar Layout Sizing to REMOVE SCROLLBAR and fit into any container width seamlessly
-    // Calculate total elements to render to dynamically adjust widths
+    const labels = {
+        kirim: t('income') || 'Kirim',
+        xarajat: t('expense') || 'Xarajat',
+        sof: t('net_profit') || 'Sof Foyda',
+    };
+
     const len = Math.max(1, data.length);
     let barW = 32;
     let depth = 22;
     let gap = 12;
 
     if (len > 8) {
-        // e.g. Barchasi (12 months) - significantly thinner to fit full year
         barW = 10;
         depth = 6;
         gap = 2;
     } else if (len >= 5) {
-        // e.g. Week (7) or Month (5)
         barW = 20;
         depth = 12;
         gap = 4;
     }
 
-    // Find absolute highest value among ALL bars in ALL groups to define chart ceiling
     const maxValRaw = useMemo(() => {
-        let currentMax = 100; // Prevent 0, and default to 100 for clean ticks without decimals when empty
+        let currentMax = 100;
         data.forEach(group => {
             currentMax = Math.max(currentMax, group.kirim, group.xarajat, group.sof);
         });
         return currentMax;
     }, [data]);
 
-    // Calculate clean chartMax for Y-ticks
     const chartMax = useMemo(() => {
         const magnitude = Math.pow(10, Math.floor(Math.log10(maxValRaw)));
         const normalized = maxValRaw / magnitude;
@@ -329,16 +444,18 @@ export const Chart3D: React.FC<Chart3DProps> = ({ data, maxBarHeight = 220 }) =>
 
     return (
         <div className="w-full flex flex-col items-center">
-            {/* Global Legend */}
-            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 mb-1 mt-2">
+            {/* Global Legend — translated */}
+            {/* Legend — pointer-events:none prevents this from intercepting
+                mouse events when the tooltip portal overlaps it */}
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 mb-1 mt-2 pointer-events-none select-none">
                 {[
-                    { label: 'Kirim', c: PALETTE.green },
-                    { label: 'Xarajat', c: PALETTE.rose },
-                    { label: 'Sof Foyda', c: PALETTE.blue }
+                    { label: labels.kirim.toUpperCase(), c: PALETTE.green },
+                    { label: labels.xarajat.toUpperCase(), c: PALETTE.rose },
+                    { label: labels.sof.toUpperCase(), c: PALETTE.blue },
                 ].map((b) => (
                     <div key={b.label} className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full shadow-sm ring-2 ring-white" style={{ backgroundColor: b.c.dot }} />
-                        <span className="text-[10px] md:text-xs font-bold text-slate-500 tracking-wider uppercase">
+                        <span className="text-[10px] md:text-xs font-bold text-slate-500 tracking-wider">
                             {b.label}
                         </span>
                     </div>
@@ -346,10 +463,9 @@ export const Chart3D: React.FC<Chart3DProps> = ({ data, maxBarHeight = 220 }) =>
             </div>
 
             {/* Interactive Chart & Grid Area */}
-            {/* Added a highly responsive overflow layout for data-heavy charts on mobile */}
             <div className="w-full overflow-x-auto custom-scrollbar pb-3 pt-16 relative z-10 flex">
 
-                {/* 1. Y-Axis Container (Sticky to viewport) */}
+                {/* 1. Y-Axis Container */}
                 <div className="sticky left-0 z-30 bg-white/95 backdrop-blur-xl w-[55px] md:w-[70px] flex-shrink-0 border-r border-slate-100">
                     <div className="absolute inset-x-0 pointer-events-none" style={{ bottom: depth + 36, height: maxBarHeight }}>
                         {ticks.map((tPct) => {
@@ -387,6 +503,7 @@ export const Chart3D: React.FC<Chart3DProps> = ({ data, maxBarHeight = 220 }) =>
                                 barW={barW}
                                 depth={depth}
                                 gap={gap}
+                                labels={labels}
                                 alignEdge={
                                     idx === 0 || (len >= 5 && idx <= 1) ? 'left' :
                                         idx === len - 1 || (len >= 5 && idx >= len - 2) ? 'right' :

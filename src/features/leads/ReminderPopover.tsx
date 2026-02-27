@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Portal } from '../../components/ui/Portal';
 import { CustomCalendar } from './CustomCalendar';
 import { format, parse } from 'date-fns';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ReminderPopoverProps {
     isOpen: boolean;
@@ -21,6 +22,8 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
     initialDate,
     initialReason = ''
 }) => {
+    const { t } = useLanguage();
+
     // Default to tomorrow at 10:00 AM
     const getDefaultDate = () => {
         const tomorrow = new Date();
@@ -62,17 +65,17 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
 
         const selectedDate = new Date(`${date}T${time}`);
         if (isNaN(selectedDate.getTime())) {
-            setError('Iltimos, to\'g\'ri sana va vaqtni tanlang');
+            setError(t('error_date_invalid') || 'Please select a valid date and time');
             return;
         }
 
         if (selectedDate < new Date()) {
-            setError('O\'tgan vaqtga eslatma qo\'yib bo\'lmaydi');
+            setError(t('alert_future_time') || 'Please select a valid future time.');
             return;
         }
 
         if (!reason.trim()) {
-            setError('Iltimos, sababni kiriting');
+            setError(t('validation_reason_required') || 'Please enter a reason');
             return;
         }
 
@@ -87,16 +90,16 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
             }, 500);
         } else {
             setIsSaving(false);
-            setError('Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
+            setError(t('login_error_generic') || 'An error occurred. Please try again.');
         }
     };
 
-    // Quick time options
+    // Quick time options — labels pulled from locale
     const quickOptions = [
-        { label: '1 soat', getDate: () => { const d = new Date(); d.setHours(d.getHours() + 1); return d; } },
-        { label: 'Ertaga', getDate: () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); return d; } },
-        { label: '3 kun', getDate: () => { const d = new Date(); d.setDate(d.getDate() + 3); d.setHours(10, 0, 0, 0); return d; } },
-        { label: 'Hafta', getDate: () => { const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(10, 0, 0, 0); return d; } },
+        { labelKey: 'one_hour', getDate: () => { const d = new Date(); d.setHours(d.getHours() + 1); return d; } },
+        { labelKey: 'tomorrow', getDate: () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); return d; } },
+        { labelKey: 'three_days', getDate: () => { const d = new Date(); d.setDate(d.getDate() + 3); d.setHours(10, 0, 0, 0); return d; } },
+        { labelKey: 'one_week', getDate: () => { const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(10, 0, 0, 0); return d; } },
     ];
 
     const applyQuickOption = (index: number, getDate: () => Date) => {
@@ -146,8 +149,12 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                         <Bell size={22} className="text-white" />
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-black text-white tracking-tight leading-none" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }}>Eslatma o'rnatish</h2>
-                                        <p className="text-[10px] text-white/80 font-black uppercase tracking-widest mt-1">Mijozga qo'ng'iroq qilishni unutmang</p>
+                                        <h2 className="text-xl font-black text-white tracking-tight leading-none" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }}>
+                                            {t('set_reminder')}
+                                        </h2>
+                                        <p className="text-[10px] text-white/80 font-black uppercase tracking-widest mt-1">
+                                            {t('dont_forget_call')}
+                                        </p>
                                     </div>
                                 </div>
                                 <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
@@ -165,12 +172,12 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                 <div>
                                     <label className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-widest mb-3 px-1">
                                         <Clock size={12} strokeWidth={2.5} />
-                                        Tez tanlash
+                                        {t('quick_select')}
                                     </label>
                                     <div className="grid grid-cols-4 gap-2">
                                         {quickOptions.map((opt, idx) => (
                                             <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                key={opt.label}
+                                                key={opt.labelKey}
                                                 type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -182,7 +189,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                                     }`}
                                                 style={selectedQuick === idx ? { background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)' } : undefined}
                                             >
-                                                {opt.label}
+                                                {t(opt.labelKey) || opt.labelKey}
                                             </motion.button>
                                         ))}
                                     </div>
@@ -194,17 +201,15 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                         <div className="col-span-3 space-y-2 relative" ref={buttonRef}>
                                             <label className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-widest px-1">
                                                 <CalendarIcon size={12} strokeWidth={2.5} />
-                                                Sana
+                                                {t('date_label') || t('date')}
                                             </label>
                                             <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                 type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     const rect = e.currentTarget.getBoundingClientRect();
-                                                    // Check if near bottom
                                                     const spaceBelow = window.innerHeight - rect.bottom;
-                                                    const showAbove = spaceBelow < 340; // ~320px for calendar + padding
-
+                                                    const showAbove = spaceBelow < 340;
                                                     setCalendarPos({
                                                         top: showAbove ? rect.top - 8 : rect.bottom + 8,
                                                         left: rect.left,
@@ -259,7 +264,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                         <div className="col-span-2 space-y-2">
                                             <label className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-widest px-1">
                                                 <Clock size={12} strokeWidth={2.5} />
-                                                Vaqt
+                                                {t('time_label') || t('select_time')}
                                             </label>
                                             <input
                                                 type="time"
@@ -269,16 +274,13 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                             />
                                         </div>
                                     </div>
-
-                                    {/* Custom Calendar Popup - Full Width Expand */}
-
                                 </div>
 
                                 {/* Reason */}
                                 <div>
                                     <label className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-widest mb-3 px-1">
                                         <Check size={12} strokeWidth={2.5} />
-                                        Sabab
+                                        {t('reason_label')}
                                     </label>
                                     <textarea
                                         value={reason}
@@ -290,9 +292,9 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                             e.target.style.overflowY = e.target.scrollHeight > 120 ? 'auto' : 'hidden';
                                         }}
                                         onClick={(e) => e.stopPropagation()}
-                                        placeholder="Eslatma sababini kiriting..."
+                                        placeholder={t('reason_placeholder') || t('add_note_placeholder') || '...'}
                                         rows={1}
-                                        className="w-full px-4 py-3.5 text-sm font-black border border-slate-200 bg-white rounded-xl focus:outline-none focus:border-promed-primary focus:ring-4 focus:ring-promed-primary/10 transition-all placeholder:text-slate-400 text-slate-900 min-h-[52px] resize-none hover:border-promed-primary/30 hover:bg-slate-50"
+                                        className="w-full px-4 py-3.5 text-sm font-black border border-slate-200 bg-white rounded-xl focus:outline-none focus:border-promed-primary focus:ring-4 focus:ring-promed-primary/10 transition-all placeholder:text-slate-400 placeholder:font-normal text-slate-900 min-h-[52px] resize-none hover:border-promed-primary/30 hover:bg-slate-50"
                                         style={{ height: '52px' }}
                                     />
                                 </div>
@@ -323,7 +325,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                         onClick={onClose}
                                         className="flex-1 px-5 py-3.5 text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200"
                                     >
-                                        Bekor qilish
+                                        {t('cancel')}
                                     </motion.button>
                                     <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                         type="submit"
@@ -344,7 +346,7 @@ export const ReminderPopover: React.FC<ReminderPopoverProps> = ({
                                             ) : (
                                                 <>
                                                     <Bell size={18} className="fill-white/20" />
-                                                    Saqlash
+                                                    {t('save')}
                                                 </>
                                             )}
                                         </span>

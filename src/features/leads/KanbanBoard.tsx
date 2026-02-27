@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import {  AnimatePresence , motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Lead, LeadStatus, LeadColumn as ILeadColumn } from '../../types';
 import { LeadCard } from './LeadCard';
 import { leadService } from '../../services/leadService';
@@ -126,17 +126,22 @@ export const KanbanBoard: React.FC = () => {
         }
     }, [leads, selectedLead?.id]); // Only depend on leads and the ID to avoid infinite loop
 
-    const handleStatusChange = async (id: string, newStatus: LeadStatus, origin?: { x: number, y: number }) => {
+    const handleStatusChange = React.useCallback(async (id: string, newStatus: LeadStatus, origin?: { x: number, y: number }) => {
         if (isViewer) return;
 
-        // Optimistic Update
-        const leadIndex = leads.findIndex(l => l.id === id);
-        if (leadIndex === -1) return;
+        // Save for rollback if needed
+        let originalLeads: Lead[] = [];
 
-        const originalLeads = [...leads];
-        const updatedLeads = [...leads];
-        updatedLeads[leadIndex] = { ...updatedLeads[leadIndex], status: newStatus, updated_at: { seconds: Date.now() / 1000 } };
-        setLeads(updatedLeads);
+        // Optimistic Update
+        setLeads(prevLeads => {
+            originalLeads = [...prevLeads];
+            const leadIndex = prevLeads.findIndex(l => l.id === id);
+            if (leadIndex === -1) return prevLeads;
+
+            const updatedLeads = [...prevLeads];
+            updatedLeads[leadIndex] = { ...updatedLeads[leadIndex], status: newStatus, updated_at: { seconds: Date.now() / 1000 } };
+            return updatedLeads;
+        });
 
         // 🎉 Trigger Celebration if moved to BOOKED (Operation)
         if (newStatus === 'BOOKED') {
@@ -158,22 +163,22 @@ export const KanbanBoard: React.FC = () => {
             console.error("Failed to update status", error);
             setLeads(originalLeads); // Revert
         }
-    };
+    }, [isViewer, t, success]);
 
-    const handleEdit = (lead: Lead) => {
+    const handleEdit = React.useCallback((lead: Lead) => {
         if (isViewer) return;
         setLeadToEdit(lead);
         setAddModalOpen(true);
         // Keep detail modal open - edit modal will appear on top
-    };
+    }, [isViewer]);
 
-    const handleDelete = (lead: Lead) => {
+    const handleDelete = React.useCallback((lead: Lead) => {
         if (isViewer) return;
         setLeadToDelete(lead);
         setIsDeleteModalOpen(true);
-    };
+    }, [isViewer]);
 
-    const handleConfirmDelete = async () => {
+    const handleConfirmDelete = React.useCallback(async () => {
         if (isViewer) return;
         if (leadToDelete) {
             try {
@@ -187,7 +192,16 @@ export const KanbanBoard: React.FC = () => {
                 console.error("Failed to delete lead", error);
             }
         }
-    };
+    }, [isViewer, leadToDelete, success, t]);
+
+    const handleRemind = React.useCallback((lead: Lead) => {
+        setLeadToRemind(lead);
+        setIsReminderModalOpen(true);
+    }, []);
+
+    const handleSelect = React.useCallback((lead: Lead) => {
+        setSelectedLead(lead);
+    }, []);
 
     const TAB_CONFIG: { id: LeadStatus; label: string; icon: any; colorTheme: string }[] = [
         { id: 'NEW', label: t('status_new'), icon: Sparkles, colorTheme: 'blue' },
@@ -467,11 +481,8 @@ export const KanbanBoard: React.FC = () => {
                                     onStatusChange={handleStatusChange}
                                     onEdit={handleEdit}
                                     onDelete={handleDelete}
-                                    onRemind={(lead) => {
-                                        setLeadToRemind(lead);
-                                        setIsReminderModalOpen(true);
-                                    }}
-                                    onSelect={(lead) => setSelectedLead(lead)}
+                                    onRemind={handleRemind}
+                                    onSelect={handleSelect}
                                     isViewer={isViewer}
                                 />
                             ))}

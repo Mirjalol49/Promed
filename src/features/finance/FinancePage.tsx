@@ -220,17 +220,35 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
         const sorted = [...validTransactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         const dataMap = new Map<string, { kirim: number; xarajat: number; sof: number; fullLabel?: string }>();
 
+        // Pick the correct date-fns locale based on active language
+        const dateLocale = language === 'ru' ? ru : language === 'uz' ? uz : enUS;
+
         if (dateFilter === 'week') {
-            const DAYS_UZ = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Juma', 'Shan'];
-            const FULL_DAYS_UZ = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
+            // Generate 7 short day names and full names using the active locale
+            const shortDays: string[] = [];
+            const fullDays: string[] = [];
+            // Sunday=0 through Saturday=6
+            for (let dow = 0; dow < 7; dow++) {
+                const refDate = new Date(2024, 0, 7 + dow); // Jan 7 2024 = Sunday
+                shortDays.push(
+                    format(refDate, 'EEE', { locale: dateLocale })
+                        .replace('.', '')
+                        .slice(0, 4)
+                        .toUpperCase()
+                );
+                fullDays.push(
+                    format(refDate, 'EEEE', { locale: dateLocale })
+                );
+            }
             // Populate exact 7 days from startDate
             for (let i = 0; i < 7; i++) {
                 const day = addDays(startDate, i);
-                dataMap.set(DAYS_UZ[day.getDay()], { kirim: 0, xarajat: 0, sof: 0, fullLabel: FULL_DAYS_UZ[day.getDay()] });
+                const dow = day.getDay();
+                dataMap.set(shortDays[dow], { kirim: 0, xarajat: 0, sof: 0, fullLabel: fullDays[dow] });
             }
             sorted.forEach(t => {
                 const d = new Date(t.date);
-                const key = DAYS_UZ[d.getDay()];
+                const key = shortDays[d.getDay()];
                 const item = dataMap.get(key);
                 if (item) {
                     if (t.type === 'income') { item.kirim += t.amount; item.sof += t.amount; }
@@ -239,7 +257,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
             });
         } else if (dateFilter === 'month') {
             const dMonth = startDate || new Date();
-            const monthName = format(dMonth, 'MMMM', { locale: uz });
+            const monthName = format(dMonth, 'MMMM', { locale: dateLocale });
             const monthNameCap = monthName.charAt(0).toUpperCase() + monthName.slice(1);
             const lastDay = endOfMonth(dMonth).getDate();
             const p1 = `1-7 ${monthNameCap}`;
@@ -270,18 +288,17 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                 }
             });
         } else {
-            // all time -> Annually (Yillik)
-            // Pre-populate all 12 months purely
+            // all time -> Annually — pre-populate all 12 months in the active locale
             for (let i = 0; i < 12; i++) {
-                const monthDate = new Date(2024, i, 1); // 2024 is arbitrary leap year for safe extraction
-                const fullMonth = format(monthDate, 'MMMM', { locale: uz });
+                const monthDate = new Date(2024, i, 1);
+                const fullMonth = format(monthDate, 'MMMM', { locale: dateLocale });
                 const formattedFullMonth = fullMonth.charAt(0).toUpperCase() + fullMonth.slice(1);
                 dataMap.set(formattedFullMonth, { kirim: 0, xarajat: 0, sof: 0, fullLabel: formattedFullMonth });
             }
 
             sorted.forEach(t => {
                 const d = new Date(t.date);
-                const fullMonth = format(d, 'MMMM', { locale: uz });
+                const fullMonth = format(d, 'MMMM', { locale: dateLocale });
                 const formattedFullMonth = fullMonth.charAt(0).toUpperCase() + fullMonth.slice(1);
 
                 if (!dataMap.has(formattedFullMonth)) {
@@ -294,7 +311,8 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
         }
 
         return Array.from(dataMap.entries()).map(([label, vals]) => ({ label, ...vals }));
-    }, [filteredTransactions, dateFilter, startDate, endDate]);
+    }, [filteredTransactions, dateFilter, startDate, endDate, language]);
+
 
     const handleSave = async (data: any) => {
         try {
@@ -839,100 +857,131 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                     <div className="flex-1 overflow-y-auto bg-slate-50 custom-scrollbar p-0">
                         {filteredTransactionsList.length > 0 ? (
                             <div className="divide-y divide-slate-200">
-                                {paginatedTransactions.map((tx) => (
-                                    <div
-                                        key={tx.id}
-                                        className={`group flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-white hover:shadow-sm transition-all duration-200 gap-4 ${tx.returned ? 'opacity-50' : ''} ${tx.isVoided ? 'bg-gray-50 opacity-60' : ''}`}
-                                    >
-                                        {/* Icon & Details */}
-                                        <div className="flex items-center gap-4 min-w-0 w-full sm:w-auto">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${tx.isVoided
-                                                ? 'bg-gray-100 text-gray-400'
-                                                : tx.type === 'income' ? 'bg-emerald-100/50 text-emerald-600 group-hover:bg-emerald-100' : 'bg-rose-100/50 text-rose-600 group-hover:bg-rose-100'
-                                                } ${tx.returned ? 'opacity-50' : ''}`}>
-                                                {tx.isVoided ? <Trash2 className="w-5 h-5" /> : (tx.type === 'income' ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />)}
+                                {paginatedTransactions.map((tx) => {
+                                    const patient = tx.patientId ? patientList.find(p => p.id === tx.patientId) : null;
+                                    const staff = tx.staffId ? staffList.find(s => s.id === tx.staffId) : null;
+                                    const isIncome = tx.type === 'income';
+                                    const isVoided = !!tx.isVoided;
+                                    const isReturned = !!tx.returned;
+
+                                    return (
+                                        <div
+                                            key={tx.id}
+                                            role="listitem"
+                                            aria-label={`${t(tx.category.toLowerCase()) || tx.category} — ${isIncome ? '+' : '-'}${formatCurrency(tx.amount)}`}
+                                            className={`group bg-white border-b border-slate-100 last:border-b-0 px-4 py-3.5 hover:bg-slate-50/70 transition-colors duration-150 ${isReturned ? 'opacity-60' : ''} ${isVoided ? 'opacity-50' : ''}`}
+                                        >
+                                            {/* ── Row 1: icon · amount · actions ── */}
+                                            <div className="flex items-center gap-3">
+                                                {/* Type Icon */}
+                                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isVoided
+                                                    ? 'bg-slate-100 text-slate-400'
+                                                    : isIncome
+                                                        ? 'bg-emerald-50 text-emerald-600'
+                                                        : 'bg-rose-50 text-rose-500'
+                                                    }`}>
+                                                    {isVoided
+                                                        ? <Trash2 className="w-4 h-4" />
+                                                        : isIncome
+                                                            ? <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+                                                            : <ArrowDownRight className="w-4 h-4 stroke-[2.5]" />
+                                                    }
+                                                </div>
+
+                                                {/* Amount — grows to fill space */}
+                                                <div className={`flex-1 font-black text-base leading-none ${isVoided
+                                                    ? 'text-slate-400 line-through'
+                                                    : isIncome
+                                                        ? 'text-emerald-600'
+                                                        : 'text-rose-500'
+                                                    }`}>
+                                                    {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
+                                                </div>
+
+                                                {/* Action buttons — always visible on mobile, not hidden behind hover */}
+                                                {!isViewer && (
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        {!isReturned && !isVoided && tx.amount !== 0 && (
+                                                            <motion.button
+                                                                whileTap={{ scale: 0.92 }}
+                                                                transition={{ type: 'spring', stiffness: 800, damping: 35 }}
+                                                                onClick={() => handleReturn(tx.id)}
+                                                                aria-label={t('return_transaction') || 'Return Transaction'}
+                                                                className="p-2 rounded-xl text-slate-400 hover:text-amber-500 hover:bg-amber-50 active:bg-amber-100 transition-colors"
+                                                            >
+                                                                <RotateCcw className="w-4 h-4" />
+                                                            </motion.button>
+                                                        )}
+                                                        <motion.button
+                                                            whileTap={{ scale: 0.92 }}
+                                                            transition={{ type: 'spring', stiffness: 800, damping: 35 }}
+                                                            onClick={() => isVoided ? handleRestore(tx.id) : handleDelete(tx.id)}
+                                                            aria-label={isVoided ? (t('restore') || 'Restore') : (t('delete') || 'Delete')}
+                                                            className={`p-2 rounded-xl transition-colors active:scale-95 ${isVoided
+                                                                ? 'text-slate-400 hover:text-blue-500 hover:bg-blue-50'
+                                                                : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50 active:bg-rose-100'
+                                                                }`}
+                                                        >
+                                                            {isVoided ? <RotateCcw className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+                                                        </motion.button>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            <div className="min-w-0 flex flex-col">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className={`font-bold text-sm capitalize ${tx.isVoided ? 'text-gray-500 line-through' : 'text-slate-800'}`}>{t(tx.category.toLowerCase()) || tx.category}</span>
-                                                    {tx.returned && (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-100 text-red-600 text-[10px] font-bold uppercase tracking-wider">
-                                                            RETURNED
+                                            {/* ── Row 2: meta info ── */}
+                                            <div className="mt-2 pl-12 flex flex-col gap-1.5">
+                                                {/* Category + badges + date */}
+                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                    <span className={`text-sm font-bold capitalize ${isVoided ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                                                        {t(tx.category.toLowerCase()) || tx.category}
+                                                    </span>
+                                                    {isReturned && (
+                                                        <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-600 text-[10px] font-bold uppercase tracking-wide">
+                                                            {t('returned') || 'Returned'}
                                                         </span>
                                                     )}
-                                                    {tx.isVoided && (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-200 text-gray-500 text-[10px] font-bold uppercase tracking-wider">
-                                                            BEKOR QILINGAN
+                                                    {isVoided && (
+                                                        <span className="px-2 py-0.5 rounded-md bg-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-wide">
+                                                            {t('cancelled') || 'Bekor'}
                                                         </span>
                                                     )}
-                                                    <span className="text-slate-300 text-xs hidden sm:inline">•</span>
-                                                    <span className="text-slate-400 text-xs font-semibold block sm:inline w-full sm:w-auto mt-0.5 sm:mt-0">
-                                                        {format(new Date(tx.date), 'MMM dd, yyyy')}
-                                                        {tx.time && <span> • {tx.time}</span>}
+                                                    <span className="text-slate-400 text-xs font-medium">
+                                                        {format(new Date(tx.date), 'dd MMM yyyy')}
+                                                        {tx.time && <span> · {tx.time}</span>}
                                                     </span>
                                                 </div>
-                                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                                    {tx.description && (
-                                                        <span className="text-xs text-slate-500 font-medium truncate max-w-[200px]">
-                                                            {tx.description.startsWith('[Split]')
-                                                                ? `${t('split_from') || '[Split] '}${tx.description.replace('[Split]', '').trim()}`
-                                                                : tx.description
-                                                            }
-                                                        </span>
-                                                    )}
 
-                                                    {tx.patientId && (() => {
-                                                        const patient = patientList.find(p => p.id === tx.patientId);
-                                                        return patient ? (
-                                                            <div className="flex items-center gap-2 bg-slate-50 pl-1 pr-2.5 py-1 rounded-full border border-slate-100/50">
-                                                                <div className="w-5 h-5 rounded-full bg-slate-200 overflow-hidden ring-1 ring-white">
+                                                {/* Description / patient / staff chips */}
+                                                {(tx.description || patient || staff) && (
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        {tx.description && (
+                                                            <span className="text-[11px] text-slate-400 font-medium truncate max-w-[220px]">
+                                                                {tx.description.startsWith('[Split]')
+                                                                    ? `${t('split_from') || '[Split]'} ${tx.description.replace('[Split]', '').trim()}`
+                                                                    : tx.description
+                                                                }
+                                                            </span>
+                                                        )}
+                                                        {patient && (
+                                                            <div className="flex items-center gap-1.5 bg-slate-100 pl-1 pr-2 py-0.5 rounded-full">
+                                                                <div className="w-4 h-4 rounded-full bg-slate-300 overflow-hidden ring-1 ring-white shrink-0">
                                                                     <ImageWithFallback src={patient.profileImage || ''} alt={patient.fullName} className="w-full h-full object-cover" />
                                                                 </div>
-                                                                <span className="text-xs font-semibold text-slate-600">{patient.fullName}</span>
+                                                                <span className="text-[11px] font-semibold text-slate-600 max-w-[120px] truncate">{patient.fullName}</span>
                                                             </div>
-                                                        ) : null;
-                                                    })()}
-                                                    {tx.staffId && (
-                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-wider">
-                                                            <User className="w-3 h-3" />
-                                                            {staffList.find(s => s.id === tx.staffId)?.fullName || 'Unknown Staff'}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pl-0 sm:pl-4 border-t sm:border-t-0 border-slate-50 pt-3 sm:pt-0 mt-2 sm:mt-0">
-                                            <div className={`text-right font-black ${tx.amount === 0 ? 'text-slate-400' : (tx.isVoided ? 'text-gray-400 line-through' : `bg-clip-text text-transparent ${tx.type === 'income' ? 'bg-gradient-to-br from-emerald-600 to-emerald-400' : 'bg-gradient-to-br from-rose-600 to-rose-400'}`)}`}>
-                                                {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
-                                            </div>
-                                            <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {!isViewer && !tx.returned && !tx.isVoided && tx.amount !== 0 && (
-                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                        onClick={() => handleReturn(tx.id)}
-                                                        className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all transform hover:scale-105 active:scale-95"
-                                                        title="Return Transaction"
-                                                    >
-                                                        <RotateCcw className="w-5 h-5" />
-                                                    </motion.button>
-                                                )}
-                                                {!isViewer && (
-                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                        onClick={() => tx.isVoided ? handleRestore(tx.id) : handleDelete(tx.id)}
-                                                        className={`p-2 rounded-lg transition-all transform hover:scale-105 active:scale-95 ${tx.isVoided
-                                                            ? 'text-slate-400 hover:text-blue-500 hover:bg-blue-50'
-                                                            : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
-                                                            }`}
-                                                        title={tx.isVoided ? "Restore Transaction" : "Delete Transaction"}
-                                                    >
-                                                        {tx.isVoided ? <RotateCcw className="w-5 h-5" /> : <Trash2 className="w-5 h-5" />}
-                                                    </motion.button>
+                                                        )}
+                                                        {staff && (
+                                                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 border border-violet-100">
+                                                                <User className="w-3 h-3 text-violet-500 shrink-0" />
+                                                                <span className="text-[11px] font-bold text-violet-600 max-w-[100px] truncate">{staff.fullName}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
 
                                 {/* Transactions Pagination - KISS Method */}
                                 <Pagination

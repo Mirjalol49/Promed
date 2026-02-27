@@ -67,13 +67,13 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
                                 pointerEvents: 'none', // Don't block mouse
                                 zIndex: 9999,
                             }}
-                            className={`px-3 py-1.5 bg-slate-800 text-white text-xs font-bold rounded-lg shadow-xl whitespace-nowrap backdrop-blur-sm border border-slate-700/50 ${position === 'top' ? '-mt-2 -translate-y-full' : 'mt-2'
+                            className={`px-3 py-1.5 bg-white/95 text-slate-800 text-xs font-bold rounded-lg shadow-xl whitespace-nowrap backdrop-blur-sm border border-slate-200/60 ${position === 'top' ? '-mt-2 -translate-y-full' : 'mt-2'
                                 }`}
                         >
                             {content}
                             {/* Arrow Pointer */}
                             <div
-                                className={`absolute left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45 transform border-r border-b border-slate-700/50 ${position === 'top'
+                                className={`absolute left-1/2 -translate-x-1/2 w-2 h-2 bg-white rotate-45 transform border-r border-b border-slate-200/60 ${position === 'top'
                                     ? '-bottom-1 border-t-0 border-l-0 border-slate-700/0' // Bottom arrow for top tooltip
                                     : '-top-1 border-r-0 border-b-0 border-slate-700/0' // Top arrow for bottom tooltip
                                     }`}

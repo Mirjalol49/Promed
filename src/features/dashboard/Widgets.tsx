@@ -527,7 +527,7 @@ export const StatCard: React.FC<StatCardProps> = ({
       {/* Tooltip Overlay */}
       {tooltipText && (
         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0 z-20">
-          <div className="bg-slate-900/90 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-xl border border-white/10 tracking-wide">
+          <div className="bg-white/95 backdrop-blur-xl border border-slate-200/60 text-slate-800 text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-xl tracking-wide">
             {tooltipText}
           </div>
         </div>
@@ -666,7 +666,14 @@ export const UpcomingInjections: React.FC<UpcomingProps> = ({ patients, onViewPa
           <h3 className="text-lg font-bold text-promed-text tracking-tight">{t('todays_appointments')}</h3>
           <p className="text-sm text-promed-muted font-medium mt-0.5">{t('upcoming_schedule')}</p>
         </div>
-        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} className="text-sm text-promed-primary font-bold hover:bg-promed-bg px-3 py-1.5 rounded-lg transition">{t('see_all')}</motion.button>
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 800, damping: 35 }}
+          className="text-sm text-promed-primary font-bold hover:bg-promed-bg px-3 py-1.5 rounded-lg transition"
+          onClick={() => window.location.href = '/patients'}
+        >
+          {t('see_all')}
+        </motion.button>
       </div>
 
       <div className="space-y-3 flex-1">

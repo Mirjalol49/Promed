@@ -168,7 +168,7 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                 <Calendar size={22} strokeWidth={2.5} />
                             </div>
                             <h2 className="text-xl font-black text-slate-800 tracking-tight">
-                                {t('schedule') || 'Jadval'}
+                                {t('schedule')}
                             </h2>
                         </div>
 
@@ -182,7 +182,7 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
-                                {t('today') || 'Bugun'}
+                                {t('today')}
                             </motion.button>
 
                             {/* Kelgusi Tab */}
@@ -193,7 +193,7 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
-                                {t('upcoming') || 'Kelgusi'}
+                                {t('upcoming')}
                             </motion.button>
                         </div>
                     </div>

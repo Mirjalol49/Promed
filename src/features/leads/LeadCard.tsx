@@ -86,7 +86,7 @@ const COL_ICONS: Record<LeadStatus, React.ElementType> = {
     'LOST': Archive
 };
 
-export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit, onDelete, onRemind, onSelect, isViewer }) => {
+export const LeadCard: React.FC<LeadCardProps> = React.memo(({ lead, onStatusChange, onEdit, onDelete, onRemind, onSelect, isViewer }) => {
     const { t, language } = useLanguage();
     const isStale = leadService.checkStale(lead);
 
@@ -449,4 +449,4 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onStatusChange, onEdit
             </div>
         </motion.div>
     );
-};
+});

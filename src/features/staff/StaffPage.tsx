@@ -336,7 +336,7 @@ const StaffModal = ({
                                                         onClick={() => setFormData({ ...formData, status: s as any })}
                                                         className={`flex-1 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${activeClass}`}
                                                     >
-                                                        {t(`status_${s}`)?.split(' ')[0] || s}
+                                                        {t(`status_${s}`) || s}
                                                     </motion.button>
                                                 );
                                             })}
@@ -388,6 +388,112 @@ const StaffModal = ({
         </Portal>
     );
 };
+
+// --- Staff Card (Memoized) ---
+const StaffCard = React.memo(({ staff, t, isViewer, onSelect, onPaySalary }: {
+    staff: Staff;
+    t: (key: string) => string;
+    isViewer: boolean;
+    onSelect: (staff: Staff) => void;
+    onPaySalary: (staffId: string) => void;
+}) => {
+    return (
+        <div
+            onClick={() => onSelect(staff)}
+            className="bg-white rounded-[2rem] border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative group overflow-visible cursor-pointer"
+        >
+            {/* Top accent gradient - Simplified for accessibility */}
+            <div
+                onClick={() => onSelect(staff)}
+                className="h-24 relative overflow-hidden bg-slate-100 cursor-pointer rounded-t-[2rem]"
+            />
+
+            {/* Avatar */}
+            <div
+                onClick={() => onSelect(staff)}
+                className="flex justify-center -mt-12 relative z-10 cursor-pointer"
+            >
+                <div className="relative">
+                    <div className="w-[88px] h-[88px] rounded-[1.5rem] overflow-hidden bg-white shadow-lg ring-[4px] ring-white">
+                        {staff.imageUrl ? (
+                            <img src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-gradient-to-br from-blue-50 to-indigo-50 text-3xl">
+                                {staff.fullName.charAt(0)}
+                            </div>
+                        )}
+                    </div>
+                    {/* Status Indicator with white border */}
+                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-[3.5px] border-white flex items-center justify-center shadow-sm z-20 ${staff.status === 'active' ? 'bg-emerald-500' :
+                        staff.status === 'on_leave' ? 'bg-amber-400' : 'bg-slate-300'
+                        }`}>
+                        {staff.status === 'active' && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
+                    </div>
+                </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 pt-4 pb-6">
+                {/* Name + Role */}
+                <div className="text-center mb-6" onClick={() => onSelect(staff)}>
+                    <h3 className="font-bold text-slate-900 text-lg leading-tight truncate capitalize group-hover:text-blue-600 transition-colors duration-200 cursor-pointer">
+                        {staff.fullName}
+                    </h3>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1.5">
+                        {t(`role_${staff.role}`) || staff.role}
+                    </p>
+                </div>
+
+                {/* Clean Data Layout */}
+                {/* Data & Actions */}
+                <div className="space-y-4">
+                    {/* Salary */}
+                    {staff.salary != null && staff.salary > 0 && (
+                        <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-white text-emerald-600 flex items-center justify-center shadow-sm">
+                                    <Banknote size={16} className="stroke-[2.5]" />
+                                </div>
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('salary')}</span>
+                            </div>
+                            <div className="font-bold text-slate-900">
+                                {staff.salary?.toLocaleString()} <span className="text-[10px] text-slate-400 font-extrabold ml-0.5">UZS</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Phone (Full Width) */}
+                    <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-white text-blue-600 flex items-center justify-center shadow-sm">
+                                <Phone size={16} className="stroke-[2.5]" />
+                            </div>
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('phone')}</span>
+                        </div>
+                        <div className="font-bold text-slate-900 text-sm">
+                            {staff.phone || '—'}
+                        </div>
+                    </div>
+
+                    {/* Pay Button */}
+                    {/* Pay Button - Hidden for Viewer */}
+                    {!isViewer && staff.salary != null && staff.salary > 0 && (
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onPaySalary(staff.id);
+                            }}
+                            className="btn-glossy-emerald uppercase"
+                        >
+                            <Banknote size={18} className="stroke-[2.5]" />
+                            {t('pay_salary')}
+                        </motion.button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+});
 
 // --- Pay Salary Modal ---
 const PaySalaryModal = ({
@@ -868,9 +974,9 @@ const StaffDetail = ({
     };
 
     const statusOptions = [
-        { value: 'active', label: 'Active', color: 'bg-emerald-500', textColor: 'text-emerald-600', bgColor: 'bg-emerald-50' },
-        { value: 'on_leave', label: 'On Leave', color: 'bg-amber-500', textColor: 'text-amber-600', bgColor: 'bg-amber-50' },
-        { value: 'inactive', label: 'Inactive', color: 'bg-slate-300', textColor: 'text-slate-600', bgColor: 'bg-slate-50' }
+        { value: 'active', label: t('status_active') || 'Active', color: 'bg-emerald-500', textColor: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+        { value: 'on_leave', label: t('status_on_leave') || 'On Leave', color: 'bg-amber-500', textColor: 'text-amber-600', bgColor: 'bg-amber-50' },
+        { value: 'inactive', label: t('status_inactive') || t('status_terminated') || 'Inactive', color: 'bg-slate-300', textColor: 'text-slate-600', bgColor: 'bg-slate-50' }
     ];
     const currentStatus = statusOptions.find(s => s.value === staff.status) || statusOptions[0];
 
@@ -1088,7 +1194,7 @@ const StaffDetail = ({
                                 className="w-full lg:w-auto btn-glossy-emerald h-12 px-8 flex items-center justify-center gap-2 rounded-2xl uppercase tracking-wide shadow-lg shadow-emerald-500/20"
                             >
                                 <Banknote size={18} className="stroke-[2.5]" />
-                                <span className="font-black text-xs md:text-sm">{t('pay_salary') || "Oylik To'lash"}</span>
+                                <span className="font-black text-xs md:text-sm">{t('pay_salary')}</span>
                             </motion.button>
                         )}
                     </div>
@@ -1144,12 +1250,12 @@ const StaffDetail = ({
                                 <button
                                     key={cat}
                                     onClick={() => setFilterCategory(cat)}
-                                    className={`!px-4 !py-1.5 shrink-0 text-[11px] font-bold rounded-md transition-colors ${filterCategory === cat
-                                        ? `${cat === 'expense' ? 'bg-rose-500 hover:bg-rose-600' : cat === 'income' ? 'bg-emerald-500 hover:bg-emerald-600' : 'btn-premium-blue'} text-white shadow-sm`
-                                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                                    className={`relative z-10 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${filterCategory === cat
+                                        ? 'text-blue-600 bg-blue-50/80 shadow-sm ring-1 ring-blue-100'
+                                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                                         }`}
                                 >
-                                    {cat === 'all' ? t('finance_filter_all') || t('filter_all') || 'All' : t(cat) || cat}
+                                    {cat === 'all' ? t('filter_all') : t(cat)}
                                 </button>
                             ))}
                         </div>
@@ -1278,7 +1384,7 @@ const StaffDetail = ({
                                 <div className="flex flex-col min-w-0 z-10 text-white justify-center">
                                     <span className="text-emerald-50 font-bold text-[10px] md:text-[11px] uppercase tracking-wider mb-0.5 opacity-90">{t('total_income') || 'Jami Daromad'}</span>
                                     <span className="font-black text-lg md:text-xl leading-none truncate block drop-shadow-sm tracking-tight">
-                                        +{totalIncome.toLocaleString()} {t('currency') || 'UZS'}
+                                        +{totalIncome.toLocaleString()} {staff.currency || 'UZS'}
                                     </span>
                                 </div>
                             </div>
@@ -1295,7 +1401,7 @@ const StaffDetail = ({
                                 <div className="flex flex-col min-w-0 z-10 text-white justify-center">
                                     <span className="text-rose-50 font-bold text-[10px] md:text-[11px] uppercase tracking-wider mb-0.5 opacity-90">{t('total_expenses') || 'Jami Xarajatlar'}</span>
                                     <span className="font-black text-lg md:text-xl leading-none truncate block drop-shadow-sm tracking-tight">
-                                        -{totalExpense.toLocaleString()} {t('currency') || 'UZS'}
+                                        -{totalExpense.toLocaleString()} {staff.currency || 'UZS'}
                                     </span>
                                 </div>
                             </div>
@@ -1682,104 +1788,17 @@ export const StaffPage = () => {
                             <>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                                     {paginatedStaff.map((staff) => (
-                                        <div
+                                        <StaffCard
                                             key={staff.id}
-                                            onClick={() => setSelectedStaff(staff)}
-                                            className="bg-white rounded-[2rem] border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative group overflow-visible cursor-pointer"
-                                        >
-
-
-                                            {/* Top accent gradient - Simplified for accessibility */}
-                                            <div
-                                                onClick={() => setSelectedStaff(staff)}
-                                                className="h-24 relative overflow-hidden bg-slate-100 cursor-pointer rounded-t-[2rem]"
-                                            />
-
-                                            {/* Avatar */}
-                                            <div
-                                                onClick={() => setSelectedStaff(staff)}
-                                                className="flex justify-center -mt-12 relative z-10 cursor-pointer"
-                                            >
-                                                <div className="relative">
-                                                    <div className="w-[88px] h-[88px] rounded-[1.5rem] overflow-hidden bg-white shadow-lg ring-[4px] ring-white">
-                                                        {staff.imageUrl ? (
-                                                            <img src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-gradient-to-br from-blue-50 to-indigo-50 text-3xl">
-                                                                {staff.fullName.charAt(0)}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    {/* Status Indicator with white border */}
-                                                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-[3.5px] border-white flex items-center justify-center shadow-sm z-20 ${staff.status === 'active' ? 'bg-emerald-500' :
-                                                        staff.status === 'on_leave' ? 'bg-amber-400' : 'bg-slate-300'
-                                                        }`}>
-                                                        {staff.status === 'active' && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Content */}
-                                            <div className="px-6 pt-4 pb-6">
-                                                {/* Name + Role */}
-                                                <div className="text-center mb-6" onClick={() => setSelectedStaff(staff)}>
-                                                    <h3 className="font-bold text-slate-900 text-lg leading-tight truncate capitalize group-hover:text-blue-600 transition-colors duration-200 cursor-pointer">
-                                                        {staff.fullName}
-                                                    </h3>
-                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1.5">
-                                                        {t(`role_${staff.role}`) || staff.role}
-                                                    </p>
-                                                </div>
-
-                                                {/* Clean Data Layout */}
-                                                {/* Data & Actions */}
-                                                <div className="space-y-4">
-                                                    {/* Salary */}
-                                                    {staff.salary != null && staff.salary > 0 && (
-                                                        <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 rounded-lg bg-white text-emerald-600 flex items-center justify-center shadow-sm">
-                                                                    <Banknote size={16} className="stroke-[2.5]" />
-                                                                </div>
-                                                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('salary')}</span>
-                                                            </div>
-                                                            <div className="font-bold text-slate-900">
-                                                                {staff.salary?.toLocaleString()} <span className="text-[10px] text-slate-400 font-extrabold ml-0.5">UZS</span>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Phone (Full Width) */}
-                                                    <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-lg bg-white text-blue-600 flex items-center justify-center shadow-sm">
-                                                                <Phone size={16} className="stroke-[2.5]" />
-                                                            </div>
-                                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('phone')}</span>
-                                                        </div>
-                                                        <div className="font-bold text-slate-900 text-sm">
-                                                            {staff.phone || '—'}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Pay Button */}
-                                                    {/* Pay Button - Hidden for Viewer */}
-                                                    {!isViewer && staff.salary != null && staff.salary > 0 && (
-                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setPayModalStaffId(staff.id);
-                                                                setIsPayModalOpen(true);
-                                                            }}
-                                                            className="btn-glossy-emerald uppercase"
-                                                        >
-                                                            <Banknote size={18} className="stroke-[2.5]" />
-                                                            {t('pay_salary') || "Oylik To'lash"}
-                                                        </motion.button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
+                                            staff={staff}
+                                            t={t}
+                                            isViewer={isViewer}
+                                            onSelect={setSelectedStaff}
+                                            onPaySalary={(staffId) => {
+                                                setPayModalStaffId(staffId);
+                                                setIsPayModalOpen(true);
+                                            }}
+                                        />
                                     ))}
                                 </div>
                                 {totalStaffListPages > 1 && (

@@ -72,10 +72,15 @@ export const NotesPage: React.FC = () => {
         };
     }, []);
 
-    const handleEdit = (note: Note) => {
+    const handleEdit = React.useCallback((note: Note) => {
         setNoteToEdit(note);
         setIsModalOpen(true);
-    };
+    }, []);
+
+    const handleDelete = React.useCallback((id: string) => {
+        setNoteToDelete(id);
+        setIsDeleteModalOpen(true);
+    }, []);
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
@@ -359,10 +364,7 @@ export const NotesPage: React.FC = () => {
                                     key={note.id}
                                     note={note}
                                     onEdit={handleEdit}
-                                    onDelete={(id) => {
-                                        setNoteToDelete(id);
-                                        setIsDeleteModalOpen(true);
-                                    }}
+                                    onDelete={handleDelete}
                                 />
                             ))}
                         </AnimatePresence>

@@ -38,6 +38,155 @@ const firebaseConfig = getApp().options;
 let _rolesCache: SubUser[] = [];
 let _rolesCacheAccountId: string | null = null;
 
+// --- Role Card (Memoized) ---
+const RoleCard = React.memo(({
+    user,
+    currentUserId,
+    t,
+    onEdit,
+    onDelete
+}: {
+    user: SubUser;
+    currentUserId: string | null;
+    t: (key: string) => string;
+    onEdit: (user: SubUser) => void;
+    onDelete: (user: SubUser, e: React.MouseEvent) => void;
+}) => {
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+    const togglePasswordVisibility = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsPasswordVisible(prev => !prev);
+    };
+
+    const roleConfig = {
+        viewer: {
+            bg: 'bg-purple-50', text: 'text-purple-600', ring: 'ring-purple-200',
+            iconBg: 'bg-purple-100', icon: Eye, label: t('viewer_role') || 'Viewer',
+            access: t('read_only_access') || 'Read-only access',
+            badgeBg: 'bg-purple-50 text-purple-700 border-purple-200',
+        },
+        seller: {
+            bg: 'bg-emerald-50', text: 'text-emerald-600', ring: 'ring-emerald-200',
+            iconBg: 'bg-emerald-100', icon: Phone, label: t('call_operator_role') || 'Operator',
+            access: t('leads_only_access') || 'Leads only access',
+            badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        },
+        nurse: {
+            bg: 'bg-pink-50', text: 'text-pink-600', ring: 'ring-pink-200',
+            iconBg: 'bg-pink-100', icon: Users, label: t('nurse_role') || 'Nurse',
+            access: t('patients_only_access') || 'Patients only access',
+            badgeBg: 'bg-pink-50 text-pink-700 border-pink-200',
+        },
+    }[user.role] || {
+        bg: 'bg-slate-50', text: 'text-slate-600', ring: 'ring-slate-200',
+        iconBg: 'bg-slate-100', icon: Eye, label: 'User',
+        access: 'Basic access',
+        badgeBg: 'bg-slate-50 text-slate-700 border-slate-200',
+    };
+
+    const RoleIcon = roleConfig.icon;
+
+    // Format phone for display: +998 XX XXX XX XX
+    const rawPhone = (user.phone || '').replace(/[^\d+]/g, '');
+    const digits = rawPhone.replace(/\D/g, '');
+    let formattedPhone = '+' + digits;
+    if (digits.length >= 3) formattedPhone = '+' + digits.slice(0, 3) + ' ' + digits.slice(3);
+    if (digits.length >= 5) formattedPhone = '+' + digits.slice(0, 3) + ' ' + digits.slice(3, 5) + ' ' + digits.slice(5);
+    if (digits.length >= 8) formattedPhone = '+' + digits.slice(0, 3) + ' ' + digits.slice(3, 5) + ' ' + digits.slice(5, 8) + ' ' + digits.slice(8);
+    if (digits.length >= 10) formattedPhone = '+' + digits.slice(0, 3) + ' ' + digits.slice(3, 5) + ' ' + digits.slice(5, 8) + ' ' + digits.slice(8, 10) + ' ' + digits.slice(10, 12);
+
+    return (
+        <div
+            onClick={() => onEdit(user)}
+            className="bg-white rounded-2xl p-5 border border-slate-100/80 cursor-pointer group relative
+                shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(0,0,0,0.05)]
+                hover:-translate-y-1 hover:shadow-[0_8px_30px_-6px_rgba(0,0,0,0.12),0_12px_40px_-8px_rgba(0,0,0,0.06)]
+                hover:border-slate-200 transition-all duration-300 ease-out"
+        >
+            {/* ── Header: Avatar + Info ── */}
+            <div className="flex items-start gap-3.5 mb-4">
+                {/* Avatar */}
+                <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ${roleConfig.ring} ${user.imageUrl ? 'ring-white' : roleConfig.iconBg} overflow-hidden`}>
+                    {user.imageUrl ? (
+                        <img src={user.imageUrl} alt={user.fullName} className="w-full h-full object-cover" />
+                    ) : (
+                        <RoleIcon size={18} className={roleConfig.text} />
+                    )}
+                </div>
+
+                {/* Name + Phone + Badge */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-[15px] text-slate-900 leading-snug truncate">{user.fullName}</h4>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border flex-shrink-0 ${roleConfig.badgeBg}`}>
+                            {roleConfig.label}
+                        </span>
+                    </div>
+                    <p className="text-[12px] text-slate-400 mt-1 flex items-center gap-1.5 font-medium truncate">
+                        <Phone size={11} className="opacity-50 flex-shrink-0" />
+                        <span className="truncate">{formattedPhone}</span>
+                    </p>
+                </div>
+            </div>
+
+            {/* ── Body: Info Rows ── */}
+            <div className="space-y-2.5 mb-4">
+                {/* Password / PIN Row */}
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                        <Key size={14} className="text-amber-500" />
+                    </div>
+                    <div className="flex-1 flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('login_password') || 'Password'}</span>
+                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-100">
+                            {isPasswordVisible
+                                ? <span className="text-sm font-bold text-slate-700 tracking-[0.25em]">{user.lockPassword || '••••••'}</span>
+                                : <span className="text-lg font-black text-slate-700 tracking-[0.2em] leading-none">••••••</span>
+                            }
+                        </div>
+                    </div>
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                        onClick={togglePasswordVisibility}
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90
+                            ${isPasswordVisible
+                                ? 'bg-amber-100 text-amber-600'
+                                : 'bg-slate-100 text-slate-500 hover:bg-amber-50 hover:text-amber-600'
+                            }`}
+                        title={isPasswordVisible ? (t('hide') || 'Hide') : (t('show') || 'Show')}
+                    >
+                        {isPasswordVisible ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </motion.button>
+                </div>
+
+                {/* Access Row */}
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                        <Shield size={14} className="text-blue-500" />
+                    </div>
+                    <span className="text-[13px] font-medium text-slate-500">{roleConfig.access}</span>
+                </div>
+            </div>
+
+            {/* ── Footer: Actions ── */}
+            <div className="flex items-center justify-end pt-3 border-t border-slate-100/80">
+                {/* Delete — hidden until hover */}
+                {user.id !== currentUserId && ( // Prevent deleting own account
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                            onClick={(e) => onDelete(user, e)}
+                            className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 active:scale-90"
+                            title={t('remove') || 'Remove'}
+                        >
+                            <Trash2 size={16} />
+                        </motion.button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+});
+
 export const RolesPage: React.FC = () => {
     const { t } = useLanguage();
     const { accountId, userId, role: userRole } = useAccount(); // Ensure only admin can access
@@ -67,13 +216,6 @@ export const RolesPage: React.FC = () => {
         password: '',
         role: 'viewer' as 'viewer' | 'seller' | 'nurse'
     });
-
-    // Password visibility toggle for cards
-    const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
-    const togglePasswordVisibility = (userId: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        setVisiblePasswords(prev => ({ ...prev, [userId]: !prev[userId] }));
-    };
 
 
     // --- Subscription ---
@@ -399,137 +541,16 @@ export const RolesPage: React.FC = () => {
                         // Security Double-Check: Strictly filter in JS as well to handle potential query lag or index issues
                         .filter(u => u.account_id === normalizedAccountId || (u as any).accountId === normalizedAccountId || u.account_id === legacyAccountId || (u as any).accountId === legacyAccountId)
                         .filter(u => u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || u.phone.includes(searchQuery))
-                        .map(user => {
-                            const roleConfig = {
-                                viewer: {
-                                    bg: 'bg-purple-50', text: 'text-purple-600', ring: 'ring-purple-200',
-                                    iconBg: 'bg-purple-100', icon: Eye, label: t('viewer_role') || 'Viewer',
-                                    access: t('read_only_access') || 'Read-only access',
-                                    badgeBg: 'bg-purple-50 text-purple-700 border-purple-200',
-                                },
-                                seller: {
-                                    bg: 'bg-emerald-50', text: 'text-emerald-600', ring: 'ring-emerald-200',
-                                    iconBg: 'bg-emerald-100', icon: Phone, label: t('call_operator_role') || 'Operator',
-                                    access: t('leads_only_access') || 'Leads only access',
-                                    badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                                },
-                                nurse: {
-                                    bg: 'bg-pink-50', text: 'text-pink-600', ring: 'ring-pink-200',
-                                    iconBg: 'bg-pink-100', icon: Users, label: t('nurse_role') || 'Nurse',
-                                    access: t('patients_only_access') || 'Patients only access',
-                                    badgeBg: 'bg-pink-50 text-pink-700 border-pink-200',
-                                },
-                            }[user.role] || {
-                                bg: 'bg-slate-50', text: 'text-slate-600', ring: 'ring-slate-200',
-                                iconBg: 'bg-slate-100', icon: Eye, label: 'User',
-                                access: 'Basic access',
-                                badgeBg: 'bg-slate-50 text-slate-700 border-slate-200',
-                            };
-
-                            const RoleIcon = roleConfig.icon;
-                            const initials = user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
-                            const isPasswordVisible = visiblePasswords[user.id];
-
-                            // Format phone for display: +998 XX XXX XX XX
-                            const rawPhone = (user.phone || '').replace(/[^\d+]/g, '');
-                            const digits = rawPhone.replace(/\D/g, '');
-                            let formattedPhone = '+' + digits;
-                            if (digits.length >= 3) formattedPhone = '+' + digits.slice(0, 3) + ' ' + digits.slice(3);
-                            if (digits.length >= 5) formattedPhone = '+' + digits.slice(0, 3) + ' ' + digits.slice(3, 5) + ' ' + digits.slice(5);
-                            if (digits.length >= 8) formattedPhone = '+' + digits.slice(0, 3) + ' ' + digits.slice(3, 5) + ' ' + digits.slice(5, 8) + ' ' + digits.slice(8);
-                            if (digits.length >= 10) formattedPhone = '+' + digits.slice(0, 3) + ' ' + digits.slice(3, 5) + ' ' + digits.slice(5, 8) + ' ' + digits.slice(8, 10) + ' ' + digits.slice(10, 12);
-
-                            return (
-                                <div
-                                    key={user.id}
-                                    onClick={() => handleEditClick(user)}
-                                    className="bg-white rounded-2xl p-5 border border-slate-100/80 cursor-pointer group relative
-                                        shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(0,0,0,0.05)]
-                                        hover:-translate-y-1 hover:shadow-[0_8px_30px_-6px_rgba(0,0,0,0.12),0_12px_40px_-8px_rgba(0,0,0,0.06)]
-                                        hover:border-slate-200 transition-all duration-300 ease-out"
-                                >
-                                    {/* ── Header: Avatar + Info ── */}
-                                    <div className="flex items-start gap-3.5 mb-4">
-                                        {/* Avatar */}
-                                        <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ${roleConfig.ring} ${user.imageUrl ? 'ring-white' : roleConfig.iconBg} overflow-hidden`}>
-                                            {user.imageUrl ? (
-                                                <img src={user.imageUrl} alt={user.fullName} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <RoleIcon size={18} className={roleConfig.text} />
-                                            )}
-                                        </div>
-
-                                        {/* Name + Phone + Badge */}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <h4 className="font-bold text-[15px] text-slate-900 leading-snug truncate">{user.fullName}</h4>
-                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border flex-shrink-0 ${roleConfig.badgeBg}`}>
-                                                    {roleConfig.label}
-                                                </span>
-                                            </div>
-                                            <p className="text-[12px] text-slate-400 mt-1 flex items-center gap-1.5 font-medium truncate">
-                                                <Phone size={11} className="opacity-50 flex-shrink-0" />
-                                                <span className="truncate">{formattedPhone}</span>
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* ── Body: Info Rows ── */}
-                                    <div className="space-y-2.5 mb-4">
-                                        {/* Password / PIN Row */}
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-                                                <Key size={14} className="text-amber-500" />
-                                            </div>
-                                            <div className="flex-1 flex items-center gap-2">
-                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('login_password') || 'Password'}</span>
-                                                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-100">
-                                                    {isPasswordVisible
-                                                        ? <span className="text-sm font-bold text-slate-700 tracking-[0.25em]">{user.lockPassword || '••••••'}</span>
-                                                        : <span className="text-lg font-black text-slate-700 tracking-[0.2em] leading-none">••••••</span>
-                                                    }
-                                                </div>
-                                            </div>
-                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                onClick={(e) => togglePasswordVisibility(user.id, e)}
-                                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90
-                                                    ${isPasswordVisible
-                                                        ? 'bg-amber-100 text-amber-600'
-                                                        : 'bg-slate-100 text-slate-500 hover:bg-amber-50 hover:text-amber-600'
-                                                    }`}
-                                                title={isPasswordVisible ? (t('hide') || 'Hide') : (t('show') || 'Show')}
-                                            >
-                                                {isPasswordVisible ? <EyeOff size={15} /> : <Eye size={15} />}
-                                            </motion.button>
-                                        </div>
-
-                                        {/* Access Row */}
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                                <Shield size={14} className="text-blue-500" />
-                                            </div>
-                                            <span className="text-[13px] font-medium text-slate-500">{roleConfig.access}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* ── Footer: Actions ── */}
-                                    <div className="flex items-center justify-end pt-3 border-t border-slate-100/80">
-                                        {/* Delete — hidden until hover */}
-                                        {user.id !== userId && ( // Prevent deleting own account
-                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                    onClick={(e) => handleDeleteUser(user, e)}
-                                                    className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 active:scale-90"
-                                                    title={t('remove') || 'Remove'}
-                                                >
-                                                    <Trash2 size={16} />
-                                                </motion.button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        .map(user => (
+                            <RoleCard
+                                key={user.id}
+                                user={user}
+                                currentUserId={userId}
+                                t={t}
+                                onEdit={handleEditClick}
+                                onDelete={handleDeleteUser}
+                            />
+                        ))}
                 </div>
             )}
 

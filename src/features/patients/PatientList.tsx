@@ -295,6 +295,127 @@ const VideoPreview = React.memo(({ src }: { src: string }) => {
   );
 });
 
+// --- Memoized Row Components ---
+const MobilePatientCard = React.memo<{ patient: Patient; onSelect: (id: string) => void }>(({ patient, onSelect }) => {
+  const { t } = useLanguage();
+  const nextInj = patient.injections.find(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date());
+  return (
+    <div
+      className="p-4 active:bg-slate-50 transition-colors cursor-pointer"
+      onClick={() => onSelect(patient.id)}
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center space-x-3">
+          <ProfileAvatar
+            src={patient.profileImage}
+            alt={patient.fullName}
+            size={48}
+            className="rounded-xl ring-1 ring-slate-100"
+            fallbackType="user"
+          />
+          <div>
+            <div className="flex items-center gap-1.5">
+              <div className="font-bold text-slate-800 text-base">{patient.fullName}</div>
+              {patient.tier === 'pro' && <ProBadge size={22} />}
+            </div>
+            <div className="text-xs text-slate-500 font-medium">
+              {patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y
+            </div>
+          </div>
+        </div>
+        {/* Technique Badge */}
+        <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-wider ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+          patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+            'bg-slate-50 text-slate-700 border-slate-200'
+          }`}>
+          {patient.technique === 'Hair' ? t('transplant_hair') :
+            patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
+              patient.technique === 'Beard' ? t('transplant_beard') : (patient.technique || 'N/A')}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mt-3 pl-[60px]">
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t('operation_date')}</p>
+          <p className="text-sm font-bold text-slate-700">{new Date(patient.operationDate).toISOString().split('T')[0].split('-').reverse().join('.')}</p>
+        </div>
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t('next_injection')}</p>
+          {nextInj ? (
+            <p className="text-sm font-bold text-blue-600 bg-blue-50 inline-block px-1.5 rounded">
+              {new Date(nextInj.date).toISOString().split('T')[0].split('-').reverse().join('.')}
+            </p>
+          ) : (
+            <p className="text-sm text-slate-400 italic">{t('none_scheduled')}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}, (prev, next) => prev.patient === next.patient);
+
+const PatientRow = React.memo<{ patient: Patient; onSelect: (id: string) => void }>(({ patient, onSelect }) => {
+  const { t } = useLanguage();
+  const nextInj = patient.injections.find(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date());
+  return (
+    <tr
+      className="bg-white border-b border-slate-100 hover:scale-[1.01] hover:shadow-md hover:z-10 relative transition-all duration-200 cursor-pointer group"
+      onClick={() => onSelect(patient.id)}
+    >
+      <td className="p-3 md:p-5 pl-4 md:pl-8 rounded-l-xl group-hover:rounded-l-xl transition-all relative">
+        <div className="absolute left-0 top-0 bottom-0 w-2 bg-promed-primary rounded-r-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        <div className="flex items-center space-x-4">
+          <div className="relative">
+            <ProfileAvatar
+              src={patient.profileImage}
+              alt={patient.fullName}
+              size={44}
+              className="rounded-xl ring-1 ring-slate-100"
+              fallbackType="user"
+            />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <div className="font-bold text-slate-800 text-sm group-hover:text-promed-primary transition-colors">{patient.fullName}</div>
+              {patient.tier === 'pro' && <ProBadge size={18} />}
+            </div>
+            <div className="text-xs text-slate-500 mt-0.5 font-medium">{patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y</div>
+          </div>
+        </div>
+      </td>
+      <td className="p-3 md:p-5 text-sm font-medium text-slate-700">
+        {new Date(patient.operationDate).toISOString().split('T')[0].split('-').reverse().join('.')}
+      </td>
+      <td className="p-3 md:p-5">
+        {nextInj ? (
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
+              {new Date(nextInj.date).toISOString().split('T')[0].split('-').reverse().join('.')}
+            </span>
+          </div>
+        ) : (
+          <span className="text-xs text-slate-400 italic font-medium">{t('none_scheduled')}</span>
+        )}
+      </td>
+      <td className="p-3 md:p-5 rounded-r-xl group-hover:rounded-r-xl transition-all">
+        <span className={`text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center space-x-1.5 border ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+          patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+            'bg-slate-50 text-slate-700 border-slate-200'
+          }`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${patient.technique === 'Hair' ? 'bg-indigo-600' :
+            patient.technique === 'Eyebrow' ? 'bg-rose-600' : 'bg-slate-600'
+            }`}></span>
+          <span>
+            {patient.technique === 'Hair' ? t('transplant_hair') :
+              patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
+                patient.technique === 'Beard' ? t('transplant_beard') : (patient.technique || 'N/A')}
+          </span>
+        </span>
+      </td>
+    </tr>
+  );
+}, (prev, next) => prev.patient === next.patient);
+
 // --- Patient List ---
 export const PatientList: React.FC<{
   patients: Patient[];
@@ -404,63 +525,9 @@ export const PatientList: React.FC<{
       <div className="block md:hidden">
         {currentPatients.length > 0 ? (
           <div className="divide-y divide-slate-100">
-            {currentPatients.map((patient) => {
-              const nextInj = patient.injections.find(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date());
-              return (
-                <div
-                  key={patient.id}
-                  className="p-4 active:bg-slate-50 transition-colors cursor-pointer"
-                  onClick={() => onSelect(patient.id)}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <ProfileAvatar
-                        src={patient.profileImage}
-                        alt={patient.fullName}
-                        size={48}
-                        className="rounded-xl ring-1 ring-slate-100"
-                        fallbackType="user"
-                      />
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="font-bold text-slate-800 text-base">{patient.fullName}</div>
-                          {patient.tier === 'pro' && <ProBadge size={22} />}
-                        </div>
-                        <div className="text-xs text-slate-500 font-medium">
-                          {patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y
-                        </div>
-                      </div>
-                    </div>
-                    {/* Technique Badge */}
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-wider ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                      patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                        'bg-slate-50 text-slate-700 border-slate-200'
-                      }`}>
-                      {patient.technique === 'Hair' ? t('transplant_hair') :
-                        patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
-                          patient.technique === 'Beard' ? t('transplant_beard') : (patient.technique || 'N/A')}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mt-3 pl-[60px]">
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t('operation_date')}</p>
-                      <p className="text-sm font-bold text-slate-700">{new Date(patient.operationDate).toISOString().split('T')[0].split('-').reverse().join('.')}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t('next_injection')}</p>
-                      {nextInj ? (
-                        <p className="text-sm font-bold text-blue-600 bg-blue-50 inline-block px-1.5 rounded">
-                          {new Date(nextInj.date).toISOString().split('T')[0].split('-').reverse().join('.')}
-                        </p>
-                      ) : (
-                        <p className="text-sm text-slate-400 italic">{t('none_scheduled')}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {currentPatients.map((patient) => (
+              <MobilePatientCard key={patient.id} patient={patient} onSelect={onSelect} />
+            ))}
           </div>
         ) : (
           <div className="py-12">
@@ -484,67 +551,9 @@ export const PatientList: React.FC<{
           </thead>
           <tbody className="divide-y-0 relative">
             {currentPatients.length > 0 ? (
-              currentPatients.map((patient, idx) => {
-                const nextInj = patient.injections.find(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date());
-                return (
-                  <tr
-                    key={patient.id}
-                    className="bg-white border-b border-slate-100 hover:scale-[1.01] hover:shadow-md hover:z-10 relative transition-all duration-200 cursor-pointer group"
-                    onClick={() => onSelect(patient.id)}
-                  >
-                    <td className="p-3 md:p-5 pl-4 md:pl-8 rounded-l-xl group-hover:rounded-l-xl transition-all relative">
-                      <div className="absolute left-0 top-0 bottom-0 w-2 bg-promed-primary rounded-r-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="flex items-center space-x-4">
-                        <div className="relative">
-                          <ProfileAvatar
-                            src={patient.profileImage}
-                            alt={patient.fullName}
-                            size={44}
-                            className="rounded-xl  ring-1 ring-slate-100"
-                            fallbackType="user"
-                          />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="font-bold text-slate-800 text-sm group-hover:text-promed-primary transition-colors">{patient.fullName}</div>
-                            {patient.tier === 'pro' && <ProBadge size={18} />}
-                          </div>
-                          <div className="text-xs text-slate-500 mt-0.5 font-medium">{patient.gender === 'Male' ? t('gender_male') : patient.gender === 'Female' ? t('gender_female') : t('gender_other')}, {patient.age}y</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-3 md:p-5 text-sm font-medium text-slate-700">
-                      {new Date(patient.operationDate).toISOString().split('T')[0].split('-').reverse().join('.')}
-                    </td>
-                    <td className="p-3 md:p-5">
-                      {nextInj ? (
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
-                            {new Date(nextInj.date).toISOString().split('T')[0].split('-').reverse().join('.')}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-400 italic font-medium">{t('none_scheduled')}</span>
-                      )}
-                    </td>
-                    <td className="p-3 md:p-5 rounded-r-xl group-hover:rounded-r-xl transition-all">
-                      <span className={`text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center space-x-1.5 border ${patient.technique === 'Hair' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                        patient.technique === 'Eyebrow' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                          'bg-slate-50 text-slate-700 border-slate-200'
-                        }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${patient.technique === 'Hair' ? 'bg-indigo-600' :
-                          patient.technique === 'Eyebrow' ? 'bg-rose-600' : 'bg-slate-600'
-                          }`}></span>
-                        <span>
-                          {patient.technique === 'Hair' ? t('transplant_hair') :
-                            patient.technique === 'Eyebrow' ? t('transplant_eyebrow') :
-                              patient.technique === 'Beard' ? t('transplant_beard') : (patient.technique || 'N/A')}
-                        </span>
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })
+              currentPatients.map((patient) => (
+                <PatientRow key={patient.id} patient={patient} onSelect={onSelect} />
+              ))
             ) : (
               <tr key="empty">
                 <td colSpan={4} className="p-12">

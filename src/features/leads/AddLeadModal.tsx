@@ -160,20 +160,20 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Name */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Ism Familiya *</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('full_name') || 'Ism Familiya'} *</label>
                             <input
                                 type="text"
                                 required
                                 value={formData.full_name}
                                 onChange={e => setFormData({ ...formData, full_name: e.target.value })}
                                 className="w-full px-4 py-2 bg-slate-50 border border-slate-400 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
-                                placeholder="Masalan: Mirjalol Shamsiddinov"
+                                placeholder={t('full_name_placeholder') || 'Masalan: Mirjalol Shamsiddinov'}
                             />
                         </div>
 
                         {/* Phone */}
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Telefon Raqami</label>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{t('phone_number') || t('phone') || 'Telefon Raqami'}</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <Phone className="h-5 w-5 text-slate-400" />
@@ -191,7 +191,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
 
                         {/* Source */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Manba (Source)</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">{t('source_label') || t('source') || 'Manba'}</label>
                             <div className="grid grid-cols-2 gap-2">
                                 {sources.map(s => {
                                     const Icon = s.icon;
@@ -229,7 +229,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                                 ) : (
                                     <>
                                         <Save size={18} className="relative z-10" />
-                                        <span>Saqlash</span>
+                                        <span>{t('save') || 'Saqlash'}</span>
                                     </>
                                 )}
                             </motion.button>

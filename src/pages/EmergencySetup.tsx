@@ -346,48 +346,68 @@ export const EmergencySetup: React.FC = () => {
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                        {filteredUsers.map(u => (
-                                            <div key={u.id} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all hover:border-slate-200 group">
-                                                <div className="flex justify-between items-start mb-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold ${u.role === 'admin' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-600'}`}>
-                                                            {u.role === 'admin' ? 'AD' : 'DR'}
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-bold text-slate-800 truncate max-w-[150px]">{u.fullName || u.name || 'Unknown'}</div>
-                                                            <div className="text-xs font-mono text-slate-400">{u.phoneNumber || 'No Phone'}</div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="relative">
-                                                        <span className={`text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wide ${u.status === 'banned' ? 'bg-rose-50 text-rose-500 border border-rose-100' : 'bg-emerald-50 text-emerald-500 border border-emerald-100'}`}>
-                                                            {u.status || 'Active'}
-                                                        </span>
-                                                    </div>
-                                                </div>
+                                        {filteredUsers.map(u => {
+                                            const role = u.role || 'viewer';
+                                            const ROLE_CONFIG: Record<string, { label: string; short: string; avatar: string; text: string; border: string }> = {
+                                                superadmin: { label: 'Super Admin', short: 'SA', avatar: 'bg-violet-100', text: 'text-violet-700', border: 'border-violet-200' },
+                                                admin: { label: 'Admin', short: 'AD', avatar: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-200' },
+                                                doctor: { label: 'Doctor', short: 'DR', avatar: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
+                                                nurse: { label: 'Nurse', short: 'NR', avatar: 'bg-pink-100', text: 'text-pink-700', border: 'border-pink-200' },
+                                                seller: { label: 'Sales', short: 'SL', avatar: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' },
+                                                call_operator: { label: 'Call Operator', short: 'CO', avatar: 'bg-cyan-100', text: 'text-cyan-700', border: 'border-cyan-200' },
+                                                viewer: { label: 'Viewer', short: 'VW', avatar: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200' },
+                                                staff: { label: 'Staff', short: 'ST', avatar: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-200' },
+                                            };
+                                            const rc = ROLE_CONFIG[role] ?? { label: role, short: role.slice(0, 2).toUpperCase(), avatar: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200' };
 
-                                                <div className="bg-slate-50 rounded-xl p-4 mb-4 space-y-3">
-                                                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                                                        <span className="text-[10px] uppercase font-bold text-slate-400">System ID</span>
-                                                        <span className="text-xs font-mono text-slate-500 truncate max-w-[150px]" title={u.email}>{u.email}</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center pt-2">
-                                                        <div className="w-full">
-                                                            <PasswordReveal value={u.lock_password} />
+                                            return (
+                                                <div key={u.id} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all hover:border-slate-200 group">
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-extrabold ${rc.avatar} ${rc.text}`}>
+                                                                {rc.short}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-bold text-slate-800 truncate max-w-[150px]">{u.fullName || u.full_name || u.name || 'Unknown'}</div>
+                                                                <div className="text-xs font-mono text-slate-400">{u.phoneNumber || u.phone || 'No Phone'}</div>
+                                                                {/* Role badge */}
+                                                                <span className={`inline-block mt-1 text-[9px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider border ${rc.text} ${rc.avatar} ${rc.border}`}>
+                                                                    {rc.label}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="relative">
+                                                            <span className={`text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wide ${u.status === 'banned' ? 'bg-rose-50 text-rose-500 border border-rose-100' : 'bg-emerald-50 text-emerald-500 border border-emerald-100'}`}>
+                                                                {u.status || 'Active'}
+                                                            </span>
                                                         </div>
                                                     </div>
-                                                </div>
 
-                                                <div className="flex gap-2">
-                                                    <ActionBtn label="Msg" icon={MessageSquare} color="blue" onClick={() => setMsgTarget(u)} />
-                                                    {u.status === 'banned' ? (
-                                                        <ActionBtn label="Unban" icon={CheckCircle} color="green" onClick={() => handleUpdateStatus(u.id, 'active')} />
-                                                    ) : (
-                                                        <ActionBtn label="Ban User" icon={Ban} color="amber" onClick={() => handleUpdateStatus(u.id, 'banned')} />
-                                                    )}
-                                                    <ActionBtn label="Delete" icon={Trash2} color="red" onClick={() => handleDeleteUser(u.id)} />
+                                                    <div className="bg-slate-50 rounded-xl p-4 mb-4 space-y-3">
+                                                        <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                                                            <span className="text-[10px] uppercase font-bold text-slate-400">System ID</span>
+                                                            <span className="text-xs font-mono text-slate-500 truncate max-w-[150px]" title={u.email}>{u.email}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center pt-2">
+                                                            <div className="w-full">
+                                                                <PasswordReveal value={u.lock_password} />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex gap-2">
+                                                        <ActionBtn label="Msg" icon={MessageSquare} color="blue" onClick={() => setMsgTarget(u)} />
+                                                        {u.status === 'banned' ? (
+                                                            <ActionBtn label="Unban" icon={CheckCircle} color="green" onClick={() => handleUpdateStatus(u.id, 'active')} />
+                                                        ) : (
+                                                            <ActionBtn label="Ban User" icon={Ban} color="amber" onClick={() => handleUpdateStatus(u.id, 'banned')} />
+                                                        )}
+                                                        <ActionBtn label="Delete" icon={Trash2} color="red" onClick={() => handleDeleteUser(u.id)} />
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
+
                                         {filteredUsers.length === 0 && !listLoading && (
                                             <div className="col-span-full py-12 text-center text-slate-400">
                                                 <Users size={48} className="mx-auto mb-4 opacity-20" />
