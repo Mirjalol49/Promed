@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Lock, Mail, User, LogOut, Shield, Eye, EyeOff, Volume2, VolumeX, Phone } from 'lucide-react';
@@ -10,6 +10,7 @@ import { ProfileAvatar } from '../components/layout/ProfileAvatar';
 import { useImageUpload } from '../hooks/useImageUpload'; // Correct import
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, getAuth } from 'firebase/auth';
 import { LogoutModal } from '../components/ui/LogoutModal';
+import { ImageUploadingOverlay } from '../components/ui/ImageUploadingOverlay';
 
 interface SettingsPageProps {
     userId: string;
@@ -42,6 +43,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
     const {
         previewUrl,
         uploading: imageUploading,
+        progress: uploadProgress,
         handleImageSelect
     } = useImageUpload({
         pathPrefix: `avatars/${userId}`,
@@ -214,6 +216,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                             <div className="absolute inset-0 z-30 bg-black/40 opacity-0 group-hover/avatar:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[1px] pointer-events-none">
                                 <Camera className="text-white w-10 h-10 transform scale-75 group-hover/avatar:scale-100 transition-all duration-300" />
                             </div>
+
+                            {/* UPLOAD ANIMATION OVERLAY */}
+                            <AnimatePresence>
+                                {imageUploading && <ImageUploadingOverlay language={language} showText={false} progress={uploadProgress} />}
+                            </AnimatePresence>
                         </div>
 
                         {/* Side Badge */}
