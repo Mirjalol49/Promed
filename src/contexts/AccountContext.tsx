@@ -70,6 +70,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (verified) setIsVerified(true);
     if (createdAtDate) setCreatedAt(createdAtDate);
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ id, userId, name, email, role: userRole, image: image || userImage, createdAt: createdAtDate || createdAt }));
+    setIsLoading(false);
   };
 
   const refreshProfile = async () => {
@@ -137,8 +138,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
           }
         }
       } else {
-        console.warn('⚠️ AccountContext: Profile not found in Firestore. Forcing logout to clear stale state.');
-        logout();
+        console.warn('⚠️ AccountContext: Profile not found in Firestore. Ignoring to avoid fresh-registration logouts.');
       }
     } catch (e) {
       console.error('Error refreshing profile:', e);

@@ -47,7 +47,7 @@ import DeleteModal from './components/ui/DeleteModal';
 import { Trash2 } from 'lucide-react';
 import { PinInput } from './components/ui/PinInput';
 import { useReminderNotifications } from './hooks/useReminderNotifications';
-import {  AnimatePresence , motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { PageTransition } from './components/ui/PageTransition';
 import { useRBAC } from './hooks/useRBAC';
 import { SCOPES } from './config/permissions';
@@ -424,11 +424,20 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (authUser) {
-      const persistedAccountId = localStorage.getItem('accountId');
       const sessionUserId = authUser.uid;
+      let sessionMismatch = false;
+      try {
+        const storedAccount = localStorage.getItem('graft_account');
+        if (storedAccount) {
+          const parsed = JSON.parse(storedAccount);
+          if (parsed.userId && parsed.userId !== sessionUserId) {
+            sessionMismatch = true;
+          }
+        }
+      } catch (e) { }
 
-      if (persistedAccountId && persistedAccountId !== sessionUserId) {
-        console.warn('⚠️ Session mismatch detected! Clearing corrupted state...');
+      if (sessionMismatch) {
+        console.warn('⚠️ User mismatch detected! Clearing old user state...');
         localStorage.clear();
         logout();
         window.location.reload();
