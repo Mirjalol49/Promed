@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Trash2, Building2, Calendar, Percent, ChevronDown, Search, User, TrendingUp, TrendingDown, FileText } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { Patient, Staff, TransactionCategory } from '../../types';
+import { Patient, Staff, TransactionCategory, Transaction } from '../../types';
 import { addTransaction } from '../../lib/financeService';
 import { subscribeToStaff } from '../../lib/staffService';
 import { useToast } from '../../contexts/ToastContext';
@@ -19,6 +19,7 @@ interface AddPaymentModalProps {
     onClose: () => void;
     patient: Patient;
     accountId: string;
+    transactions?: Transaction[];
 }
 
 // ── Split Types ──
@@ -94,7 +95,7 @@ const Avatar = ({ src, alt, fallback, className }: { src?: string; alt: string; 
     </div>
 );
 
-export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClose, patient, accountId }) => {
+export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClose, patient, accountId, transactions = [] }) => {
     const { t, language } = useLanguage();
     const { success, error: toastError } = useToast();
 
@@ -110,6 +111,12 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
     const [note, setNote] = useState('');
     const [category, setCategory] = useState<TransactionCategory>('surgery');
     const [loading, setLoading] = useState(false);
+
+    // Calculate previous sessions based on selected category (e.g. how many previous 'surgery' exist)
+    const previousSessions = React.useMemo(() => {
+        if (!transactions) return 0;
+        return transactions.filter(tr => tr.type === 'income' && tr.category === category && !tr.isVoided).length;
+    }, [transactions, category]);
 
     // Expense-specific
     const [expenseDescription, setExpenseDescription] = useState('');
@@ -442,8 +449,15 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
                                         <div className="p-4 border-b border-gray-50 flex items-center justify-between gap-4 relative group hover:bg-gray-50/50 transition-colors cursor-pointer">
                                             <div className="flex items-center gap-4 min-w-0">
                                                 <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 shrink-0 border border-purple-100"><Search size={18} /></div>
-                                                <div className="min-w-0">
-                                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{t('category') || 'Kategoriya'}</div>
+                                                <div className="min-w-0 flex flex-col justify-center">
+                                                    <div className="flex items-center gap-2 mb-0.5">
+                                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('category') || 'Kategoriya'}</div>
+                                                        {category === 'surgery' && (
+                                                            <span className="text-[9px] bg-emerald-50 text-emerald-600 border border-emerald-200/60 px-1.5 py-0.5 rounded-md font-bold tracking-widest uppercase whitespace-nowrap">
+                                                                {previousSessions === 0 ? (t('seans_1') || '1-Seans') : (t('seans_n')?.replace('{n}', `${previousSessions + 1}`) || `${previousSessions + 1}-Seans`)}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div className="font-extrabold text-slate-900 text-sm capitalize truncate">{t(category) || category}</div>
                                                 </div>
                                             </div>

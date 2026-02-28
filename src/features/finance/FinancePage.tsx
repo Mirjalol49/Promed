@@ -743,7 +743,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
             ) : (
                 <div
                     key="transactions"
-                    className="flex flex-col h-[calc(100vh-200px)] min-h-[600px] bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 overflow-hidden relative z-10"
+                    className="flex flex-col bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 overflow-hidden relative z-10"
                 >
                     {/* --- FILTER TOOLBAR --- */}
                     <div className="p-4 md:p-6 border-b border-slate-200">
@@ -854,7 +854,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                     })()}
 
                     {/* --- TRANSACTIONS LIST --- */}
-                    <div className="flex-1 overflow-y-auto bg-slate-50 custom-scrollbar p-0">
+                    <div className="flex-1 bg-slate-50 p-0">
                         {filteredTransactionsList.length > 0 ? (
                             <div className="divide-y divide-slate-200">
                                 {paginatedTransactions.map((tx) => {

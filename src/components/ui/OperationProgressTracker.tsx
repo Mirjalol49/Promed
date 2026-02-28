@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Activity, Play, Square, User, Clock, CheckCircle2,
-    Trash2, Plus, Stethoscope, Check, Timer, ChevronDown, RotateCcw, X
+    Activity, User, Clock,
+    Trash2, Plus, Stethoscope, Check, ChevronDown, RotateCcw, X
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAccount } from '../../contexts/AccountContext';
@@ -13,12 +13,14 @@ import { subscribeToTracker, updateTracker, OperationTrackerData, OperationSessi
 import { subscribeToTransactions } from '../../lib/financeService';
 import { Transaction } from '../../types';
 import { formatWithSpaces } from '../../lib/formatters';
-
-const STORAGE_KEY_PREFIX = 'promed_op_tracker_';
+import { format } from 'date-fns';
+import { uz, ru, enUS } from 'date-fns/locale';
 
 export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ patientId }) => {
     const { t, language } = useLanguage();
     const { accountId } = useAccount();
+
+    const currentLocale = language === 'ru' ? ru : language === 'en' ? enUS : uz;
 
     const [dataState, setDataState] = useState<OperationTrackerData>({
         activeSessionId: 'session_1',
@@ -33,7 +35,6 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
     });
 
     const state = dataState.sessions.find(s => s.id === dataState.activeSessionId) || dataState.sessions[0];
-
 
     const [transactions, setTransactions] = useState<Transaction[]>([]);
 
@@ -78,14 +79,13 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
         });
     };
 
+    // State
     const [newTitle, setNewTitle] = useState('');
     const [newDoctors, setNewDoctors] = useState<string[]>([]);
-    const [durationHours, setDurationHours] = useState('');
-    const [now, setNow] = useState(Date.now());
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
     const [isDeleteSessionModalOpen, setIsDeleteSessionModalOpen] = useState(false);
 
-    // For Staff Dropdown
+    // Staff Dropdown
     const [staffList, setStaffList] = useState<Staff[]>([]);
     const [isDoctorDropdownOpen, setIsDoctorDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -108,93 +108,28 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // 2. Timer Loop
-    useEffect(() => {
-        if (state.status !== 'running') return;
-
-        const interval = setInterval(() => {
-            const currentTime = Date.now();
-            setNow(currentTime);
-
-            // Automatically advance when timer runs out
-            if (state.stepStartTime) {
-                let currentIdx = state.currentStepIndex;
-                let startTime = state.stepStartTime;
-                let changed = false;
-
-                while (currentIdx < state.steps.length) {
-                    const step = state.steps[currentIdx];
-                    const elapsed = currentTime - startTime;
-                    const totalDuration = step.durationMinutes * 60 * 1000;
-
-                    if (elapsed >= totalDuration) {
-                        currentIdx++;
-                        startTime += totalDuration; // Fast-forward baseline by exact step length
-                        changed = true;
-                    } else {
-                        break;
-                    }
-                }
-
-                if (changed) {
-                    if (currentIdx < state.steps.length) {
-                        setSharedState(prev => ({
-                            ...prev,
-                            currentStepIndex: currentIdx,
-                            stepStartTime: startTime
-                        }));
-                    } else {
-                        setSharedState(prev => ({
-                            ...prev,
-                            status: 'completed',
-                            currentStepIndex: prev.steps.length > 0 ? prev.steps.length - 1 : 0,
-                            stepStartTime: null
-                        }));
-                    }
-                }
-            }
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [state.status, state.currentStepIndex, state.steps, state.stepStartTime]);
-
-    // 3. Actions
+    // Actions
     const addStep = () => {
         if (!newTitle) return;
-        const h = parseInt(durationHours) || 0;
-        const totalMin = h * 60;
-
-        if (totalMin <= 0) return;
-
         setSharedState(prev => ({
             ...prev,
+            status: 'completed',
+            currentStepIndex: prev.steps.length + 1,
             steps: [...prev.steps, {
                 id: `step_${Date.now()}`,
                 title: newTitle,
-                doctor: newDoctors.length > 0 ? newDoctors.join(', ') : t('doctor_staff') || 'TBD',
-                durationMinutes: totalMin
+                doctor: newDoctors.length > 0 ? newDoctors.join(', ') : t('doctor_staff') || 'Belgilanmagan',
+                durationMinutes: 0
             }]
         }));
-
         setNewTitle('');
         setNewDoctors([]);
-        setDurationHours('');
     };
 
     const removeStep = (id: string) => {
         setSharedState(prev => ({
             ...prev,
             steps: prev.steps.filter(s => s.id !== id)
-        }));
-    };
-
-    const startOperation = () => {
-        if (state.steps.length === 0) return;
-        setSharedState(prev => ({
-            ...prev,
-            status: 'running',
-            currentStepIndex: 0,
-            stepStartTime: Date.now()
         }));
     };
 
@@ -210,95 +145,163 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
     };
 
     const confirmDeleteSession = () => {
-        setDataState(prev => {
-            const nextSessions = prev.sessions.filter(s => s.id !== prev.activeSessionId);
+        setDataState(prevData => {
+            const remaining = prevData.sessions.filter(s => s.id !== prevData.activeSessionId);
             const nextDataState = {
-                ...prev,
-                sessions: nextSessions.length > 0 ? nextSessions : [{
-                    id: `session_${Date.now()}`,
+                ...prevData,
+                activeSessionId: remaining[0]?.id || 'session_1',
+                sessions: remaining.length > 0 ? remaining : [{
+                    id: 'session_1',
                     name: 'Seans 1',
                     steps: [],
-                    status: 'setup' as const,
+                    status: 'setup',
                     currentStepIndex: 0,
                     stepStartTime: null
-                }],
-                activeSessionId: nextSessions.length > 0 ? nextSessions[0].id : `session_${Date.now()}`
+                } as OperationSession]
             };
-            if (nextSessions.length === 0) {
-                nextDataState.activeSessionId = nextDataState.sessions[0].id;
-            }
-            updateTracker(patientId, nextDataState as OperationTrackerData).catch(console.error);
+            updateTracker(patientId, nextDataState).catch(console.error);
             return nextDataState as OperationTrackerData;
         });
         setIsDeleteSessionModalOpen(false);
     };
 
-    const completeCurrentStepEarly = () => {
-        // Force completion of current step right now
-        if (state.currentStepIndex + 1 < state.steps.length) {
-            setSharedState(prev => ({
-                ...prev,
-                currentStepIndex: prev.currentStepIndex + 1,
-                stepStartTime: Date.now()
-            }));
-        } else {
-            setSharedState(prev => ({
-                ...prev,
-                status: 'completed',
-                stepStartTime: null
-            }));
-        }
-    };
+    // Render
+    const renderTracker = () => (
+        <div className="space-y-5 animate-in fade-in duration-300">
 
-    // 4. Formatting Helpers
-    const formatTimeLeft = (elapsedMs: number, totalMin: number) => {
-        const totalMs = totalMin * 60 * 1000;
-        let leftMs = totalMs - elapsedMs;
-        if (leftMs < 0) leftMs = 0;
+            {/* STEPS LIST */}
+            {state.steps.length > 0 && (
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center px-1">
+                        <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-slate-700 text-[13px] uppercase tracking-wider">{t('completed_steps')}</h4>
+                            <span className="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-md text-[11px] border border-slate-200">{state.steps.length}</span>
+                        </div>
+                        <button
+                            onClick={() => setIsResetModalOpen(true)}
+                            className="shrink-0 text-[10px] font-black text-slate-400 hover:text-red-600 flex items-center gap-1.5 transition-colors uppercase tracking-widest bg-white hover:bg-red-50 px-3 py-1.5 rounded-md border border-slate-200 shadow-sm active:scale-[0.98]"
+                        >
+                            <RotateCcw size={13} /> {t('reset_tracker')}
+                        </button>
+                    </div>
 
-        const h = Math.floor(leftMs / (1000 * 60 * 60));
-        const m = Math.floor((leftMs % (1000 * 60 * 60)) / (1000 * 60));
-        const s = Math.floor((leftMs % (1000 * 60)) / 1000);
+                    <div className="space-y-3">
+                        {state.steps.map((step, idx) => {
+                            const doctorNames = step.doctor ? step.doctor.split(',').map(n => n.trim()).filter(Boolean) : [];
+                            return (
+                                <div key={step.id} className="group relative bg-white border border-slate-200 rounded-[18px] p-5 shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-300">
+                                    <div className="hidden sm:block absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                        <button onClick={() => removeStep(step.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                            <Trash2 size={16} strokeWidth={2.5} />
+                                        </button>
+                                    </div>
+                                    <div className="sm:hidden absolute top-4 right-4">
+                                        <button onClick={() => removeStep(step.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-slate-50 rounded-lg transition-colors">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
 
-        if (h > 0) return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    };
+                                    <div className="pr-12 sm:pr-10">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-7 h-7 rounded-md bg-slate-50 text-slate-500 border border-slate-200 flex items-center justify-center font-black text-[12px] shrink-0">
+                                                {idx + 1}
+                                            </div>
+                                            <h4 className="text-[16px] font-black tracking-tight text-slate-800">{step.title}</h4>
+                                        </div>
 
-    const formatDuration = (min: number) => {
-        const h = Math.floor(min / 60);
-        const m = min % 60;
-        const hrStr = t('hours_short') || 'Hrs';
-        const minStr = t('minutes') || 'Min';
-        if (h > 0 && m > 0) return `${h}${hrStr} ${m}${minStr}`;
-        if (h > 0) return `${h}${hrStr}`;
-        return `${m}${minStr}`;
-    };
+                                        <div className="flex flex-col gap-2.5 pl-10">
+                                            {doctorNames.map((dName, dIdx) => {
+                                                const dStaff = staffList.find(s => s.fullName === dName);
+                                                const dSplits = dStaff ? transactions.filter(t => t.staffId === dStaff.id).sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime()) : [];
+                                                const dLatestSplit = dSplits.length > 0 ? dSplits[0] : null;
 
-    // 5. Renderers
-    const renderSetup = () => (
-        <div className="space-y-4 animate-in fade-in duration-300">
-            <div className="bg-slate-50/50 rounded-xl p-4 border border-slate-100 flex flex-col md:flex-row gap-3 items-end">
-                <div className="flex-1 w-full relative">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 block">{t('step_title') || 'Step Title'}</label>
+                                                return (
+                                                    <div key={dIdx} className="flex items-center gap-3 min-w-0 bg-slate-50/60 p-2.5 rounded-xl border border-slate-100">
+                                                        <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm border-[2px] border-white">
+                                                            {dStaff?.imageUrl ? (
+                                                                <img src={dStaff.imageUrl} alt={dName} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-[12px] font-black text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
+                                                                    {dName.charAt(0)}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex flex-col min-w-0 flex-1">
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className="font-bold text-slate-700 text-[13px] truncate">{dName}</span>
+                                                                {dStaff && dStaff.role && (
+                                                                    <span className="text-[9px] uppercase tracking-widest font-bold text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200/80 shrink-0">
+                                                                        {t(`role_${dStaff.role}`) || dStaff.role}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {dLatestSplit && dLatestSplit.amount > 0 && (
+                                                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                                                    <span className="text-[12px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded shadow-sm shrink-0">
+                                                                        {formatWithSpaces(dLatestSplit.amount)} {dLatestSplit.currency || 'UZS'}
+                                                                    </span>
+                                                                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 shrink-0 uppercase tracking-widest">
+                                                                        <Clock size={10} strokeWidth={2.5} />
+                                                                        {format(new Date(dLatestSplit.date || dLatestSplit.createdAt || new Date()), 'dd MMM yyyy', { locale: currentLocale })}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            {doctorNames.length === 0 && (
+                                                <div className="flex items-center gap-3 opacity-60 bg-slate-50/60 p-2.5 rounded-xl border border-slate-100">
+                                                    <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center border-2 border-dashed border-slate-200 bg-white">
+                                                        <User size={14} className="text-slate-400" />
+                                                    </div>
+                                                    <span className="text-[12px] font-bold text-slate-500">{t('doctor_staff')}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Empty state */}
+            {state.steps.length === 0 && (
+                <div className="text-center py-8 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                    <div className="mx-auto w-12 h-12 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center mb-3">
+                        <Stethoscope className="h-6 w-6 text-slate-300 stroke-[2.5px]" />
+                    </div>
+                    <p className="text-[14px] font-bold text-slate-500">{t('no_operation_steps')}</p>
+                    <p className="text-[12px] text-slate-400 mt-1 font-medium">{t('add_phases_ph')}</p>
+                </div>
+            )}
+
+            {/* ADD STEP — always visible at the bottom */}
+            <div className="bg-slate-50/50 rounded-xl p-4 md:p-5 border border-slate-100 flex flex-col md:flex-row gap-4 items-end relative z-30">
+                <div className="flex-1 w-full">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 block">{t('step_title')}</label>
                     <input
                         type="text"
                         value={newTitle}
                         onChange={e => setNewTitle(e.target.value)}
-                        placeholder={t('step_title_ph') || "e.g. Extraction Phase"}
-                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-promed-primary focus:ring-2 focus:ring-promed-primary/20 transition-all outline-none"
+                        onKeyDown={e => { if (e.key === 'Enter') addStep(); }}
+                        placeholder={t('step_title_ph') || "Masalan: Ekstraksiya"}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-[14px] font-medium text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                     />
                 </div>
                 <div className="flex-1 w-full relative" ref={dropdownRef}>
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 block">{t('doctor_staff') || 'Doctor / Staff'}</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 block">{t('doctor_staff')}</label>
                     <button
                         type="button"
                         onClick={() => setIsDoctorDropdownOpen(!isDoctorDropdownOpen)}
-                        className={`w-full bg-white border transition-all rounded-lg px-3 py-2 text-sm flex items-center justify-between outline-none text-left ${isDoctorDropdownOpen ? 'border-promed-primary ring-2 ring-promed-primary/20' : 'border-slate-200 hover:border-slate-300'}`}
+                        className={`w-full bg-white border outline-none transition-all rounded-lg px-4 py-3 text-[14px] flex items-center justify-between text-left ${isDoctorDropdownOpen ? 'border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-200 hover:border-slate-300'}`}
                     >
-                        <span className={`truncate ${newDoctors.length > 0 ? 'text-slate-900 font-medium' : 'text-slate-400'}`}>
-                            {newDoctors.length > 0 ? newDoctors.join(', ') : (t('select_staff') || 'Select Staff')}
+                        <span className={`truncate ${newDoctors.length > 0 ? 'text-slate-900 font-bold' : 'text-slate-400 font-medium'}`}>
+                            {newDoctors.length > 0 ? newDoctors.join(', ') : (t('select_staff') || 'Xodim tanlash')}
                         </span>
-                        <ChevronDown size={14} className={`flex-shrink-0 text-slate-400 transition-transform duration-200 ${isDoctorDropdownOpen ? 'rotate-180' : ''}`} />
+                        <ChevronDown size={16} className={`flex-shrink-0 text-slate-400 transition-transform duration-200 ${isDoctorDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} />
                     </button>
                     <AnimatePresence>
                         {isDoctorDropdownOpen && (
@@ -307,10 +310,10 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 5 }}
                                 transition={{ duration: 0.15 }}
-                                className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-56 overflow-y-auto"
+                                className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto p-1"
                             >
                                 {staffList.length === 0 ? (
-                                    <div className="p-3 text-xs text-slate-500 text-center">{t('no_staff_found') || 'No staff found'}</div>
+                                    <div className="p-4 text-[13px] text-slate-500 text-center font-medium">{t('no_staff_found')}</div>
                                 ) : (
                                     staffList.map(staff => (
                                         <button
@@ -324,9 +327,9 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                                     setNewDoctors([...newDoctors, staff.fullName]);
                                                 }
                                             }}
-                                            className="w-full text-left px-3 py-2.5 hover:bg-slate-50 flex items-center gap-3 transition-colors group"
+                                            className="w-full text-left px-3 py-3 hover:bg-slate-50 rounded-lg flex items-center gap-3 transition-colors group"
                                         >
-                                            <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 relative">
+                                            <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 relative">
                                                 {staff.imageUrl ? (
                                                     <img src={staff.imageUrl} alt="" className="w-full h-full object-cover" />
                                                 ) : (
@@ -337,11 +340,13 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                                 <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-full pointer-events-none"></div>
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <div className="text-sm font-semibold text-slate-700 truncate group-hover:text-blue-600 transition-colors">{staff.fullName}</div>
-                                                <div className="text-[10px] text-slate-400 uppercase tracking-widest">{t(`role_${staff.role}`) || staff.role}</div>
+                                                <div className="text-[14px] font-bold text-slate-700 truncate group-hover:text-blue-600 transition-colors leading-tight">{staff.fullName}</div>
+                                                <div className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5 font-semibold">{t(`role_${staff.role}`) || staff.role}</div>
                                             </div>
                                             {newDoctors.includes(staff.fullName) && (
-                                                <Check size={14} className="text-blue-600 flex-shrink-0" />
+                                                <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                                    <Check size={14} className="text-blue-600 stroke-[3px]" />
+                                                </div>
                                             )}
                                         </button>
                                     ))
@@ -350,293 +355,25 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                         )}
                     </AnimatePresence>
                 </div>
-                <div className="flex gap-2 w-full md:w-auto">
-                    <div>
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 block">{t('hours_short') || 'Hrs'}</label>
-                        <input
-                            type="number"
-                            min="1"
-                            value={durationHours}
-                            onChange={e => setDurationHours(e.target.value)}
-                            placeholder="1"
-                            className="w-16 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-promed-primary transition-all outline-none text-center font-mono font-medium"
-                        />
-                    </div>
-                </div>
                 <motion.button
                     whileTap={{ scale: 0.96 }}
                     whileHover={{ scale: 1.02 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
                     onClick={addStep}
-                    disabled={!newTitle || !durationHours}
-                    className="relative overflow-hidden shrink-0 h-[40px] px-6 text-white rounded-xl flex items-center justify-center gap-2 font-bold shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed group transition-all duration-300"
+                    disabled={!newTitle}
+                    className="relative overflow-hidden shrink-0 h-[46px] px-8 text-white rounded-lg flex items-center justify-center gap-2.5 font-black shadow-md hover:shadow-lg hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed group transition-all duration-300 active:translate-y-0 active:scale-[0.98]"
                     style={{
-                        background: (!newTitle || !durationHours) ? '#cbd5e1' : 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
-                        boxShadow: (!newTitle || !durationHours) ? 'none' : '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
+                        background: (!newTitle) ? '#e2e8f0' : '#3b82f6',
+                        color: (!newTitle) ? '#94a3b8' : 'white',
+                        boxShadow: (!newTitle) ? 'none' : '0 4px 12px -2px rgba(59, 130, 246, 0.4)'
                     }}
                 >
-                    <Plus size={16} className="group-hover:rotate-90 transition-transform duration-300" strokeWidth={2.5} />
-                    <span className="text-sm tracking-wide">{t('add') || 'Add'}</span>
+                    <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" strokeWidth={3} />
+                    <span className="text-[14px] tracking-wide uppercase">{t('add')}</span>
                 </motion.button>
             </div>
-
-            <div className="space-y-2">
-                <AnimatePresence>
-                    {state.steps.map((step, idx) => (
-                        <motion.div
-                            key={step.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-sm gap-2"
-                        >
-                            <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-6 h-6 shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
-                                    {idx + 1}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <h4 className="text-sm font-semibold text-slate-800 truncate">{step.title}</h4>
-                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                        <span className="text-[11px] text-slate-500 flex items-center gap-1 min-w-0"><User size={10} className="shrink-0" /><span className="truncate max-w-[120px]">{step.doctor}</span></span>
-                                        <span className="text-[10px] text-slate-300 shrink-0">•</span>
-                                        <span className="text-[11px] text-slate-500 flex items-center gap-1 shrink-0"><Clock size={10} />{formatDuration(step.durationMinutes)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => removeStep(step.id)}
-                                className="text-slate-400 hover:text-red-500 transition-colors p-2 shrink-0 bg-slate-50 rounded-lg"
-                                aria-label="Remove step"
-                            >
-                                <Trash2 size={16} />
-                                <span className="sr-only">Remove</span>
-                            </button>
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-
-                {state.steps.length === 0 && (
-                    <div className="text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50 relative overflow-hidden isolate">
-                        <Stethoscope className="mx-auto h-8 w-8 text-slate-300 mb-2" />
-                        <p className="text-sm font-medium text-slate-400">{t('no_operation_steps') || 'No operation steps defined'}</p>
-                        <p className="text-xs text-slate-400/80 mt-1">{t('add_phases_ph') || 'Add phases e.g. Anesthesia, Extraction, Implantation'}</p>
-                    </div>
-                )}
-            </div>
-
-            {state.steps.length > 0 && (
-                <div className="flex justify-end pt-2 border-t border-slate-100">
-                    <motion.button
-                        whileTap={{ scale: 0.96 }}
-                        whileHover={{ scale: 1.02 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                        onClick={startOperation}
-                        className="relative overflow-hidden h-[44px] px-8 text-white rounded-xl flex items-center justify-center gap-2 font-bold shadow-md hover:shadow-lg group transition-all duration-300"
-                        style={{
-                            background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
-                            boxShadow: '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
-                        }}
-                    >
-                        <Play size={18} fill="currentColor" className="group-hover:scale-110 transition-transform duration-300" />
-                        <span className="text-[15px] tracking-wide">{t('start_operation') || 'Start Operation'}</span>
-                    </motion.button>
-                </div>
-            )}
         </div>
     );
-
-    const renderRunning = () => (
-        <div className="space-y-4 animate-in fade-in duration-300">
-            <div className="flex flex-wrap justify-between items-center mb-5 md:mb-6 pl-1 pr-1 gap-3">
-                <div className="flex items-center gap-2 min-w-0">
-                    <div className="relative flex shrink-0 h-3 w-3">
-                        {state.status === 'running' ? (
-                            <>
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                            </>
-                        ) : (
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                        )}
-                    </div>
-                    <span className={`text-sm font-bold uppercase tracking-widest truncate ${state.status === 'running' ? 'text-blue-600' : 'text-emerald-600'}`}>
-                        {state.status === 'running' ? (t('operation_active') || 'Operation Active') : (t('operation_successful') || 'Operation Successful')}
-                    </span>
-                </div>
-                {state.status === 'running' ? (
-                    <button
-                        onClick={() => setIsResetModalOpen(true)}
-                        className="shrink-0 text-xs font-bold text-slate-400 hover:text-red-500 flex items-center gap-1.5 transition-colors uppercase tracking-wider bg-slate-50 hover:bg-red-50 px-3 py-1.5 rounded-lg"
-                    >
-                        <Square size={12} fill="currentColor" /> {t('stop') || 'Stop'}
-                    </button>
-                ) : (
-                    <button
-                        onClick={() => setIsResetModalOpen(true)}
-                        className="shrink-0 text-xs font-bold text-slate-400 hover:text-blue-600 flex items-center gap-1.5 transition-colors uppercase tracking-wider bg-slate-50 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
-                    >
-                        {t('reset_tracker') || 'Reset Tracker'}
-                    </button>
-                )}
-            </div>
-
-            <div className="space-y-0">
-                {state.steps.map((step, idx) => {
-                    const isPast = state.status === 'completed' || idx < state.currentStepIndex;
-                    const isCurrent = state.status === 'running' && idx === state.currentStepIndex;
-                    const isFuture = state.status === 'running' && idx > state.currentStepIndex;
-
-                    const elapsed = isCurrent && state.stepStartTime ? Math.max(0, now - state.stepStartTime) : 0;
-                    const totalDurationMs = step.durationMinutes * 60 * 1000;
-                    const progressPercent = isCurrent ? Math.min(100, (elapsed / totalDurationMs) * 100) : (isPast ? 100 : 0);
-
-                    const doctorNames = step.doctor ? step.doctor.split(',').map(n => n.trim()).filter(Boolean) : [];
-
-                    return (
-                        <div key={step.id} className="flex items-stretch group">
-                            {/* Marker Column */}
-                            <div className="flex flex-col items-center mr-4 md:mr-6 w-8 mt-1">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors duration-300 z-10 
-                                    ${isPast ? 'border-emerald-500 text-emerald-500 bg-emerald-50' :
-                                        isCurrent ? 'border-blue-500 text-blue-600 bg-white ring-4 ring-blue-50' :
-                                            'border-slate-200 text-slate-400 bg-white font-medium'}
-                                `}>
-                                    {isPast ? <Check size={14} strokeWidth={3} /> : <span className="text-sm font-bold pt-[1px]">{idx + 1}</span>}
-                                </div>
-                                {/* Line connecting to next */}
-                                {idx < state.steps.length - 1 && (
-                                    <div className="w-[2px] grow bg-slate-100 my-2 rounded-full min-h-[20px]"></div>
-                                )}
-                            </div>
-
-                            {/* Content Column */}
-                            <div className={`flex-1 min-w-0 pb-6 ${isFuture ? 'opacity-50 grayscale' : ''}`}>
-                                <div className={`bg-white border rounded-2xl p-4 md:p-5 shadow-sm overflow-hidden transition-all duration-300 ${isCurrent ? 'border-blue-200 ring-1 ring-blue-50 hover:shadow-md' : isPast ? 'border-emerald-100 bg-emerald-50/10' : 'border-slate-100 border-dashed'}`}>
-                                    <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
-
-                                        {/* Left Side: Title & Doctors */}
-                                        <div className="flex items-start w-full min-w-0">
-                                            <div className="pt-0.5 w-full min-w-0">
-                                                <div className="flex justify-between items-start gap-2">
-                                                    <h4 className={`text-base font-black tracking-tight truncate ${isCurrent ? 'text-blue-900' : 'text-slate-800'}`}>{step.title}</h4>
-
-                                                    {/* Mobile Only: Status Badge inline with title */}
-                                                    <div className="sm:hidden shrink-0 mt-0.5">
-                                                        {isCurrent ? (
-                                                            <div className="flex flex-col items-end gap-1.5">
-                                                                <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 font-mono font-bold tracking-tight shadow-sm text-[11px]">
-                                                                    <Timer size={12} className="animate-pulse" />
-                                                                    {formatTimeLeft(elapsed, step.durationMinutes)}
-                                                                </div>
-                                                                <button onClick={completeCurrentStepEarly} className="text-[9px] uppercase tracking-wider font-bold text-slate-400 hover:text-blue-600 transition-colors focus:outline-none rounded">
-                                                                    {t('skip') || 'Skip'} &rarr;
-                                                                </button>
-                                                            </div>
-                                                        ) : isPast ? (
-                                                            <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-100 shadow-sm">
-                                                                <CheckCircle2 size={12} /> {t('done') || 'Done'}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="text-[10px] font-bold tracking-wide text-slate-400 flex items-center gap-1 px-2 py-1 bg-slate-50 rounded-lg border border-slate-100">
-                                                                <Clock size={11} /> {formatDuration(step.durationMinutes)}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex flex-col gap-2 mt-3">
-                                                    {doctorNames.map((dName, dIdx) => {
-                                                        const dStaff = staffList.find(s => s.fullName === dName);
-                                                        const dSplits = dStaff ? transactions.filter(t => t.staffId === dStaff.id).sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime()) : [];
-                                                        const dLatestSplit = dSplits.length > 0 ? dSplits[0] : null;
-
-                                                        return (
-                                                            <div key={dIdx} className="flex items-center gap-2.5 min-w-0">
-                                                                <div className={`w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm border-[1.5px] ${isCurrent ? 'border-blue-100 ring-1 ring-blue-50' : 'border-white ring-1 ring-slate-100'}`}>
-                                                                    {dStaff?.imageUrl ? (
-                                                                        <img src={dStaff.imageUrl} alt={dName} className="w-full h-full object-cover" />
-                                                                    ) : (
-                                                                        <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
-                                                                            {dName.charAt(0)}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex flex-wrap items-center gap-1.5 font-bold text-slate-600 text-[13px] min-w-0">
-                                                                    <span className="truncate max-w-full">{dName}</span>
-                                                                    {dStaff && dStaff.role && (
-                                                                        <span className="text-[9px] uppercase tracking-widest text-slate-400 bg-slate-100/80 px-1.5 py-0.5 rounded border border-slate-200/50 shrink-0">
-                                                                            {t(`role_${dStaff.role}`) || dStaff.role}
-                                                                        </span>
-                                                                    )}
-                                                                    {dLatestSplit && dLatestSplit.amount > 0 && (
-                                                                        <span className="text-[12px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 flex items-center gap-1 shadow-sm ring-1 ring-emerald-500/10 shrink-0">
-                                                                            {formatWithSpaces(dLatestSplit.amount)} {dLatestSplit.currency || 'UZS'}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                    {doctorNames.length === 0 && (
-                                                        <div className="flex items-center gap-2.5">
-                                                            <div className={`w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm border-[1.5px] ${isCurrent ? 'border-blue-100 ring-1 ring-blue-50' : 'border-white ring-1 ring-slate-100'}`}>
-                                                                <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
-                                                                    <User size={12} />
-                                                                </div>
-                                                            </div>
-                                                            <span className="text-[13px] font-bold text-slate-500">{t('doctor_staff') || 'TBD'}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Desktop Only: Status Badge or Timer */}
-                                        <div className="hidden sm:flex text-right flex-col items-end gap-2 shrink-0">
-                                            {isCurrent ? (
-                                                <>
-                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 font-mono font-bold tracking-tight shadow-sm">
-                                                        <Timer size={14} className="animate-pulse" />
-                                                        {formatTimeLeft(elapsed, step.durationMinutes)}
-                                                    </div>
-                                                    <button onClick={completeCurrentStepEarly} className="text-[10px] uppercase tracking-wider font-bold text-slate-400 hover:text-blue-600 transition-colors focus:outline-none rounded">
-                                                        {t('skip') || 'Skip'} &rarr;
-                                                    </button>
-                                                </>
-                                            ) : isPast ? (
-                                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-100 shadow-sm">
-                                                    <CheckCircle2 size={14} /> {t('done') || 'Done'}
-                                                </div>
-                                            ) : (
-                                                <div className="text-xs font-bold tracking-wide text-slate-400 flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                                                    <Clock size={13} /> {formatDuration(step.durationMinutes)}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Perfect Progress Bar */}
-                                    {isCurrent && (
-                                        <div className="mt-5 flex flex-col gap-2.5">
-                                            <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-widest text-slate-500">
-                                                <span>{t('progress') || 'Progress'}</span>
-                                                <span className="text-blue-600">{Math.round(progressPercent)}%</span>
-                                            </div>
-                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
-                                                <div className="h-full bg-blue-500 rounded-full transition-all duration-1000 ease-linear shadow-inner" style={{ width: `${progressPercent}%` }}></div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-
-    const renderCompleted = () => renderRunning();
 
     return (
         <div className="bg-white rounded-2xl p-6 shadow-apple border border-slate-200 mb-6">
@@ -645,7 +382,7 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                     <div className="p-2 bg-blue-50 rounded-lg text-blue-600 border border-blue-100">
                         <Activity size={20} />
                     </div>
-                    {t('operation_progress') || 'Operation Progress'}
+                    {t('operation_progress')}
                 </h3>
 
                 {/* Session Tabs */}
@@ -704,9 +441,8 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                 </div>
             </div>
 
-            <div className="overflow-hidden">
-                {state.status === 'setup' && renderSetup()}
-                {(state.status === 'running' || state.status === 'completed') && renderRunning()}
+            <div className="overflow-visible mt-6">
+                {renderTracker()}
             </div>
 
             <ConfirmationModal

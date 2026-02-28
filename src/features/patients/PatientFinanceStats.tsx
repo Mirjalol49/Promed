@@ -353,6 +353,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                 onClose={() => setIsAddingPayment(false)}
                 patient={patient}
                 accountId={accountId}
+                transactions={transactions}
             />
 
             {/* ── Transaction History ── */}
@@ -493,7 +494,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                 </div>
 
                 {/* ── Transaction List ── */}
-                <div className="max-h-[700px] overflow-y-auto no-scrollbar pr-1 -mr-1 pb-4">
+                <div className="min-h-[600px] max-h-[calc(100vh-280px)] overflow-y-auto no-scrollbar pr-1 -mr-1 pb-4">
                     {timeline.length > 0 ? (
                         <>
                             <div>
@@ -507,18 +508,18 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                         return (
                                             <div
                                                 key={exp.id}
-                                                className={`group relative px-4 py-4 md:px-8 md:py-5 flex flex-col md:flex-row md:items-center gap-3 md:gap-5 transition-all duration-200 mx-3 md:mx-6 mb-3 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md ${isVoided ? 'opacity-75' : ''}`}
+                                                className={`group relative px-4 py-3 md:px-6 md:py-3.5 flex flex-col md:flex-row md:items-center gap-2.5 md:gap-4 transition-all duration-200 mx-3 md:mx-5 mb-2 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md ${isVoided ? 'opacity-75' : ''}`}
                                             >
-                                                <div className="hidden md:flex flex-col items-center justify-center w-[4.5rem] h-[4.5rem] bg-slate-100/80 rounded-2xl border border-slate-200 shadow-sm shrink-0 group-hover:scale-105 transition-all duration-300">
-                                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-0.5">{getMonthShort(exp.date)}</span>
-                                                    <span className="text-[1.75rem] font-black text-slate-800 leading-none">{format(new Date(exp.date), 'dd')}</span>
-                                                    <span className="text-[10px] font-bold text-rose-500 leading-none mt-1 bg-white/60 px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm">{exp.time || '--:--'}</span>
+                                                <div className="hidden md:flex flex-col items-center justify-center w-12 h-12 bg-slate-100/80 rounded-xl border border-slate-200 shadow-sm shrink-0 group-hover:scale-105 transition-all duration-300">
+                                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-0.5">{getMonthShort(exp.date)}</span>
+                                                    <span className="text-[1.25rem] font-black text-slate-800 leading-none">{format(new Date(exp.date), 'dd')}</span>
+                                                    <span className="text-[8px] font-bold text-rose-500 leading-none mt-0.5">{exp.time || '--:--'}</span>
                                                 </div>
 
                                                 {/* Info */}
                                                 <div className="flex-1 w-full md:w-auto min-w-0">
-                                                    <div className="flex justify-between items-start gap-4 mb-2 md:mb-1.5">
-                                                        <div className={`font-medium text-slate-600 text-sm md:text-base leading-snug line-clamp-2 md:line-clamp-none ${isVoided ? 'line-through decoration-slate-400 text-slate-400' : ''}`}>
+                                                    <div className="flex justify-between items-start gap-3 mb-1.5 md:mb-1">
+                                                        <div className={`font-medium text-slate-600 text-sm leading-snug line-clamp-2 md:line-clamp-none ${isVoided ? 'line-through decoration-slate-400 text-slate-400' : ''}`}>
                                                             {exp.description ? (
                                                                 exp.description.startsWith('[Split]')
                                                                     ? `${t('split_from') || '[Split] '}${exp.description.replace('[Split]', '').trim()}`
@@ -553,8 +554,8 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
 
                                                 {/* Amount */}
                                                 <div className="hidden md:block text-right shrink-0">
-                                                    <div className={`text-xl font-black tabular-nums ${isVoided ? 'text-slate-400 line-through decoration-slate-400' : 'text-rose-500'}`}>
-                                                        -{formatWithSpaces(exp.amount)} <span className={`text-xs font-bold ml-0.5 ${isVoided ? 'text-slate-300 no-underline' : 'text-rose-300'}`}>UZS</span>
+                                                    <div className={`text-lg font-black tabular-nums ${isVoided ? 'text-slate-400 line-through decoration-slate-400' : 'text-rose-500'}`}>
+                                                        -{formatWithSpaces(exp.amount)} <span className={`text-[11px] font-bold ml-0.5 ${isVoided ? 'text-slate-300 no-underline' : 'text-rose-300'}`}>UZS</span>
                                                     </div>
                                                 </div>
 
@@ -596,19 +597,19 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                         <div key={income.id}>
                                             {/* ── Main Transaction Row ── */}
                                             <div
-                                                className={`group relative px-4 py-4 md:px-8 md:py-5 flex flex-col md:flex-row md:items-center gap-3 md:gap-5 transition-all duration-200 mx-3 md:mx-6 mb-3 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md ${isVoided ? 'opacity-75' : (hasSplits ? 'cursor-pointer' : '')} ${isExpanded ? 'ring-2 ring-blue-100 shadow-md' : ''}`}
+                                                className={`group relative px-4 py-3 md:px-6 md:py-3.5 flex flex-col md:flex-row md:items-center gap-2.5 md:gap-4 transition-all duration-200 mx-3 md:mx-5 mb-2 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md ${isVoided ? 'opacity-75' : (hasSplits ? 'cursor-pointer' : '')} ${isExpanded ? 'ring-2 ring-blue-100 shadow-md' : ''}`}
                                                 onClick={() => !isVoided && hasSplits && toggleExpand(income.id)}
                                             >
-                                                <div className="hidden md:flex flex-col items-center justify-center w-[4.5rem] h-[4.5rem] bg-slate-100/80 rounded-2xl border border-slate-200 shadow-sm shrink-0 group-hover:scale-105 transition-all duration-300">
-                                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-0.5">{getMonthShort(income.date)}</span>
-                                                    <span className="text-[1.75rem] font-black text-slate-800 leading-none">{format(new Date(income.date), 'dd')}</span>
-                                                    <span className="text-[10px] font-bold text-blue-600 leading-none mt-1 bg-white/80 px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm">{income.time || '--:--'}</span>
+                                                <div className="hidden md:flex flex-col items-center justify-center w-12 h-12 bg-slate-100/80 rounded-xl border border-slate-200 shadow-sm shrink-0 group-hover:scale-105 transition-all duration-300">
+                                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-0.5">{getMonthShort(income.date)}</span>
+                                                    <span className="text-[1.25rem] font-black text-slate-800 leading-none">{format(new Date(income.date), 'dd')}</span>
+                                                    <span className="text-[8px] font-bold text-blue-600 leading-none mt-0.5">{income.time || '--:--'}</span>
                                                 </div>
 
                                                 {/* Info */}
                                                 <div className="flex-1 w-full md:w-auto min-w-0">
-                                                    <div className="flex justify-between items-start gap-4 mb-2 md:mb-1.5">
-                                                        <div className={`font-medium text-slate-600 text-sm md:text-base leading-snug line-clamp-2 md:line-clamp-none ${isVoided ? 'line-through decoration-slate-400 text-slate-400' : ''}`}>
+                                                    <div className="flex justify-between items-start gap-3 mb-1.5 md:mb-1">
+                                                        <div className={`font-medium text-slate-600 text-sm leading-snug line-clamp-2 md:line-clamp-none ${isVoided ? 'line-through decoration-slate-400 text-slate-400' : ''}`}>
                                                             {income.description && income.description !== t(income.category) && income.description !== income.category
                                                                 ? income.description.replace(` - ${patient.fullName}`, '')
                                                                 : (t('payment_received') || "To'lov qabul qilindi")}
@@ -706,9 +707,9 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                 )}
 
                                                 {/* Amount */}
-                                                <div className="hidden md:block text-right shrink-0 min-w-[120px]">
-                                                    <div className={`text-xl font-black tabular-nums tracking-tight ${isVoided ? 'text-slate-400 line-through decoration-slate-400' : 'text-emerald-500'}`}>
-                                                        +{formatWithSpaces(income.amount)} <span className={`text-xs font-bold ml-0.5 uppercase ${isVoided ? 'text-slate-300 no-underline' : 'text-emerald-300'}`}>UZS</span>
+                                                <div className="hidden md:block text-right shrink-0 min-w-[100px]">
+                                                    <div className={`text-lg font-black tabular-nums tracking-tight ${isVoided ? 'text-slate-400 line-through decoration-slate-400' : 'text-emerald-500'}`}>
+                                                        +{formatWithSpaces(income.amount)} <span className={`text-[11px] font-bold ml-0.5 uppercase ${isVoided ? 'text-slate-300 no-underline' : 'text-emerald-300'}`}>UZS</span>
                                                     </div>
                                                 </div>
 

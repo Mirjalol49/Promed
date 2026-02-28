@@ -280,13 +280,25 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                                                                     const x = (rect.left + rect.width / 2) / window.innerWidth;
                                                                     const y = (rect.top + rect.height / 2) / window.innerHeight;
                                                                     onUpdateStatus(inj.id, InjectionStatus.COMPLETED);
-                                                                    confetti({
-                                                                        particleCount: 100,
-                                                                        spread: 70,
+                                                                    const count = 150;
+                                                                    const defaults = {
                                                                         origin: { x, y },
-                                                                        zIndex: 9999,
-                                                                        colors: ['#34d399', '#6ee7b7', '#059669', '#a7f3d0'] // Minty confetti
-                                                                    });
+                                                                        zIndex: 99999,
+                                                                        shapes: ['circle', 'square'],
+                                                                        colors: ['#34C759', '#5856D6', '#FF9500', '#FF2D55', '#007AFF']
+                                                                    };
+
+                                                                    const fire = (particleRatio: number, opts: any) => {
+                                                                        confetti(Object.assign({}, defaults, opts, {
+                                                                            particleCount: Math.floor(count * particleRatio)
+                                                                        }));
+                                                                    };
+
+                                                                    fire(0.25, { spread: 26, startVelocity: 55 });
+                                                                    fire(0.2, { spread: 60 });
+                                                                    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+                                                                    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+                                                                    fire(0.1, { spread: 120, startVelocity: 45 });
                                                                 }}
                                                                 className="btn-glossy-emerald !py-2.5 !px-6 text-sm shadow-emerald-500/20 hover:shadow-emerald-500/40"
                                                             >
