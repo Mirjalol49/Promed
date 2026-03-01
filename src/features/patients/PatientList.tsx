@@ -1157,11 +1157,19 @@ export const AddPatientForm: React.FC<{
   const [technique, setTechnique] = useState(initialData?.technique || '');
   const [tier, setTier] = useState<Patient['tier']>(initialData?.tier || 'regular');
   const [profileImage, setProfileImage] = useState(initialData?.profileImage || '');
-  const [beforeImage, setBeforeImage] = useState(initialData?.beforeImage || '');
+  const [beforeMediaItems, setBeforeMediaItems] = useState<Array<{ url: string; file: File | null }>>(() => {
+    const items = [];
+    if (initialData?.beforeImages?.length) {
+      items.push(...initialData.beforeImages.map(url => ({ url, file: null })));
+    } else if (initialData?.beforeImage) {
+      const arr = Array.isArray(initialData.beforeImage) ? initialData.beforeImage : [initialData.beforeImage as string];
+      items.push(...arr.map(url => ({ url, file: null })));
+    }
+    return items;
+  });
 
   // File states for upload
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
-  const [beforeImageFile, setBeforeImageFile] = useState<File | null>(null);
 
   // Validation error state
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -1235,6 +1243,41 @@ export const AddPatientForm: React.FC<{
     }
   }, []);
 
+  const handleMultipleBeforeImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setIsBeforeUploading(true);
+
+    setTimeout(async () => {
+      try {
+        const processedItems: Array<{ url: string; file: File }> = [];
+
+        for (const file of files) {
+          let processedFile = file;
+          if (isVideoFile(file)) {
+            processedFile = await compressVideo(file);
+          } else {
+            processedFile = await compressImage(file);
+          }
+          const url = URL.createObjectURL(processedFile);
+          processedItems.push({ url, file: processedFile });
+        }
+
+        setBeforeMediaItems(prev => [...prev, ...processedItems]);
+      } catch (error) {
+        console.error("Processing failed", error);
+      } finally {
+        setIsBeforeUploading(false);
+      }
+    }, 10);
+
+    e.target.value = '';
+  }, []);
+
+  const removeBeforeMedia = (index: number) => {
+    setBeforeMediaItems(prev => prev.filter((_, i) => i !== index));
+  };
+
   // --- Auto-Fill Feature (Magic Button) ---
   const handleAutoFill = () => {
     const randomNames = ["Azizbek Tursunov", "Jasur Rahimjonov", "Otabek Nurmatov", "Sardor Kamilov", "Bekzod Alimov"];
@@ -1273,8 +1316,9 @@ export const AddPatientForm: React.FC<{
     setValidationError(null);
 
     let finalProfileUrl = profileImage;
-    let finalBeforeUrl = beforeImage;
     const tempId = initialData?.id || `temp-${Date.now()}`;
+
+    let finalBeforeImages: string[] = [];
 
     // Perform Reliable Uploads
     try {
@@ -1295,29 +1339,30 @@ export const AddPatientForm: React.FC<{
         return profileImage; // Return existing/default if no file
       };
 
-      // Before Image Upload Promise
-      const beforeUploadPromise = async () => {
-        if (beforeImageFile) {
+      // Before Images Upload Promises
+      const beforeUploadPromises = beforeMediaItems.map(async (item, index) => {
+        if (item.file) {
           setIsBeforeUploading(true);
           const url = await reliableUpload({
             bucket: 'promed-images',
-            path: `patients/${tempId}/before`,
-            file: beforeImageFile
+            path: `patients/${tempId}/before_${index}_${Date.now()}`,
+            file: item.file
           });
-          setIsBeforeUploading(false);
           return url;
         }
-        return beforeImage; // Return existing/default if no file
-      };
+        return item.url;
+      });
 
       // Execute in parallel
-      const [newProfileUrl, newBeforeUrl] = await Promise.all([
+      const [newProfileUrl, ...newBeforeUrls] = await Promise.all([
         profileUploadPromise(),
-        beforeUploadPromise()
+        ...beforeUploadPromises
       ]);
 
+      setIsBeforeUploading(false);
+
       finalProfileUrl = newProfileUrl || profileImage;
-      finalBeforeUrl = newBeforeUrl || beforeImage;
+      finalBeforeImages = newBeforeUrls.filter((url): url is string => !!url);
 
     } catch (err: any) {
       setIsProfileUploading(false);
@@ -1337,7 +1382,8 @@ export const AddPatientForm: React.FC<{
       grafts: parseInt(grafts) || 0,
       technique,
       profileImage: finalProfileUrl || `https://ui-avatars.com/api/?name=${fullName.replace(' ', '+')}&background=random`,
-      beforeImage: finalBeforeUrl,
+      beforeImage: finalBeforeImages, // Keep for backward compatibility
+      beforeImages: finalBeforeImages,
       afterImages: initialData?.afterImages || [],
       injections: initialData?.injections || [],
       status: initialData?.status || 'Active',
@@ -1449,50 +1495,37 @@ export const AddPatientForm: React.FC<{
                       {t('before_media')}
                     </h4>
 
-                    {beforeImage ? (
-                      <div className="relative w-full h-44 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group">
-                        {(beforeImageFile && isVideoFile(beforeImageFile)) || (!beforeImageFile && isVideoUrl(beforeImage as string)) ? (
-                          <VideoPreview src={beforeImage as string} />
-                        ) : (
-                          <div className="w-full h-full relative group/img">
-                            <ImageWithFallback src={beforeImage as string} className="w-full h-full object-cover" alt="Before" />
-                            <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors pointer-events-none" />
-                          </div>
-                        )}
+                    <div className="grid grid-cols-2 gap-3 max-h-56 overflow-y-auto w-full pr-1">
+                      {beforeMediaItems.map((item, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group">
+                          {((item.file && isVideoFile(item.file)) || (!item.file && isVideoUrl(item.url))) ? (
+                            <VideoPreview src={item.url} />
+                          ) : (
+                            <div className="w-full h-full relative group/img">
+                              <ImageWithFallback src={item.url} className="w-full h-full object-cover" alt="Before" />
+                              <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors pointer-events-none" />
+                            </div>
+                          )}
 
-                        {/* Action Buttons Overlay */}
-                        <div className="absolute top-3 right-3 flex gap-2 z-10">
-                          <label className="p-2 bg-white/90 backdrop-blur-md text-slate-700 rounded-lg hover:bg-white hover:text-promed-primary shadow-lg cursor-pointer transition-all hover:scale-110 border border-slate-200">
-                            <Edit2 size={14} />
-                            <input type="file" className="hidden" accept="image/*,video/*" onChange={(e) => handleImageUpload(e, setBeforeImage, setBeforeImageFile, setIsBeforeUploading)} />
-                          </label>
+                          {/* Delete Button */}
                           <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             type="button"
-                            onClick={() => { setBeforeImage(''); setBeforeImageFile(null); }}
-                            className="p-2 bg-white/90 backdrop-blur-md text-red-500 rounded-lg hover:bg-red-50 hover:text-red-600 shadow-lg transition-all hover:scale-110 border border-slate-200"
+                            onClick={() => removeBeforeMedia(idx)}
+                            className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-md text-red-500 rounded-lg hover:bg-red-50 hover:text-red-600 shadow-lg transition-all hover:scale-110 border border-slate-200 opacity-0 group-hover:opacity-100 z-10"
                           >
                             <Trash2 size={14} />
                           </motion.button>
                         </div>
-                      </div>
-                    ) : (
-                      <label className="block w-full h-44 border-2 border-dashed border-slate-200 rounded-2xl overflow-hidden cursor-pointer bg-slate-50 hover:bg-white hover:border-promed-primary/40 transition-all duration-300 relative group/upload shadow-sm hover:shadow-md">
-                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-3 px-4 text-center">
-                          <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center group-hover/upload:scale-110 group-hover/upload:text-promed-primary ring-1 ring-slate-100 transition-all duration-500">
-                            <Camera className="w-7 h-7" />
-                          </div>
-                          <div className="space-y-1">
-                            <span className="block text-xs font-bold uppercase tracking-wider group-hover/upload:text-promed-primary transition-colors">
-                              {t('upload_photo_video')}
-                            </span>
-                          </div>
+                      ))}
 
-                          {/* Subtle Inner Glow on Hover */}
-                          <div className="absolute inset-0 bg-promed-primary/0 group-hover/upload:bg-promed-primary/[0.01] transition-colors duration-500 pointer-events-none" />
+                      <label className="cursor-pointer aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-300 bg-slate-50/50 group">
+                        <div className="flex flex-col items-center">
+                          <PlusCircle size={28} className="group-hover:scale-110 transition-transform mb-1 opacity-60 group-hover:opacity-100" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('add_media') || "Add Media"}</span>
                         </div>
-                        <input type="file" className="hidden" accept="image/*,video/*" onChange={(e) => handleImageUpload(e, setBeforeImage, setBeforeImageFile, setIsBeforeUploading)} />
+                        <input type="file" multiple className="hidden" accept="image/*,video/*" onChange={handleMultipleBeforeImageUpload} />
                       </label>
-                    )}
+                    </div>
 
                     {isBeforeUploading && (
                       <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-20">
