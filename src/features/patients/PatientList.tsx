@@ -1457,7 +1457,7 @@ export const AddPatientForm: React.FC<{
               <div className="flex flex-col lg:flex-row gap-6 md:gap-8">
 
                 {/* Left Column: Photos & Visuals */}
-                <div className="w-full lg:w-1/3 flex flex-col gap-6">
+                <div className="w-full lg:w-1/3 flex flex-col gap-6 lg:sticky lg:top-8 self-start">
                   {/* Profile Photo Card */}
                   <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 flex flex-col items-center text-center transition-all duration-300 group relative overflow-hidden">
                     <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-promed-primary to-teal-400"></div>
@@ -1505,44 +1505,55 @@ export const AddPatientForm: React.FC<{
                   </div>
 
                   {/* Before Photo Card */}
-                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 transition-all duration-300 group flex-1 relative overflow-hidden">
+                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 transition-all duration-300 group relative overflow-hidden flex flex-col">
                     <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-promed-primary to-teal-400"></div>
-                    <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wide">
+                    <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wide shrink-0">
                       <ImageIcon size={16} className="text-promed-primary" />
                       {t('before_media')}
                     </h4>
 
-                    <div className="grid grid-cols-2 gap-3 max-h-56 overflow-y-auto w-full pr-1">
-                      {beforeMediaItems.map((item, idx) => (
-                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group">
-                          {((item.file && isVideoFile(item.file)) || (!item.file && isVideoUrl(item.url))) ? (
-                            <VideoPreview src={item.url} />
-                          ) : (
-                            <div className="w-full h-full relative group/img">
-                              <ImageWithFallback src={item.url} className="w-full h-full object-cover" alt="Before" />
-                              <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors pointer-events-none" />
-                            </div>
-                          )}
-
-                          {/* Delete Button */}
-                          <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                            type="button"
-                            onClick={() => removeBeforeMedia(idx)}
-                            className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-md text-red-500 rounded-lg hover:bg-red-50 hover:text-red-600 shadow-lg transition-all hover:scale-110 border border-slate-200 opacity-0 group-hover:opacity-100 z-10"
-                          >
-                            <Trash2 size={14} />
-                          </motion.button>
-                        </div>
-                      ))}
-
-                      <label className="cursor-pointer aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-300 bg-slate-50/50 group">
-                        <div className="flex flex-col items-center">
-                          <PlusCircle size={28} className="group-hover:scale-110 transition-transform mb-1 opacity-60 group-hover:opacity-100" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('add_media') || "Add Media"}</span>
+                    {beforeMediaItems.length === 0 ? (
+                      <label className="cursor-pointer w-full aspect-video rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-500 bg-slate-50/50 group/upload mt-1">
+                        <div className="flex flex-col items-center p-6">
+                          <PlusCircle size={36} className="group-hover/upload:scale-110 group-hover/upload:-translate-y-1 transition-all duration-400 mb-3 opacity-40 group-hover/upload:opacity-100 text-promed-primary" />
+                          <span className="text-xs font-black uppercase tracking-widest text-center text-slate-500 group-hover/upload:text-promed-primary transition-colors">{t('add_media') || "Add Media"}</span>
+                          <span className="text-[10px] text-slate-400 mt-2 font-medium max-w-[180px] text-center leading-relaxed opacity-80 group-hover/upload:opacity-100 transition-opacity flex items-center gap-1.5"><ImageIcon size={12} />{t('click_upload') || "Upload images or videos"}</span>
                         </div>
                         <input type="file" multiple className="hidden" accept="image/*,video/*" onChange={handleMultipleBeforeImageUpload} />
                       </label>
-                    </div>
+                    ) : (
+                      <div className="grid grid-cols-2 content-start gap-3 overflow-y-auto w-full pr-2 pb-2 max-h-[350px]">
+                        {beforeMediaItems.map((item, idx) => (
+                          <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group">
+                            {((item.file && isVideoFile(item.file)) || (!item.file && isVideoUrl(item.url))) ? (
+                              <VideoPreview src={item.url} />
+                            ) : (
+                              <div className="w-full h-full relative group/img">
+                                <ImageWithFallback src={item.url} className="w-full h-full object-cover" alt="Before" />
+                                <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors pointer-events-none" />
+                              </div>
+                            )}
+
+                            {/* Delete Button */}
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                              type="button"
+                              onClick={() => removeBeforeMedia(idx)}
+                              className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-md text-red-500 rounded-lg hover:bg-red-50 hover:text-red-600 shadow-lg transition-all hover:scale-110 border border-slate-200 opacity-0 group-hover:opacity-100 z-10"
+                            >
+                              <Trash2 size={14} />
+                            </motion.button>
+                          </div>
+                        ))}
+
+                        <label className="cursor-pointer aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-300 bg-slate-50/50 group">
+                          <div className="flex flex-col items-center">
+                            <PlusCircle size={28} className="group-hover:scale-110 transition-transform mb-1 opacity-60 group-hover:opacity-100" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('add_media') || "Add Media"}</span>
+                          </div>
+                          <input type="file" multiple className="hidden" accept="image/*,video/*" onChange={handleMultipleBeforeImageUpload} />
+                        </label>
+                      </div>
+                    )}
 
                     {isBeforeUploading && (
                       <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-20">
@@ -1645,7 +1656,7 @@ export const AddPatientForm: React.FC<{
                                 {t('tier_pro') || 'Pro Patient (Bonus)'}
                               </span>
                               <span className="text-[9px] md:text-[10px] uppercase font-bold tracking-wider truncate text-slate-400">
-                                {tier === 'pro' ? (t('status_active') || 'Active') : (t('status_not_paid') || 'Inactive')}
+                                {tier === 'pro' ? (t('bonus_applied') || 'Bonus Applied') : (t('standard_patient') || 'Standard')}
                               </span>
                             </div>
                           </div>
