@@ -740,6 +740,12 @@ export const PatientDetail: React.FC<{
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .find(inj => new Date(inj.date).setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0));
 
+  const beforeMediaList = patient.beforeImages?.length
+    ? patient.beforeImages
+    : patient.beforeImage
+      ? (Array.isArray(patient.beforeImage) ? patient.beforeImage : [patient.beforeImage as string])
+      : [];
+
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
       <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onBack} className="flex items-center space-x-2 text-slate-500 hover:text-promed-primary transition mb-2 font-bold hover:-translate-x-1 duration-200 px-1">
@@ -893,39 +899,49 @@ export const PatientDetail: React.FC<{
                   </div>
                   <span>{t('before_operation')}</span>
                 </h3>
-                <div className="aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer relative group border border-slate-200" onClick={() => setSelectedImage((patient.beforeImage as string) || null)}>
-                  {(patient.beforeImage as string) ? (
-                    <>
-                      {isVideoUrl((patient.beforeImage as string)) ? (
-                        <div className="relative w-full h-full flex items-center justify-center bg-black/5">
-                          <video
-                            src={(patient.beforeImage as string)}
-                            className="w-full h-full object-cover opacity-90"
-                            muted
-                            playsInline
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/30 transition-colors">
-                            <div className="w-14 h-14 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center border border-white/50 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                              <Play size={28} className="text-white fill-white ml-1" />
+                {beforeMediaList.length > 0 ? (
+                  <div className={`grid ${beforeMediaList.length === 1 ? 'grid-cols-1 aspect-square' : 'grid-cols-2 max-h-56 overflow-y-auto'} gap-3 w-full pr-1`}>
+                    {beforeMediaList.map((url, idx) => (
+                      <div
+                        key={idx}
+                        className={`relative rounded-xl overflow-hidden bg-slate-50 cursor-pointer group border border-slate-200 ${beforeMediaList.length > 1 ? 'aspect-square' : 'w-full h-full'}`}
+                        onClick={() => setSelectedImage(url)}
+                      >
+                        {isVideoUrl(url) ? (
+                          <div className="relative w-full h-full flex items-center justify-center bg-black/5">
+                            <video
+                              src={url}
+                              className="w-full h-full object-cover opacity-90"
+                              muted
+                              playsInline
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/30 transition-colors">
+                              <div className="w-14 h-14 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center border border-white/50 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                <Play size={28} className="text-white fill-white ml-1" />
+                              </div>
+                            </div>
+                            <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-md p-1.5 rounded-lg border border-white/20">
+                              <AnimateIcon className="text-white">
+                                <Play size={14} fill="currentColor" />
+                              </AnimateIcon>
                             </div>
                           </div>
-                          <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-md p-1.5 rounded-lg border border-white/20">
-                            <AnimateIcon className="text-white">
-                              <Play size={14} fill="currentColor" />
-                            </AnimateIcon>
-                          </div>
-                        </div>
-                      ) : (
-                        <ImageWithFallback src={(patient.beforeImage as string)} optimisticId={`${patient.id}_before`} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" />
-                      )}
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/40 via-transparent to-transparent h-1/2 group-hover:from-black/60 transition-all duration-300 flex items-end justify-center pb-4 opacity-0 group-hover:opacity-100">
-                        <p className="text-white text-xs font-bold uppercase tracking-widest">{isVideoUrl((patient.beforeImage as string)) ? t('play_video') || "Play Video" : t('view_photo') || "View Photo"}</p>
+                        ) : (
+                          <>
+                            <ImageWithFallback src={url} className="w-full h-full object-cover hover:scale-105 transition duration-700 ease-in-out" alt="Before" fallbackType="image" optimisticId={`${patient.id}_before_${idx}`} />
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/40 via-transparent to-transparent h-1/2 group-hover:from-black/60 transition-all duration-300 flex items-end justify-center pb-4 opacity-0 group-hover:opacity-100">
+                              <p className="text-white text-xs font-bold uppercase tracking-widest">{t('view_photo') || "View Photo"}</p>
+                            </div>
+                          </>
+                        )}
                       </div>
-                    </>
-                  ) : (
+                    ))}
+                  </div>
+                ) : (
+                  <div className="aspect-square rounded-2xl overflow-hidden bg-slate-50 cursor-pointer relative group border border-slate-200">
                     <div className="flex items-center justify-center h-full text-slate-400">{t('no_image')}</div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               <div className="bg-white rounded-2xl p-6 shadow-apple border border-slate-200">
@@ -1055,7 +1071,7 @@ export const PatientDetail: React.FC<{
               <div className="max-w-full max-h-[90vh] rounded-xl overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-300 bg-black/20 relative" onClick={e => e.stopPropagation()}>
                 {(() => {
                   const matchedImg = patient.afterImages.find(img => img.url === selectedImage);
-                  const isVideo = (matchedImg?.type === 'video') || isVideoUrl(selectedImage) || ((patient.beforeImage as string) === selectedImage && isVideoUrl((patient.beforeImage as string)));
+                  const isVideo = (matchedImg?.type === 'video') || isVideoUrl(selectedImage);
 
                   return isVideo ? (
                     <>
@@ -1343,9 +1359,10 @@ export const AddPatientForm: React.FC<{
       const beforeUploadPromises = beforeMediaItems.map(async (item, index) => {
         if (item.file) {
           setIsBeforeUploading(true);
+          const extension = isVideoFile(item.file) ? '.mp4' : '.jpg';
           const url = await reliableUpload({
             bucket: 'promed-images',
-            path: `patients/${tempId}/before_${index}_${Date.now()}`,
+            path: `patients/${tempId}/before_${index}_${Date.now()}${extension}`,
             file: item.file
           });
           return url;

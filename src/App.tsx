@@ -1139,7 +1139,8 @@ const App: React.FC = () => {
       let finalPhotoUrl = typeof photoOrFile === 'string' ? photoOrFile : '';
       if (photoOrFile instanceof File) {
         try {
-          finalPhotoUrl = await uploadImage(photoOrFile, `patients/${patientId}/after_images/${stablePhotoId}`);
+          const extension = isVideoFile(photoOrFile) ? '.mp4' : '.jpg';
+          finalPhotoUrl = await uploadImage(photoOrFile, `patients/${patientId}/after_images/${stablePhotoId}${extension}`);
         } catch (e) {
           console.error('❌ Upload failed:', e);
           showError(t('toast_error_title'), t('toast_upload_failed'));

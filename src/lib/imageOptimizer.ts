@@ -73,10 +73,14 @@ export function isVideoUrl(url: string | null | undefined): boolean {
     if (!url) return false;
     // Check for common video extensions or data URI
     const lower = url.toLowerCase();
-    return lower.endsWith('.mp4') ||
-        lower.endsWith('.webm') ||
-        lower.endsWith('.mov') ||
-        lower.endsWith('.ogg') ||
+
+    // ignore query parameters to match base URL
+    const withoutQuery = lower.split('?')[0].split('#')[0];
+
+    return withoutQuery.endsWith('.mp4') ||
+        withoutQuery.endsWith('.webm') ||
+        withoutQuery.endsWith('.mov') ||
+        withoutQuery.endsWith('.ogg') ||
         lower.includes('video/'); // Data URIs
 }
 
