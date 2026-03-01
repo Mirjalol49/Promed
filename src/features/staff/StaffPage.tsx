@@ -414,7 +414,16 @@ const StaffCard = React.memo(({ staff, t, isViewer, language, onSelect, onPaySal
     onSelect: (staff: Staff) => void;
     onPaySalary: (staffId: string) => void;
 }) => {
-    const dateLocale = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
+    const formatJoinDate = (iso: string) => {
+        const d = new Date(iso);
+        const day = d.getDate();
+        const year = d.getFullYear();
+        const monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthsUz = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
+        const monthsRu = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+        const months = language === 'uz' ? monthsUz : language === 'ru' ? monthsRu : monthsEn;
+        return `${day} ${months[d.getMonth()]} ${year}`;
+    };
     return (
         <div
             onClick={() => onSelect(staff)}
@@ -501,7 +510,7 @@ const StaffCard = React.memo(({ staff, t, isViewer, language, onSelect, onPaySal
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('join_date') || 'Joined'}</span>
                         </div>
                         <div className="font-bold text-slate-900 text-sm">
-                            {staff.joinDate ? new Date(staff.joinDate).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                            {staff.joinDate ? formatJoinDate(staff.joinDate) : '—'}
                         </div>
                     </div>
 
