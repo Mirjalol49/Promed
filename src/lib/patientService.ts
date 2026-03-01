@@ -177,6 +177,7 @@ export const updatePatient = async (
   if (updates.afterImages) dbUpdates.after_images = updates.afterImages;
   if (updates.injections) dbUpdates.injections = updates.injections;
   if (updates.technique) dbUpdates.technique = updates.technique;
+  if (updates.grafts !== undefined) dbUpdates.grafts = updates.grafts;
 
   // Explicit check for undefined to allow saving empty/falsy values if needed, though tier is enum
   if (updates.tier !== undefined) {
