@@ -6,7 +6,6 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useAppSounds } from '../../hooks/useAppSounds';
 import confetti from 'canvas-confetti';
-import injectionMascot from '../../components/mascot/injection_mascot.png';
 import { Plus, Clock, Edit2, Trash2, ShieldCheck, HeartPulse, Droplets, CheckCircle2, X, Check } from 'lucide-react';
 import injectSvg from '../../assets/images/mascots/inject.svg';
 
@@ -84,11 +83,11 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
     };
 
     return (
-        <div className="bg-white rounded-3xl border-2 border-solid border-promed-primary/60 shadow-apple flex flex-col relative overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-apple flex flex-col relative overflow-hidden">
 
             <div className="relative">
                 {/* 1. Header Area (Static) */}
-                <div className="p-5 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 z-30 bg-white/95 backdrop-blur-md border-b border-solid border-promed-primary/20 rounded-t-3xl transition-all duration-300">
+                <div className="p-5 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 z-30 bg-white/95 backdrop-blur-md rounded-t-3xl transition-all duration-300">
                     <div>
                         <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
                             {t('injection_schedule')}
@@ -344,38 +343,6 @@ export const InjectionTimeline: React.FC<InjectionTimelineProps> = ({
                     )}
                 </div>
             </div>
-
-            {/* SPACER for Mascot (Outside sticky scope) */}
-            {injections.length > 0 && <div className="h-56 w-full" />}
-
-            {/* 3. THE MASCOT (Absolute at Bottom Right - Smart Hide on Toast) */}
-            {injections.length > 0 && (
-                <motion.div
-                    initial={{ opacity: 1, y: 0 }}
-                    animate={{
-                        opacity: activeToast ? 0 : 1,
-                        y: activeToast ? 20 : 0
-                    }}
-                    transition={{ duration: 0.4, ease: "easeInOut" }}
-                    className="absolute bottom-0 right-0 z-30 pointer-events-none h-64 w-64 flex items-end justify-end"
-                >
-                    <motion.img
-                        src={injectionMascot}
-                        alt="Dr Koala"
-                        whileHover={{
-                            scale: 1.05,
-                            rotate: -2,
-                            y: -5,
-                            transition: { type: "spring", stiffness: 400, damping: 10 }
-                        }}
-                        className="w-full h-full object-contain relative z-20 pointer-events-auto cursor-pointer"
-                        style={{ filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.15))" }}
-                    />
-                </motion.div>
-            )}
-
-            {/* 3. THE MASCOT (Fixed at Bottom Right) */}
-
 
         </div>
     );

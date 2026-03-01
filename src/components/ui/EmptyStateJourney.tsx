@@ -51,7 +51,7 @@ export const EmptyStateJourney: React.FC<EmptyStateJourneyProps> = () => {
                 transition={{ delay: 0.3 }}
                 className="text-center mb-6 relative z-10"
             >
-                <h3 className="text-xl font-black text-slate-800 mb-0 tracking-tight">{t('empty_state_peace') || "Hozircha Bo'sh"}</h3>
+                <h3 className="text-lg font-bold text-slate-400 mb-0 tracking-tight">{t('empty_state_peace') || "Hozircha Bo'sh"}</h3>
             </motion.div>
 
         </div>
