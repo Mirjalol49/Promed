@@ -150,14 +150,14 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     );
 
     return (
-        <div className={`relative ${className} mb-6 sm:mb-0`} ref={containerRef}>
+        <div className={`relative ${className}`} ref={containerRef}>
             {label && <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">{label}</label>}
 
             <div
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
-            w-full p-3 bg-white border rounded-xl flex items-center justify-between cursor-pointer transition-all
-            ${isOpen ? 'ring-2 ring-promed-primary border-promed-primary' : 'border-slate-400 hover:border-slate-500'}
+            w-full px-4 h-[52px] bg-slate-50 border border-slate-300 rounded-2xl flex items-center justify-between cursor-pointer transition-all
+            ${isOpen ? 'ring-2 ring-promed-primary bg-white border-promed-primary' : 'hover:border-slate-400 hover:bg-white'}
         `}
             >
                 <div className="flex items-center space-x-3 text-slate-700">
@@ -169,7 +169,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             </div>
 
             {isOpen && (
-                <div id={portalId} className="absolute z-[100] mt-2 bg-white rounded-3xl shadow-xl border border-slate-100 p-5 w-full min-w-[300px] animate-in fade-in zoom-in-95 duration-200 slide-in-from-top-2 left-0 sm:left-auto">
+                <div id={portalId} className="absolute z-[100] bottom-[calc(100%+8px)] bg-white rounded-3xl shadow-xl border border-slate-100 p-5 w-full min-w-[300px] animate-in fade-in zoom-in-95 duration-200 slide-in-from-bottom-2 left-0 sm:left-auto">
                     {renderDropdownContent()}
                 </div>
             )}

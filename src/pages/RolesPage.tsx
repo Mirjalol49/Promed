@@ -34,9 +34,6 @@ interface SubUser {
 // We reuse the config from the main app instance
 const firebaseConfig = getApp().options;
 
-// Module-level cache to persist roles data across unmount/remount cycles
-let _rolesCache: SubUser[] = [];
-let _rolesCacheAccountId: string | null = null;
 
 // --- Role Card (Memoized) ---
 const RoleCard = React.memo(({
@@ -194,9 +191,8 @@ export const RolesPage: React.FC = () => {
     const isShared = userId && accountId && accountId !== userId && accountId !== `account_${userId}`;
     const { success, error: showError } = useToast();
 
-    const isSameAccount = accountId === _rolesCacheAccountId;
-    const [users, setUsers] = useState<SubUser[]>(isSameAccount ? _rolesCache : []);
-    const [loading, setLoading] = useState(!isSameAccount || _rolesCache.length === 0);
+    const [users, setUsers] = useState<SubUser[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [editingUser, setEditingUser] = useState<SubUser | null>(null);
@@ -220,13 +216,6 @@ export const RolesPage: React.FC = () => {
 
     // --- Subscription ---
     useEffect(() => {
-        // RESET STATE only on account switch (Security Best Practice)
-        if (accountId !== _rolesCacheAccountId) {
-            setUsers([]);
-            setLoading(true);
-            _rolesCache = [];
-            _rolesCacheAccountId = accountId;
-        }
 
         if (!accountId) {
             console.warn("RolesPage: No Account ID detected.");
@@ -260,10 +249,13 @@ export const RolesPage: React.FC = () => {
                 console.log(`  👤 ${u.fullName}: account_id="${u.account_id}", accountId="${(u as any).accountId}", role="${u.role}"`);
             });
 
-            _rolesCache = fetchedUsers;
-            _rolesCacheAccountId = accountId;
             setUsers(fetchedUsers);
-            setLoading(false);
+
+            // SECURITY & UX FIX: Don't stop loading until we have data OR we're sure it's definitively empty (not from cache)
+            // This prevents a momentary flash of "No Users Found" during cold starts or sync delays
+            if (fetchedUsers.length > 0 || !snapshot.metadata.fromCache) {
+                setLoading(false);
+            }
         }, (err) => {
             console.error("Error fetching roles:", err);
             setLoading(false);
@@ -487,13 +479,16 @@ export const RolesPage: React.FC = () => {
         );
     }
 
-    // Normalized IDs for accurate filtering
     const normalizedAccountId = accountId.startsWith('account_') ? accountId.replace('account_', '') : accountId;
     const legacyAccountId = `account_${normalizedAccountId}`;
 
-    if (legacyAccountId === 'account_undefined' || !normalizedAccountId) return null;
+    const displayUsers = users
+        // Security Double-Check: Strictly filter in JS as well to handle potential query lag or index issues
+        .filter(u => u.account_id === normalizedAccountId || (u as any).accountId === normalizedAccountId || u.account_id === legacyAccountId || (u as any).accountId === legacyAccountId)
+        .filter(u => u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || u.phone.includes(searchQuery));
+
     return (
-        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
 
             {/* Header - TITLE REMOVED, BUTTON CENTERED */}
             {/* Header Actions */}
@@ -527,30 +522,26 @@ export const RolesPage: React.FC = () => {
 
             {/* Content */}
             {loading ? (
-                <div className="flex justify-center py-20">
-                    <Loader2 className="animate-spin text-promed-primary w-10 h-10" />
+                <div className="flex items-center justify-center h-40">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
                 </div>
-            ) : users.filter(u => u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || u.phone.includes(searchQuery)).length === 0 ? (
+            ) : displayUsers.length === 0 ? (
                 <EmptyState
                     message={searchQuery ? (t('no_results_found') || 'No matching users found') : (t('no_users_found') || 'No users found')}
                     fullHeight={false}
                 />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {users
-                        // Security Double-Check: Strictly filter in JS as well to handle potential query lag or index issues
-                        .filter(u => u.account_id === normalizedAccountId || (u as any).accountId === normalizedAccountId || u.account_id === legacyAccountId || (u as any).accountId === legacyAccountId)
-                        .filter(u => u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || u.phone.includes(searchQuery))
-                        .map(user => (
-                            <RoleCard
-                                key={user.id}
-                                user={user}
-                                currentUserId={userId}
-                                t={t}
-                                onEdit={handleEditClick}
-                                onDelete={handleDeleteUser}
-                            />
-                        ))}
+                    {displayUsers.map(user => (
+                        <RoleCard
+                            key={user.id}
+                            user={user}
+                            currentUserId={userId}
+                            t={t}
+                            onEdit={handleEditClick}
+                            onDelete={handleDeleteUser}
+                        />
+                    ))}
                 </div>
             )}
 

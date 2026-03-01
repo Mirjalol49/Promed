@@ -1651,12 +1651,9 @@ export const AddPatientForm: React.FC<{
                                 <Crown size={18} className="text-slate-400" />
                               )}
                             </div>
-                            <div className="flex flex-col min-w-0">
+                            <div className="flex flex-col min-w-0 justify-center">
                               <span className={`font-bold text-[13px] md:text-sm truncate transition-colors ${tier === 'pro' ? 'text-yellow-900' : 'text-slate-600'}`}>
                                 {t('tier_pro') || 'Pro Patient (Bonus)'}
-                              </span>
-                              <span className="text-[9px] md:text-[10px] uppercase font-bold tracking-wider truncate text-slate-400">
-                                {tier === 'pro' ? (t('bonus_applied') || 'Bonus Applied') : (t('standard_patient') || 'Standard')}
                               </span>
                             </div>
                           </div>
@@ -1679,8 +1676,8 @@ export const AddPatientForm: React.FC<{
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('operation_date')}</label>
                         <DatePicker
-                          label={t('operation_date')}
                           value={operationDate}
                           onChange={setOperationDate}
                         />
