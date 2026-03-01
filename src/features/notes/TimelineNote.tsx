@@ -137,7 +137,13 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
     );
 
     return (
-        <div className={`relative flex flex-col md:flex-row items-center justify-between w-full mb-8 md:mb-12 ${isLeft ? 'md:flex-row-reverse' : ''}`}>
+        <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.3, type: "spring", bounce: 0.3 } }}
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+            className={`relative flex flex-col md:flex-row items-center justify-between w-full mb-8 md:mb-12 ${isLeft ? 'md:flex-row-reverse' : ''}`}
+        >
             {/* Center Line Connector - Hidden on mobile */}
             <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center h-full">
                 {/* Smaller 3D Pin on Line */}
@@ -153,12 +159,8 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
 
             {/* Note Card */}
             <motion.div
-                initial={{ opacity: 0, x: 0, scale: 0.9 }}
-                whileInView={{
-                    opacity: 1,
-                    x: 0,
-                    scale: 1,
-                    rotate: window.innerWidth > 768 ? rotation : 0
+                style={{
+                    rotate: window.innerWidth > 768 ? rotation : 0,
                 }}
                 whileHover={{
                     scale: 1.02,
@@ -256,6 +258,6 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
                     </motion.button>
                 </div>
             </motion.div>
-        </div>
+        </motion.div>
     );
 };

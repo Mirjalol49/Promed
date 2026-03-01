@@ -53,12 +53,8 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
         if (!title.trim() && !content.trim()) return;
         setIsLoading(true);
         try {
-            await onSave({
-                title,
-                content,
-                color,
-                fileData: undefined
-            });
+            const payload: any = { title, content, color };
+            await onSave(payload);
             onClose();
         } catch (error) {
             console.error(error);
@@ -94,6 +90,12 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                             placeholder={t('note_title_placeholder')}
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault(); // Prevents the macOS "bonk" sound
+                                    document.getElementById('note-content-textarea')?.focus();
+                                }
+                            }}
                             className="text-xl font-bold bg-transparent border-none outline-none placeholder:text-slate-300 text-slate-800 w-full mr-4"
                         />
                         <div className="flex items-center gap-3 shrink-0">
@@ -122,9 +124,16 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, not
                     {/* Content Area */}
                     <div className="flex-1 overflow-y-auto p-6 relative flex flex-col gap-4">
                         <textarea
+                            id="note-content-textarea"
                             placeholder={t('note_content_placeholder')}
                             value={content}
                             onChange={handleTextChange}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                    e.preventDefault();
+                                    handleSave();
+                                }
+                            }}
                             className="w-full flex-1 min-h-[200px] resize-none border-none outline-none text-lg text-slate-600 leading-relaxed placeholder:text-slate-300 bg-transparent"
                             autoFocus
                         />

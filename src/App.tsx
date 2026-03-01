@@ -254,6 +254,7 @@ const App: React.FC = () => {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [selectedInjectionId, setSelectedInjectionId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [highlightTransactionId, setHighlightTransactionId] = useState<string | null>(null);
   // Initialize lock state from localStorage to persist across refreshes
   const [isLocked, setIsLocked] = useState(() => {
     const savedLockState = localStorage.getItem('appLockState');
@@ -648,6 +649,22 @@ const App: React.FC = () => {
       setSelectedPatientId(null);
       setSelectedInjectionId(null);
     }
+    if (page !== 'FINANCE') {
+      setHighlightTransactionId(null);
+    }
+  }, []);
+
+  // Listen for cross-page navigation events (e.g. Staff → Finance transaction deep-link)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.transactionId) {
+        setHighlightTransactionId(detail.transactionId);
+        setView('FINANCE');
+      }
+    };
+    window.addEventListener('navigate-to-transaction', handler);
+    return () => window.removeEventListener('navigate-to-transaction', handler);
   }, []);
 
   const handleSelectPatient = useCallback((id: string, injectionId?: string) => {
@@ -1347,7 +1364,7 @@ const App: React.FC = () => {
 
         {view === 'FINANCE' && (
           <PageTransition key="finance">
-            <FinancePage onPatientClick={(id) => { setSelectedPatientId(id); setView('PATIENT_DETAIL'); }} />
+            <FinancePage onPatientClick={(id) => { setSelectedPatientId(id); setView('PATIENT_DETAIL'); }} highlightTransactionId={highlightTransactionId} onHighlightClear={() => setHighlightTransactionId(null)} />
           </PageTransition>
         )}
 

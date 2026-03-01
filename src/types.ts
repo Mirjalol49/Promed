@@ -133,7 +133,7 @@ export interface Note {
 }
 
 // --- STAFF MODULE TYPES ---
-export type StaffRole = 'doctor' | 'assistant' | 'admin' | 'receptionist' | 'nurse' | 'cleaner' | 'other';
+export type StaffRole = 'doctor' | 'assistant' | 'admin' | 'receptionist' | 'nurse' | 'cleaner' | 'call_operator' | 'other';
 
 export interface Staff {
   id: string;

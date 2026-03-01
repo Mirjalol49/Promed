@@ -13,7 +13,7 @@ import {
     Users, Plus, Search, Phone, Mail, DollarSign, Trash2, Edit2,
     MoreVertical, Calendar, Briefcase, User, X, ChevronLeft, ChevronDown, Activity,
     Clock, Camera, PlusCircle, Loader2, Check, ArrowLeft, Banknote, ChevronRight, RotateCcw,
-    ArrowUpRight, ArrowDownRight, Building2
+    ArrowUpRight, ArrowDownRight, Building2, UtensilsCrossed, Pill, Receipt, Zap, Tag, Stethoscope
 } from 'lucide-react';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
 
@@ -122,7 +122,7 @@ const StaffModal = ({
         }
     };
 
-    const roles: StaffRole[] = ['doctor', 'assistant', 'nurse', 'cleaner', 'admin', 'other'];
+    const roles: StaffRole[] = ['doctor', 'assistant', 'nurse', 'cleaner', 'call_operator', 'admin', 'other'];
 
     return (
         <Portal>
@@ -1552,12 +1552,38 @@ const StaffDetail = ({
                                                 const isVoided = !!payment.isVoided;
                                                 const patient = payment.patientId ? patientList.find(p => p.id === payment.patientId) : null;
                                                 const isIncome = payment.type === 'income' || payment.category === 'salary';
+
+                                                // Category-based icon & color config for expense rows
+                                                const getCategoryConfig = (category: string) => {
+                                                    switch (category) {
+                                                        case 'salary': return { icon: Banknote, bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-100' };
+                                                        case 'food': return { icon: UtensilsCrossed, bg: 'bg-amber-50', text: 'text-amber-600', ring: 'ring-amber-100' };
+                                                        case 'rent': return { icon: Building2, bg: 'bg-violet-50', text: 'text-violet-600', ring: 'ring-violet-100' };
+                                                        case 'equipment': return { icon: Zap, bg: 'bg-cyan-50', text: 'text-cyan-600', ring: 'ring-cyan-100' };
+                                                        case 'marketing': return { icon: Tag, bg: 'bg-pink-50', text: 'text-pink-600', ring: 'ring-pink-100' };
+                                                        case 'pills': return { icon: Pill, bg: 'bg-rose-50', text: 'text-rose-600', ring: 'ring-rose-100' };
+                                                        case 'utility': return { icon: Zap, bg: 'bg-orange-50', text: 'text-orange-600', ring: 'ring-orange-100' };
+                                                        case 'surgery': return { icon: Stethoscope, bg: 'bg-emerald-50', text: 'text-emerald-600', ring: 'ring-emerald-100' };
+                                                        case 'consultation': return { icon: User, bg: 'bg-teal-50', text: 'text-teal-600', ring: 'ring-teal-100' };
+                                                        case 'injection': return { icon: Activity, bg: 'bg-indigo-50', text: 'text-indigo-600', ring: 'ring-indigo-100' };
+                                                        case 'shampoo': return { icon: Receipt, bg: 'bg-lime-50', text: 'text-lime-600', ring: 'ring-lime-100' };
+                                                        default: return { icon: Receipt, bg: 'bg-slate-50', text: 'text-slate-600', ring: 'ring-slate-100' };
+                                                    }
+                                                };
+                                                const catConfig = getCategoryConfig(payment.category);
+                                                const CatIcon = catConfig.icon;
+
                                                 return (
                                                     <div
                                                         key={payment.id}
-                                                        className={`rounded-[1.25rem] md:rounded-[1.5rem] p-3 md:p-4 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-0 sm:justify-between transition-colors group cursor-default border shadow-sm ${isVoided
+                                                        onClick={() => {
+                                                            window.dispatchEvent(new CustomEvent('navigate-to-transaction', { detail: { transactionId: payment.id } }));
+                                                        }}
+                                                        className={`rounded-[1.25rem] md:rounded-[1.5rem] p-3 md:p-4 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-0 sm:justify-between transition-all duration-300 group cursor-pointer border shadow-sm active:scale-[0.99] ${isVoided
                                                             ? 'bg-slate-50 border-slate-200/50 opacity-60'
-                                                            : 'bg-white border-slate-200/60 hover:bg-slate-50 hover:border-slate-300/80'
+                                                            : isIncome
+                                                                ? 'bg-white border-slate-200/60 hover:bg-slate-50 hover:border-slate-300/80'
+                                                                : 'bg-white border-slate-200/60 hover:bg-rose-50/30 hover:border-rose-200/60'
                                                             }`}
                                                     >
                                                         {/* Top/Left: Icon & Info */}
@@ -1580,17 +1606,17 @@ const StaffDetail = ({
                                                                     )}
                                                                 </div>
                                                             ) : (
-                                                                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-[1rem] flex items-center justify-center border shadow-sm flex-shrink-0 transition-transform duration-300 ${isVoided
-                                                                    ? 'bg-slate-50 text-slate-400 border-slate-100'
-                                                                    : `bg-slate-100 border-slate-200 group-hover:scale-110 ${isIncome ? 'text-blue-600' : 'text-slate-600'}`
+                                                                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-[1rem] flex items-center justify-center flex-shrink-0 transition-transform duration-300 ring-1 ${isVoided
+                                                                    ? 'bg-slate-50 text-slate-400 ring-slate-100'
+                                                                    : `${catConfig.bg} ${catConfig.text} ${catConfig.ring} ${!isVoided ? 'group-hover:scale-110' : ''}`
                                                                     }`}>
-                                                                    <Building2 size={20} className="stroke-[2.5]" />
+                                                                    <CatIcon size={20} className="stroke-[2]" />
                                                                 </div>
                                                             )}
                                                             <div className="flex flex-col gap-0.5 md:gap-1 min-w-0">
                                                                 <p className={`font-bold text-[14px] md:text-base leading-tight capitalize transition-colors truncate ${isVoided
                                                                     ? 'text-slate-400 line-through decoration-slate-300'
-                                                                    : 'text-slate-900 group-hover:text-amber-600'
+                                                                    : isIncome ? 'text-slate-900 group-hover:text-emerald-700' : 'text-slate-900 group-hover:text-rose-700'
                                                                     }`}>
                                                                     {payment.description.startsWith('[Split]')
                                                                         ? `${t('split_from') || '[Bo\'linma]'} ${patient ? patient.fullName + ' - ' : `${t('clinic') || 'Klinika'} - `}${staff.fullName}`
@@ -1615,16 +1641,18 @@ const StaffDetail = ({
                                                         {/* Bottom/Right: Amount & Buttons */}
                                                         <div className="flex items-center justify-between sm:justify-end gap-3 md:gap-4 pl-12 sm:pl-4">
                                                             <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-1">
-                                                                <p className={`font-black text-[15px] md:text-base tabular-nums leading-none ${isVoided ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-900'
+                                                                <p className={`font-black text-[15px] md:text-base tabular-nums leading-none ${isVoided
+                                                                    ? 'text-slate-400 line-through decoration-slate-300'
+                                                                    : isIncome ? 'text-slate-900' : 'text-rose-600'
                                                                     }`}>
-                                                                    {Number(payment.amount).toLocaleString()}
-                                                                    <span className={`text-[10px] font-extrabold ml-1 uppercase ${isVoided ? 'text-slate-300 no-underline' : 'text-slate-500'
+                                                                    {isIncome ? '' : '-'}{Number(payment.amount).toLocaleString()}
+                                                                    <span className={`text-[10px] font-extrabold ml-1 uppercase ${isVoided ? 'text-slate-300 no-underline' : isIncome ? 'text-slate-500' : 'text-rose-400'
                                                                         }`}>{payment.currency}</span>
                                                                 </p>
                                                                 <div className={`flex items-center gap-1 transition-opacity ${isVoided ? 'opacity-50' : 'opacity-80 group-hover:opacity-100'
                                                                     }`}>
-                                                                    <div className={`w-1.5 h-1.5 rounded-full ${isVoided ? 'bg-slate-400' : 'bg-emerald-500'}`}></div>
-                                                                    <span className={`text-[9px] font-bold uppercase tracking-wider ${isVoided ? 'text-slate-400' : 'text-emerald-700'
+                                                                    <div className={`w-1.5 h-1.5 rounded-full ${isVoided ? 'bg-slate-400' : isIncome ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                                                                    <span className={`text-[9px] font-bold uppercase tracking-wider ${isVoided ? 'text-slate-400' : isIncome ? 'text-emerald-700' : 'text-rose-600'
                                                                         }`}>
                                                                         {t('paid') || 'Paid'}
                                                                     </span>

@@ -383,15 +383,7 @@ export const NotesPage: React.FC = () => {
                         activeFolder === 'todo' ? 'green' :
                             'yellow'
                 }
-                locked={!!activeFolder && !noteToEdit} // Lock only if creating new (actually user said "if i make only urgency notes", implying creation)
-            // But if editing, maybe we should also lock? 
-            // "remove the res of it" suggests cleaner UI.
-            // If I edit an "Urgency" note, should I be able to change it to "Todo"?
-            // Probably yes if I want to move it?
-            // But for now let's just lock for CREATION as that's the primary request context "if i am in urgency folder then i can make only urgency...".
-            // Wait, if I edit a note inside Urgency folder, and change it to Todo, it will disappear from view (since view filters by pink).
-            // That might be confusing. So locking it inside the view makes sense too.
-            // I will lock it if `activeFolder` is present, regardless of edit/create, to avoid "disappearing note" confusion.
+                locked={!!activeFolder || !!noteToEdit}
             />
 
             <DeleteModal

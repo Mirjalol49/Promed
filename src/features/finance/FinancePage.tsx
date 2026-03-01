@@ -13,7 +13,7 @@ import {
     LayoutGrid, List, Clock, BarChart3, ChevronRight, Search, FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, subDays, startOfMonth, endOfMonth, startOfWeek, isAfter, isBefore, startOfDay, endOfDay, addDays } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isAfter, isBefore, startOfDay, endOfDay, addDays } from 'date-fns';
 import { uz, ru, enUS } from 'date-fns/locale';
 import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
 import { CustomSelect } from '../../components/ui/CustomSelect';
@@ -40,7 +40,7 @@ const expenseCategories: TransactionCategory[] = ['salary', 'tax', 'rent', 'mark
 
 
 
-export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) => void }) => {
+export const FinancePage = ({ onPatientClick, highlightTransactionId, onHighlightClear }: { onPatientClick?: (id: string) => void; highlightTransactionId?: string | null; onHighlightClear?: () => void }) => {
     const { t, language } = useLanguage();
     const { accountId, role } = useAccount();
     const isViewer = role === 'viewer';
@@ -62,6 +62,62 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
     const [transactionsPage, setTransactionsPage] = useState(1);
     const [patientsPage, setPatientsPage] = useState(1);
     const ITEMS_PER_PAGE = 10;
+
+    // Highlight state for deep-linked transactions
+    const [activeHighlight, setActiveHighlight] = useState<string | null>(null);
+
+    // Deep-link: auto-switch to transactions tab, clear ALL filters, scroll & highlight
+    useEffect(() => {
+        if (highlightTransactionId && !loading) {
+            // Switch to transactions tab and clear every filter
+            setView('transactions');
+            setDateFilter('all');
+            setStartDate(null);
+            setEndDate(null);
+            setSearchTerm('');
+            setTxTypeFilter('all');
+            setTxCategoryFilter('all');
+            setTransactionsPage(1);
+            setActiveHighlight(highlightTransactionId);
+
+            // Wait for filters to settle and list to re-render, then find page + scroll
+            const timer = setTimeout(() => {
+                // Find the transaction in the now-unfiltered list
+                const allTxRows = document.querySelectorAll('[data-transaction-id]');
+                let targetEl: Element | null = null;
+                let targetIdx = -1;
+                allTxRows.forEach((el, i) => {
+                    if (el.getAttribute('data-transaction-id') === highlightTransactionId) {
+                        targetEl = el;
+                        targetIdx = i;
+                    }
+                });
+
+                if (!targetEl) {
+                    // Transaction not on current page — search in data list
+                    const idx = transactions.findIndex(tx => tx.id === highlightTransactionId);
+                    if (idx >= 0) {
+                        setTransactionsPage(Math.floor(idx / ITEMS_PER_PAGE) + 1);
+                        // Re-scroll after page change
+                        setTimeout(() => {
+                            const el2 = document.querySelector(`[data-transaction-id="${highlightTransactionId}"]`);
+                            if (el2) el2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 300);
+                    }
+                } else {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 600);
+
+            // Clear highlight after 4s
+            const clearTimer = setTimeout(() => {
+                setActiveHighlight(null);
+                onHighlightClear?.();
+            }, 4000);
+
+            return () => { clearTimeout(timer); clearTimeout(clearTimer); };
+        }
+    }, [highlightTransactionId, loading]);
 
     // Delete Modal State
     const [deleteTransactionId, setDeleteTransactionId] = useState<string | null>(null);
@@ -108,12 +164,17 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
         setDateFilter(filter);
         const now = new Date();
         if (filter === 'month') {
-            setStartDate(startOfMonth(now));
-            setEndDate(new Date());
+            // Monthly: full current year (Jan 1 → Dec 31)
+            setStartDate(new Date(now.getFullYear(), 0, 1));
+            setEndDate(new Date(now.getFullYear(), 11, 31));
         } else if (filter === 'week') {
-            setStartDate(startOfWeek(now));
-            setEndDate(new Date());
+            // Weekly: full Mon→Sun week
+            const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+            const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+            setStartDate(weekStart);
+            setEndDate(weekEnd);
         } else if (filter === 'all') {
+            // Annual: span all transaction history
             if (transactions.length > 0) {
                 const dates = transactions.map(t => new Date(t.date).getTime());
                 setStartDate(new Date(Math.min(...dates)));
@@ -212,106 +273,92 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
     // Calculate Stats (Synced with chart and filters)
     const stats = useMemo(() => calculateStats(filteredTransactions), [filteredTransactions]);
 
-    // Generate accurate Time-Series data for the new 3D Grouped Bar Chart
+    // Generate accurate Time-Series data for the 3D Grouped Bar Chart
     const timeSeriesData = useMemo(() => {
-        if (!startDate || !endDate || !filteredTransactions) return [];
-        // Only consider valid transactions for the chart
-        const validTransactions = filteredTransactions.filter(t => !t.isVoided && !t.returned);
-        const sorted = [...validTransactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         const dataMap = new Map<string, { kirim: number; xarajat: number; sof: number; fullLabel?: string }>();
-
-        // Pick the correct date-fns locale based on active language
         const dateLocale = language === 'ru' ? ru : language === 'uz' ? uz : enUS;
 
         if (dateFilter === 'week') {
-            // Generate 7 short day names and full names using the active locale
-            const shortDays: string[] = [];
-            const fullDays: string[] = [];
-            // Sunday=0 through Saturday=6
-            for (let dow = 0; dow < 7; dow++) {
-                const refDate = new Date(2024, 0, 7 + dow); // Jan 7 2024 = Sunday
-                shortDays.push(
-                    format(refDate, 'EEE', { locale: dateLocale })
-                        .replace('.', '')
-                        .slice(0, 4)
-                        .toUpperCase()
-                );
-                fullDays.push(
-                    format(refDate, 'EEEE', { locale: dateLocale })
-                );
-            }
-            // Populate exact 7 days from startDate
+            // ── WEEKLY: Each day of the current week (Mon → Sun) with dates ──
+            const weekStart = startDate || startOfWeek(new Date(), { weekStartsOn: 1 });
             for (let i = 0; i < 7; i++) {
-                const day = addDays(startDate, i);
-                const dow = day.getDay();
-                dataMap.set(shortDays[dow], { kirim: 0, xarajat: 0, sof: 0, fullLabel: fullDays[dow] });
+                const day = addDays(weekStart, i);
+                const dayAbbr = format(day, 'EE', { locale: dateLocale }).replace('.', '').toUpperCase();
+                const dateNum = format(day, 'd');
+                const shortLabel = `${dayAbbr} ${dateNum}`; // e.g. "DU 24" or "MON 24"
+                const fullLabel = format(day, 'EEEE, d MMMM yyyy', { locale: dateLocale });
+                const dayKey = format(day, 'yyyy-MM-dd');
+                dataMap.set(dayKey, { kirim: 0, xarajat: 0, sof: 0, fullLabel: `${shortLabel}||${fullLabel}` });
             }
-            sorted.forEach(t => {
-                const d = new Date(t.date);
-                const key = shortDays[d.getDay()];
-                const item = dataMap.get(key);
+
+            const validTxs = (filteredTransactions || []).filter(t => !t.isVoided && !t.returned);
+            validTxs.forEach(t => {
+                const dayKey = format(new Date(t.date), 'yyyy-MM-dd');
+                const item = dataMap.get(dayKey);
                 if (item) {
                     if (t.type === 'income') { item.kirim += t.amount; item.sof += t.amount; }
                     else if (t.type === 'expense') { item.xarajat += t.amount; item.sof -= t.amount; }
                 }
             });
+
+            return Array.from(dataMap.entries()).map(([, vals]) => {
+                const [shortLabel, fullLabel] = (vals.fullLabel || '').split('||');
+                return { label: shortLabel, fullLabel, kirim: vals.kirim, xarajat: vals.xarajat, sof: vals.sof };
+            });
+
         } else if (dateFilter === 'month') {
-            const dMonth = startDate || new Date();
-            const monthName = format(dMonth, 'MMMM', { locale: dateLocale });
-            const monthNameCap = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-            const lastDay = endOfMonth(dMonth).getDate();
-            const p1 = `1-7 ${monthNameCap}`;
-            const p2 = `8-14 ${monthNameCap}`;
-            const p3 = `15-21 ${monthNameCap}`;
-            const p4 = `22-28 ${monthNameCap}`;
-            const p5 = `29-${lastDay} ${monthNameCap}`;
+            // ── MONTHLY: All 12 months of the current year (Jan → Dec) ──
+            const year = startDate ? startDate.getFullYear() : new Date().getFullYear();
+            for (let i = 0; i < 12; i++) {
+                const monthDate = new Date(year, i, 1);
+                const shortLabel = format(monthDate, 'MMM', { locale: dateLocale }).replace('.', '');
+                const shortLabelCap = shortLabel.charAt(0).toUpperCase() + shortLabel.slice(1);
+                const fullMonth = format(monthDate, 'MMMM yyyy', { locale: dateLocale });
+                const fullMonthCap = fullMonth.charAt(0).toUpperCase() + fullMonth.slice(1);
+                dataMap.set(String(i), { kirim: 0, xarajat: 0, sof: 0, fullLabel: `${shortLabelCap}||${fullMonthCap}` });
+            }
 
-            dataMap.set(p1, { kirim: 0, xarajat: 0, sof: 0, fullLabel: `1-7 ${monthNameCap}` });
-            dataMap.set(p2, { kirim: 0, xarajat: 0, sof: 0, fullLabel: `8-14 ${monthNameCap}` });
-            dataMap.set(p3, { kirim: 0, xarajat: 0, sof: 0, fullLabel: `15-21 ${monthNameCap}` });
-            dataMap.set(p4, { kirim: 0, xarajat: 0, sof: 0, fullLabel: `22-28 ${monthNameCap}` });
-            dataMap.set(p5, { kirim: 0, xarajat: 0, sof: 0, fullLabel: `29-${lastDay} ${monthNameCap}` });
-
-            sorted.forEach(t => {
+            // Use ALL transactions from the same year (not filtered by date range)
+            const yearTxs = transactions.filter(t => {
                 const d = new Date(t.date);
-                const dayOfMonth = d.getDate();
-                let week = p1;
-                if (dayOfMonth > 7 && dayOfMonth <= 14) week = p2;
-                else if (dayOfMonth > 14 && dayOfMonth <= 21) week = p3;
-                else if (dayOfMonth > 21 && dayOfMonth <= 28) week = p4;
-                else if (dayOfMonth > 28) week = p5;
+                return d.getFullYear() === year && !t.isVoided && !t.returned;
+            });
 
-                const item = dataMap.get(week);
+            yearTxs.forEach(t => {
+                const monthIdx = String(new Date(t.date).getMonth());
+                const item = dataMap.get(monthIdx);
                 if (item) {
                     if (t.type === 'income') { item.kirim += t.amount; item.sof += t.amount; }
                     else if (t.type === 'expense') { item.xarajat += t.amount; item.sof -= t.amount; }
                 }
             });
+
+            return Array.from(dataMap.entries()).map(([, vals]) => {
+                const [shortLabel, fullLabel] = (vals.fullLabel || '').split('||');
+                return { label: shortLabel, fullLabel, kirim: vals.kirim, xarajat: vals.xarajat, sof: vals.sof };
+            });
+
         } else {
-            // all time -> Annually — pre-populate all 12 months in the active locale
-            for (let i = 0; i < 12; i++) {
-                const monthDate = new Date(2024, i, 1);
-                const fullMonth = format(monthDate, 'MMMM', { locale: dateLocale });
-                const formattedFullMonth = fullMonth.charAt(0).toUpperCase() + fullMonth.slice(1);
-                dataMap.set(formattedFullMonth, { kirim: 0, xarajat: 0, sof: 0, fullLabel: formattedFullMonth });
+            // ── ANNUAL: Year-by-year comparison starting from 2026 ──
+            const startYear = 2026;
+            const rangeEnd = startYear + 4; // Show 5 years: 2026–2030
+
+            for (let year = startYear; year <= rangeEnd; year++) {
+                dataMap.set(String(year), { kirim: 0, xarajat: 0, sof: 0, fullLabel: String(year) });
             }
 
-            sorted.forEach(t => {
-                const d = new Date(t.date);
-                const fullMonth = format(d, 'MMMM', { locale: dateLocale });
-                const formattedFullMonth = fullMonth.charAt(0).toUpperCase() + fullMonth.slice(1);
-
-                if (!dataMap.has(formattedFullMonth)) {
-                    dataMap.set(formattedFullMonth, { kirim: 0, xarajat: 0, sof: 0, fullLabel: formattedFullMonth });
+            transactions.filter(t => !t.isVoided && !t.returned).forEach(t => {
+                const year = String(new Date(t.date).getFullYear());
+                const item = dataMap.get(year);
+                if (item) {
+                    if (t.type === 'income') { item.kirim += t.amount; item.sof += t.amount; }
+                    else if (t.type === 'expense') { item.xarajat += t.amount; item.sof -= t.amount; }
                 }
-                const item = dataMap.get(formattedFullMonth)!;
-                if (t.type === 'income') { item.kirim += t.amount; item.sof += t.amount; }
-                else if (t.type === 'expense') { item.xarajat += t.amount; item.sof -= t.amount; }
             });
-        }
 
-        return Array.from(dataMap.entries()).map(([label, vals]) => ({ label, ...vals }));
-    }, [filteredTransactions, dateFilter, startDate, endDate, language]);
+            return Array.from(dataMap.entries()).map(([label, vals]) => ({ label, fullLabel: label, ...vals }));
+        }
+    }, [filteredTransactions, transactions, dateFilter, startDate, endDate, language]);
 
 
     const handleSave = async (data: any) => {
@@ -776,6 +823,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                         <CustomDatePicker
                                             value={startDate}
                                             onChange={setStartDate}
+                                            placeholder={t('start_date') || 'Start Date'}
                                             minimal
                                         />
                                     </div>
@@ -784,6 +832,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                         <CustomDatePicker
                                             value={endDate}
                                             onChange={setEndDate}
+                                            placeholder={t('end_date') || 'End Date'}
                                             minimal
                                         />
                                     </div>
@@ -867,9 +916,10 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                     return (
                                         <div
                                             key={tx.id}
+                                            data-transaction-id={tx.id}
                                             role="listitem"
                                             aria-label={`${t(tx.category.toLowerCase()) || tx.category} — ${isIncome ? '+' : '-'}${formatCurrency(tx.amount)}`}
-                                            className={`group bg-white border-b border-slate-100 last:border-b-0 px-4 py-3.5 hover:bg-slate-50/70 transition-colors duration-150 ${isReturned ? 'opacity-60' : ''} ${isVoided ? 'opacity-50' : ''}`}
+                                            className={`group border-b border-slate-100 last:border-b-0 px-4 py-3.5 hover:bg-slate-50/70 transition-all duration-500 ${isReturned ? 'opacity-60' : ''} ${isVoided ? 'opacity-50' : ''} ${activeHighlight === tx.id ? 'bg-gradient-to-r from-blue-50/90 via-blue-50/50 to-white ring-2 ring-blue-500/70 rounded-2xl my-1.5 mx-1 shadow-lg shadow-blue-500/10 border-b-0 relative z-10' : 'bg-white'}`}
                                         >
                                             {/* ── Row 1: icon · amount · actions ── */}
                                             <div className="flex items-center gap-3">

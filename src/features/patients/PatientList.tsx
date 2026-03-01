@@ -1622,7 +1622,7 @@ export const AddPatientForm: React.FC<{
                           ]}
                         />
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5 col-span-2">
                         <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('tier') || 'Status'}</label>
                         <div
                           onClick={() => setTier(tier === 'regular' ? 'pro' : 'regular')}
