@@ -577,6 +577,7 @@ export const translations = {
     add_first_staff: "Start by adding your first team member",
     upload_photo: "Upload Photo",
     role: "Role",
+    join_date: "Joined",
 
     save_staff: "Save",
     update_staff: "Update Staff",
@@ -1269,6 +1270,7 @@ export const translations = {
     add_first_staff: "Yangi xodim qo'shish orqali boshlang",
     upload_photo: "Rasm Yuklash",
     role: "Rol",
+    join_date: "Qo'shilgan",
 
     save_staff: "Saqlash",
     update_staff: "Xodimni yangilash",
@@ -1889,6 +1891,7 @@ export const translations = {
     // lead_created duplicate removed
     created: "Создан",
     notes_placeholder: "Введите заметки...",
+    join_date: "Дата начала",
     role_doctor: "Врач",
     role_assistant: "Ассистент",
     role_receptionist: "Ресепшн",

@@ -957,7 +957,7 @@ export const FinancePage = ({ onPatientClick }: { onPatientClick?: (id: string) 
                                                         {tx.description && (
                                                             <span className="text-[11px] text-slate-400 font-medium truncate max-w-[220px]">
                                                                 {tx.description.startsWith('[Split]')
-                                                                    ? `${t('split_from') || '[Split]'} ${tx.description.replace('[Split]', '').trim()}`
+                                                                    ? `${t('split_from') || '[Split]'} ${staff ? staff.fullName : tx.description.replace('[Split]', '').trim()}`
                                                                     : tx.description
                                                                 }
                                                             </span>

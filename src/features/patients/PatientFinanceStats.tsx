@@ -522,7 +522,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                         <div className={`font-medium text-slate-600 text-sm leading-snug line-clamp-2 md:line-clamp-none ${isVoided ? 'line-through decoration-slate-400 text-slate-400' : ''}`}>
                                                             {exp.description ? (
                                                                 exp.description.startsWith('[Split]')
-                                                                    ? `${t('split_from') || '[Split] '}${exp.description.replace('[Split]', '').trim()}`
+                                                                    ? `${t('split_from') || '[Split] '}${getStaffForSplit(exp)?.fullName || exp.description.replace('[Split]', '').trim()}`
                                                                     : exp.description
                                                             ) : (t('expense') || 'Xarajat')}
                                                         </div>
@@ -667,7 +667,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                             } else {
                                                                 // Fallback: Try to parse name from description for deleted staff
                                                                 // Format usually "[Split] Name"
-                                                                const rawName = s.description?.replace('[Split] ', '').trim();
+                                                                const rawName = staff ? staff.fullName : s.description?.replace('[Split] ', '').trim();
                                                                 displayName = rawName ? rawName.split(' ')[0] : (t('unknown') || '???');
                                                             }
 
@@ -793,7 +793,8 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                                         {splits.map((s, idx) => {
                                                                             const pct = totalAmount > 0 ? Math.round((Number(s.amount) / totalAmount) * 100) : 0;
                                                                             const colors = SPLIT_COLORS[idx % SPLIT_COLORS.length];
-                                                                            const label = s.description?.replace('[Split] ', '') || '';
+                                                                            const staffForPill = getStaffForSplit(s);
+                                                                            const label = staffForPill ? staffForPill.fullName : (s.description?.replace('[Split] ', '') || '');
                                                                             return (
                                                                                 <span key={s.id || idx} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${colors.light} ${colors.text} text-[10px] font-black ring-1 ${colors.ring}`}>
                                                                                     <span className={`w-1.5 h-1.5 rounded-full ${colors.bg}`} />
@@ -809,7 +810,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                                     {splits.map((s, idx) => {
                                                                         const staff = getStaffForSplit(s);
                                                                         const pct = totalAmount > 0 ? Math.round((Number(s.amount) / totalAmount) * 100) : 0;
-                                                                        const label = s.description?.replace('[Split] ', '') || '';
+                                                                        const label = staff ? staff.fullName : (s.description?.replace('[Split] ', '') || '');
                                                                         const colors = SPLIT_COLORS[idx % SPLIT_COLORS.length];
                                                                         const isTax = s.category === 'tax';
 

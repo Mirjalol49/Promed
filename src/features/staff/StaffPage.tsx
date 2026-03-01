@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -13,7 +13,7 @@ import {
     Users, Plus, Search, Phone, Mail, DollarSign, Trash2, Edit2,
     MoreVertical, Calendar, Briefcase, User, X, ChevronLeft, ChevronDown, Activity,
     Clock, Camera, PlusCircle, Loader2, Check, ArrowLeft, Banknote, ChevronRight, RotateCcw,
-    ArrowUpRight, ArrowDownRight
+    ArrowUpRight, ArrowDownRight, Building2
 } from 'lucide-react';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
 
@@ -110,7 +110,7 @@ const StaffModal = ({
         try {
             const finalData = { ...formData };
             if (!isSalaryEnabled) {
-                delete (finalData as any).salary;
+                finalData.salary = 0;
             }
             await onSave(finalData, imageFile || undefined);
             onClose();
@@ -194,7 +194,7 @@ const StaffModal = ({
                                     />
                                 </div>
                                 <p className="mt-3 text-xs font-semibold text-slate-400">
-                                    {t('upload_photo') || 'Upload Photo'} <span className="text-slate-300 font-normal">({t('optional') || 'Optional'})</span>
+                                    {t('upload_photo') || 'Upload Photo'}
                                 </p>
                             </div>
 
@@ -205,7 +205,7 @@ const StaffModal = ({
                                     <label className="text-sm font-bold text-slate-700 ml-1">{t('first_name')}</label>
                                     <input
                                         required
-                                        className="w-full bg-white border border-slate-400 rounded-xl py-3 px-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-400"
+                                        className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-bold focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none placeholder:text-slate-400/70 placeholder:font-medium"
                                         value={formData.firstName}
                                         onChange={e => setFormData({ ...formData, firstName: e.target.value })}
                                         placeholder="Mirjalol"
@@ -216,7 +216,7 @@ const StaffModal = ({
                                     <label className="text-sm font-bold text-slate-700 ml-1">{t('last_name')}</label>
                                     <input
                                         required
-                                        className="w-full bg-white border border-slate-400 rounded-xl py-3 px-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-400"
+                                        className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-bold focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none placeholder:text-slate-400/70 placeholder:font-medium"
                                         value={formData.lastName}
                                         onChange={e => setFormData({ ...formData, lastName: e.target.value })}
                                         placeholder="Shamsiddinov"
@@ -230,7 +230,7 @@ const StaffModal = ({
                                         <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             type="button"
                                             onClick={() => setIsRoleOpen(!isRoleOpen)}
-                                            className={`w-full bg-white border rounded-xl py-3 px-4 text-slate-900 font-bold flex items-center justify-between outline-none transition-all ${isRoleOpen ? 'bg-white border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-400'}`}
+                                            className={`w-full bg-white border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-bold flex items-center justify-between outline-none hover:border-slate-300 transition-all duration-300 ${isRoleOpen ? 'bg-white border-blue-500/50 ring-[3px] ring-blue-500/20 hover:border-blue-500/50' : 'border-slate-200'}`}
                                         >
                                             <span className="flex items-center gap-2 capitalize">
                                                 {t(`role_${formData.role}`) || formData.role}
@@ -240,7 +240,7 @@ const StaffModal = ({
 
                                         {isRoleOpen && (
                                             <div
-                                                className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                                                className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 p-1.5 z-[60]"
                                             >
                                                 {roles.map((r) => (
                                                     <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
@@ -250,7 +250,7 @@ const StaffModal = ({
                                                             setFormData({ ...formData, role: r });
                                                             setIsRoleOpen(false);
                                                         }}
-                                                        className={`w-full text-left px-4 py-3 font-bold text-sm transition-colors flex items-center justify-between ${formData.role === r ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                        className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-between ${formData.role === r ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                                                     >
                                                         <span className="capitalize">{t(`role_${r}`) || r}</span>
                                                         {formData.role === r && <Check size={16} className="text-blue-600" />}
@@ -266,7 +266,7 @@ const StaffModal = ({
                                     <label className="text-sm font-bold text-slate-700 ml-1">{t('phone')}</label>
                                     <input
                                         required
-                                        className="w-full bg-white border border-slate-400 rounded-xl py-3 px-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none placeholder:text-slate-400"
+                                        className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-bold tracking-wide focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none placeholder:text-slate-400/70 placeholder:font-medium"
                                         value={formData.phone}
                                         onChange={e => {
                                             let val = e.target.value;
@@ -285,71 +285,87 @@ const StaffModal = ({
                                     />
                                 </div>
 
-                                {/* Salary & Status Row */}
-                                <div className={initialData ? "space-y-1.5" : "space-y-1.5 col-span-2"}>
+                                {/* Salary */}
+                                <div className="space-y-1.5 col-span-2">
                                     <div className="flex items-center justify-between ml-1 mb-1.5">
-                                        <label className="text-sm font-bold text-slate-700">{t('salary')}</label>
-                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                        <label className={`text-sm font-bold transition-colors duration-300 ${isSalaryEnabled ? 'text-slate-700' : 'text-slate-400'}`}>{t('salary')}</label>
+                                        <motion.button whileTap={{ scale: 0.92 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             type="button"
                                             onClick={() => setIsSalaryEnabled(!isSalaryEnabled)}
-                                            className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 ${isSalaryEnabled ? 'gel-blue-style border-none shadow-sm' : 'bg-slate-200'}`}
+                                            className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 ${isSalaryEnabled ? 'gel-blue-style border-none shadow-sm' : 'bg-slate-300/70 border border-slate-300 shadow-inner'}`}
                                         >
-                                            <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 shadow-sm z-20 ${isSalaryEnabled ? 'left-8' : 'left-1'}`} />
+                                            <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-300 z-20 ${isSalaryEnabled ? 'left-8 shadow-md' : 'left-1 shadow-sm'}`} />
                                         </motion.button>
                                     </div>
-                                    <div className={`relative transition-all duration-300 ${isSalaryEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">UZS</div>
-                                        <input
-                                            type="text"
-                                            inputMode="numeric"
-                                            disabled={!isSalaryEnabled}
-                                            className="w-full bg-white border border-slate-400 rounded-xl py-3 pl-12 pr-4 text-slate-900 font-bold focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none disabled:bg-slate-50 disabled:text-slate-400 disabled:shadow-none disabled:border-transparent"
-                                            value={formData.salary ? new Intl.NumberFormat('uz-UZ').format(Number(formData.salary)) : ''}
-                                            onChange={e => {
-                                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                                setFormData({ ...formData, salary: val ? Number(val) : 0 });
-                                            }}
-                                            placeholder="0"
-                                        />
+                                    <AnimatePresence>
+                                        {isSalaryEnabled && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                                                animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+                                                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                                                className="relative overflow-hidden"
+                                            >
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs z-10 pointer-events-none">UZS</div>
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 pl-12 pr-4 text-slate-800 font-bold tracking-wide focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none placeholder:text-slate-400/70 placeholder:font-medium"
+                                                    value={formData.salary ? new Intl.NumberFormat('uz-UZ').format(Number(formData.salary)) : ''}
+                                                    onChange={e => {
+                                                        const val = e.target.value.replace(/[^0-9]/g, '');
+                                                        setFormData({ ...formData, salary: val ? Number(val) : 0 });
+                                                    }}
+                                                    placeholder="0"
+                                                />
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </div>
+
+                            {/* Status - Full Width */}
+                            {initialData && (
+                                <div className="space-y-2.5">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">{t('status')}</label>
+                                    <div className="grid grid-cols-3 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] gap-1.5">
+                                        {['active', 'on_leave', 'terminated'].map((s) => {
+                                            const isSelected = formData.status === s;
+                                            const config = {
+                                                active: {
+                                                    selected: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 shadow-sm',
+                                                    dot: 'bg-emerald-500',
+                                                },
+                                                on_leave: {
+                                                    selected: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200 shadow-sm',
+                                                    dot: 'bg-amber-500',
+                                                },
+                                                terminated: {
+                                                    selected: 'bg-rose-50 text-rose-600 ring-1 ring-rose-200 shadow-sm',
+                                                    dot: 'bg-rose-500',
+                                                },
+                                            }[s]!;
+
+                                            return (
+                                                <motion.button whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                    key={s}
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, status: s as any })}
+                                                    className={`flex items-center justify-center gap-2 rounded-xl py-3.5 text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${isSelected ? config.selected : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+                                                >
+                                                    <span className={`w-2 h-2 rounded-full shrink-0 transition-all duration-300 ${isSelected ? config.dot : 'bg-slate-300'}`} />
+                                                    {t(`status_${s}`) || s}
+                                                </motion.button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
-
-                                {initialData && (
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-bold text-slate-700 ml-1">{t('status')}</label>
-                                        <div className="flex bg-white p-1.5 rounded-xl border border-slate-400 gap-1.5 h-[52px]">
-                                            {['active', 'on_leave', 'terminated'].map((s) => {
-                                                const isActive = formData.status === s;
-                                                let activeClass = '';
-                                                if (isActive) {
-                                                    if (s === 'active') activeClass = 'bg-white text-emerald-600 shadow-sm ring-1 ring-emerald-500/20';
-                                                    else if (s === 'on_leave') activeClass = 'bg-white text-amber-600 shadow-sm ring-1 ring-amber-500/20';
-                                                    else activeClass = 'bg-white text-rose-600 shadow-sm ring-1 ring-rose-500/20';
-                                                } else {
-                                                    activeClass = 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50';
-                                                }
-
-                                                return (
-                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                        key={s}
-                                                        type="button"
-                                                        onClick={() => setFormData({ ...formData, status: s as any })}
-                                                        className={`flex-1 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${activeClass}`}
-                                                    >
-                                                        {t(`status_${s}`) || s}
-                                                    </motion.button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            )}
 
                             {/* Notes */}
                             <div className="space-y-1.5">
                                 <label className="text-sm font-bold text-slate-700 ml-1">{t('notes')}</label>
                                 <textarea
-                                    className="w-full bg-white border border-slate-400 rounded-xl py-3 px-4 text-slate-900 font-medium placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none"
+                                    className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-medium placeholder:text-slate-400/70 placeholder:font-medium focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none resize-none"
                                     rows={3}
                                     value={formData.notes || ''}
                                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
@@ -390,13 +406,15 @@ const StaffModal = ({
 };
 
 // --- Staff Card (Memoized) ---
-const StaffCard = React.memo(({ staff, t, isViewer, onSelect, onPaySalary }: {
+const StaffCard = React.memo(({ staff, t, isViewer, language, onSelect, onPaySalary }: {
     staff: Staff;
     t: (key: string) => string;
     isViewer: boolean;
+    language: string;
     onSelect: (staff: Staff) => void;
     onPaySalary: (staffId: string) => void;
 }) => {
+    const dateLocale = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
     return (
         <div
             onClick={() => onSelect(staff)}
@@ -433,9 +451,9 @@ const StaffCard = React.memo(({ staff, t, isViewer, onSelect, onPaySalary }: {
             </div>
 
             {/* Content */}
-            <div className="px-6 pt-4 pb-6">
+            <div className="px-6 pt-4 pb-5">
                 {/* Name + Role */}
-                <div className="text-center mb-6" onClick={() => onSelect(staff)}>
+                <div className="text-center mb-5" onClick={() => onSelect(staff)}>
                     <h3 className="font-bold text-slate-900 text-lg leading-tight truncate capitalize group-hover:text-blue-600 transition-colors duration-200 cursor-pointer">
                         {staff.fullName}
                     </h3>
@@ -444,48 +462,59 @@ const StaffCard = React.memo(({ staff, t, isViewer, onSelect, onPaySalary }: {
                     </p>
                 </div>
 
-                {/* Clean Data Layout */}
-                {/* Data & Actions */}
-                <div className="space-y-4">
+                {/* Data Rows */}
+                <div className="space-y-2.5">
                     {/* Salary */}
                     {staff.salary != null && staff.salary > 0 && (
-                        <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-white text-emerald-600 flex items-center justify-center shadow-sm">
-                                    <Banknote size={16} className="stroke-[2.5]" />
+                        <div className="bg-slate-50 rounded-xl px-3 py-2.5 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-white text-emerald-600 flex items-center justify-center shadow-sm">
+                                    <Banknote size={14} className="stroke-[2.5]" />
                                 </div>
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('salary')}</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('salary')}</span>
                             </div>
-                            <div className="font-bold text-slate-900">
+                            <div className="font-bold text-slate-900 text-sm">
                                 {staff.salary?.toLocaleString()} <span className="text-[10px] text-slate-400 font-extrabold ml-0.5">UZS</span>
                             </div>
                         </div>
                     )}
 
-                    {/* Phone (Full Width) */}
-                    <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-white text-blue-600 flex items-center justify-center shadow-sm">
-                                <Phone size={16} className="stroke-[2.5]" />
+                    {/* Phone */}
+                    <div className="bg-slate-50 rounded-xl px-3 py-2.5 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-white text-blue-600 flex items-center justify-center shadow-sm">
+                                <Phone size={14} className="stroke-[2.5]" />
                             </div>
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('phone')}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('phone')}</span>
                         </div>
                         <div className="font-bold text-slate-900 text-sm">
                             {staff.phone || '—'}
                         </div>
                     </div>
 
-                    {/* Pay Button */}
-                    {/* Pay Button - Hidden for Viewer */}
+                    {/* Join Date */}
+                    <div className="bg-slate-50 rounded-xl px-3 py-2.5 flex items-center justify-between group/item hover:bg-slate-100 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-white text-violet-600 flex items-center justify-center shadow-sm">
+                                <Calendar size={14} className="stroke-[2.5]" />
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('join_date') || 'Joined'}</span>
+                        </div>
+                        <div className="font-bold text-slate-900 text-sm">
+                            {staff.joinDate ? new Date(staff.joinDate).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        </div>
+                    </div>
+
+                    {/* Pay Button - Compact */}
                     {!isViewer && staff.salary != null && staff.salary > 0 && (
-                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                        <motion.button whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onPaySalary(staff.id);
                             }}
-                            className="btn-glossy-emerald uppercase"
+                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200 hover:bg-emerald-100 hover:ring-emerald-300 transition-all duration-300 mt-1"
                         >
-                            <Banknote size={18} className="stroke-[2.5]" />
+                            <Banknote size={15} className="stroke-[2.5]" />
                             {t('pay_salary')}
                         </motion.button>
                     )}
@@ -861,6 +890,8 @@ const StaffDetail = ({
     const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const monthPickerRef = useRef<HTMLDivElement>(null);
+    const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
+    const categoryPickerRef = useRef<HTMLDivElement>(null);
     const [showStatusMenu, setShowStatusMenu] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
@@ -878,19 +909,21 @@ const StaffDetail = ({
             if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
                 setIsMonthPickerOpen(false);
             }
+            if (categoryPickerRef.current && !categoryPickerRef.current.contains(event.target as Node)) {
+                setIsCategoryPickerOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     const MONTH_NAMES_SHORT = useMemo(() => {
-        const d = new Date(2025, 0, 1);
-        const formatStr = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US';
-        return Array.from({ length: 12 }).map((_, i) => {
-            d.setMonth(i);
-            const raw = d.toLocaleDateString(formatStr, { month: 'short' });
-            return raw.charAt(0).toUpperCase() + raw.slice(1).replace('.', '');
-        });
+        const MONTH_NAMES_SHORT_MAP: Record<string, string[]> = {
+            en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            uz: ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'],
+            ru: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+        };
+        return MONTH_NAMES_SHORT_MAP[language] || MONTH_NAMES_SHORT_MAP.uz;
     }, [language]);
 
     const handleSelectMonth = (monthIndex: number) => {
@@ -985,10 +1018,17 @@ const StaffDetail = ({
 
     // Group payments by month
     const paymentsByMonth = useMemo(() => {
+        const MONTH_NAMES_FULL_MAP: Record<string, string[]> = {
+            en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+            uz: ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'],
+            ru: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+        };
+        const monthNames = MONTH_NAMES_FULL_MAP[language] || MONTH_NAMES_FULL_MAP.uz;
+
         return payments.reduce((acc, payment) => {
             const date = new Date(payment.date);
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            const monthLabel = capitalize(date.toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US', { month: 'long', year: 'numeric' }));
+            const monthLabel = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
 
             if (!acc[monthKey]) {
                 acc[monthKey] = {
@@ -1058,9 +1098,15 @@ const StaffDetail = ({
 
     // Calculate payment statistics for current month
     const paymentStats = useMemo(() => {
+        const MONTH_NAMES_FULL_MAP: Record<string, string[]> = {
+            en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+            uz: ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'],
+            ru: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+        };
+        const monthNames = MONTH_NAMES_FULL_MAP[language] || MONTH_NAMES_FULL_MAP.uz;
         const now = new Date();
         const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        const currentMonth = capitalize(now.toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US', { month: 'long', year: 'numeric' }));
+        const currentMonth = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
 
         // Filter payments for current month only AND not voided
         const currentMonthPayments = payments.filter(p => {
@@ -1244,20 +1290,65 @@ const StaffDetail = ({
                             )}
                         </h3>
 
-                        {/* Transaction Categories Filter */}
-                        <div className="flex items-center overflow-x-auto bg-white rounded-lg p-1 border border-slate-200 no-scrollbar max-w-[calc(100vw-32px)]">
-                            {(['all', 'income', 'expense', 'salary', 'food', 'other'] as const).map(cat => (
-                                <button
-                                    key={cat}
-                                    onClick={() => setFilterCategory(cat)}
-                                    className={`relative z-10 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${filterCategory === cat
-                                        ? 'text-blue-600 bg-blue-50/80 shadow-sm ring-1 ring-blue-100'
-                                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                                        }`}
-                                >
-                                    {cat === 'all' ? t('filter_all') : t(cat)}
-                                </button>
-                            ))}
+                        {/* Transaction Categories Filter Dropdown */}
+                        <div className="relative" ref={categoryPickerRef}>
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                onClick={() => setIsCategoryPickerOpen(!isCategoryPickerOpen)}
+                                className={`flex items-center gap-2 pl-3.5 pr-3 py-1.5 rounded-[0.55rem] text-[13px] font-bold transition-all duration-200 border h-9 ${filterCategory !== 'all'
+                                    ? 'bg-blue-50/50 border-blue-200 text-blue-600 hover:bg-blue-50'
+                                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                                    } ${isCategoryPickerOpen ? 'ring-2 ring-blue-500/20 shadow-sm shadow-blue-500/5 !border-blue-400' : ''}`}
+                            >
+                                <span className="whitespace-nowrap tabular-nums uppercase font-black text-[11px] tracking-wider translate-y-[0.5px]">
+                                    {filterCategory === 'all' ? t('filter_all') || 'All' : t(filterCategory)}
+                                </span>
+                                {filterCategory !== 'all' ? (
+                                    <span
+                                        onClick={(e) => { e.stopPropagation(); setFilterCategory('all'); setIsCategoryPickerOpen(false); }}
+                                        className="ml-0.5 p-0.5 rounded-full hover:bg-blue-100 transition-colors cursor-pointer text-blue-400 hover:text-blue-600"
+                                    >
+                                        <X size={14} strokeWidth={3} />
+                                    </span>
+                                ) : (
+                                    <ChevronDown size={14} strokeWidth={2.5} className="ml-1 text-slate-400" />
+                                )}
+                            </motion.button>
+
+                            {isCategoryPickerOpen && (
+                                <div className="absolute top-full right-0 mt-2 z-[60] w-[200px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 p-1.5">
+                                    {(['all', 'income', 'expense', 'salary', 'food', 'other'] as const).map(cat => {
+                                        const isActive = filterCategory === cat;
+                                        const dotColor = {
+                                            all: 'bg-slate-400',
+                                            income: 'bg-emerald-500',
+                                            expense: 'bg-rose-500',
+                                            salary: 'bg-blue-500',
+                                            food: 'bg-amber-500',
+                                            other: 'bg-violet-500',
+                                        }[cat];
+                                        const activeBg = {
+                                            all: 'bg-slate-50 text-slate-700 ring-1 ring-slate-200',
+                                            income: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+                                            expense: 'bg-rose-50 text-rose-700 ring-1 ring-rose-200',
+                                            salary: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+                                            food: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+                                            other: 'bg-violet-50 text-violet-700 ring-1 ring-violet-200',
+                                        }[cat];
+
+                                        return (
+                                            <motion.button whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                key={cat}
+                                                onClick={() => { setFilterCategory(cat); setIsCategoryPickerOpen(false); }}
+                                                className={`w-full text-left px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 flex items-center gap-2.5 ${isActive ? activeBg : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                                            >
+                                                <span className={`w-2 h-2 rounded-full shrink-0 ${isActive ? dotColor : 'bg-slate-300'}`} />
+                                                <span className="flex-1">{cat === 'all' ? t('filter_all') || 'All' : t(cat)}</span>
+                                                {isActive && <Check size={14} strokeWidth={3} className="shrink-0 opacity-70" />}
+                                            </motion.button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -1482,9 +1573,9 @@ const StaffDetail = ({
                                                             ) : (
                                                                 <div className={`w-10 h-10 md:w-12 md:h-12 rounded-[1rem] flex items-center justify-center border shadow-sm flex-shrink-0 transition-transform duration-300 ${isVoided
                                                                     ? 'bg-slate-50 text-slate-400 border-slate-100'
-                                                                    : `bg-white border-slate-200 group-hover:scale-110 ${isIncome ? 'text-emerald-600' : 'text-rose-600'}`
+                                                                    : `bg-slate-100 border-slate-200 group-hover:scale-110 ${isIncome ? 'text-blue-600' : 'text-slate-600'}`
                                                                     }`}>
-                                                                    <Banknote size={20} className="stroke-[2.5]" />
+                                                                    <Building2 size={20} className="stroke-[2.5]" />
                                                                 </div>
                                                             )}
                                                             <div className="flex flex-col gap-0.5 md:gap-1 min-w-0">
@@ -1493,11 +1584,14 @@ const StaffDetail = ({
                                                                     : 'text-slate-900 group-hover:text-amber-600'
                                                                     }`}>
                                                                     {payment.description.startsWith('[Split]')
-                                                                        ? `${t('split_from') || '[Bo\'linma]'} ${patient ? patient.fullName + ' - ' : ''}${payment.description.replace('[Split]', '').trim()}`
+                                                                        ? `${t('split_from') || '[Bo\'linma]'} ${patient ? patient.fullName + ' - ' : `${t('clinic') || 'Klinika'} - `}${staff.fullName}`
                                                                         : (t(payment.description) || payment.description)}
                                                                 </p>
                                                                 <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-slate-500 font-medium flex-wrap">
-                                                                    <span>{new Date(payment.date).toLocaleDateString()}</span>
+                                                                    <span>{(() => {
+                                                                        const d = new Date(payment.date);
+                                                                        return `${String(d.getDate()).padStart(2, '0')} ${MONTH_NAMES_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+                                                                    })()}</span>
                                                                     <span className="w-1 h-1 rounded-full bg-slate-400 opacity-50" />
                                                                     <span>{payment.time || '—'}</span>
                                                                     {isVoided && (
@@ -1577,7 +1671,7 @@ const StaffDetail = ({
 };
 
 export const StaffPage = () => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { accountId, role } = useAccount();
     const isViewer = role === 'viewer';
     const { success, error: toastError } = useToast();
@@ -1793,6 +1887,7 @@ export const StaffPage = () => {
                                             staff={staff}
                                             t={t}
                                             isViewer={isViewer}
+                                            language={language}
                                             onSelect={setSelectedStaff}
                                             onPaySalary={(staffId) => {
                                                 setPayModalStaffId(staffId);
