@@ -142,16 +142,16 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.3, type: "spring", bounce: 0.3 } }}
             exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-            className={`relative flex flex-col md:flex-row items-center justify-between w-full mb-8 md:mb-12 ${isLeft ? 'md:flex-row-reverse' : ''}`}
+            className={`relative flex flex-col md:flex-row items-center justify-between w-full pt-6 mb-8 md:pt-0 md:mb-12 ${isLeft ? 'md:flex-row-reverse' : ''}`}
         >
-            {/* Center Line Connector - Hidden on mobile */}
-            <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center h-full">
-                {/* Smaller 3D Pin on Line */}
-                <div className="z-20 relative">
+            {/* Center Line Connector - Visible on both mobile and desktop explicitly to tie them together cleanly */}
+            <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center h-full -z-10">
+                {/* Smaller 3D Pin on Line - Desktop only */}
+                <div className="z-20 relative hidden md:block">
                     <RealisticPin scale={0.6} />
                 </div>
                 {/* Connecting Line - dashed */}
-                <div className="w-0.5 grow border-l-2 border-dashed border-slate-300 absolute top-4 h-[calc(100%+32px)] opacity-50 -z-10" />
+                <div className="w-0.5 grow border-l-2 border-dashed border-slate-300 absolute top-[-24px] md:top-4 h-[calc(100%+80px)] md:h-[calc(100%+32px)] opacity-40 -z-10" />
             </div>
 
             {/* Empty Space for the other side - Hidden on mobile */}
@@ -200,7 +200,7 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
                             e.stopPropagation();
                             onDelete(note.id);
                         }}
-                        className="absolute top-4 right-4 p-2 bg-red-50 text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 z-20"
+                        className="absolute top-4 right-4 p-2 bg-red-50 text-red-500 rounded-xl opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-100 z-20 shadow-sm md:shadow-none"
                     >
                         <Trash2 size={18} />
                     </motion.button>

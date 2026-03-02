@@ -471,29 +471,63 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                         </div>
 
                         {/* Category Filters */}
-                        <div className="relative flex items-center bg-white/90 rounded-2xl p-1.5 border border-slate-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-xl overflow-x-auto no-scrollbar w-full max-w-[calc(100vw-3rem)] sm:max-w-[400px] md:max-w-none justify-start md:justify-center mx-auto md:mx-0">
-                            {(['all', 'income', 'expense', 'surgery', 'injection'] as const).map(cat => (
-                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                    key={cat}
-                                    onClick={() => setFilterCategory(cat)}
-                                    className={`relative z-10 flex items-center shrink-0 min-w-max whitespace-nowrap px-5 py-2.5 rounded-xl text-[13px] font-bold transition-colors duration-300 ${filterCategory === cat ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
+                        <div className="w-full md:w-auto">
+                            {/* Mobile Dropdown Category Filter */}
+                            <div className="md:hidden relative w-full mt-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] rounded-2xl">
+                                <select
+                                    value={filterCategory}
+                                    onChange={(e) => setFilterCategory(e.target.value as any)}
+                                    className="w-full text-white appearance-none rounded-2xl py-3 px-4 font-bold outline-none border border-white/20 transition-all duration-300"
+                                    style={{
+                                        background: filterCategory === 'income' ? 'linear-gradient(180deg, #34D399 0%, #059669 100%)' :
+                                            filterCategory === 'expense' ? 'linear-gradient(180deg, #F87171 0%, #DC2626 100%)' :
+                                                'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
+                                        boxShadow: filterCategory === 'income' ? '0 8px 16px -4px rgba(5, 150, 105, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)' :
+                                            filterCategory === 'expense' ? '0 8px 16px -4px rgba(220, 38, 38, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)' :
+                                                '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
+                                    }}
                                 >
-                                    {filterCategory === cat && (
-                                        <motion.div
-                                            layoutId="FinanceCategoryPill"
-                                            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                            className="absolute inset-0 rounded-xl overflow-hidden"
-                                            style={{
-                                                background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
-                                                boxShadow: '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
-                                            }}
-                                        >
-                                            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
-                                        </motion.div>
-                                    )}
-                                    <span className="relative z-10">{cat === 'all' ? t('filter_all') : t(cat)}</span>
-                                </motion.button>
-                            ))}
+                                    <option value="all" className="text-slate-800 bg-white">{t('filter_all') || 'Barchasi'}</option>
+                                    <option value="income" className="text-slate-800 bg-white">{t('income') || 'Kirim'}</option>
+                                    <option value="expense" className="text-slate-800 bg-white">{t('expense') || 'Xarajat'}</option>
+                                    <option value="surgery" className="text-slate-800 bg-white">{t('surgery') || 'Operatsiya'}</option>
+                                    <option value="injection" className="text-slate-800 bg-white">{t('injection') || 'Inyeksiya'}</option>
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white opacity-90 drop-shadow-sm">
+                                    <ChevronDown size={18} strokeWidth={3} />
+                                </div>
+                                <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-t-2xl" />
+                            </div>
+
+                            {/* Desktop Tabs Category Filter */}
+                            <div className="hidden md:flex relative items-center bg-white/90 rounded-2xl p-1.5 border border-slate-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-xl overflow-x-auto no-scrollbar w-full max-w-[calc(100vw-3rem)] sm:max-w-[400px] md:max-w-none justify-start md:justify-center mx-auto md:mx-0">
+                                {(['all', 'income', 'expense', 'surgery', 'injection'] as const).map(cat => (
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                        key={cat}
+                                        onClick={() => setFilterCategory(cat)}
+                                        className={`relative z-10 flex items-center shrink-0 min-w-max whitespace-nowrap px-5 py-2.5 rounded-xl text-[13px] font-bold transition-colors duration-300 ${filterCategory === cat ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        {filterCategory === cat && (
+                                            <motion.div
+                                                layoutId="FinanceCategoryPill"
+                                                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                                className="absolute inset-0 rounded-xl overflow-hidden"
+                                                style={{
+                                                    background: cat === 'income' ? 'linear-gradient(180deg, #34D399 0%, #059669 100%)' :
+                                                        cat === 'expense' ? 'linear-gradient(180deg, #F87171 0%, #DC2626 100%)' :
+                                                            'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
+                                                    boxShadow: cat === 'income' ? '0 8px 16px -4px rgba(5, 150, 105, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)' :
+                                                        cat === 'expense' ? '0 8px 16px -4px rgba(220, 38, 38, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)' :
+                                                            '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
+                                                }}
+                                            >
+                                                <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
+                                            </motion.div>
+                                        )}
+                                        <span className="relative z-10">{cat === 'all' ? t('filter_all') : t(cat)}</span>
+                                    </motion.button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
