@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import EmojiPicker, { EmojiStyle, Theme } from 'emoji-picker-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Patient } from '../../types';
-import { Search, Send, User, Smile, Trash2, Edit2, X, Check, CheckCheck, ChevronDown, Copy, Reply, Pin, PinOff, CalendarClock, Clock, BellOff } from 'lucide-react';
+import { Search, Send, User, Smile, Trash2, Edit2, X, Check, CheckCheck, ChevronDown, Copy, Reply, Pin, PinOff, CalendarClock, Clock, BellOff, Paperclip, Image as ImageIcon, FileVideo } from 'lucide-react';
 import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { format } from 'date-fns';
@@ -17,6 +17,7 @@ import { ProBadge } from '../../components/ui/ProBadge';
 import { db, storage } from '../../lib/firebase';
 import { Portal } from '../../components/ui/Portal';
 import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, limitToLast, startAfter, endBefore, limit, getDocs, where, writeBatch, QueryDocumentSnapshot, DocumentData, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 
 
 
@@ -38,6 +39,9 @@ interface Message {
     createdAt: string;
     image?: string;
     voice?: string;
+    video?: string;
+    mediaUrl?: string;
+    type?: string;
     telegramMessageId?: number;
     status?: 'sent' | 'delivered' | 'seen' | 'scheduled'; // Updated status
     scheduledFor?: string; // New field
@@ -71,6 +75,12 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     const [searchText, setSearchText] = useState('');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [isScheduledView, setIsScheduledView] = useState(false);
+
+    // Media Attachment
+    const [fileAttachment, setFileAttachment] = useState<File | null>(null);
+    const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Schedule Modal State
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -240,10 +250,19 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
         const unsubscribe = onSnapshot(q, (snapshot) => {
             console.log(`📨 Snapshot received: ${snapshot.docs.length} messages (from ${snapshot.metadata.fromCache ? 'CACHE' : 'SERVER'})`);
 
-            const msgs = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })).reverse() as Message[];
+            const msgs = snapshot.docs.map(doc => {
+                const data = doc.data();
+                // Normalize legacy media fields
+                // Old messages might have mediaUrl + type instead of video/image
+                if (data.mediaUrl && !data.video && !data.image) {
+                    if (data.type === 'video' || data.mediaType === 'video') {
+                        data.video = data.mediaUrl;
+                    } else if (data.type === 'image' || data.mediaType === 'image') {
+                        data.image = data.mediaUrl;
+                    }
+                }
+                return { id: doc.id, ...data };
+            }).reverse() as Message[];
 
             setMessages(msgs);
 
@@ -301,10 +320,17 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             );
 
             const snapshot = await getDocs(q);
-            const newMsgs = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })).reverse() as Message[];
+            const newMsgs = snapshot.docs.map(doc => {
+                const data = doc.data();
+                if (data.mediaUrl && !data.video && !data.image) {
+                    if (data.type === 'video' || data.mediaType === 'video') {
+                        data.video = data.mediaUrl;
+                    } else if (data.type === 'image' || data.mediaType === 'image') {
+                        data.image = data.mediaUrl;
+                    }
+                }
+                return { id: doc.id, ...data };
+            }).reverse() as Message[];
 
             if (newMsgs.length > 0) {
                 setMessages(prev => [...newMsgs, ...prev]);
@@ -420,7 +446,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     const [isSending, setIsSending] = useState(false);
 
     const handleSendMessage = async (scheduledDateArg?: Date) => {
-        if (!messageInput.trim() || !selectedPatient || isSending) {
+        if ((!messageInput.trim() && !fileAttachment) || !selectedPatient || isSending) {
             return;
         }
 
@@ -436,6 +462,32 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
         try {
             const now = new Date();
+
+            let mediaUrl = null;
+            let mediaType = null;
+
+            if (fileAttachment) {
+                const ext = fileAttachment.name.split('.').pop();
+                const filename = `${selectedPatient.id}_doc_${Date.now()}.${ext}`;
+                const storageRef = ref(storage, `chat_media/${filename}`);
+
+                // Use resumable upload for progress tracking
+                mediaUrl = await new Promise<string>((resolve, reject) => {
+                    const uploadTask = uploadBytesResumable(storageRef, fileAttachment);
+                    uploadTask.on('state_changed',
+                        (snapshot) => {
+                            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                            setUploadProgress(progress);
+                        },
+                        (error) => reject(error),
+                        async () => {
+                            const url = await getDownloadURL(uploadTask.snapshot.ref);
+                            resolve(url);
+                        }
+                    );
+                });
+                mediaType = fileAttachment.type.startsWith('video/') ? 'video' : 'image';
+            }
 
             // Prepare Message Payload (Robust for Security Rules)
             const messageData: any = {
@@ -461,8 +513,13 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                 sender_id: userId,
                 authorId: userId,
 
-                type: 'text'
+                type: mediaType || 'text'
             };
+
+            if (mediaUrl) {
+                if (mediaType === 'video') messageData.video = mediaUrl;
+                if (mediaType === 'image') messageData.image = mediaUrl;
+            }
 
             // Handle Scheduling (Local Display)
             if (scheduledDateArg) {
@@ -490,7 +547,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             if (!scheduledDateArg) {
                 try {
                     await updateDoc(doc(db, 'patients', selectedPatient.id), {
-                        lastMessage: messageInput.trim(),
+                        lastMessage: mediaType ? `[${mediaType === 'video' ? 'Video' : 'Rasm'}] ${messageInput.trim()}` : messageInput.trim(),
                         lastMessageTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
                         lastMessageTimestamp: now.toISOString()
                     });
@@ -515,6 +572,13 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                         createdAt: now.toISOString()
                     };
 
+                    if (mediaUrl && mediaType === 'video') {
+                        payload.videoUrl = mediaUrl;
+                    }
+                    if (mediaUrl && mediaType === 'image') {
+                        payload.imageUrl = mediaUrl;
+                    }
+
                     if (scheduledDateArg) {
                         payload.scheduledFor = scheduledDateArg.toISOString();
                     }
@@ -532,7 +596,11 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
             // Success Updates
             setMessageInput('');
+            setFileAttachment(null);
+            setVideoThumbnail(null);
+            setUploadProgress(0);
             setReplyingToMessage(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
             if (textareaRef.current) {
                 textareaRef.current.style.height = 'auto'; // Reset height
             }
@@ -544,6 +612,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             showToastError(t('toast_error_title'), `Failed to send: ${errorMessage}`);
         } finally {
             setIsSending(false);
+            setUploadProgress(0);
         }
     };
 
@@ -714,6 +783,18 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                 });
             }
 
+            // 3b. Clean up media from Firebase Storage
+            const mediaUrl = msg.video || msg.image;
+            if (mediaUrl && mediaUrl.includes('firebase')) {
+                try {
+                    const mediaRef = ref(storage, mediaUrl);
+                    await deleteObject(mediaRef);
+                    console.log('🗑️ Media file deleted from Storage');
+                } catch (storageErr) {
+                    console.warn('⚠️ Storage cleanup failed (non-fatal):', storageErr);
+                }
+            }
+
             // 4. SYNC: Update Patient's lastMessage field
             // Fetch the new latest message for this patient
             const latestMsgQuery = query(
@@ -727,7 +808,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             if (!latestSnapshot.empty) {
                 const newLastMsg = latestSnapshot.docs[0].data();
                 await updateDoc(patientRef, {
-                    lastMessage: newLastMsg.text || (newLastMsg.image ? '[Image]' : '') || (newLastMsg.voice ? '[Voice]' : ''),
+                    lastMessage: newLastMsg.text || (newLastMsg.video ? '[Video]' : '') || (newLastMsg.image ? '[Image]' : '') || (newLastMsg.voice ? '[Voice]' : ''),
                     lastMessageTimestamp: newLastMsg.createdAt,
                     lastMessageTime: new Date(newLastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
                 });
@@ -739,6 +820,11 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                     lastMessageTime: ''
                 });
             }
+
+            // 5. Scroll to close any gaps from deleted large media
+            setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 150);
 
         } catch (error) {
             console.error('Error deleting message:', error);
@@ -1019,7 +1105,7 @@ match /patients/{patientId}/messages/{messageId} {
                                     const isNearBottom = scrollHeight - scrollTop - clientHeight < 300;
                                     setShowScrollButton(!isNearBottom);
                                 }}
-                                className="absolute inset-0 overflow-y-auto px-2 md:px-4 pt-3 md:pt-4 pb-1 space-y-2 md:space-y-3 no-scrollbar"
+                                className="absolute inset-0 overflow-y-auto px-2 md:px-4 pt-3 md:pt-4 pb-1 no-scrollbar flex flex-col min-h-full"
                             >
                                 {hasMore && !loadingMore && !isScheduledView && (
                                     <div className="flex justify-center pb-4">
@@ -1079,127 +1165,187 @@ match /patients/{patientId}/messages/{messageId} {
                                     });
 
                                     return (
-                                        <>
-                                            {groups.map((group, groupIndex) => (
-                                                <div key={group.key + groupIndex} className="relative flex flex-col gap-1.5">
-                                                    {/* Group Header (Static) */}
-                                                    <div className="flex justify-center py-4 mb-2 pointer-events-none fade-in">
-                                                        <span className="text-xs font-bold text-slate-500 bg-white/50 px-3 py-1 rounded-full shadow-sm border border-white/40 tracking-wide uppercase">
-                                                            {isScheduledView ? `${t('scheduled_for')} ${group.key}` : group.key}
-                                                        </span>
-                                                    </div>
+                                        <div className="flex flex-col min-h-full">
+                                            {/* Spacer pushes messages to bottom when few */}
+                                            <div className="flex-grow min-h-[10px]" />
+                                            <div className="flex flex-col space-y-4">
+                                                {groups.map((group, groupIndex) => (
+                                                    <div key={group.key + groupIndex} className="relative flex flex-col">
+                                                        {/* Group Header (Static) */}
+                                                        <div className="flex justify-center py-4 mb-2 pointer-events-none fade-in">
+                                                            <span className="text-xs font-bold text-slate-500 bg-white/50 px-3 py-1 rounded-full shadow-sm border border-white/40 tracking-wide uppercase">
+                                                                {isScheduledView ? `${t('scheduled_for')} ${group.key}` : group.key}
+                                                            </span>
+                                                        </div>
 
-                                                    {/* Messages in this group */}
-                                                    {group.messages.map((msg) => (
-                                                        <React.Fragment key={msg.id}>
-                                                            <div id={`msg-${msg.id}`} className={`flex ${msg.sender === 'doctor' ? 'justify-end' : 'justify-start'} relative`}>
-
-
-                                                                <div
-                                                                    className={`max-w-[85%] sm:max-w-[75%] px-3 py-2 text-[14px] md:text-[15px] leading-relaxed relative shadow-sm group cursor-pointer transition-transform active:scale-[0.98] ${msg.sender === 'doctor'
-                                                                        ? 'gel-blue-style text-white rounded-2xl md:rounded-3xl bubble-tail-out'
-                                                                        : 'bg-white text-slate-800 rounded-2xl md:rounded-3xl bubble-tail-in'
-                                                                        } ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}
-                                                                    onContextMenu={(e) => {
-                                                                        e.preventDefault();
-                                                                        setMsgContextMenu({ id: msg.id, x: e.clientX, y: e.clientY });
-                                                                    }}
-                                                                    onTouchStart={(e) => {
-                                                                        const touch = e.touches[0];
-                                                                        const timer = setTimeout(() => {
-                                                                            setMsgContextMenu({ id: msg.id, x: touch.clientX, y: touch.clientY });
-                                                                        }, 500);
-                                                                        (window as any).__lastTouchTimer = timer;
-                                                                    }}
-                                                                    onTouchEnd={() => {
-                                                                        clearTimeout((window as any).__lastTouchTimer);
-                                                                    }}
-                                                                >
-
-                                                                    {/* Pinned Icon (Visual Indicator) */}
-                                                                    {msg.isPinned && (
-                                                                        <div className="absolute -right-2 -top-2 bg-blue-500 text-white rounded-full p-0.5 shadow-sm scale-75 z-10">
-                                                                            <Pin size={12} fill="white" />
-                                                                        </div>
-                                                                    )}
-
-
-                                                                    {/* Reply Context (Quoted Message) */}
-                                                                    {msg.replyTo && (
+                                                        {/* Messages in this group */}
+                                                        <div className="flex flex-col space-y-2 md:space-y-3">
+                                                            {group.messages.map((msg) => (
+                                                                <div id={`msg-${msg.id}`} key={msg.id} className={`flex ${msg.sender === 'doctor' ? 'justify-end' : 'justify-start'} relative px-2 md:px-0`}>
+                                                                    {/* VIDEO MESSAGE — Telegram-style standalone */}
+                                                                    {msg.video ? (
                                                                         <div
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                if (msg.replyTo) {
-                                                                                    scrollToAndHighlight(msg.replyTo.id);
-                                                                                }
+                                                                            className={`max-w-[85%] sm:max-w-[75%] relative group cursor-pointer transition-transform active:scale-[0.98] ${msg.isPinned ? 'ring-2 ring-blue-400/30 rounded-2xl' : ''}`}
+                                                                            onContextMenu={(e) => {
+                                                                                e.preventDefault();
+                                                                                setMsgContextMenu({ id: msg.id, x: e.clientX, y: e.clientY });
                                                                             }}
-                                                                            className={`mb-2 border-l-[3px] rounded-r-md px-2 py-1 cursor-pointer text-xs transition-colors ${msg.sender === 'doctor'
-                                                                                ? 'border-white/60 bg-white/10 hover:bg-white/20'
-                                                                                : 'border-promed-primary bg-promed-light/50 hover:bg-promed-light'
-                                                                                }`}
+                                                                            onTouchStart={(e) => {
+                                                                                const touch = e.touches[0];
+                                                                                const timer = setTimeout(() => {
+                                                                                    setMsgContextMenu({ id: msg.id, x: touch.clientX, y: touch.clientY });
+                                                                                }, 500);
+                                                                                (window as any).__lastTouchTimer = timer;
+                                                                            }}
+                                                                            onTouchEnd={() => {
+                                                                                clearTimeout((window as any).__lastTouchTimer);
+                                                                            }}
                                                                         >
-                                                                            <div className={`font-black uppercase tracking-widest text-[10px] ${msg.sender === 'doctor' ? 'text-white/90' : 'text-promed-primary'}`}>
-                                                                                {msg.replyTo.displayName || (msg.replyTo.sender === 'doctor' ? t('doctor') : t('patient'))}
+                                                                            {/* Video Player */}
+                                                                            <div className="relative rounded-2xl overflow-hidden shadow-md bg-black">
+                                                                                <video
+                                                                                    src={msg.video}
+                                                                                    controls
+                                                                                    preload="metadata"
+                                                                                    playsInline
+                                                                                    className="w-full max-h-80 object-contain rounded-2xl bg-black"
+                                                                                    style={{ minWidth: '220px' }}
+                                                                                    onLoadedMetadata={(e) => {
+                                                                                        const vid = e.currentTarget;
+                                                                                        if (vid.currentTime === 0) {
+                                                                                            vid.currentTime = 0.5;
+                                                                                        }
+                                                                                    }}
+                                                                                />
+                                                                                {/* Time Overlay */}
+                                                                                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 pointer-events-none z-10">
+                                                                                    <span className="text-[11px] text-white font-medium">
+                                                                                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                                                    </span>
+                                                                                    {msg.sender === 'doctor' && (
+                                                                                        <span>
+                                                                                            {(msg.status === 'seen' || msg.status === 'delivered') ? (
+                                                                                                <CheckCheck size={14} className="text-white" />
+                                                                                            ) : (
+                                                                                                <Check size={14} className="text-white/70" />
+                                                                                            )}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
-                                                                            <div className={`truncate ${msg.sender === 'doctor' ? 'text-white/80' : 'text-slate-600'}`}>{msg.replyTo.text}</div>
-                                                                        </div>
-                                                                    )}
-
-                                                                    {msg.text && (
-                                                                        <div className="whitespace-pre-wrap break-words">
-                                                                            {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, index) => {
-                                                                                if (part.match(/https?:\/\/[^\s]+/)) {
-                                                                                    return (
-                                                                                        <a
-                                                                                            key={index}
-                                                                                            href={part}
-                                                                                            target="_blank"
-                                                                                            rel="noopener noreferrer"
-                                                                                            className="text-blue-500 hover:underline"
-                                                                                            onClick={(e) => e.stopPropagation()}
-                                                                                        >
-                                                                                            {part}
-                                                                                        </a>
-                                                                                    );
-                                                                                }
-                                                                                return part;
-                                                                            })}
-                                                                        </div>
-                                                                    )}
-                                                                    {msg.preview && (
-                                                                        <div className="mt-2 mb-1 border-l-[3px] border-[#3390EC] pl-2 rounded-sm overflow-hidden cursor-pointer hover:bg-black/5 transition-colors" onClick={() => window.open(msg.preview?.url, '_blank')}>
-                                                                            <div className="text-[#3390EC] font-semibold text-sm line-clamp-1">{msg.preview.title || "Link Preview"}</div>
-                                                                            <div className="text-sm text-black/80 line-clamp-2">{msg.preview.description}</div>
-                                                                            {msg.preview.image && (
-                                                                                <img src={msg.preview.image} alt="Preview" className="mt-1 rounded-md w-full h-32 object-cover" />
+                                                                            {/* Caption below video */}
+                                                                            {msg.text && (
+                                                                                <div className={`mt-1.5 px-3 py-1.5 rounded-xl text-[14px] shadow-sm ${msg.sender === 'doctor'
+                                                                                    ? 'gel-blue-style text-white'
+                                                                                    : 'bg-white text-slate-800'
+                                                                                    }`}>
+                                                                                    <div className="whitespace-pre-wrap break-words">{msg.text}</div>
+                                                                                </div>
                                                                             )}
                                                                         </div>
-                                                                    )}
-
-                                                                    <div className={`text-[11px] mt-1 flex items-center justify-end gap-1 select-none ${msg.sender === 'doctor' ? 'text-white/80' : 'text-slate-400'
-                                                                        }`}>
-                                                                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                                                        {msg.sender === 'doctor' && (
-                                                                            <span>
-                                                                                {(msg.status === 'seen' || msg.status === 'delivered') ? (
-                                                                                    // Double Check (Delivered/Seen)
-                                                                                    <CheckCheck size={16} className="text-white" />
-                                                                                ) : (
-                                                                                    // Single Check (Sent)
-                                                                                    <Check size={16} className="text-white/70" />
+                                                                    ) : (
+                                                                        /* NORMAL MESSAGE — existing bubble layout */
+                                                                        <div
+                                                                            className={`max-w-[85%] sm:max-w-[75%] px-3 py-2 text-[14px] md:text-[15px] leading-relaxed relative shadow-sm group cursor-pointer transition-transform active:scale-[0.98] ${msg.sender === 'doctor'
+                                                                                ? 'gel-blue-style text-white rounded-2xl md:rounded-3xl bubble-tail-out'
+                                                                                : 'bg-white text-slate-800 rounded-2xl md:rounded-3xl bubble-tail-in'
+                                                                                } ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}
+                                                                            onContextMenu={(e) => {
+                                                                                e.preventDefault();
+                                                                                setMsgContextMenu({ id: msg.id, x: e.clientX, y: e.clientY });
+                                                                            }}
+                                                                            onTouchStart={(e) => {
+                                                                                const touch = e.touches[0];
+                                                                                const timer = setTimeout(() => {
+                                                                                    setMsgContextMenu({ id: msg.id, x: touch.clientX, y: touch.clientY });
+                                                                                }, 500);
+                                                                                (window as any).__lastTouchTimer = timer;
+                                                                            }}
+                                                                            onTouchEnd={() => {
+                                                                                clearTimeout((window as any).__lastTouchTimer);
+                                                                            }}
+                                                                        >
+                                                                            {msg.isPinned && (
+                                                                                <div className="absolute -right-2 -top-2 bg-blue-500 text-white rounded-full p-0.5 shadow-sm scale-75 z-10">
+                                                                                    <Pin size={12} fill="white" />
+                                                                                </div>
+                                                                            )}
+                                                                            {msg.replyTo && (
+                                                                                <div
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        if (msg.replyTo) {
+                                                                                            scrollToAndHighlight(msg.replyTo.id);
+                                                                                        }
+                                                                                    }}
+                                                                                    className={`mb-2 border-l-[3px] rounded-r-md px-2 py-1 cursor-pointer text-xs transition-colors ${msg.sender === 'doctor'
+                                                                                        ? 'border-white/60 bg-white/10 hover:bg-white/20'
+                                                                                        : 'border-promed-primary bg-promed-light/50 hover:bg-promed-light'
+                                                                                        }`}
+                                                                                >
+                                                                                    <div className={`font-black uppercase tracking-widest text-[10px] ${msg.sender === 'doctor' ? 'text-white/90' : 'text-promed-primary'}`}>
+                                                                                        {msg.replyTo.displayName || (msg.replyTo.sender === 'doctor' ? t('doctor') : t('patient'))}
+                                                                                    </div>
+                                                                                    <div className={`truncate ${msg.sender === 'doctor' ? 'text-white/80' : 'text-slate-600'}`}>{msg.replyTo.text}</div>
+                                                                                </div>
+                                                                            )}
+                                                                            {msg.text && (
+                                                                                <div className="whitespace-pre-wrap break-words">
+                                                                                    {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, index) => {
+                                                                                        if (part.match(/https?:\/\/[^\s]+/)) {
+                                                                                            return (
+                                                                                                <a
+                                                                                                    key={index}
+                                                                                                    href={part}
+                                                                                                    target="_blank"
+                                                                                                    rel="noopener noreferrer"
+                                                                                                    className="text-blue-500 hover:underline"
+                                                                                                    onClick={(e) => e.stopPropagation()}
+                                                                                                >
+                                                                                                    {part}
+                                                                                                </a>
+                                                                                            );
+                                                                                        }
+                                                                                        return part;
+                                                                                    })}
+                                                                                </div>
+                                                                            )}
+                                                                            {msg.image && (
+                                                                                <div className="mt-1 mb-2">
+                                                                                    <img src={msg.image} alt="Attachment" className="max-w-full rounded-xl max-h-64 object-contain" />
+                                                                                </div>
+                                                                            )}
+                                                                            {msg.preview && !msg.image && (
+                                                                                <div className="mt-2 mb-1 border-l-[3px] border-[#3390EC] pl-2 rounded-sm overflow-hidden cursor-pointer hover:bg-black/5 transition-colors" onClick={() => window.open(msg.preview?.url, '_blank')}>
+                                                                                    <div className="text-[#3390EC] font-semibold text-sm line-clamp-1">{msg.preview.title || "Link Preview"}</div>
+                                                                                    <div className="text-sm text-black/80 line-clamp-2">{msg.preview.description}</div>
+                                                                                    {msg.preview.image && (
+                                                                                        <img src={msg.preview.image} alt="Preview" className="mt-1 rounded-md w-full h-32 object-cover" />
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
+                                                                            <div className={`text-[11px] mt-1 flex items-center justify-end gap-1 select-none ${msg.sender === 'doctor' ? 'text-white/80' : 'text-slate-400'}`}>
+                                                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                                                {msg.sender === 'doctor' && (
+                                                                                    <span>
+                                                                                        {(msg.status === 'seen' || msg.status === 'delivered') ? (
+                                                                                            <CheckCheck size={16} className="text-white" />
+                                                                                        ) : (
+                                                                                            <Check size={16} className="text-white/70" />
+                                                                                        )}
+                                                                                    </span>
                                                                                 )}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                            </div>
-                                                        </React.Fragment>
-                                                    ))
-                                                    }
-                                                </div >
-                                            ))}
-                                            <div ref={messagesEndRef} />
-                                        </>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div ref={messagesEndRef} className="h-4" />
+                                        </div>
                                     );
                                 })()}
                             </div>
@@ -1340,6 +1486,109 @@ match /patients/{patientId}/messages/{messageId} {
                                     </>
                                 )}
 
+                                {/* Media Attachment Preview */}
+                                {fileAttachment && (
+                                    <div className="absolute bottom-full left-0 right-0 bg-slate-50/95 backdrop-blur-sm border-t border-slate-200 shadow-lg rounded-t-2xl overflow-hidden">
+                                        {/* Upload Progress Bar */}
+                                        {isSending && uploadProgress > 0 && (
+                                            <div className="h-1 bg-slate-200 w-full">
+                                                <motion.div
+                                                    className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"
+                                                    initial={{ width: '0%' }}
+                                                    animate={{ width: `${uploadProgress}%` }}
+                                                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                                                />
+                                            </div>
+                                        )}
+                                        <div className="p-3 flex items-center gap-3">
+                                            {/* Thumbnail / Preview */}
+                                            <div className="w-14 h-14 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0 relative">
+                                                {fileAttachment.type.startsWith('video/') ? (
+                                                    videoThumbnail ? (
+                                                        <>
+                                                            <img src={videoThumbnail} alt="Video preview" className="w-full h-full object-cover" />
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                                                <Play size={20} className="text-white" fill="white" />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <FileVideo size={24} className="text-slate-400" />
+                                                    )
+                                                ) : (
+                                                    <img src={URL.createObjectURL(fileAttachment)} alt="Preview" className="w-full h-full object-cover" />
+                                                )}
+                                            </div>
+                                            {/* Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-slate-700 truncate">{fileAttachment.name}</p>
+                                                <p className="text-xs text-slate-500">
+                                                    {(fileAttachment.size / 1024 / 1024).toFixed(2)} MB
+                                                    {isSending && uploadProgress > 0 && (
+                                                        <span className="ml-2 text-blue-500 font-bold">
+                                                            {uploadProgress < 100 ? `${uploadProgress}%` : '✓'}
+                                                        </span>
+                                                    )}
+                                                </p>
+                                            </div>
+                                            {/* Cancel */}
+                                            {!isSending && (
+                                                <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setFileAttachment(null); setVideoThumbnail(null); if (fileInputRef.current) fileInputRef.current.value = ''; }} className="p-2 text-slate-400 hover:text-red-500 rounded-full hover:bg-slate-100 transition-colors">
+                                                    <X size={20} />
+                                                </motion.button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*,video/mp4,video/quicktime,video/x-msvideo,video/webm,video/x-matroska"
+                                    onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            const file = e.target.files[0];
+                                            setFileAttachment(file);
+                                            setVideoThumbnail(null);
+
+                                            // Generate video thumbnail
+                                            if (file.type.startsWith('video/')) {
+                                                const video = document.createElement('video');
+                                                video.preload = 'metadata';
+                                                video.muted = true;
+                                                video.playsInline = true;
+                                                const objectUrl = URL.createObjectURL(file);
+                                                video.src = objectUrl;
+                                                video.onloadeddata = () => {
+                                                    video.currentTime = Math.min(1, video.duration * 0.1);
+                                                };
+                                                video.onseeked = () => {
+                                                    const canvas = document.createElement('canvas');
+                                                    canvas.width = video.videoWidth;
+                                                    canvas.height = video.videoHeight;
+                                                    const ctx = canvas.getContext('2d');
+                                                    if (ctx) {
+                                                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                                                        setVideoThumbnail(canvas.toDataURL('image/jpeg', 0.7));
+                                                    }
+                                                    URL.revokeObjectURL(objectUrl);
+                                                };
+                                            }
+
+                                            setTimeout(() => textareaRef.current?.focus(), 100);
+                                        }
+                                    }}
+                                />
+
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className={`p-2.5 rounded-xl hover:bg-white transition-all flex-shrink-0 ${fileAttachment ? 'text-blue-500 bg-white shadow-sm' : 'text-slate-400'}`}
+                                    disabled={isSending}
+                                    title="Attach Media"
+                                >
+                                    <Paperclip size={24} />
+                                </motion.button>
+
                                 {/* 1. Emoji (Left) */}
                                 <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -1382,7 +1631,7 @@ match /patients/{patientId}/messages/{messageId} {
                                 <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                     ref={sendButtonRef}
                                     onClick={(e) => {
-                                        if (!isSending && messageInput.trim()) {
+                                        if (!isSending && (messageInput.trim() || fileAttachment)) {
                                             if (isScheduledView) {
                                                 setIsScheduleModalOpen(true);
                                             } else {
@@ -1392,12 +1641,12 @@ match /patients/{patientId}/messages/{messageId} {
                                     }}
                                     onContextMenu={(e) => {
                                         e.preventDefault();
-                                        if (messageInput.trim()) {
+                                        if (messageInput.trim() || fileAttachment) {
                                             setSendButtonContextMenu({ x: e.clientX, y: e.clientY });
                                         }
                                     }}
                                     onTouchStart={(e) => {
-                                        if (!messageInput.trim()) return;
+                                        if (!messageInput.trim() && !fileAttachment) return;
                                         // e.preventDefault(); // CAREFUL: This might block click
                                         longPressTimeoutRef.current = setTimeout(() => {
                                             // Trigger context menu for mobile
@@ -1410,8 +1659,8 @@ match /patients/{patientId}/messages/{messageId} {
                                             clearTimeout(longPressTimeoutRef.current);
                                         }
                                     }}
-                                    disabled={!messageInput.trim() || isSending}
-                                    className={`p-2.5 rounded-xl transition-all duration-200 flex-shrink-0 flex items-center justify-center ${!messageInput.trim() ? 'text-slate-400 cursor-not-allowed' : 'bg-blue-500 text-white shadow-md hover:bg-blue-600 hover:shadow-lg active:scale-95'}`}
+                                    disabled={(!messageInput.trim() && !fileAttachment) || isSending}
+                                    className={`p-2.5 rounded-xl transition-all duration-200 flex-shrink-0 flex items-center justify-center ${(!messageInput.trim() && !fileAttachment) ? 'text-slate-400 cursor-not-allowed' : 'bg-blue-500 text-white shadow-md hover:bg-blue-600 hover:shadow-lg active:scale-95'}`}
                                     title="Send Message (Hold for options)"
                                 >
                                     {isSending ? (
@@ -1419,11 +1668,11 @@ match /patients/{patientId}/messages/{messageId} {
                                     ) : editingMessageId ? (
                                         <Check size={20} />
                                     ) : (
-                                        <Send size={20} className={!messageInput.trim() ? "" : "ml-0.5"} fill={!messageInput.trim() ? "none" : "currentColor"} />
+                                        <Send size={20} className={(!messageInput.trim() && !fileAttachment) ? "" : "ml-0.5"} fill={(!messageInput.trim() && !fileAttachment) ? "none" : "currentColor"} />
                                     )}
                                 </motion.button>
                             </div>
-                        </div>
+                        </div >
                     </>
                 ) : (
                     <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/50 p-6">
@@ -1438,142 +1687,144 @@ match /patients/{patientId}/messages/{messageId} {
                         </p>
                     </div>
                 )}
-            </div>
+            </div >
             {/* Global Message Context Menu Overlay */}
             {/* Global Message Context Menu Overlay */}
-            {msgContextMenu && (
-                <Portal lockScroll={false}>
-                    <div
-                        className="fixed inset-0 z-[99999] isolate flex items-start justify-start"
-                        onMouseDown={(e) => {
-                            // Only close if the mousedown happened on the backdrop itself
-                            if (e.target === e.currentTarget) {
-                                e.preventDefault();
-                                setMsgContextMenu(null);
-                            }
-                        }}
-                        onContextMenu={(e) => { e.preventDefault(); setMsgContextMenu(null); }}
-                    >
-                        {/* Semi-transparent backdrop for visual only, click handled by parent */}
-                        <div className="absolute inset-0 bg-black/5 pointer-events-none" />
+            {
+                msgContextMenu && (
+                    <Portal lockScroll={false}>
+                        <div
+                            className="fixed inset-0 z-[99999] isolate flex items-start justify-start"
+                            onMouseDown={(e) => {
+                                // Only close if the mousedown happened on the backdrop itself
+                                if (e.target === e.currentTarget) {
+                                    e.preventDefault();
+                                    setMsgContextMenu(null);
+                                }
+                            }}
+                            onContextMenu={(e) => { e.preventDefault(); setMsgContextMenu(null); }}
+                        >
+                            {/* Semi-transparent backdrop for visual only, click handled by parent */}
+                            <div className="absolute inset-0 bg-black/5 pointer-events-none" />
 
-                        {(() => {
-                            const targetMsg = messages.find(m => m.id === msgContextMenu.id);
-                            if (!targetMsg) return null;
+                            {(() => {
+                                const targetMsg = messages.find(m => m.id === msgContextMenu.id);
+                                if (!targetMsg) return null;
 
-                            // Smart Positioning logic
-                            const menuWidth = 200;
-                            const menuHeight = 280;
-                            let x = msgContextMenu.x;
-                            let y = msgContextMenu.y;
+                                // Smart Positioning logic
+                                const menuWidth = 200;
+                                const menuHeight = 280;
+                                let x = msgContextMenu.x;
+                                let y = msgContextMenu.y;
 
-                            // Boundary checks
-                            if (x + menuWidth > window.innerWidth) x -= menuWidth;
-                            if (y + menuHeight > window.innerHeight) y -= menuHeight;
-                            if (x < 0) x = 10;
-                            if (y < 0) y = 10;
+                                // Boundary checks
+                                if (x + menuWidth > window.innerWidth) x -= menuWidth;
+                                if (y + menuHeight > window.innerHeight) y -= menuHeight;
+                                if (x < 0) x = 10;
+                                if (y < 0) y = 10;
 
-                            return (
-                                <div
-                                    className="fixed z-[100000] animate-in fade-in zoom-in-95 duration-200 shadow-2xl rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-xl p-1.5 flex flex-col gap-0.5 min-w-[200px]"
-                                    style={{ top: y, left: x }}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                        onClick={(e) => {
-                                            setMsgContextMenu(null);
-                                            setReplyingToMessage(targetMsg);
-                                            setTimeout(() => textareaRef.current?.focus(), 100);
-                                        }}
-                                        className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 text-slate-700 hover:text-blue-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
+                                return (
+                                    <div
+                                        className="fixed z-[100000] animate-in fade-in zoom-in-95 duration-200 shadow-2xl rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-xl p-1.5 flex flex-col gap-0.5 min-w-[200px]"
+                                        style={{ top: y, left: x }}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => e.stopPropagation()}
                                     >
-                                        <Reply size={18} className="text-slate-400" />
-                                        <span>{t('reply')}</span>
-                                    </motion.button>
-                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                        onClick={async (e) => {
-                                            setMsgContextMenu(null);
-                                            try {
-                                                if (navigator.clipboard && navigator.clipboard.writeText) {
-                                                    await navigator.clipboard.writeText(targetMsg.text);
-                                                    showToastSuccess(t('success') || 'Bajarildi', t('copied_to_clipboard') || 'Nusxalandi');
-                                                } else {
-                                                    const textArea = document.createElement("textarea");
-                                                    textArea.value = targetMsg.text;
-                                                    document.body.appendChild(textArea);
-                                                    textArea.select();
-                                                    document.execCommand('copy');
-                                                    document.body.removeChild(textArea);
-                                                    showToastSuccess(t('success') || 'Bajarildi', t('copied_to_clipboard') || 'Nusxalandi');
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            onClick={(e) => {
+                                                setMsgContextMenu(null);
+                                                setReplyingToMessage(targetMsg);
+                                                setTimeout(() => textareaRef.current?.focus(), 100);
+                                            }}
+                                            className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 text-slate-700 hover:text-blue-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
+                                        >
+                                            <Reply size={18} className="text-slate-400" />
+                                            <span>{t('reply')}</span>
+                                        </motion.button>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            onClick={async (e) => {
+                                                setMsgContextMenu(null);
+                                                try {
+                                                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                                                        await navigator.clipboard.writeText(targetMsg.text);
+                                                        showToastSuccess(t('success') || 'Bajarildi', t('copied_to_clipboard') || 'Nusxalandi');
+                                                    } else {
+                                                        const textArea = document.createElement("textarea");
+                                                        textArea.value = targetMsg.text;
+                                                        document.body.appendChild(textArea);
+                                                        textArea.select();
+                                                        document.execCommand('copy');
+                                                        document.body.removeChild(textArea);
+                                                        showToastSuccess(t('success') || 'Bajarildi', t('copied_to_clipboard') || 'Nusxalandi');
+                                                    }
+                                                } catch (err) {
+                                                    console.error("Copy failed:", err);
+                                                    showToastError("Xatolik", "Nusxalashda xatolik yuz berdi");
                                                 }
-                                            } catch (err) {
-                                                console.error("Copy failed:", err);
-                                                showToastError("Xatolik", "Nusxalashda xatolik yuz berdi");
-                                            }
-                                        }}
-                                        className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 text-slate-700 hover:text-blue-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
-                                    >
-                                        <Copy size={18} className="text-slate-400" />
-                                        <span>{t('copy')}</span>
-                                    </motion.button>
-                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                        onClick={async (e) => {
-                                            // Debug alert removed, relying on console
-                                            setMsgContextMenu(null);
-                                            try {
-                                                await handleTogglePin(targetMsg);
-                                            } catch (err) {
-                                                console.error("Pin action failed:", err);
-                                                alert("Pin action failed: " + err);
-                                            }
-                                        }}
-                                        className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-100 rounded-xl transition-all text-sm font-semibold text-left w-full ${targetMsg.isPinned ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'}`}
-                                    >
-                                        {targetMsg.isPinned ? <PinOff size={18} className="text-blue-500" /> : <Pin size={18} className="text-slate-400" />}
-                                        <span>{targetMsg.isPinned ? t('unpin') : t('pin')}</span>
-                                    </motion.button>
-                                    {targetMsg.sender === 'doctor' && (
-                                        <>
-                                            <div className="h-px bg-slate-100 my-1 mx-2" />
-                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                onClick={(e) => {
-                                                    setMsgContextMenu(null);
-                                                    setEditingMessageId(targetMsg.id);
-                                                    setMessageInput(targetMsg.text);
-                                                    if (textareaRef.current) textareaRef.current.style.height = 'auto';
-                                                    setTimeout(() => {
-                                                        textareaRef.current?.focus();
-                                                        if (textareaRef.current) {
-                                                            const scrollHeight = textareaRef.current.scrollHeight;
-                                                            textareaRef.current.style.height = `${Math.min(scrollHeight, 150)}px`;
-                                                        }
-                                                    }, 100);
-                                                }}
-                                                className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 text-slate-700 hover:text-blue-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
-                                            >
-                                                <Edit2 size={18} className="text-slate-400" />
-                                                <span>{t('edit')}</span>
-                                            </motion.button>
-                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                onClick={(e) => {
-                                                    setMsgContextMenu(null);
-                                                    setMessageToDelete(targetMsg);
-                                                    setIsDeleteModalOpen(true);
-                                                }}
-                                                className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
-                                            >
-                                                <Trash2 size={18} className="text-red-400" />
-                                                <span>{t('delete')}</span>
-                                            </motion.button>
-                                        </>
-                                    )}
-                                </div>
-                            );
-                        })()}
-                    </div>
-                </Portal>
-            )}
+                                            }}
+                                            className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 text-slate-700 hover:text-blue-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
+                                        >
+                                            <Copy size={18} className="text-slate-400" />
+                                            <span>{t('copy')}</span>
+                                        </motion.button>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            onClick={async (e) => {
+                                                // Debug alert removed, relying on console
+                                                setMsgContextMenu(null);
+                                                try {
+                                                    await handleTogglePin(targetMsg);
+                                                } catch (err) {
+                                                    console.error("Pin action failed:", err);
+                                                    alert("Pin action failed: " + err);
+                                                }
+                                            }}
+                                            className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-100 rounded-xl transition-all text-sm font-semibold text-left w-full ${targetMsg.isPinned ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'}`}
+                                        >
+                                            {targetMsg.isPinned ? <PinOff size={18} className="text-blue-500" /> : <Pin size={18} className="text-slate-400" />}
+                                            <span>{targetMsg.isPinned ? t('unpin') : t('pin')}</span>
+                                        </motion.button>
+                                        {targetMsg.sender === 'doctor' && (
+                                            <>
+                                                <div className="h-px bg-slate-100 my-1 mx-2" />
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                    onClick={(e) => {
+                                                        setMsgContextMenu(null);
+                                                        setEditingMessageId(targetMsg.id);
+                                                        setMessageInput(targetMsg.text);
+                                                        if (textareaRef.current) textareaRef.current.style.height = 'auto';
+                                                        setTimeout(() => {
+                                                            textareaRef.current?.focus();
+                                                            if (textareaRef.current) {
+                                                                const scrollHeight = textareaRef.current.scrollHeight;
+                                                                textareaRef.current.style.height = `${Math.min(scrollHeight, 150)}px`;
+                                                            }
+                                                        }, 100);
+                                                    }}
+                                                    className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 text-slate-700 hover:text-blue-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
+                                                >
+                                                    <Edit2 size={18} className="text-slate-400" />
+                                                    <span>{t('edit')}</span>
+                                                </motion.button>
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                    onClick={(e) => {
+                                                        setMsgContextMenu(null);
+                                                        setMessageToDelete(targetMsg);
+                                                        setIsDeleteModalOpen(true);
+                                                    }}
+                                                    className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
+                                                >
+                                                    <Trash2 size={18} className="text-red-400" />
+                                                    <span>{t('delete')}</span>
+                                                </motion.button>
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    </Portal>
+                )
+            }
 
             {/* Delete Confirmation Modal */}
             <DeleteModal

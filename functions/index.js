@@ -765,7 +765,7 @@ const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 
 // --- HELPER: Process Telegram Task (Shared by Trigger & Scheduler) ---
 async function processTelegramTask(data, ref) {
-    const { telegramChatId, text, patientName, imageUrl, voiceUrl, action, telegramMessageId, replyToMessageId } = data;
+    const { telegramChatId, text, patientName, imageUrl, voiceUrl, videoUrl, action, telegramMessageId, replyToMessageId } = data;
     let sentMessageId = null;
 
     console.log(`📨 Executing task: ${action || 'SEND'} for ${patientName} (${telegramChatId})`);
@@ -784,20 +784,23 @@ async function processTelegramTask(data, ref) {
             const extra = {};
             if (replyToMessageId) extra.reply_to_message_id = replyToMessageId;
 
-            if (text) {
-                console.log(`📤 Sending Text...`);
-                const sent = await bot.telegram.sendMessage(telegramChatId, text, extra);
+            if (videoUrl) {
+                const videoExtra = { ...extra, caption: text || undefined };
+                console.log(`📤 Sending Video...`);
+                const sent = await bot.telegram.sendVideo(telegramChatId, videoUrl, videoExtra);
                 sentMessageId = sent.message_id;
-            }
-            if (imageUrl) {
+            } else if (imageUrl) {
                 const photoExtra = { ...extra, caption: text || undefined };
                 console.log(`📤 Sending Photo...`);
                 const sent = await bot.telegram.sendPhoto(telegramChatId, imageUrl, photoExtra);
                 sentMessageId = sent.message_id;
-            }
-            if (voiceUrl) {
+            } else if (voiceUrl) {
                 console.log(`📤 Sending Voice...`);
                 const sent = await bot.telegram.sendVoice(telegramChatId, voiceUrl, extra);
+                sentMessageId = sent.message_id;
+            } else if (text) {
+                console.log(`📤 Sending Text...`);
+                const sent = await bot.telegram.sendMessage(telegramChatId, text, extra);
                 sentMessageId = sent.message_id;
             }
         }
