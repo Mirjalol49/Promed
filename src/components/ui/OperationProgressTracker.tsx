@@ -93,7 +93,7 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
     useEffect(() => {
         if (!accountId) return;
         const unsubscribe = subscribeToStaff(accountId, (data) => {
-            setStaffList(data.filter(s => s.status === 'active'));
+            setStaffList(data);
         }, (err) => console.error(err));
         return () => unsubscribe();
     }, [accountId]);
@@ -107,6 +107,61 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Auto-migrate: convert old staff names into robust IDs
+    useEffect(() => {
+        if (staffList.length === 0 || !dataState.sessions) return;
+
+        let migrated = false;
+        const nextSessions = dataState.sessions.map(session => {
+            let sessionMigrated = false;
+            const nextSteps = session.steps.map(step => {
+                if (!step.doctor) return step;
+
+                const namesOrIds = step.doctor.split(',').map(n => n.trim()).filter(Boolean);
+                let stepMigrated = false;
+                const newIds = namesOrIds.map(val => {
+                    // Try to migrate if `val` is exactly a staff's fullName or fuzzy matched
+                    const exactMatch = staffList.find(s => s.id === val);
+                    if (exactMatch) return val; // Already an ID
+
+                    const staffMatch = staffList.find(s => s.fullName === val)
+                        || staffList.find(s => s.fullName.toLowerCase() === val.toLowerCase())
+                        || staffList.find(s => {
+                            const nameParts = s.fullName.toLowerCase().split(' ').filter(p => p.length > 2);
+                            const valParts = val.toLowerCase().split(' ').filter(p => p.length > 2);
+                            return nameParts.some(np => valParts.some(vp => np.includes(vp) || vp.includes(np)));
+                        });
+
+                    // If we found a match by name/fuzzy, and `val` is not matching the staff's id already...
+                    if (staffMatch && staffMatch.id && staffMatch.id !== val) {
+                        stepMigrated = true;
+                        return staffMatch.id;
+                    }
+                    return val;
+                });
+
+                if (stepMigrated) {
+                    sessionMigrated = true;
+                    return { ...step, doctor: newIds.join(', ') };
+                }
+                return step;
+            });
+
+            if (sessionMigrated) {
+                migrated = true;
+                return { ...session, steps: nextSteps };
+            }
+            return session;
+        });
+
+        if (migrated) {
+            const nextDataState = { ...dataState, sessions: nextSessions };
+            // Opt-in background sync
+            setDataState(nextDataState);
+            updateTracker(patientId, nextDataState).catch(console.error);
+        }
+    }, [staffList, dataState.sessions, patientId]);
 
     // Actions
     const addStep = () => {
@@ -211,7 +266,16 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
 
                                         <div className="flex flex-col gap-2.5 pl-10">
                                             {doctorNames.map((dName, dIdx) => {
-                                                const dStaff = staffList.find(s => s.fullName === dName);
+                                                const dStaff = staffList.find(s => s.id === dName)
+                                                    || staffList.find(s => s.fullName === dName)
+                                                    || staffList.find(s => s.fullName.toLowerCase() === dName.toLowerCase())
+                                                    || staffList.find(s => {
+                                                        const nameParts = s.fullName.toLowerCase().split(' ').filter(p => p.length > 2);
+                                                        const valParts = dName.toLowerCase().split(' ').filter(p => p.length > 2);
+                                                        return nameParts.some(np => valParts.some(vp => np.includes(vp) || vp.includes(np)));
+                                                    });
+
+                                                const displayName = dStaff ? dStaff.fullName : dName;
                                                 const dSplits = dStaff ? transactions.filter(t => t.staffId === dStaff.id).sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime()) : [];
                                                 const dLatestSplit = dSplits.length > 0 ? dSplits[0] : null;
 
@@ -219,16 +283,16 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                                     <div key={dIdx} className="flex items-center gap-3 min-w-0 bg-slate-50/60 p-2.5 rounded-xl border border-slate-100">
                                                         <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm border-[2px] border-white">
                                                             {dStaff?.imageUrl ? (
-                                                                <img src={dStaff.imageUrl} alt={dName} className="w-full h-full object-cover" />
+                                                                <img src={dStaff.imageUrl} alt={displayName} className="w-full h-full object-cover" />
                                                             ) : (
                                                                 <div className="w-full h-full flex items-center justify-center text-[12px] font-black text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
-                                                                    {dName.charAt(0)}
+                                                                    {displayName.charAt(0)}
                                                                 </div>
                                                             )}
                                                         </div>
                                                         <div className="flex flex-col min-w-0 flex-1">
                                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                                <span className="font-bold text-slate-700 text-[13px] truncate">{dName}</span>
+                                                                <span className="font-bold text-slate-700 text-[13px] truncate">{displayName}</span>
                                                                 {dStaff && dStaff.role && (
                                                                     <span className="text-[9px] uppercase tracking-widest font-bold text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200/80 shrink-0">
                                                                         {t(`role_${dStaff.role}`) || dStaff.role}
@@ -299,7 +363,7 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                         className={`w-full bg-white border outline-none transition-all rounded-lg px-4 py-3 text-[14px] flex items-center justify-between text-left ${isDoctorDropdownOpen ? 'border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-200 hover:border-slate-300'}`}
                     >
                         <span className={`truncate ${newDoctors.length > 0 ? 'text-slate-900 font-bold' : 'text-slate-400 font-medium'}`}>
-                            {newDoctors.length > 0 ? newDoctors.join(', ') : (t('select_staff') || 'Xodim tanlash')}
+                            {newDoctors.length > 0 ? newDoctors.map(id => staffList.find(s => s.id === id)?.fullName || id).join(', ') : (t('select_staff') || 'Xodim tanlash')}
                         </span>
                         <ChevronDown size={16} className={`flex-shrink-0 text-slate-400 transition-transform duration-200 ${isDoctorDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} />
                     </button>
@@ -312,19 +376,19 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                 transition={{ duration: 0.15 }}
                                 className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto p-1"
                             >
-                                {staffList.length === 0 ? (
+                                {staffList.filter(s => s.status === 'active').length === 0 ? (
                                     <div className="p-4 text-[13px] text-slate-500 text-center font-medium">{t('no_staff_found')}</div>
                                 ) : (
-                                    staffList.map(staff => (
+                                    staffList.filter(s => s.status === 'active').map(staff => (
                                         <button
                                             key={staff.id}
                                             type="button"
                                             onClick={(e) => {
                                                 e.preventDefault();
-                                                if (newDoctors.includes(staff.fullName)) {
-                                                    setNewDoctors(newDoctors.filter(d => d !== staff.fullName));
+                                                if (newDoctors.includes(staff.id)) {
+                                                    setNewDoctors(newDoctors.filter(d => d !== staff.id));
                                                 } else {
-                                                    setNewDoctors([...newDoctors, staff.fullName]);
+                                                    setNewDoctors([...newDoctors, staff.id]);
                                                 }
                                             }}
                                             className="w-full text-left px-3 py-3 hover:bg-slate-50 rounded-lg flex items-center gap-3 transition-colors group"
@@ -343,7 +407,7 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                                 <div className="text-[14px] font-bold text-slate-700 truncate group-hover:text-blue-600 transition-colors leading-tight">{staff.fullName}</div>
                                                 <div className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5 font-semibold">{t(`role_${staff.role}`) || staff.role}</div>
                                             </div>
-                                            {newDoctors.includes(staff.fullName) && (
+                                            {newDoctors.includes(staff.id) && (
                                                 <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
                                                     <Check size={14} className="text-blue-600 stroke-[3px]" />
                                                 </div>

@@ -313,6 +313,11 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
     // Find staff info for a split transaction
     const getStaffForSplit = (tx: Transaction) => {
         if (tx.staffId) return staffList.find(s => s.id === tx.staffId);
+        // Fallback for older transactions that didn't record staffId, relying on description
+        if (tx.description?.startsWith('[Split]')) {
+            const rawName = tx.description.replace('[Split]', '').trim();
+            return staffList.find(s => s.fullName === rawName);
+        }
         return undefined;
     };
 

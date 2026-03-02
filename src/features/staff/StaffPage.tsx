@@ -224,7 +224,7 @@ const StaffModal = ({
                                 </div>
 
                                 {/* Role */}
-                                <div className="space-y-1.5 relative z-10">
+                                <div className="space-y-1.5 relative z-50">
                                     <label className="text-sm font-bold text-slate-700 ml-1">{t('role')}</label>
                                     <div className="relative" ref={roleRef}>
                                         <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}

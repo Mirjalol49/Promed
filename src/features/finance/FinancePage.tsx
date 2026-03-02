@@ -1003,27 +1003,58 @@ export const FinancePage = ({ onPatientClick, highlightTransactionId, onHighligh
 
                                                 {/* Description / patient / staff chips */}
                                                 {(tx.description || patient || staff) && (
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        {tx.description && (
-                                                            <span className="text-[11px] text-slate-400 font-medium truncate max-w-[220px]">
-                                                                {tx.description.startsWith('[Split]')
-                                                                    ? `${t('split_from') || '[Split]'} ${staff ? staff.fullName : tx.description.replace('[Split]', '').trim()}`
-                                                                    : tx.description
-                                                                }
-                                                            </span>
-                                                        )}
+                                                    <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                                        {tx.description && (() => {
+                                                            const rawDesc = tx.description.replace('[Split]', '').trim();
+                                                            const isSplit = tx.description.startsWith('[Split]');
+
+                                                            // Hide if it just repeats the staff's name or is a generic salary/patient tag.
+                                                            if (staff && rawDesc === staff.fullName) return null;
+                                                            if (staff && rawDesc.toLowerCase().includes('oylik')) return null;
+                                                            if (staff && rawDesc.toLowerCase().includes('salary')) return null;
+                                                            if (patient && rawDesc === patient.fullName) return null;
+
+                                                            return (
+                                                                <span className="text-[12px] text-slate-500 font-medium truncate max-w-[200px] flex items-center bg-slate-100 rounded-full px-2 py-0.5 border border-slate-200">
+                                                                    {isSplit ? (t('split_from') ? t('split_from').replace('Bo\'linma', 'Ulush') : 'Ulush') : tx.description}
+                                                                </span>
+                                                            );
+                                                        })()}
+
                                                         {patient && (
-                                                            <div className="flex items-center gap-1.5 bg-slate-100 pl-1 pr-2 py-0.5 rounded-full">
-                                                                <div className="w-4 h-4 rounded-full bg-slate-300 overflow-hidden ring-1 ring-white shrink-0">
-                                                                    <ImageWithFallback src={patient.profileImage || ''} alt={patient.fullName} className="w-full h-full object-cover" />
+                                                            <div
+                                                                className="flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 transition-colors cursor-pointer pl-0.5 pr-3 py-[3px] rounded-full border border-sky-100/60 shadow-sm group/patient"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onPatientClick?.(patient.id);
+                                                                }}
+                                                                title={t('patient') || 'Bemor'}
+                                                            >
+                                                                <div className="w-6 h-6 rounded-full bg-sky-200 overflow-hidden shrink-0 flex items-center justify-center border-2 border-white shadow-sm">
+                                                                    {patient.profileImage ? (
+                                                                        <ImageWithFallback src={patient.profileImage || ''} alt={patient.fullName} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <User size={11} className="text-sky-600" />
+                                                                    )}
                                                                 </div>
-                                                                <span className="text-[11px] font-semibold text-slate-600 max-w-[120px] truncate">{patient.fullName}</span>
+                                                                <div className="flex flex-col justify-center">
+                                                                    <span className="text-[8px] font-bold uppercase tracking-widest text-sky-500 leading-none mb-[3px]">{t('patient') || 'Bemor'}</span>
+                                                                    <span className="text-[12px] font-bold text-sky-900 max-w-[150px] md:max-w-[200px] truncate leading-none">{patient.fullName}</span>
+                                                                </div>
                                                             </div>
                                                         )}
                                                         {staff && (
-                                                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 border border-violet-100">
-                                                                <User className="w-3 h-3 text-violet-500 shrink-0" />
-                                                                <span className="text-[11px] font-bold text-violet-600 max-w-[100px] truncate">{staff.fullName}</span>
+                                                            <div
+                                                                className="flex items-center gap-1.5 pl-0.5 pr-3 py-[3px] rounded-full bg-fuchsia-50 border border-fuchsia-100/60 shadow-sm"
+                                                                title={t('doctor_staff') || 'Xodim'}
+                                                            >
+                                                                <div className="w-6 h-6 rounded-full bg-fuchsia-200 overflow-hidden shrink-0 flex items-center justify-center border-2 border-white shadow-sm">
+                                                                    {staff.imageUrl ? <img src={staff.imageUrl} alt={staff.fullName} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-violet-200 text-fuchsia-700 text-[11px] font-bold">{staff.fullName.charAt(0)}</div>}
+                                                                </div>
+                                                                <div className="flex flex-col justify-center">
+                                                                    <span className="text-[8px] font-bold uppercase tracking-widest text-fuchsia-500 leading-none mb-[3px]">{t('staff_member') || 'Xodim'}</span>
+                                                                    <span className="text-[12px] font-bold text-fuchsia-900 max-w-[150px] md:max-w-[200px] truncate leading-none">{staff.fullName}</span>
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </div>
