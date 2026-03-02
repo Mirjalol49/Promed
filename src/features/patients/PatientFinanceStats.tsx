@@ -50,6 +50,7 @@ interface GroupedTransaction {
     splits: Transaction[];
     clinicAmount: number;
     clinicPercent: number;
+    seansNumber?: number;
 }
 
 // A unified timeline item: either grouped income or standalone expense
@@ -225,6 +226,18 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
             t.type === 'expense' && !splitIds.has(t.id) && !t.description?.startsWith('[Split]')
         );
 
+        // Calculate chronological seans numbers globally (across all dates)
+        const allSurgeryIncomesSorted = transactions
+            .filter(t => t.type === 'income' && t.category === 'surgery' && !t.isVoided && !t.returned)
+            .sort((a, b) => {
+                const strA = `${a.date}T${a.time || '00:00'}`;
+                const strB = `${b.date}T${b.time || '00:00'}`;
+                if (strA === strB) {
+                    return a.createdAt && b.createdAt ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() : a.id.localeCompare(b.id);
+                }
+                return strA.localeCompare(strB); // oldest first
+            });
+
         // Build income items if category allows
         let incomeItems: TimelineItem[] = [];
         let expenseItems: TimelineItem[] = [];
@@ -245,7 +258,13 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                 const clinicPercent = Number(income.amount) > 0
                     ? Math.round((clinicAmount / Number(income.amount)) * 100) : 100;
 
-                return { kind: 'income', data: { income, splits: relatedSplits, clinicAmount, clinicPercent } };
+                let seansNumber: number | undefined = undefined;
+                if (income.category === 'surgery' && !income.isVoided && !income.returned) {
+                    const idx = allSurgeryIncomesSorted.findIndex(t => t.id === income.id);
+                    if (idx !== -1) seansNumber = idx + 1;
+                }
+
+                return { kind: 'income', data: { income, splits: relatedSplits, clinicAmount, clinicPercent, seansNumber } };
             });
         }
 
@@ -273,7 +292,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
             return strB.localeCompare(strA);
         });
         return all;
-    }, [dateFilteredTransactions, filterCategory]);
+    }, [dateFilteredTransactions, filterCategory, transactions]);
 
     const totalPages = Math.ceil(timeline.length / ITEMS_PER_PAGE);
     const paginatedTimeline = useMemo(() => {
@@ -715,6 +734,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                                     : 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100'
                                                                     }`}>
                                                                     {income.category === 'surgery' ? <Activity size={10} /> : <Syringe size={10} />}
+                                                                    {item.data.seansNumber ? `${t('seans_n')?.replace('{n}', String(item.data.seansNumber)) || `${item.data.seansNumber}-Seans`} • ` : ''}
                                                                     {t(income.category)}
                                                                 </span>
 
@@ -924,7 +944,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                                                     <div className="font-black text-slate-800 text-sm truncate mb-0.5">{label || (isTax ? t('tax') : 'Staff')}</div>
                                                                                     <div className="flex items-center gap-2">
                                                                                         <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider bg-slate-100 px-1.5 py-0.5 rounded-md">
-                                                                                            {isTax ? (t('tax') || 'Soliq') : (staff?.role || t('salary') || 'Ish haqi')}
+                                                                                            {isTax ? (t('tax') || 'Soliq') : (staff?.role ? (t(`role_${staff.role}`) || staff.role) : t('salary') || 'Ish haqi')}
                                                                                         </span>
                                                                                         <span className={`text-[10px] font-semibold ${colors.text} bg-white px-1.5 py-0.5 rounded-md shadow-sm ring-1 ${colors.ring}`}>
                                                                                             {pct}%

@@ -12,6 +12,7 @@ import {
     User,
     Syringe,
     Clock,
+    Activity,
 } from 'lucide-react';
 import { format, isSameDay, isToday, addDays } from 'date-fns';
 import { uz, ru, enUS } from 'date-fns/locale';
@@ -256,11 +257,13 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                                 }}
                                                 className="flex items-stretch cursor-pointer relative"
                                             >
-                                                {/* Left Time Panel */}
+                                                {/* Left Icon Panel (No Time Needed) */}
                                                 <div className="w-[60px] md:w-[80px] flex items-center justify-center flex-shrink-0 transition-colors gel-blue-style">
-                                                    <span className="text-sm md:text-lg font-black text-white tracking-tight tabular-nums drop-shadow-sm">
-                                                        {format(primaryEvent.date, 'HH:mm')}
-                                                    </span>
+                                                    {primaryEvent.type === 'Operation' ? (
+                                                        <Activity className="w-6 h-6 md:w-8 md:h-8 text-white drop-shadow-sm opacity-90" />
+                                                    ) : (
+                                                        <Syringe className="w-6 h-6 md:w-8 md:h-8 text-white drop-shadow-sm opacity-90" />
+                                                    )}
                                                 </div>
 
                                                 {/* Right Content */}

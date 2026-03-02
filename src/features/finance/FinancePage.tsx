@@ -863,6 +863,7 @@ export const FinancePage = ({ onPatientClick, highlightTransactionId, onHighligh
                     {(() => {
                         const incomeVal = filteredTransactionsList.filter(t => t.type === 'income' && !t.returned && !t.isVoided).reduce((sum, t) => sum + t.amount, 0);
                         const expenseVal = filteredTransactionsList.filter(t => t.type === 'expense' && !t.returned && !t.isVoided).reduce((sum, t) => sum + t.amount, 0);
+                        const netProfitVal = incomeVal - expenseVal;
                         return (
                             <div className="flex flex-col sm:flex-row items-stretch gap-4 px-4 md:px-6 py-4 border-b border-slate-100 bg-white/50">
                                 {/* Income Card Premium */}
@@ -895,6 +896,23 @@ export const FinancePage = ({ onPatientClick, highlightTransactionId, onHighligh
                                         <span className="text-rose-50 font-bold text-[10px] md:text-[11px] uppercase tracking-wider mb-0.5 opacity-90">{t('total_expenses') || 'Jami Xarajatlar'}</span>
                                         <span className="font-black text-lg md:text-xl leading-none truncate block drop-shadow-sm tracking-tight">
                                             -{formatCurrency(expenseVal)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Net Profit Card Premium */}
+                                <div
+                                    className="flex-1 flex items-center gap-3 md:gap-4 shadow-[0_4px_12px_-4px_rgba(59,130,246,0.3)] px-4 py-3 md:px-5 md:py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden"
+                                    style={{ background: 'linear-gradient(180deg, #3B82F6 0%, #2563EB 100%)' }}
+                                >
+                                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+                                    <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0 border border-white/30 backdrop-blur-md z-10 group-hover:scale-105 transition-transform">
+                                        <Wallet className="w-5 h-5 md:w-6 md:h-6 text-white stroke-[2.5] drop-shadow-sm" />
+                                    </div>
+                                    <div className="flex flex-col min-w-0 z-10 text-white justify-center">
+                                        <span className="text-blue-50 font-bold text-[10px] md:text-[11px] uppercase tracking-wider mb-0.5 opacity-90">{t('net_profit') || 'Sof Foyda'}</span>
+                                        <span className="font-black text-lg md:text-xl leading-none truncate block drop-shadow-sm tracking-tight">
+                                            {netProfitVal > 0 ? '+' : ''}{formatCurrency(netProfitVal)}
                                         </span>
                                     </div>
                                 </div>
@@ -1103,7 +1121,7 @@ export const FinancePage = ({ onPatientClick, highlightTransactionId, onHighligh
                 isOpen={isReturnModalOpen}
                 onClose={() => setIsReturnModalOpen(false)}
                 onConfirm={confirmReturn}
-                title={t('return_transaction') || 'Return Transaction?'}
+                title={t('return_transaction_title') || 'Return Transaction?'}
             />
 
             {/* Delete Transaction Modal */}
@@ -1111,7 +1129,7 @@ export const FinancePage = ({ onPatientClick, highlightTransactionId, onHighligh
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={confirmDelete}
-                title={t('delete_transaction') || 'Delete Transaction?'}
+                title={t('delete_transaction_title') || 'Delete Transaction?'}
             />
         </div >
     );

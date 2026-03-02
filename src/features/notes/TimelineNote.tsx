@@ -16,18 +16,12 @@ interface TimelineNoteProps {
     onDelete?: (id: string) => void;
 }
 
-interface ExtendedTimelineNoteProps extends TimelineNoteProps {
-    [key: string]: any;
-}
-
-export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: string, isCompleted: boolean) => void }> = ({ note, index, isLeft, onEdit, onDelete, onStatusChange }) => {
+export const TimelineNote: React.FC<TimelineNoteProps> = ({ note, index, isLeft, onEdit, onDelete, onStatusChange }) => {
     const { t } = useLanguage();
 
     // Inverted tilt: Left cards tilt Left (-), Right cards tilt Right (+)
-    // Only apply tilt on larger screens or reduced on mobile
     const rotation = React.useMemo(() => (isLeft ? -1 : 1) * (4 + Math.random() * 4), [isLeft]);
 
-    // Color-specific styles for the 3D Pin parts
     const getPinColors = (idx: number) => {
         const palettes = [
             { // Blue (Promed)
@@ -84,31 +78,21 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
         const newState = !isCompleted;
         setIsCompleted(newState); // Optimistic
 
-        // Trigger onStatusChange handler
         if (onStatusChange) {
             onStatusChange(note.id, newState);
         } else if (onEdit && (onEdit as any).onStatusChange) {
-            // Fallback for previous hacky way if any
             (onEdit as any).onStatusChange(note.id, newState);
         }
 
         if (!isCompleted) {
-            // Calculate origin based on click position
-            const x = e.clientX / window.innerWidth;
-            const y = e.clientY / window.innerHeight;
+            const x = e.clientX ? e.clientX / window.innerWidth : 0.5;
+            const y = e.clientY ? e.clientY / window.innerHeight : 0.5;
 
-            // Confetti Effect only when marking as done
             const count = 200;
-            const defaults = {
-                origin: { x, y }
-            };
+            const defaults = { origin: { x, y } };
 
             function fire(particleRatio: number, opts: any) {
-                confetti({
-                    ...defaults,
-                    ...opts,
-                    particleCount: Math.floor(count * particleRatio)
-                });
+                confetti({ ...defaults, ...opts, particleCount: Math.floor(count * particleRatio) });
             }
 
             fire(0.25, { spread: 26, startVelocity: 55 });
@@ -119,19 +103,12 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
         }
     };
 
-    // Component for the complex 3D Pin shape
     const RealisticPin = ({ scale = 1 }: { scale?: number }) => (
         <div style={{ transform: `scale(${scale})` }} className="relative flex flex-col items-center justify-end w-10 h-10 filter drop-shadow-[0_4px_3px_rgba(0,0,0,0.2)]">
-            {/* Pin Head (Sphere) */}
             <div className={`w-8 h-8 rounded-full ${pinColors.head} relative z-30 shadow-[inset_0_-2px_4px_rgba(0,0,0,0.2)]`}>
-                {/* Specular Highlight */}
                 <div className={`absolute top-1.5 left-2 w-2.5 h-1.5 rounded-full ${pinColors.highlight} opacity-60 blur-[1px] transform -rotate-45`} />
             </div>
-
-            {/* Pin Neck (Tapered connection) */}
             <div className={`w-3 h-3 -mt-2 ${pinColors.neck} z-20 rounded-sm`} />
-
-            {/* Pin Base (Disc) */}
             <div className={`w-6 h-2 -mt-1 rounded-full ${pinColors.base} z-10 shadow-[0_2px_4px_rgba(0,0,0,0.3)]`} />
         </div>
     );
@@ -144,120 +121,115 @@ export const TimelineNote: React.FC<TimelineNoteProps & { onStatusChange?: (id: 
             exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
             className={`relative flex flex-col md:flex-row items-center justify-between w-full pt-6 mb-8 md:pt-0 md:mb-12 ${isLeft ? 'md:flex-row-reverse' : ''}`}
         >
-            {/* Center Line Connector - Visible on both mobile and desktop explicitly to tie them together cleanly */}
-            <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center h-full -z-10">
+            {/* Center Line Connector - Reimplemented gracefully w/o massive absolute boxes block scrolling */}
+            <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center h-full pointer-events-none z-0">
                 {/* Smaller 3D Pin on Line - Desktop only */}
                 <div className="z-20 relative hidden md:block">
                     <RealisticPin scale={0.6} />
                 </div>
-                {/* Connecting Line - dashed */}
-                <div className="w-0.5 grow border-l-2 border-dashed border-slate-300 absolute top-[-24px] md:top-4 h-[calc(100%+80px)] md:h-[calc(100%+32px)] opacity-40 -z-10" />
+                {/* Connecting Line - dashed. Use perfectly cropped constraints so they don't overlap layout endlessly. */}
+                <div className="w-0.5 border-l-2 border-dashed border-slate-300 absolute top-0 -bottom-8 md:-bottom-12 opacity-40 mix-blend-multiply" />
             </div>
 
             {/* Empty Space for the other side - Hidden on mobile */}
             <div className="hidden md:block md:w-[45%]" />
 
             {/* Note Card */}
-            <motion.div
-                style={{
-                    rotate: window.innerWidth > 768 ? rotation : 0,
-                }}
-                whileHover={{
-                    scale: 1.02,
-                    rotate: 0,
-                    transition: { duration: 0.1, ease: "easeOut" }
-                }}
-                onClick={() => onEdit(note)}
-                className={`
-                    w-full md:w-[45%] p-6 rounded-3xl shadow-xl shadow-slate-200/60 relative cursor-pointer
-                     group transition-all duration-300
-                    ${isLeft ? 'md:origin-top-right' : 'md:origin-top-left'}
-                    ${isCompleted ? 'bg-slate-50/80 border border-emerald-100/50 opacity-90' : 'bg-white'}
-                `}
+            <div
+                className={`w-full md:w-[45%] relative z-10 ${isLeft ? 'md:origin-top-right' : 'md:origin-top-left'} md:[transform:rotate(var(--card-rotate))] md:hover:[transform:rotate(0deg)] transition-all duration-300 ease-out`}
+                style={{ '--card-rotate': `${rotation}deg` } as React.CSSProperties}
             >
                 {/* Visual Pin on the card itself (Top Center) - Tilted with card (Static) */}
-                <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
+                <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-none">
                     <RealisticPin />
-                    {/* Pin Shadow on Paper */}
                     <div className="w-6 h-1.5 bg-black/20 rounded-full blur-[2px] mt-[-2px] ml-1" />
                 </div>
 
-                {/* --- GIANT DONE WATERMARK STAMP --- */}
-                {isCompleted && (
-                    <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none z-0">
-                        <div className="absolute w-full h-full flex items-center justify-center">
+                {/* THE CARD */}
+                <div
+                    onClick={() => onEdit?.(note)}
+                    className={`
+                        w-full p-6 bg-white rounded-3xl shadow-xl shadow-slate-200/60 cursor-pointer overflow-hidden
+                        transition-all duration-300 ease-out active:scale-95 group relative
+                        hover:shadow-2xl hover:shadow-slate-200/80
+                        ${isCompleted ? 'bg-slate-50/80 border border-emerald-100/50 opacity-90' : 'bg-white'}
+                    `}
+                >
+                    {/* --- GIANT DONE WATERMARK STAMP --- */}
+                    {isCompleted && (
+                        <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
                             <div className="transform -rotate-[15deg] border-[6px] border-emerald-500 text-emerald-500 text-3xl md:text-5xl font-black uppercase tracking-[0.2em] px-8 py-4 rounded-3xl opacity-[0.08] select-none whitespace-nowrap">
                                 {t('completed') || 'BAJARILDI'}
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Delete Button (Hover) */}
-                {onDelete && (
-                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(note.id);
-                        }}
-                        className="absolute top-4 right-4 p-2 bg-red-50 text-red-500 rounded-xl opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-100 z-20 shadow-sm md:shadow-none"
-                    >
-                        <Trash2 size={18} />
-                    </motion.button>
-                )}
+                    {/* Delete Button (Hover) */}
+                    {onDelete && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(note.id);
+                            }}
+                            className="absolute top-4 right-4 p-2 bg-red-50 text-red-500 rounded-xl opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-100 z-20 shadow-sm md:shadow-none"
+                        >
+                            <Trash2 size={18} />
+                        </button>
+                    )}
 
-                {/* Single Professional Number Badge */}
-                <div className="mb-4 flex items-center justify-between relative z-10">
-                    <div className="flex items-center gap-2">
-                        {/* Status Badge - Shows Green Check when Done */}
-                        {isCompleted && (
-                            <div className="w-6 h-6 rounded-full bg-green-500 border-2 border-white shadow-md flex items-center justify-center animate-in zoom-in spin-in-12 duration-300">
-                                <Check size={14} className="text-white" strokeWidth={3} />
+                    {/* Header: Step Number */}
+                    <div className="mb-4 flex items-center justify-between relative z-10">
+                        <div className="flex items-center gap-2">
+                            {/* Status Badge */}
+                            {isCompleted && (
+                                <div className="w-6 h-6 rounded-full bg-green-500 border-2 border-white shadow-md flex items-center justify-center animate-in zoom-in spin-in-12 duration-300">
+                                    <Check size={14} className="text-white" strokeWidth={3} />
+                                </div>
+                            )}
+
+                            {/* Step Number Badge */}
+                            <div className={`
+                                px-3 py-1 rounded-full bg-white border ${pinColors.border} shadow-sm
+                                text-xs font-black ${pinColors.text} tracking-widest uppercase flex items-center gap-1.5
+                            `}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${pinColors.head}`}></div>
+                                {t('step')} {String(index + 1).padStart(2, '0')}
                             </div>
-                        )}
-
-                        {/* Step Number Badge */}
-                        <div className={`
-                            px-3 py-1 rounded-full bg-white border ${pinColors.border} shadow-sm
-                            text-xs font-black ${pinColors.text} tracking-widest uppercase flex items-center gap-1.5
-                        `}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${pinColors.head}`}></div>
-                            {t('step')} {String(index + 1).padStart(2, '0')}
                         </div>
                     </div>
+
+                    <h3 className={`relative z-10 font-bold text-lg leading-tight mb-2 line-clamp-2 transition-colors pr-8 ${isCompleted ? 'line-through decoration-slate-400 decoration-2 text-slate-400' : 'text-slate-800'}`}>
+                        {note.title || 'Sarlavhasiz'}
+                    </h3>
+
+                    <p className={`relative z-10 text-sm leading-relaxed line-clamp-4 mb-3 ${isCompleted ? 'line-through decoration-slate-300 decoration-1 text-slate-400' : 'text-slate-600/80'}`}>
+                        {note.content}
+                    </p>
+
+                    <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-xs font-medium text-slate-400 relative z-10">
+                        <span>
+                            {note.createdAt?.toDate
+                                ? format(note.createdAt.toDate(), 'd MMM, HH:mm', { locale: uz })
+                                : 'Date unknown'}
+                        </span>
+
+                        {/* Done Button */}
+                        <button
+                            onClick={handleDone}
+                            className={`
+                                flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-300 hover:scale-105 active:scale-95
+                                ${isCompleted ? 'bg-slate-200/80 text-slate-500 hover:bg-slate-300 hover:text-slate-700' : `${pinColors.btn} shadow-md`}
+                            `}
+                        >
+                            {isCompleted ? (
+                                <React.Fragment><RotateCcw size={14} strokeWidth={2} />{t('undo')}</React.Fragment>
+                            ) : (
+                                <React.Fragment><Check size={14} strokeWidth={3} />{t('done')}</React.Fragment>
+                            )}
+                        </button>
+                    </div>
                 </div>
-
-                <h3 className={`relative z-10 font-bold text-lg leading-tight mb-2 line-clamp-2 group-hover:text-promed-primary transition-colors pr-8 ${isCompleted ? 'line-through decoration-slate-400 decoration-2 text-slate-400' : 'text-slate-800'}`}>
-                    {note.title || 'Sarlavhasiz'}
-                </h3>
-
-                <p className={`relative z-10 text-sm leading-relaxed line-clamp-4 mb-3 ${isCompleted ? 'line-through decoration-slate-300 decoration-1 text-slate-400' : 'text-slate-600/80'}`}>
-                    {note.content}
-                </p>
-
-                <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-xs font-medium text-slate-400 relative z-10">
-                    <span>
-                        {note.createdAt?.toDate
-                            ? format(note.createdAt.toDate(), 'd MMM, HH:mm', { locale: uz })
-                            : 'Date unknown'}
-                    </span>
-
-                    {/* Done Button */}
-                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                        onClick={handleDone}
-                        className={`
-                            flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-300
-                            ${isCompleted ? 'bg-slate-200/80 text-slate-500 hover:bg-slate-300 hover:text-slate-700' : `${pinColors.btn} shadow-md`}
-                        `}
-                    >
-                        {isCompleted ? (
-                            <React.Fragment><RotateCcw size={14} strokeWidth={2} />{t('undo')}</React.Fragment>
-                        ) : (
-                            <React.Fragment><Check size={14} strokeWidth={3} />{t('done')}</React.Fragment>
-                        )}
-                    </motion.button>
-                </div>
-            </motion.div>
+            </div>
         </motion.div>
     );
 };

@@ -498,7 +498,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
 
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="font-bold text-slate-900 text-sm truncate">{split.note || (split.isTax ? (t('tax_exp') || 'Tax/Expense') : 'Staff')}</div>
-                                                                <div className="text-xs text-slate-500 font-medium mt-0.5">{split.isTax ? (t('tax') || 'Tax') : (staff?.role || 'staff')}</div>
+                                                                <div className="text-xs text-slate-500 font-medium mt-0.5">{split.isTax ? (t('tax') || 'Tax') : (staff?.role ? t(`role_${staff.role}`) || staff.role : 'staff')}</div>
                                                             </div>
 
                                                             <div className="flex items-center gap-3">
