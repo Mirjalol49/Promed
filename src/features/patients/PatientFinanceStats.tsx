@@ -23,6 +23,7 @@ import {
     Trash2,
     RotateCcw,
     Activity,
+    Check,
     Syringe,
     Users,
     Calendar as CalendarIcon,
@@ -85,23 +86,28 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
     const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const monthPickerRef = useRef<HTMLDivElement>(null);
+    const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
+    const mobileCategoryRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setCurrentPage(1);
     }, [filterCategory, selectedMonth, pickerYear]);
 
-    // Click outside to close month picker
+    // Click outside to close pickers
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             if (monthPickerRef.current && !monthPickerRef.current.contains(e.target as Node)) {
                 setIsMonthPickerOpen(false);
             }
+            if (mobileCategoryRef.current && !mobileCategoryRef.current.contains(e.target as Node)) {
+                setIsMobileCategoryOpen(false);
+            }
         };
-        if (isMonthPickerOpen) {
+        if (isMonthPickerOpen || isMobileCategoryOpen) {
             document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
         }
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isMonthPickerOpen]);
+    }, [isMonthPickerOpen, isMobileCategoryOpen]);
 
     const MONTH_NAMES_SHORT_MAP: Record<string, string[]> = {
         en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -472,31 +478,66 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
 
                         {/* Category Filters */}
                         <div className="w-full md:w-auto">
-                            {/* Mobile Dropdown Category Filter */}
-                            <div className="md:hidden relative w-full mt-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] rounded-2xl">
-                                <select
-                                    value={filterCategory}
-                                    onChange={(e) => setFilterCategory(e.target.value as any)}
-                                    className="w-full text-white appearance-none rounded-2xl py-3 px-4 font-bold outline-none border border-white/20 transition-all duration-300"
+                            {/* Mobile Dropdown Category Filter (Custom Interactive) */}
+                            <div className="md:hidden relative w-full mt-1.5" ref={mobileCategoryRef}>
+                                <motion.button
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setIsMobileCategoryOpen(!isMobileCategoryOpen)}
+                                    className="relative w-full text-white appearance-none rounded-2xl py-3 px-4 text-left font-bold outline-none border border-white/20 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
                                     style={{
-                                        background: filterCategory === 'income' ? 'linear-gradient(180deg, #34D399 0%, #059669 100%)' :
-                                            filterCategory === 'expense' ? 'linear-gradient(180deg, #F87171 0%, #DC2626 100%)' :
+                                        background: filterCategory === 'income' ? 'linear-gradient(180deg, #10B981 0%, #047857 100%)' :
+                                            filterCategory === 'expense' ? 'linear-gradient(180deg, #EF4444 0%, #B91C1C 100%)' :
                                                 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
-                                        boxShadow: filterCategory === 'income' ? '0 8px 16px -4px rgba(5, 150, 105, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)' :
-                                            filterCategory === 'expense' ? '0 8px 16px -4px rgba(220, 38, 38, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)' :
+                                        boxShadow: filterCategory === 'income' ? '0 8px 16px -4px rgba(4, 120, 87, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -2px 1px rgba(0, 0, 0, 0.2)' :
+                                            filterCategory === 'expense' ? '0 8px 16px -4px rgba(185, 28, 28, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -2px 1px rgba(0, 0, 0, 0.2)' :
                                                 '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
                                     }}
                                 >
-                                    <option value="all" className="text-slate-800 bg-white">{t('filter_all') || 'Barchasi'}</option>
-                                    <option value="income" className="text-slate-800 bg-white">{t('income') || 'Kirim'}</option>
-                                    <option value="expense" className="text-slate-800 bg-white">{t('expense') || 'Xarajat'}</option>
-                                    <option value="surgery" className="text-slate-800 bg-white">{t('surgery') || 'Operatsiya'}</option>
-                                    <option value="injection" className="text-slate-800 bg-white">{t('injection') || 'Inyeksiya'}</option>
-                                </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white opacity-90 drop-shadow-sm">
-                                    <ChevronDown size={18} strokeWidth={3} />
-                                </div>
-                                <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-t-2xl" />
+                                    <span className="relative z-10 block pr-6">
+                                        {filterCategory === 'all' ? (t('filter_all') || 'Barchasi') :
+                                            filterCategory === 'income' ? (t('income') || 'Kirim') :
+                                                filterCategory === 'expense' ? (t('expense') || 'Xarajat') :
+                                                    filterCategory === 'surgery' ? (t('surgery') || 'Operatsiya') :
+                                                        (t('injection') || 'Inyeksiya')
+                                        }
+                                    </span>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/90">
+                                        <ChevronDown size={18} strokeWidth={3} className={`transition-transform duration-300 ${isMobileCategoryOpen ? 'rotate-180' : ''}`} />
+                                    </div>
+                                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-t-2xl" />
+                                </motion.button>
+
+                                <AnimatePresence>
+                                    {isMobileCategoryOpen && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                            transition={{ duration: 0.2, type: "spring", stiffness: 300, damping: 25 }}
+                                            className="absolute top-full left-0 right-0 mt-2 z-50 bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/50 shadow-2xl overflow-hidden p-1.5"
+                                        >
+                                            {(['all', 'income', 'expense', 'surgery', 'injection'] as const).map(cat => (
+                                                <button
+                                                    key={cat}
+                                                    onClick={() => {
+                                                        setFilterCategory(cat);
+                                                        setIsMobileCategoryOpen(false);
+                                                    }}
+                                                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-left font-bold transition-all duration-200 mb-0.5 last:mb-0 ${filterCategory === cat ? 'bg-slate-100/80 text-promed-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'}`}
+                                                >
+                                                    <span className="text-[14px]">
+                                                        {cat === 'all' && (t('filter_all') || 'Barchasi')}
+                                                        {cat === 'income' && (t('income') || 'Kirim')}
+                                                        {cat === 'expense' && (t('expense') || 'Xarajat')}
+                                                        {cat === 'surgery' && (t('surgery') || 'Operatsiya')}
+                                                        {cat === 'injection' && (t('injection') || 'Inyeksiya')}
+                                                    </span>
+                                                    {filterCategory === cat && <Check size={16} strokeWidth={3} />}
+                                                </button>
+                                            ))}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
 
                             {/* Desktop Tabs Category Filter */}
@@ -513,11 +554,11 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                                                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                                 className="absolute inset-0 rounded-xl overflow-hidden"
                                                 style={{
-                                                    background: cat === 'income' ? 'linear-gradient(180deg, #34D399 0%, #059669 100%)' :
-                                                        cat === 'expense' ? 'linear-gradient(180deg, #F87171 0%, #DC2626 100%)' :
+                                                    background: cat === 'income' ? 'linear-gradient(180deg, #10B981 0%, #047857 100%)' :
+                                                        cat === 'expense' ? 'linear-gradient(180deg, #EF4444 0%, #B91C1C 100%)' :
                                                             'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
-                                                    boxShadow: cat === 'income' ? '0 8px 16px -4px rgba(5, 150, 105, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)' :
-                                                        cat === 'expense' ? '0 8px 16px -4px rgba(220, 38, 38, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)' :
+                                                    boxShadow: cat === 'income' ? '0 8px 16px -4px rgba(4, 120, 87, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -2px 1px rgba(0, 0, 0, 0.2)' :
+                                                        cat === 'expense' ? '0 8px 16px -4px rgba(185, 28, 28, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -2px 1px rgba(0, 0, 0, 0.2)' :
                                                             '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
                                                 }}
                                             >
