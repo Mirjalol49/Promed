@@ -49,6 +49,7 @@ const mapPatient = (id: string, p: any): Patient => ({
   unreadCount: p.unreadCount,
   lastMessage: p.lastMessage,
   lastMessageTime: p.lastMessageTime,
+  lastMessageTimestamp: p.lastMessageTimestamp,
 });
 // console.log("🔄 [mapPatient] Mapped:", p.full_name, "Tier:", p.tier);
 
@@ -135,7 +136,8 @@ export const addPatient = async (
     grafts: patient.grafts ?? null,
     technique: patient.technique ?? null,
     tier: patient.tier || 'regular',
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    lastMessageTimestamp: new Date().toISOString()
   };
 
   console.log("💾 DB INSERT START:", { account_id: dbPatient.account_id, full_name: dbPatient.full_name });

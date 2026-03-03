@@ -634,13 +634,22 @@ const App: React.FC = () => {
   }, [patients, transactions]);
 
   const filteredPatients = useMemo(() => {
-    if (!searchQuery) return patients;
-    const q = searchQuery.toLowerCase();
-    return patients.filter(p =>
-      p.fullName.toLowerCase().includes(q) ||
-      p.phone.includes(q) ||
-      (p.email?.toLowerCase().includes(q) ?? false)
-    );
+    let result = [...patients];
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(p =>
+        p.fullName.toLowerCase().includes(q) ||
+        p.phone.includes(q) ||
+        (p.email?.toLowerCase().includes(q) ?? false)
+      );
+    }
+
+    // Always sort by last activity (Telegram-style)
+    return result.sort((a, b) => {
+      const timeA = (a.lastMessageTimestamp || a.lastActive || a.operationDate) ? new Date(a.lastMessageTimestamp || a.lastActive || a.operationDate).getTime() : 0;
+      const timeB = (b.lastMessageTimestamp || b.lastActive || b.operationDate) ? new Date(b.lastMessageTimestamp || b.lastActive || b.operationDate).getTime() : 0;
+      return timeB - timeA;
+    });
   }, [patients, searchQuery]);
 
   const handleNavigate = useCallback((page: PageView) => {

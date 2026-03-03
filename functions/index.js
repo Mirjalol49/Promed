@@ -12,6 +12,7 @@ const path = require("path");
 admin.initializeApp();
 const db = admin.firestore();
 
+
 // --- CONFIGURATION ---
 const BOT_TOKEN = '8591992335:AAHzpuGzTHGvEHZgiQuH1-SgEZsf3l9w_GQ';
 // IMPORTANT: Set this in your environment variables or config
@@ -563,6 +564,7 @@ async function checkSchedule(ctx) {
 // Handlers for Check Schedule Button (All languages)
 bot.hears([TEXTS.uz.check_btn, TEXTS.ru.check_btn, TEXTS.en.check_btn], (ctx) => checkSchedule(ctx));
 
+
 // Handlers for Chat Button (New)
 bot.hears([TEXTS.uz.chat_btn, TEXTS.ru.chat_btn, TEXTS.en.chat_btn], async (ctx) => {
     const userId = ctx.from.id.toString();
@@ -654,6 +656,7 @@ bot.on('text', async (ctx) => {
         const patientId = patientDoc.id;
         const patientData = patientDoc.data();
 
+
         const now = new Date();
         const messageData = {
             sender: 'user', // From Patient
@@ -671,8 +674,8 @@ bot.on('text', async (ctx) => {
         await patientDoc.ref.update({
             lastMessage: messageData.text,
             lastMessageTime: messageData.time,
-            unreadCount: admin.firestore.FieldValue.increment(1),
-            userIsTyping: false // Reset typing if any
+            lastMessageTimestamp: now.toISOString(),
+            unreadCount: admin.firestore.FieldValue.increment(1)
         });
 
     } catch (e) {
@@ -1111,38 +1114,70 @@ exports.processMessageQueue = onSchedule({
     timeZone: "Asia/Tashkent",
     region: "us-central1"
 }, async (event) => {
-    console.log("⏰ Checking for due scheduled messages...");
     const now = new Date();
+    console.log(`⏰ Scheduler tick at ${now.toISOString()} (Tashkent: ${now.toLocaleString('en-GB', { timeZone: 'Asia/Tashkent' })})`);
 
     try {
-        // OPTIMIZATION: Query ONLY by status to avoid missing composite index (status + scheduledFor)
-        // Filtering by date in memory is safe for the expected volume of queued messages.
         const pendingRef = db.collection('outbound_messages')
             .where('status', '==', 'QUEUED');
 
         const snapshot = await pendingRef.get();
 
         if (snapshot.empty) {
+            console.log("📭 No QUEUED messages in outbound_messages collection.");
             return;
         }
+
+        console.log(`📋 Found ${snapshot.size} QUEUED message(s). Checking due times...`);
 
         // Filter in memory: scheduledFor <= now
         const dueDocs = snapshot.docs.filter(doc => {
             const data = doc.data();
-            return data.scheduledFor && data.scheduledFor <= now.toISOString();
+            const isDue = data.scheduledFor && data.scheduledFor <= now.toISOString();
+            console.log(`   📝 Doc ${doc.id}: scheduledFor=${data.scheduledFor}, due=${isDue}, patient=${data.patientName}`);
+            return isDue;
         });
 
         if (dueDocs.length === 0) {
-            // console.log("✅ No due messages found (checked " + snapshot.size + " queued items)");
+            console.log(`⏳ ${snapshot.size} QUEUED but none are due yet.`);
             return;
         }
 
         console.log(`🚀 Found ${dueDocs.length} due messages (out of ${snapshot.size} queued). Sending...`);
 
-        const promises = dueDocs.map(async (doc) => {
-            const data = doc.data();
-            // Mutates document status to 'delivered'
-            await processTelegramTask(data, doc.ref);
+        const promises = dueDocs.map(async (docSnap) => {
+            const data = docSnap.data();
+            const success = await processTelegramTask(data, docSnap.ref);
+
+            // CRITICAL FIX: Also update the patient's message status from 'scheduled' to 'sent'
+            if (success && data.patientId && data.originalMessageId) {
+                try {
+                    const nowTashkent = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Tashkent' });
+                    // Parse out HH:mm
+                    const timePart = nowTashkent.split(', ')[1]?.substring(0, 5) || "";
+
+                    const batch = db.batch();
+                    const msgRef = db.collection('patients').doc(data.patientId).collection('messages').doc(data.originalMessageId);
+                    const patientRef = db.collection('patients').doc(data.patientId);
+
+                    batch.update(msgRef, {
+                        status: 'sent',
+                        scheduledFor: null
+                    });
+
+                    // Update patient metadata for sorting
+                    batch.update(patientRef, {
+                        lastMessage: data.text || (data.imageUrl ? "[Rasm]" : data.videoUrl ? "[Video]" : ""),
+                        lastMessageTime: timePart,
+                        lastMessageTimestamp: new Date().toISOString()
+                    });
+
+                    await batch.commit();
+                    console.log(`✅ Updated patient message and metadata for ${data.patientId}`);
+                } catch (e) {
+                    console.error(`⚠️ Failed to update patient message status:`, e.message);
+                }
+            }
         });
 
         await Promise.all(promises);

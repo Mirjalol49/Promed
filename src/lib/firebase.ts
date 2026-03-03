@@ -1,8 +1,9 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, initializeFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
+import { getDatabase } from 'firebase/database';
 
 // Your web app's Firebase configuration
 export const firebaseConfig = {
@@ -20,14 +21,14 @@ export const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-// Initialize Firestore with offline persistence
-export const db = getFirestore(app);
 
-// Enable offline persistence for better cross-device sync
-// Enable offline persistence for better cross-device sync
-// persistence creates issues with multiple tabs in dev, disabling for stability
-// EXPLICITLY DISABLED TO PREVENT 'INTERNAL ASSERTION FAILED' ERRORS
-// enableIndexedDbPersistence(db).catch((err) => { ... });
+// Modern Offline Persistence (Multi-tab safe, v10+ standard)
+export const db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+});
+
+// Realtime Database for high-frequency writes (Typing stats, Presence)
+export const rtdb = getDatabase(app);
 
 
 

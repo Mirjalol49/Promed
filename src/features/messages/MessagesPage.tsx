@@ -1,3 +1,5 @@
+// @ts-ignore
+import imageCompression from 'browser-image-compression';
 import { motion } from 'framer-motion';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -14,14 +16,15 @@ import { useToast } from '../../contexts/ToastContext';
 import DeleteModal from '../../components/ui/DeleteModal';
 import { ScheduleModal } from '../../components/ui/ScheduleModal'; // NEW
 import { ProBadge } from '../../components/ui/ProBadge';
-import { db, storage } from '../../lib/firebase';
+import { db, storage, rtdb } from '../../lib/firebase';
+import { ref as dbRef, onValue, set as rtdbSet } from 'firebase/database';
 import { Portal } from '../../components/ui/Portal';
 import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, limitToLast, startAfter, endBefore, limit, getDocs, where, writeBatch, QueryDocumentSnapshot, DocumentData, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 
 
 
-import { Play, Pause, Loader2 } from 'lucide-react';
+import { Play, Pause, Loader2, MoreHorizontal } from 'lucide-react';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
 import Lottie from 'lottie-react';
 import chatAnimation from '../../assets/images/mascots/chat.json';
@@ -107,6 +110,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     const [patientIsTyping, setPatientIsTyping] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     // messagesEndRef handled in scrolling logic
     const { error: showToastError, success: showToastSuccess } = useToast();
@@ -150,10 +154,18 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     }, [msgContextMenu]);
 
 
-    // Filter patients
-    const filteredPatients = patients.filter(p =>
-        p.fullName.toLowerCase().includes(searchText.toLowerCase())
-    );
+    // Filter & Sort patients (Telegram-style: most recent message on top)
+    const filteredPatients = useMemo(() => {
+        return patients
+            .filter(p => p.fullName.toLowerCase().includes(searchText.toLowerCase()))
+            .sort((a, b) => {
+                // Primary: lastMessageTimestamp
+                // Secondary: lastActive (for cases where they interact but don't message)
+                const timeA = (a.lastMessageTimestamp || a.lastActive) ? new Date(a.lastMessageTimestamp || a.lastActive!).getTime() : 0;
+                const timeB = (b.lastMessageTimestamp || b.lastActive) ? new Date(b.lastMessageTimestamp || b.lastActive!).getTime() : 0;
+                return timeB - timeA; // Descending: most recent first
+            });
+    }, [patients, searchText]);
 
     // Simple scroll memory - save position on every scroll
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -284,11 +296,10 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             setIsLoading(false);
         });
 
-        // 3. Hear Typing Status
-        const unsubTyping = onSnapshot(doc(db, 'patients', selectedPatientId), (docSnap) => {
-            if (docSnap.exists()) {
-                setPatientIsTyping(docSnap.data().userIsTyping || false);
-            }
+        // 3. Hear Typing Status from RTDB (Cheaper & Faster than Firestore)
+        const patientTypingRef = dbRef(rtdb, `status/${selectedPatientId}/userIsTyping`);
+        const unsubTyping = onValue(patientTypingRef, (snapshot) => {
+            setPatientIsTyping(snapshot.val() || false);
         });
 
         return () => {
@@ -349,16 +360,14 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     const handleTyping = () => {
         if (!selectedPatientId) return;
 
-        // Update my status to "typing" for the patient to see
-        updateDoc(doc(db, 'patients', selectedPatientId), {
-            doctorIsTyping: true
-        }).catch(e => console.error("Typing error", e));
+        // Use Realtime Database for volatile typing state (Zero Firestore Write Cost)
+        const doctorTypingRef = dbRef(rtdb, `status/${selectedPatientId}/doctorIsTyping`);
+
+        rtdbSet(doctorTypingRef, true).catch(e => console.error("Typing error", e));
 
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
-            updateDoc(doc(db, 'patients', selectedPatientId), {
-                doctorIsTyping: false
-            });
+            rtdbSet(doctorTypingRef, false).catch(() => { });
         }, 3000);
     };
 
@@ -431,6 +440,100 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
         }
     }, [messages, selectedPatient, selectedPatientId]);
 
+    // CLIENT-SIDE SCHEDULED MESSAGE PROCESSOR (Self-Healing Fallback)
+    // Runs every 30 seconds to catch any scheduled messages whose time has passed.
+    // This is critical because the Cloud Function scheduler might miss messages
+    // (e.g., if the outbound doc was never created, or the function had a cold start delay).
+    useEffect(() => {
+        if (!selectedPatientId || !selectedPatient) return;
+
+        const processScheduledMessages = async () => {
+            const now = new Date();
+            const dueMessages = messages.filter(msg => {
+                if (msg.status !== 'scheduled') return false;
+                const scheduledTime = msg.scheduledFor;
+                if (!scheduledTime) return false;
+                return new Date(scheduledTime) <= now;
+            });
+
+            if (dueMessages.length === 0) return;
+
+            console.log(`⏰ Client-side scheduler: Found ${dueMessages.length} due scheduled message(s). Processing...`);
+
+            for (const msg of dueMessages) {
+                try {
+                    // 1. Update the message status in patient's messages subcollection
+                    const msgRef = doc(db, 'patients', selectedPatientId, 'messages', msg.id);
+                    await updateDoc(msgRef, {
+                        status: 'sent',
+                        scheduledFor: null // Clear the scheduled marker
+                    });
+
+                    // 2. Create outbound doc (if patient has Telegram) with PENDING status
+                    // so the notificationSender Cloud Function trigger fires immediately
+                    if (selectedPatient.telegramChatId) {
+                        // Check if an outbound doc already exists for this message
+                        const existingOutbound = await getDocs(query(
+                            collection(db, 'outbound_messages'),
+                            where('originalMessageId', '==', msg.id),
+                            limit(1)
+                        ));
+
+                        // Only create if no outbound doc exists or existing one is stuck in QUEUED
+                        if (existingOutbound.empty) {
+                            const payload: any = {
+                                telegramChatId: selectedPatient.telegramChatId,
+                                text: msg.text || '',
+                                status: 'PENDING', // CRITICAL: PENDING triggers notificationSender immediately
+                                patientId: selectedPatientId,
+                                originalMessageId: msg.id,
+                                patientName: selectedPatient.fullName,
+                                botLanguage: selectedPatient.botLanguage || 'uz',
+                                action: 'SEND',
+                                createdAt: new Date().toISOString()
+                            };
+
+                            if (msg.video) payload.videoUrl = msg.video;
+                            if (msg.image) payload.imageUrl = msg.image;
+
+                            await addDoc(collection(db, 'outbound_messages'), payload);
+                            console.log(`✅ Client scheduler: Created outbound doc for message ${msg.id}`);
+                        } else {
+                            // If outbound exists and is QUEUED, flip to PENDING to trigger immediate send
+                            const outboundDoc = existingOutbound.docs[0];
+                            const outboundData = outboundDoc.data();
+                            if (outboundData.status === 'QUEUED') {
+                                await updateDoc(outboundDoc.ref, { status: 'PENDING' });
+                                console.log(`✅ Client scheduler: Flipped QUEUED→PENDING for ${msg.id}`);
+                            }
+                        }
+                    }
+
+                    // 3. Update patient metadata to show this message in sidebar
+                    try {
+                        await updateDoc(doc(db, 'patients', selectedPatientId), {
+                            lastMessage: msg.video ? `[Video] ${msg.text || ''}` : msg.image ? `[Rasm] ${msg.text || ''}` : msg.text,
+                            lastMessageTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+                            lastMessageTimestamp: new Date().toISOString()
+                        });
+                    } catch (e) {
+                        console.error('⚠️ Patient metadata update failed (non-fatal):', e);
+                    }
+
+                    console.log(`✅ Scheduled message ${msg.id} processed successfully`);
+                } catch (error) {
+                    console.error(`❌ Failed to process scheduled message ${msg.id}:`, error);
+                }
+            }
+        };
+
+        // Run immediately once, then every 30 seconds
+        processScheduledMessages();
+        const interval = setInterval(processScheduledMessages, 30_000);
+
+        return () => clearInterval(interval);
+    }, [messages, selectedPatientId, selectedPatient]);
+
     const adjustTextareaHeight = () => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
@@ -467,13 +570,37 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             let mediaType = null;
 
             if (fileAttachment) {
-                const ext = fileAttachment.name.split('.').pop();
+                let currentFileToUpload = fileAttachment;
+                mediaType = fileAttachment.type.startsWith('video/') ? 'video' : 'image';
+
+                // 1. Client-Side Image Compression Strategy BEFORE Upload
+                if (mediaType === 'image') {
+                    console.log(`🖼️ Original Image Size: ${(fileAttachment.size / 1024 / 1024).toFixed(2)} MB`);
+                    try {
+                        const compressionOptions = {
+                            maxSizeMB: 1, // Target under 1 MB
+                            maxWidthOrHeight: 1920, // Maintain Full HD resolution bounds
+                            useWebWorker: true,
+                        };
+                        const compressedBlob = await imageCompression(fileAttachment, compressionOptions);
+                        // Make sure to attach the name property back to the blob so storage knows the ext
+                        currentFileToUpload = new File([compressedBlob], fileAttachment.name, {
+                            type: compressedBlob.type,
+                            lastModified: Date.now(),
+                        });
+                        console.log(`✅ Compressed Image Size: ${(currentFileToUpload.size / 1024 / 1024).toFixed(2)} MB`);
+                    } catch (compressionError) {
+                        console.error('⚠️ Image Compression Failed, uploading original:', compressionError);
+                    }
+                }
+
+                const ext = currentFileToUpload.name.split('.').pop();
                 const filename = `${selectedPatient.id}_doc_${Date.now()}.${ext}`;
                 const storageRef = ref(storage, `chat_media/${filename}`);
 
                 // Use resumable upload for progress tracking
                 mediaUrl = await new Promise<string>((resolve, reject) => {
-                    const uploadTask = uploadBytesResumable(storageRef, fileAttachment);
+                    const uploadTask = uploadBytesResumable(storageRef, currentFileToUpload);
                     uploadTask.on('state_changed',
                         (snapshot) => {
                             const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
@@ -486,7 +613,6 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                         }
                     );
                 });
-                mediaType = fileAttachment.type.startsWith('video/') ? 'video' : 'image';
             }
 
             // Prepare Message Payload (Robust for Security Rules)
@@ -783,42 +909,70 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                 });
             }
 
-            // 3b. Clean up media from Firebase Storage
+            // 3b. Clean up media from Firebase Storage (fully isolated — never triggers error toast)
             const mediaUrl = msg.video || msg.image;
-            if (mediaUrl && mediaUrl.includes('firebase')) {
+            if (mediaUrl) {
                 try {
-                    const mediaRef = ref(storage, mediaUrl);
-                    await deleteObject(mediaRef);
-                    console.log('🗑️ Media file deleted from Storage');
-                } catch (storageErr) {
-                    console.warn('⚠️ Storage cleanup failed (non-fatal):', storageErr);
+                    // Handle both full download URLs and gs:// paths
+                    let mediaRef;
+                    if (mediaUrl.includes('firebasestorage.googleapis.com') || mediaUrl.startsWith('gs://')) {
+                        mediaRef = ref(storage, mediaUrl);
+                    } else if (mediaUrl.includes('firebase')) {
+                        // Fallback: try to extract the path from the URL
+                        try {
+                            const url = new URL(mediaUrl);
+                            const pathMatch = url.pathname.match(/\/o\/(.+?)(?:\?|$)/);
+                            if (pathMatch) {
+                                const decodedPath = decodeURIComponent(pathMatch[1]);
+                                mediaRef = ref(storage, decodedPath);
+                            }
+                        } catch {
+                            // URL parsing failed, skip cleanup
+                            console.warn('⚠️ Could not parse media URL for cleanup:', mediaUrl);
+                        }
+                    }
+                    if (mediaRef) {
+                        await deleteObject(mediaRef);
+                        console.log('🗑️ Media file deleted from Storage');
+                    }
+                } catch (storageErr: any) {
+                    // Completely silent — storage cleanup is non-critical
+                    // Common: file already deleted, URL format changed, permission issue
+                    console.warn('⚠️ Storage cleanup failed (non-fatal):', storageErr?.code || storageErr);
                 }
             }
 
-            // 4. SYNC: Update Patient's lastMessage field
-            // Fetch the new latest message for this patient
-            const latestMsgQuery = query(
-                collection(db, 'patients', selectedPatientId, 'messages'),
-                orderBy('createdAt', 'desc'),
-                limit(1)
-            );
-            const latestSnapshot = await getDocs(latestMsgQuery);
-            const patientRef = doc(db, 'patients', selectedPatientId);
+            // 4. SYNC: Update Patient's lastMessage field (isolated — non-fatal)
+            try {
+                const latestMsgQuery = query(
+                    collection(db, 'patients', selectedPatientId, 'messages'),
+                    orderBy('createdAt', 'desc'),
+                    limit(1)
+                );
+                const latestSnapshot = await getDocs(latestMsgQuery);
+                const patientRef = doc(db, 'patients', selectedPatientId);
 
-            if (!latestSnapshot.empty) {
-                const newLastMsg = latestSnapshot.docs[0].data();
-                await updateDoc(patientRef, {
-                    lastMessage: newLastMsg.text || (newLastMsg.video ? '[Video]' : '') || (newLastMsg.image ? '[Image]' : '') || (newLastMsg.voice ? '[Voice]' : ''),
-                    lastMessageTimestamp: newLastMsg.createdAt,
-                    lastMessageTime: new Date(newLastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-                });
-            } else {
-                // No messages left
-                await updateDoc(patientRef, {
-                    lastMessage: '',
-                    lastMessageTimestamp: null,
-                    lastMessageTime: ''
-                });
+                if (!latestSnapshot.empty) {
+                    const newLastMsg = latestSnapshot.docs[0].data();
+                    const createdAt = newLastMsg.createdAt;
+                    // Safely handle both ISO strings and Firestore Timestamp objects
+                    const timestamp = typeof createdAt === 'string' ? createdAt : (createdAt?.toDate?.() || new Date()).toISOString();
+                    const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
+                    await updateDoc(patientRef, {
+                        lastMessage: newLastMsg.text || (newLastMsg.video ? '[Video]' : '') || (newLastMsg.image ? '[Image]' : '') || (newLastMsg.voice ? '[Voice]' : ''),
+                        lastMessageTimestamp: timestamp,
+                        lastMessageTime: timeStr
+                    });
+                } else {
+                    await updateDoc(patientRef, {
+                        lastMessage: '',
+                        lastMessageTimestamp: null,
+                        lastMessageTime: ''
+                    });
+                }
+            } catch (metaErr) {
+                console.warn('⚠️ Patient metadata sync after delete failed (non-fatal):', metaErr);
             }
 
             // 5. Scroll to close any gaps from deleted large media
@@ -897,11 +1051,11 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                 setSelectedPatientId(patient.id);
                             }}
                             className={`p-3.5 rounded-2xl cursor-pointer flex items-center gap-4 transition-all duration-300 mx-1 ${selectedPatientId === patient.id
-                                ? 'bg-blue-600 shadow-lg shadow-blue-200 scale-[1.02] active:scale-100'
-                                : 'hover:bg-slate-50 active:scale-95'
+                                ? 'gel-blue-style text-white shadow-lg shadow-blue-500/30 scale-[1.02] border-none active:scale-100'
+                                : 'hover:bg-slate-50 border border-transparent active:scale-95'
                                 }`}
                         >
-                            <div className="relative flex-shrink-0">
+                            <div className="relative flex-shrink-0 z-10">
                                 <ProfileAvatar src={patient.profileImage} alt={patient.fullName} size={52} className="rounded-full ring-2 ring-white shadow-sm" optimisticId={patient.id} />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -923,7 +1077,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                                         {patient.lastMessage || t('no_messages_yet')}
                                     </p>
                                     {patient.unreadCount && patient.unreadCount > 0 ? (
-                                        <span className={`flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-[10px] font-bold rounded-full shadow-lg ml-2 ${selectedPatientId === patient.id ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>
+                                        <span className={`flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-[10px] font-bold rounded-full shadow-lg ml-2 z-10 relative ${selectedPatientId === patient.id ? 'bg-white text-[#0044FF]' : 'gel-blue-style text-white border-none'}`}>
                                             {patient.unreadCount}
                                         </span>
                                     ) : null}
@@ -1168,7 +1322,7 @@ match /patients/{patientId}/messages/{messageId} {
                                         <div className="flex flex-col min-h-full">
                                             {/* Spacer pushes messages to bottom when few */}
                                             <div className="flex-grow min-h-[10px]" />
-                                            <div className="flex flex-col space-y-4">
+                                            <div className="flex flex-col space-y-4 chat-breathing-room">
                                                 {groups.map((group, groupIndex) => (
                                                     <div key={group.key + groupIndex} className="relative flex flex-col">
                                                         {/* Group Header (Static) */}
@@ -1182,115 +1336,98 @@ match /patients/{patientId}/messages/{messageId} {
                                                         <div className="flex flex-col space-y-2 md:space-y-3">
                                                             {group.messages.map((msg) => (
                                                                 <div id={`msg-${msg.id}`} key={msg.id} className={`flex ${msg.sender === 'doctor' ? 'justify-end' : 'justify-start'} relative px-2 md:px-0`}>
-                                                                    {/* VIDEO MESSAGE — Telegram-style standalone */}
-                                                                    {msg.video ? (
-                                                                        <div
-                                                                            className={`max-w-[85%] sm:max-w-[75%] relative group cursor-pointer transition-transform active:scale-[0.98] ${msg.isPinned ? 'ring-2 ring-blue-400/30 rounded-2xl' : ''}`}
-                                                                            onContextMenu={(e) => {
-                                                                                e.preventDefault();
-                                                                                setMsgContextMenu({ id: msg.id, x: e.clientX, y: e.clientY });
-                                                                            }}
-                                                                            onTouchStart={(e) => {
-                                                                                const touch = e.touches[0];
-                                                                                const timer = setTimeout(() => {
-                                                                                    setMsgContextMenu({ id: msg.id, x: touch.clientX, y: touch.clientY });
-                                                                                }, 500);
-                                                                                (window as any).__lastTouchTimer = timer;
-                                                                            }}
-                                                                            onTouchEnd={() => {
-                                                                                clearTimeout((window as any).__lastTouchTimer);
-                                                                            }}
-                                                                        >
-                                                                            {/* Video Player */}
-                                                                            <div className="relative rounded-2xl overflow-hidden shadow-md bg-black">
-                                                                                <video
-                                                                                    src={msg.video}
-                                                                                    controls
-                                                                                    preload="metadata"
-                                                                                    playsInline
-                                                                                    className="w-full max-h-80 object-contain rounded-2xl bg-black"
-                                                                                    style={{ minWidth: '220px' }}
-                                                                                    onLoadedMetadata={(e) => {
-                                                                                        const vid = e.currentTarget;
-                                                                                        if (vid.currentTime === 0) {
-                                                                                            vid.currentTime = 0.5;
-                                                                                        }
-                                                                                    }}
-                                                                                />
-                                                                                {/* Time Overlay */}
-                                                                                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 pointer-events-none z-10">
-                                                                                    <span className="text-[11px] text-white font-medium">
-                                                                                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                                                                    </span>
-                                                                                    {msg.sender === 'doctor' && (
-                                                                                        <span>
-                                                                                            {(msg.status === 'seen' || msg.status === 'delivered') ? (
-                                                                                                <CheckCheck size={14} className="text-white" />
-                                                                                            ) : (
-                                                                                                <Check size={14} className="text-white/70" />
-                                                                                            )}
-                                                                                        </span>
-                                                                                    )}
-                                                                                </div>
+                                                                    {/* UNIFIED BUBBLE MESSAGE — Text, Images, and Videos integrated into a single premium bubble */}
+                                                                    <div
+                                                                        className={`${(!msg.image && !msg.video) ? 'max-w-[85%] sm:max-w-[75%] px-3 py-1' : 'max-w-[260px] sm:max-w-[320px] md:max-w-[380px] p-1 inline-block'} text-[14px] md:text-[15px] leading-relaxed relative shadow-sm group cursor-pointer transition-transform active:scale-[0.98] ${msg.sender === 'doctor'
+                                                                            ? 'bg-telegram-blue text-white rounded-[18px] mb-1 bubble-tail-out border-none'
+                                                                            : 'bg-white text-slate-800 rounded-[18px] mb-1 bubble-tail-in border-none'
+                                                                            } ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}
+                                                                        onContextMenu={(e) => {
+                                                                            e.preventDefault();
+                                                                            setMsgContextMenu({ id: msg.id, x: e.clientX, y: e.clientY });
+                                                                        }}
+                                                                        onTouchStart={(e) => {
+                                                                            const touch = e.touches[0];
+                                                                            const timer = setTimeout(() => {
+                                                                                setMsgContextMenu({ id: msg.id, x: touch.clientX, y: touch.clientY });
+                                                                            }, 500);
+                                                                            (window as any).__lastTouchTimer = timer;
+                                                                        }}
+                                                                        onTouchEnd={() => {
+                                                                            clearTimeout((window as any).__lastTouchTimer);
+                                                                        }}
+                                                                    >
+                                                                        {msg.isPinned && (
+                                                                            <div className="absolute -right-2 -top-2 bg-blue-500 text-white rounded-full p-0.5 shadow-sm scale-75 z-10">
+                                                                                <Pin size={12} fill="white" />
                                                                             </div>
-                                                                            {/* Caption below video */}
-                                                                            {msg.text && (
-                                                                                <div className={`mt-1.5 px-3 py-1.5 rounded-xl text-[14px] shadow-sm ${msg.sender === 'doctor'
-                                                                                    ? 'gel-blue-style text-white'
-                                                                                    : 'bg-white text-slate-800'
-                                                                                    }`}>
-                                                                                    <div className="whitespace-pre-wrap break-words">{msg.text}</div>
+                                                                        )}
+                                                                        {msg.replyTo && (
+                                                                            <div
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    if (msg.replyTo) {
+                                                                                        scrollToAndHighlight(msg.replyTo.id);
+                                                                                    }
+                                                                                }}
+                                                                                className={`mb-2 mx-1 border-l-[3px] rounded-r-md px-2 py-1 cursor-pointer text-xs transition-colors ${msg.sender === 'doctor'
+                                                                                    ? 'border-white/60 bg-white/10 hover:bg-white/20'
+                                                                                    : 'border-promed-primary bg-promed-light/50 hover:bg-promed-light'
+                                                                                    }`}
+                                                                            >
+                                                                                <div className={`font-black uppercase tracking-widest text-[10px] ${msg.sender === 'doctor' ? 'text-white/90' : 'text-promed-primary'}`}>
+                                                                                    {msg.replyTo.displayName || (msg.replyTo.sender === 'doctor' ? t('doctor') : t('patient'))}
                                                                                 </div>
-                                                                            )}
-                                                                        </div>
-                                                                    ) : (
-                                                                        /* NORMAL MESSAGE — existing bubble layout */
-                                                                        <div
-                                                                            className={`max-w-[85%] sm:max-w-[75%] px-3 py-2 text-[14px] md:text-[15px] leading-relaxed relative shadow-sm group cursor-pointer transition-transform active:scale-[0.98] ${msg.sender === 'doctor'
-                                                                                ? 'gel-blue-style text-white rounded-2xl md:rounded-3xl bubble-tail-out'
-                                                                                : 'bg-white text-slate-800 rounded-2xl md:rounded-3xl bubble-tail-in'
-                                                                                } ${msg.isPinned ? 'ring-2 ring-blue-400/30' : ''}`}
-                                                                            onContextMenu={(e) => {
-                                                                                e.preventDefault();
-                                                                                setMsgContextMenu({ id: msg.id, x: e.clientX, y: e.clientY });
-                                                                            }}
-                                                                            onTouchStart={(e) => {
-                                                                                const touch = e.touches[0];
-                                                                                const timer = setTimeout(() => {
-                                                                                    setMsgContextMenu({ id: msg.id, x: touch.clientX, y: touch.clientY });
-                                                                                }, 500);
-                                                                                (window as any).__lastTouchTimer = timer;
-                                                                            }}
-                                                                            onTouchEnd={() => {
-                                                                                clearTimeout((window as any).__lastTouchTimer);
-                                                                            }}
-                                                                        >
-                                                                            {msg.isPinned && (
-                                                                                <div className="absolute -right-2 -top-2 bg-blue-500 text-white rounded-full p-0.5 shadow-sm scale-75 z-10">
-                                                                                    <Pin size={12} fill="white" />
-                                                                                </div>
-                                                                            )}
-                                                                            {msg.replyTo && (
-                                                                                <div
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        if (msg.replyTo) {
-                                                                                            scrollToAndHighlight(msg.replyTo.id);
-                                                                                        }
-                                                                                    }}
-                                                                                    className={`mb-2 border-l-[3px] rounded-r-md px-2 py-1 cursor-pointer text-xs transition-colors ${msg.sender === 'doctor'
-                                                                                        ? 'border-white/60 bg-white/10 hover:bg-white/20'
-                                                                                        : 'border-promed-primary bg-promed-light/50 hover:bg-promed-light'
-                                                                                        }`}
-                                                                                >
-                                                                                    <div className={`font-black uppercase tracking-widest text-[10px] ${msg.sender === 'doctor' ? 'text-white/90' : 'text-promed-primary'}`}>
-                                                                                        {msg.replyTo.displayName || (msg.replyTo.sender === 'doctor' ? t('doctor') : t('patient'))}
+                                                                                <div className={`truncate ${msg.sender === 'doctor' ? 'text-white/80' : 'text-slate-600'}`}>{msg.replyTo.text}</div>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Render Media (Image or Video) tightly attached to the top */}
+                                                                        {(msg.image || msg.video) && (
+                                                                            <div className="relative mb-1 flex items-center justify-center rounded-[14px] overflow-hidden bg-black shadow-sm">
+                                                                                {msg.image ? (
+                                                                                    <img src={msg.image} alt="Attachment" className="w-full h-auto object-contain bg-black/5" />
+                                                                                ) : (
+                                                                                    <video
+                                                                                        src={msg.video}
+                                                                                        controls
+                                                                                        preload="metadata"
+                                                                                        playsInline
+                                                                                        className="w-full max-h-80 object-contain bg-black"
+                                                                                        style={{ minWidth: '220px' }}
+                                                                                        onLoadedMetadata={(e) => {
+                                                                                            const vid = e.currentTarget;
+                                                                                            if (vid.currentTime === 0) {
+                                                                                                vid.currentTime = 0.5;
+                                                                                            }
+                                                                                        }}
+                                                                                    />
+                                                                                )}
+
+                                                                                {/* Time Overlay ONLY if NO text caption exists */}
+                                                                                {!msg.text && (
+                                                                                    <div className="absolute bottom-2 right-2 bg-black/40 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 pointer-events-none z-10">
+                                                                                        <span className="text-[10px] text-white/90 font-medium">
+                                                                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                                                        </span>
+                                                                                        {msg.sender === 'doctor' && (
+                                                                                            <span className="flex items-center">
+                                                                                                {(msg.status === 'seen' || msg.status === 'delivered') ? (
+                                                                                                    <CheckCheck size={12} className="text-white/90" />
+                                                                                                ) : (
+                                                                                                    <Check size={12} className="text-white/70" />
+                                                                                                )}
+                                                                                            </span>
+                                                                                        )}
                                                                                     </div>
-                                                                                    <div className={`truncate ${msg.sender === 'doctor' ? 'text-white/80' : 'text-slate-600'}`}>{msg.replyTo.text}</div>
-                                                                                </div>
-                                                                            )}
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Message Text Area */}
+                                                                        <div className={`flex flex-col relative ${(msg.image || msg.video) ? 'px-2 pb-1' : ''}`}>
                                                                             {msg.text && (
-                                                                                <div className="whitespace-pre-wrap break-words">
+                                                                                <div className="whitespace-pre-wrap break-words pr-2">
                                                                                     {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, index) => {
                                                                                         if (part.match(/https?:\/\/[^\s]+/)) {
                                                                                             return (
@@ -1310,12 +1447,24 @@ match /patients/{patientId}/messages/{messageId} {
                                                                                     })}
                                                                                 </div>
                                                                             )}
-                                                                            {msg.image && (
-                                                                                <div className="mt-1 mb-2">
-                                                                                    <img src={msg.image} alt="Attachment" className="max-w-full rounded-xl max-h-64 object-contain" />
+
+                                                                            {/* Integrated Timestamp (if text exists) */}
+                                                                            {msg.text && (
+                                                                                <div className={`text-[10px] sm:text-[11px] mt-0.5 self-end flex items-center justify-end gap-1 select-none pointer-events-none ${msg.sender === 'doctor' ? 'text-white/70' : 'text-slate-400'}`}>
+                                                                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                                                    {msg.sender === 'doctor' && (
+                                                                                        <span className="flex items-center">
+                                                                                            {(msg.status === 'seen' || msg.status === 'delivered') ? (
+                                                                                                <CheckCheck size={13} className="text-white/90" />
+                                                                                            ) : (
+                                                                                                <Check size={13} className="text-white/60" />
+                                                                                            )}
+                                                                                        </span>
+                                                                                    )}
                                                                                 </div>
                                                                             )}
-                                                                            {msg.preview && !msg.image && (
+
+                                                                            {msg.preview && !msg.image && !msg.video && (
                                                                                 <div className="mt-2 mb-1 border-l-[3px] border-[#3390EC] pl-2 rounded-sm overflow-hidden cursor-pointer hover:bg-black/5 transition-colors" onClick={() => window.open(msg.preview?.url, '_blank')}>
                                                                                     <div className="text-[#3390EC] font-semibold text-sm line-clamp-1">{msg.preview.title || "Link Preview"}</div>
                                                                                     <div className="text-sm text-black/80 line-clamp-2">{msg.preview.description}</div>
@@ -1324,20 +1473,8 @@ match /patients/{patientId}/messages/{messageId} {
                                                                                     )}
                                                                                 </div>
                                                                             )}
-                                                                            <div className={`text-[11px] mt-1 flex items-center justify-end gap-1 select-none ${msg.sender === 'doctor' ? 'text-white/80' : 'text-slate-400'}`}>
-                                                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                                                                                {msg.sender === 'doctor' && (
-                                                                                    <span>
-                                                                                        {(msg.status === 'seen' || msg.status === 'delivered') ? (
-                                                                                            <CheckCheck size={16} className="text-white" />
-                                                                                        ) : (
-                                                                                            <Check size={16} className="text-white/70" />
-                                                                                        )}
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
                                                                         </div>
-                                                                    )}
+                                                                    </div>
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -1486,58 +1623,108 @@ match /patients/{patientId}/messages/{messageId} {
                                     </>
                                 )}
 
-                                {/* Media Attachment Preview */}
+                                {/* Telegram Style Media Attachment Preview Modal (Light Version) */}
                                 {fileAttachment && (
-                                    <div className="absolute bottom-full left-0 right-0 bg-slate-50/95 backdrop-blur-sm border-t border-slate-200 shadow-lg rounded-t-2xl overflow-hidden">
-                                        {/* Upload Progress Bar */}
-                                        {isSending && uploadProgress > 0 && (
-                                            <div className="h-1 bg-slate-200 w-full">
-                                                <motion.div
-                                                    className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"
-                                                    initial={{ width: '0%' }}
-                                                    animate={{ width: `${uploadProgress}%` }}
-                                                    transition={{ duration: 0.3, ease: 'easeOut' }}
-                                                />
-                                            </div>
-                                        )}
-                                        <div className="p-3 flex items-center gap-3">
-                                            {/* Thumbnail / Preview */}
-                                            <div className="w-14 h-14 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0 relative">
-                                                {fileAttachment.type.startsWith('video/') ? (
-                                                    videoThumbnail ? (
-                                                        <>
-                                                            <img src={videoThumbnail} alt="Video preview" className="w-full h-full object-cover" />
-                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                                                <Play size={20} className="text-white" fill="white" />
-                                                            </div>
-                                                        </>
+                                    <Portal lockScroll={true}>
+                                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 md:p-8 text-slate-800 animate-fade-in">
+                                            <div className="bg-white shadow-2xl w-full max-w-lg md:max-w-2xl flex flex-col relative scale-100 animate-scale-in" style={{ borderRadius: '24px' }}>
+                                                {/* Header */}
+                                                <div className="flex items-center justify-between px-4 py-3 relative z-10 w-full">
+                                                    <motion.button whileTap={{ scale: 0.9 }}
+                                                        onClick={() => { setFileAttachment(null); setVideoThumbnail(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                                        className="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors order-1"
+                                                    >
+                                                        <X size={20} />
+                                                    </motion.button>
+                                                    <div className="text-[16px] font-semibold tracking-wide order-2 text-slate-800">
+                                                        1 Media
+                                                    </div>
+                                                    <div className="w-8 order-3"></div> {/* Placeholder to keep header balanced */}
+                                                </div>
+
+                                                {/* Media Canvas */}
+                                                <div className="w-full flex items-center justify-center bg-slate-50 relative overflow-hidden group border-y border-slate-100" style={{ minHeight: '30vh', maxHeight: '55vh' }}>
+                                                    {fileAttachment.type.startsWith('video/') ? (
+                                                        videoThumbnail ? (
+                                                            <>
+                                                                <img src={videoThumbnail} alt="Video preview" className="max-w-full max-h-[55vh] object-contain" />
+                                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                                    <div className="bg-white/80 backdrop-blur-md rounded-full p-4 shadow-sm border border-slate-200">
+                                                                        <Play size={32} className="text-black ml-1" fill="currentColor" />
+                                                                    </div>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <FileVideo size={64} className="text-slate-300" />
+                                                        )
                                                     ) : (
-                                                        <FileVideo size={24} className="text-slate-400" />
-                                                    )
-                                                ) : (
-                                                    <img src={URL.createObjectURL(fileAttachment)} alt="Preview" className="w-full h-full object-cover" />
-                                                )}
-                                            </div>
-                                            {/* Info */}
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-semibold text-slate-700 truncate">{fileAttachment.name}</p>
-                                                <p className="text-xs text-slate-500">
-                                                    {(fileAttachment.size / 1024 / 1024).toFixed(2)} MB
-                                                    {isSending && uploadProgress > 0 && (
-                                                        <span className="ml-2 text-blue-500 font-bold">
-                                                            {uploadProgress < 100 ? `${uploadProgress}%` : '✓'}
-                                                        </span>
+                                                        <img src={URL.createObjectURL(fileAttachment)} className="max-w-full max-h-[55vh] object-contain" />
                                                     )}
-                                                </p>
+
+                                                    {/* Upload progress overlay */}
+                                                    {isSending && uploadProgress > 0 && (
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm z-20">
+                                                            <div className="relative flex items-center justify-center w-20 h-20">
+                                                                <svg className="animate-spin text-blue-500 w-16 h-16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                </svg>
+                                                                <span className="absolute text-sm font-bold text-slate-800 shadow-sm">{uploadProgress}%</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Editing / Input Area attached at the bottom */}
+                                                <div className="p-3 md:p-4 w-full bg-white rounded-b-[24px]">
+                                                    <div className="flex bg-slate-100 rounded-2xl items-end relative w-full border border-slate-200">
+                                                        <motion.button whileTap={{ scale: 0.9 }}
+                                                            onClick={(e) => { e.preventDefault(); setShowEmojiPicker(!showEmojiPicker); }}
+                                                            className="p-3 text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0"
+                                                            disabled={isSending}
+                                                        >
+                                                            <Smile size={24} />
+                                                        </motion.button>
+
+                                                        <textarea
+                                                            autoFocus
+                                                            value={messageInput}
+                                                            onChange={(e) => {
+                                                                setMessageInput(e.target.value);
+                                                                handleTyping();
+                                                            }}
+                                                            placeholder="Write a message..."
+                                                            disabled={isSending}
+                                                            className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 px-1 py-3.5 text-[15px] resize-none min-h-[44px] max-h-[120px] w-full placeholder:text-slate-400 text-slate-800 font-medium my-auto mt-0.5"
+                                                            rows={1}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                                    e.preventDefault();
+                                                                    if (isScheduledView) setIsScheduleModalOpen(true);
+                                                                    else handleSendMessage();
+                                                                }
+                                                            }}
+                                                        />
+
+                                                        <div className="p-2 flex-shrink-0 mb-0.5 mr-0.5">
+                                                            <motion.button whileTap={{ scale: 0.9 }}
+                                                                onClick={() => {
+                                                                    if (!isSending) {
+                                                                        if (isScheduledView) setIsScheduleModalOpen(true);
+                                                                        else handleSendMessage();
+                                                                    }
+                                                                }}
+                                                                disabled={isSending}
+                                                                className={`w-10 h-10 rounded-full transition-all flex items-center justify-center ${isSending ? 'bg-slate-300 text-white' : 'gel-blue-style text-white shadow-md hover:shadow-lg active:scale-95 border-none'}`}
+                                                            >
+                                                                <Send size={18} className="ml-1" />
+                                                            </motion.button>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            {/* Cancel */}
-                                            {!isSending && (
-                                                <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setFileAttachment(null); setVideoThumbnail(null); if (fileInputRef.current) fileInputRef.current.value = ''; }} className="p-2 text-slate-400 hover:text-red-500 rounded-full hover:bg-slate-100 transition-colors">
-                                                    <X size={20} />
-                                                </motion.button>
-                                            )}
                                         </div>
-                                    </div>
+                                    </Portal>
                                 )}
 
                                 <input
@@ -1660,7 +1847,7 @@ match /patients/{patientId}/messages/{messageId} {
                                         }
                                     }}
                                     disabled={(!messageInput.trim() && !fileAttachment) || isSending}
-                                    className={`p-2.5 rounded-xl transition-all duration-200 flex-shrink-0 flex items-center justify-center ${(!messageInput.trim() && !fileAttachment) ? 'text-slate-400 cursor-not-allowed' : 'bg-blue-500 text-white shadow-md hover:bg-blue-600 hover:shadow-lg active:scale-95'}`}
+                                    className={`p-2.5 rounded-xl transition-all duration-200 flex-shrink-0 flex items-center justify-center ${(!messageInput.trim() && !fileAttachment) ? 'text-slate-400 cursor-not-allowed' : 'gel-blue-style border-none text-white shadow-md active:scale-95'}`}
                                     title="Send Message (Hold for options)"
                                 >
                                     {isSending ? (
