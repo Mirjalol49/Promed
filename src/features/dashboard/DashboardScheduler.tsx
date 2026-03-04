@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, LayoutGroup } from 'framer-motion';
 import React, { useState, useMemo } from 'react';
 import { CalendarWidget, CalendarEvent, EventType } from './CalendarWidget';
 import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
@@ -174,7 +174,24 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                         </div>
 
                         {/* Segmented Control */}
-                        <div className="relative inline-flex items-center bg-white/90 rounded-2xl p-1.5 border border-slate-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-xl">
+                        <div className="relative inline-flex items-center bg-white/90 rounded-2xl p-1.5 border border-slate-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] backdrop-blur-xl isolate">
+                            {/* Moving Background Pill */}
+                            <motion.div
+                                className="absolute inset-y-1.5 left-1.5 w-[calc(50%-6px)] rounded-xl overflow-hidden pointer-events-none"
+                                initial={false}
+                                animate={{
+                                    x: (!selectedDate || (selectedDate && !isToday(selectedDate))) ? '100%' : '0%'
+                                }}
+                                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                                style={{
+                                    background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
+                                    boxShadow: '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)',
+                                    zIndex: 0
+                                }}
+                            >
+                                <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent" />
+                            </motion.div>
+
                             {/* Bugun Tab */}
                             <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                 onClick={() => setSelectedDate(new Date())}
@@ -183,20 +200,6 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
-                                {selectedDate && isToday(selectedDate) && (
-                                    <motion.div
-                                        layoutId="dashboardScheduleActiveTab"
-                                        initial={false}
-                                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                        className="absolute inset-0 rounded-xl overflow-hidden"
-                                        style={{
-                                            background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
-                                            boxShadow: '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
-                                        }}
-                                    >
-                                        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
-                                    </motion.div>
-                                )}
                                 <span className="relative z-10">{t('today')}</span>
                             </motion.button>
 
@@ -208,20 +211,6 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
-                                {(!selectedDate || (selectedDate && !isToday(selectedDate))) && (
-                                    <motion.div
-                                        layoutId="dashboardScheduleActiveTab"
-                                        initial={false}
-                                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                        className="absolute inset-0 rounded-xl overflow-hidden"
-                                        style={{
-                                            background: 'linear-gradient(180deg, #4A85FF 0%, #0044FF 100%)',
-                                            boxShadow: '0 8px 16px -4px rgba(0, 68, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 1px rgba(0, 0, 0, 0.15)'
-                                        }}
-                                    >
-                                        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
-                                    </motion.div>
-                                )}
                                 <span className="relative z-10">{t('upcoming')}</span>
                             </motion.button>
                         </div>

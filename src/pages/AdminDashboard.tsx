@@ -186,7 +186,7 @@ export const AdminDashboard: React.FC = () => {
 
 
     return (
-        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20 relative">
+        <div className="space-y-10 pb-20 relative">
             {/* Background Mesh Gradients */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-promed-bg">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-promed-primary/5 rounded-full blur-[120px]" />
@@ -356,7 +356,7 @@ export const AdminDashboard: React.FC = () => {
             )}
 
             {activeTab === 'registry' ? (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div>
                     <div className="bg-white/70 backdrop-blur-3xl rounded-[40px] shadow-premium border border-white/40 overflow-hidden group/table transition-all duration-500 max-w-6xl mx-auto">
                         <div className="p-6 md:p-10 border-b border-slate-100/50 flex flex-col md:flex-row md:items-center justify-between gap-8 bg-gradient-to-b from-slate-50/50 to-transparent">
                             <div>
@@ -469,7 +469,7 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                 </div>
             ) : (
-                <div className="max-w-2xl mx-auto space-y-8 animate-in mt-10 fade-in slide-in-from-bottom-4 duration-700">
+                <div className="max-w-2xl mx-auto space-y-8 mt-10">
                     <div className="bg-white/80 backdrop-blur-3xl rounded-[40px] shadow-premium border border-white/40 overflow-hidden relative group/mega transition-all duration-500">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/[0.03] rounded-full blur-[80px] -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000" />
                         <div className="p-6 md:p-10 border-b border-slate-100/50 bg-gradient-to-b from-rose-500/[0.02] to-transparent">

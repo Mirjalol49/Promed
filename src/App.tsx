@@ -109,7 +109,14 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
   };
 
   if (!t) {
-    return <div className="fixed inset-0 bg-slate-900 flex items-center justify-center text-white">Loading Security...</div>;
+    return (
+      <div className="fixed inset-0 bg-promed-deep flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+          <p className="text-white/60 font-medium tracking-widest text-xs uppercase animate-pulse">Security Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

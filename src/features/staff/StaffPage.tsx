@@ -13,7 +13,8 @@ import {
     Users, Plus, Search, Phone, Mail, DollarSign, Trash2, Edit2,
     MoreVertical, Calendar, Briefcase, User, X, ChevronLeft, ChevronDown, Activity,
     Clock, Camera, PlusCircle, Loader2, Check, ArrowLeft, Banknote, ChevronRight, RotateCcw,
-    ArrowUpRight, ArrowDownRight, Building2, UtensilsCrossed, Pill, Receipt, Zap, Tag, Stethoscope
+    ArrowUpRight, ArrowDownRight, Building2, UtensilsCrossed, Pill, Receipt, Zap, Tag, Stethoscope,
+    UserPlus
 } from 'lucide-react';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
 
@@ -102,7 +103,7 @@ const StaffModal = ({
         setImageFile(null);
     }, [initialData, isOpen]);
 
-    if (!isOpen) return null;
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -126,281 +127,301 @@ const StaffModal = ({
 
     return (
         <Portal>
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-                <div
-                    onClick={onClose}
-                    className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"
-                />
-
-                {/* Modal Container */}
-                <div className="bg-[#dcecf7] rounded-3xl w-full max-w-2xl shadow-2xl relative z-10 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
-
-                    {/* Header */}
-                    <div className="px-5 md:px-8 py-4 md:py-5 flex items-center justify-between bg-white sticky top-0 z-20 rounded-t-3xl border-b border-white/50">
-                        <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight">
-                            {initialData ? t('edit_staff') : t('add_new_staff')}
-                        </h2>
-                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+            <AnimatePresence>
+                {isOpen && (
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
                             onClick={onClose}
-                            className="bg-white/50 hover:bg-white text-slate-500 hover:text-slate-700 rounded-full p-2 transition-all shadow-sm"
+                        />
+
+                        {/* Modal Container */}
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                            className="bg-[#dcecf7] rounded-3xl w-full max-w-2xl shadow-2xl relative z-10 flex flex-col max-h-[90vh] overflow-hidden"
                         >
-                            <X size={20} />
-                        </motion.button>
-                    </div>
 
-                    {/* Scrollable Content */}
-                    <div className="overflow-y-auto p-5 md:p-8 custom-scrollbar">
-                        <form id="staff-form" onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
+                            {/* Header */}
+                            <div className="px-5 md:px-8 py-4 md:py-5 flex items-center justify-between bg-white sticky top-0 z-20 rounded-t-3xl border-b border-white/50">
+                                <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight">
+                                    {initialData ? t('edit_staff') : t('add_new_staff')}
+                                </h2>
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                    onClick={onClose}
+                                    className="bg-white/50 hover:bg-white text-slate-500 hover:text-slate-700 rounded-full p-2 transition-all shadow-sm"
+                                >
+                                    <X size={20} />
+                                </motion.button>
+                            </div>
 
-                            {/* Photo Section - Centered */}
-                            <div className="flex flex-col items-center">
-                                <div className="relative group">
-                                    <div
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="w-32 h-32 rounded-full bg-white border-4 border-white shadow-lg ring-1 ring-slate-200 flex items-center justify-center relative overflow-hidden cursor-pointer group-hover:ring-blue-300 transition-all"
-                                    >
-                                        {(imageFile || initialData?.imageUrl) ? (
-                                            <img
-                                                src={imageFile ? URL.createObjectURL(imageFile) : initialData?.imageUrl}
-                                                className="w-full h-full object-cover"
-                                                alt="Staff"
-                                            />
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-1 text-slate-300 group-hover:text-blue-500 transition-colors">
-                                                <Camera size={32} strokeWidth={1.5} />
+                            {/* Scrollable Content */}
+                            <div className="overflow-y-auto p-5 md:p-8 custom-scrollbar">
+                                <form id="staff-form" onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
+
+                                    {/* Photo Section - Centered */}
+                                    <div className="flex flex-col items-center">
+                                        <div className="relative group">
+                                            <div
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="w-32 h-32 rounded-full bg-white border-4 border-white shadow-lg ring-1 ring-slate-200 flex items-center justify-center relative overflow-hidden cursor-pointer group-hover:ring-blue-300 transition-all"
+                                            >
+                                                {(imageFile || initialData?.imageUrl) ? (
+                                                    <img
+                                                        src={imageFile ? URL.createObjectURL(imageFile) : initialData?.imageUrl}
+                                                        className="w-full h-full object-cover"
+                                                        alt="Staff"
+                                                    />
+                                                ) : (
+                                                    <div className="flex flex-col items-center gap-1 text-slate-300 group-hover:text-blue-500 transition-colors">
+                                                        <Camera size={32} strokeWidth={1.5} />
+                                                    </div>
+                                                )}
+                                                {/* Overlay text on hover */}
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                                </div>
                                             </div>
-                                        )}
-                                        {/* Overlay text on hover */}
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                type="button"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="absolute bottom-1 right-1 w-9 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-md border-[3px] border-white transition-transform hover:scale-110 active:scale-95"
+                                            >
+                                                <Plus size={18} strokeWidth={3} />
+                                            </motion.button>
+
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    if (e.target.files?.[0]) setImageFile(e.target.files[0]);
+                                                }}
+                                            />
+                                        </div>
+                                        <p className="mt-3 text-xs font-semibold text-slate-400">
+                                            {t('upload_photo') || 'Upload Photo'}
+                                        </p>
+                                    </div>
+
+                                    {/* Form Grid */}
+                                    <div className="flex flex-col md:grid md:grid-cols-2 gap-5 md:gap-x-6 md:gap-y-6">
+                                        {/* First Name */}
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-bold text-slate-700 ml-1">{t('first_name')}</label>
+                                            <input
+                                                required
+                                                className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-bold focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none placeholder:text-slate-400/70 placeholder:font-medium"
+                                                value={formData.firstName}
+                                                onChange={e => setFormData({ ...formData, firstName: e.target.value })}
+                                                placeholder="Mirjalol"
+                                            />
+                                        </div>
+                                        {/* Last Name */}
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-bold text-slate-700 ml-1">{t('last_name')}</label>
+                                            <input
+                                                required
+                                                className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-bold focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none placeholder:text-slate-400/70 placeholder:font-medium"
+                                                value={formData.lastName}
+                                                onChange={e => setFormData({ ...formData, lastName: e.target.value })}
+                                                placeholder="Shamsiddinov"
+                                            />
+                                        </div>
+
+                                        {/* Role */}
+                                        <div className="space-y-1.5 relative z-50">
+                                            <label className="text-sm font-bold text-slate-700 ml-1">{t('role')}</label>
+                                            <div className="relative" ref={roleRef}>
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                    type="button"
+                                                    onClick={() => setIsRoleOpen(!isRoleOpen)}
+                                                    className={`w-full bg-white border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-bold flex items-center justify-between outline-none hover:border-slate-300 transition-all duration-300 ${isRoleOpen ? 'bg-white border-blue-500/50 ring-[3px] ring-blue-500/20 hover:border-blue-500/50' : 'border-slate-200'}`}
+                                                >
+                                                    <span className="flex items-center gap-2 capitalize">
+                                                        {t(`role_${formData.role}`) || formData.role}
+                                                    </span>
+                                                    <ChevronDown size={18} className={`text-slate-400 transition-transform duration-200 ${isRoleOpen ? 'rotate-180' : ''}`} />
+                                                </motion.button>
+
+                                                <AnimatePresence>
+                                                    {isRoleOpen && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                            transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                                                            className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden p-1.5 z-[60] origin-top"
+                                                        >
+                                                            {roles.map((r) => (
+                                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                                    key={r}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setFormData({ ...formData, role: r });
+                                                                        setIsRoleOpen(false);
+                                                                    }}
+                                                                    className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-between ${formData.role === r ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                                                                >
+                                                                    <span className="capitalize">{t(`role_${r}`) || r}</span>
+                                                                    {formData.role === r && <Check size={16} className="text-blue-600" />}
+                                                                </motion.button>
+                                                            ))}
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                        </div>
+
+                                        {/* Phone */}
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-bold text-slate-700 ml-1">{t('phone')}</label>
+                                            <input
+                                                required
+                                                className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-bold tracking-wide focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none placeholder:text-slate-400/70 placeholder:font-medium"
+                                                value={formData.phone}
+                                                onChange={e => {
+                                                    let val = e.target.value;
+                                                    if (!val.startsWith('+998')) {
+                                                        if (val.startsWith('998')) val = '+' + val;
+                                                        else val = '+998' + val.replace(/\D/g, '');
+                                                    }
+                                                    const clean = val.replace(/[^\d+]/g, '');
+                                                    let formatted = clean;
+                                                    if (clean.length > 6) formatted = clean.slice(0, 6) + ' ' + clean.slice(6);
+                                                    if (clean.length > 9) formatted = formatted.slice(0, 10) + ' ' + clean.slice(9);
+                                                    if (clean.length > 11) formatted = formatted.slice(0, 13) + ' ' + clean.slice(11);
+                                                    setFormData({ ...formData, phone: formatted.slice(0, 17) });
+                                                }}
+                                                placeholder="+998XX XXX XX XX"
+                                            />
+                                        </div>
+
+                                        {/* Salary */}
+                                        <div className="space-y-1.5 col-span-2">
+                                            <div className="flex items-center justify-between ml-1 mb-1.5">
+                                                <label className={`text-sm font-bold transition-colors duration-300 ${isSalaryEnabled ? 'text-slate-700' : 'text-slate-400'}`}>{t('salary')}</label>
+                                                <motion.button whileTap={{ scale: 0.92 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                    type="button"
+                                                    onClick={() => setIsSalaryEnabled(!isSalaryEnabled)}
+                                                    className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 ${isSalaryEnabled ? 'gel-blue-style border-none shadow-sm' : 'bg-slate-300/70 border border-slate-300 shadow-inner'}`}
+                                                >
+                                                    <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-300 z-20 ${isSalaryEnabled ? 'left-8 shadow-md' : 'left-1 shadow-sm'}`} />
+                                                </motion.button>
+                                            </div>
+                                            <AnimatePresence>
+                                                {isSalaryEnabled && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                                                        animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+                                                        exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                                                        className="relative overflow-hidden"
+                                                    >
+                                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs z-10 pointer-events-none">UZS</div>
+                                                        <input
+                                                            type="text"
+                                                            inputMode="numeric"
+                                                            className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 pl-12 pr-4 text-slate-800 font-bold tracking-wide focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none placeholder:text-slate-400/70 placeholder:font-medium"
+                                                            value={formData.salary ? new Intl.NumberFormat('uz-UZ').format(Number(formData.salary)) : ''}
+                                                            onChange={e => {
+                                                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                                                setFormData({ ...formData, salary: val ? Number(val) : 0 });
+                                                            }}
+                                                            placeholder="0"
+                                                        />
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
                                         </div>
                                     </div>
 
-                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="absolute bottom-1 right-1 w-9 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-md border-[3px] border-white transition-transform hover:scale-110 active:scale-95"
-                                    >
-                                        <Plus size={18} strokeWidth={3} />
-                                    </motion.button>
+                                    {/* Status - Full Width */}
+                                    {initialData && (
+                                        <div className="space-y-2.5">
+                                            <label className="text-sm font-bold text-slate-700 ml-1">{t('status')}</label>
+                                            <div className="grid grid-cols-3 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] gap-1.5">
+                                                {['active', 'on_leave', 'terminated'].map((s) => {
+                                                    const isSelected = formData.status === s;
+                                                    const config = {
+                                                        active: {
+                                                            selected: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 shadow-sm',
+                                                            dot: 'bg-emerald-500',
+                                                        },
+                                                        on_leave: {
+                                                            selected: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200 shadow-sm',
+                                                            dot: 'bg-amber-500',
+                                                        },
+                                                        terminated: {
+                                                            selected: 'bg-rose-50 text-rose-600 ring-1 ring-rose-200 shadow-sm',
+                                                            dot: 'bg-rose-500',
+                                                        },
+                                                    }[s]!;
 
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={(e) => {
-                                            if (e.target.files?.[0]) setImageFile(e.target.files[0]);
-                                        }}
-                                    />
-                                </div>
-                                <p className="mt-3 text-xs font-semibold text-slate-400">
-                                    {t('upload_photo') || 'Upload Photo'}
-                                </p>
-                            </div>
-
-                            {/* Form Grid */}
-                            <div className="flex flex-col md:grid md:grid-cols-2 gap-5 md:gap-x-6 md:gap-y-6">
-                                {/* First Name */}
-                                <div className="space-y-1.5">
-                                    <label className="text-sm font-bold text-slate-700 ml-1">{t('first_name')}</label>
-                                    <input
-                                        required
-                                        className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-bold focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none placeholder:text-slate-400/70 placeholder:font-medium"
-                                        value={formData.firstName}
-                                        onChange={e => setFormData({ ...formData, firstName: e.target.value })}
-                                        placeholder="Mirjalol"
-                                    />
-                                </div>
-                                {/* Last Name */}
-                                <div className="space-y-1.5">
-                                    <label className="text-sm font-bold text-slate-700 ml-1">{t('last_name')}</label>
-                                    <input
-                                        required
-                                        className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-bold focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none placeholder:text-slate-400/70 placeholder:font-medium"
-                                        value={formData.lastName}
-                                        onChange={e => setFormData({ ...formData, lastName: e.target.value })}
-                                        placeholder="Shamsiddinov"
-                                    />
-                                </div>
-
-                                {/* Role */}
-                                <div className="space-y-1.5 relative z-50">
-                                    <label className="text-sm font-bold text-slate-700 ml-1">{t('role')}</label>
-                                    <div className="relative" ref={roleRef}>
-                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                            type="button"
-                                            onClick={() => setIsRoleOpen(!isRoleOpen)}
-                                            className={`w-full bg-white border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-bold flex items-center justify-between outline-none hover:border-slate-300 transition-all duration-300 ${isRoleOpen ? 'bg-white border-blue-500/50 ring-[3px] ring-blue-500/20 hover:border-blue-500/50' : 'border-slate-200'}`}
-                                        >
-                                            <span className="flex items-center gap-2 capitalize">
-                                                {t(`role_${formData.role}`) || formData.role}
-                                            </span>
-                                            <ChevronDown size={18} className={`text-slate-400 transition-transform duration-200 ${isRoleOpen ? 'rotate-180' : ''}`} />
-                                        </motion.button>
-
-                                        {isRoleOpen && (
-                                            <div
-                                                className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 p-1.5 z-[60]"
-                                            >
-                                                {roles.map((r) => (
-                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                        key={r}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setFormData({ ...formData, role: r });
-                                                            setIsRoleOpen(false);
-                                                        }}
-                                                        className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-between ${formData.role === r ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
-                                                    >
-                                                        <span className="capitalize">{t(`role_${r}`) || r}</span>
-                                                        {formData.role === r && <Check size={16} className="text-blue-600" />}
-                                                    </motion.button>
-                                                ))}
+                                                    return (
+                                                        <motion.button whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                            key={s}
+                                                            type="button"
+                                                            onClick={() => setFormData({ ...formData, status: s as any })}
+                                                            className={`flex items-center justify-center gap-2 rounded-xl py-3.5 text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${isSelected ? config.selected : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+                                                        >
+                                                            <span className={`w-2 h-2 rounded-full shrink-0 transition-all duration-300 ${isSelected ? config.dot : 'bg-slate-300'}`} />
+                                                            {t(`status_${s}`) || s}
+                                                        </motion.button>
+                                                    );
+                                                })}
                                             </div>
-                                        )}
-                                    </div>
-                                </div>
+                                        </div>
+                                    )}
 
-                                {/* Phone */}
-                                <div className="space-y-1.5">
-                                    <label className="text-sm font-bold text-slate-700 ml-1">{t('phone')}</label>
-                                    <input
-                                        required
-                                        className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-bold tracking-wide focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none placeholder:text-slate-400/70 placeholder:font-medium"
-                                        value={formData.phone}
-                                        onChange={e => {
-                                            let val = e.target.value;
-                                            if (!val.startsWith('+998')) {
-                                                if (val.startsWith('998')) val = '+' + val;
-                                                else val = '+998' + val.replace(/\D/g, '');
-                                            }
-                                            const clean = val.replace(/[^\d+]/g, '');
-                                            let formatted = clean;
-                                            if (clean.length > 6) formatted = clean.slice(0, 6) + ' ' + clean.slice(6);
-                                            if (clean.length > 9) formatted = formatted.slice(0, 10) + ' ' + clean.slice(9);
-                                            if (clean.length > 11) formatted = formatted.slice(0, 13) + ' ' + clean.slice(11);
-                                            setFormData({ ...formData, phone: formatted.slice(0, 17) });
-                                        }}
-                                        placeholder="+998XX XXX XX XX"
-                                    />
-                                </div>
-
-                                {/* Salary */}
-                                <div className="space-y-1.5 col-span-2">
-                                    <div className="flex items-center justify-between ml-1 mb-1.5">
-                                        <label className={`text-sm font-bold transition-colors duration-300 ${isSalaryEnabled ? 'text-slate-700' : 'text-slate-400'}`}>{t('salary')}</label>
-                                        <motion.button whileTap={{ scale: 0.92 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                            type="button"
-                                            onClick={() => setIsSalaryEnabled(!isSalaryEnabled)}
-                                            className={`w-14 h-7 rounded-full transition-all duration-300 relative focus:outline-none flex-shrink-0 ${isSalaryEnabled ? 'gel-blue-style border-none shadow-sm' : 'bg-slate-300/70 border border-slate-300 shadow-inner'}`}
-                                        >
-                                            <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-300 z-20 ${isSalaryEnabled ? 'left-8 shadow-md' : 'left-1 shadow-sm'}`} />
-                                        </motion.button>
+                                    {/* Notes */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-bold text-slate-700 ml-1">{t('notes')}</label>
+                                        <textarea
+                                            className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-medium placeholder:text-slate-400/70 placeholder:font-medium focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none resize-none"
+                                            rows={3}
+                                            value={formData.notes || ''}
+                                            onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                            placeholder={t('notes_placeholder') || "Write some notes..."}
+                                        />
                                     </div>
-                                    <AnimatePresence>
-                                        {isSalaryEnabled && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                                                animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
-                                                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                                                className="relative overflow-hidden"
-                                            >
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs z-10 pointer-events-none">UZS</div>
-                                                <input
-                                                    type="text"
-                                                    inputMode="numeric"
-                                                    className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 pl-12 pr-4 text-slate-800 font-bold tracking-wide focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none placeholder:text-slate-400/70 placeholder:font-medium"
-                                                    value={formData.salary ? new Intl.NumberFormat('uz-UZ').format(Number(formData.salary)) : ''}
-                                                    onChange={e => {
-                                                        const val = e.target.value.replace(/[^0-9]/g, '');
-                                                        setFormData({ ...formData, salary: val ? Number(val) : 0 });
-                                                    }}
-                                                    placeholder="0"
-                                                />
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
+                                </form>
                             </div>
 
-                            {/* Status - Full Width */}
-                            {initialData && (
-                                <div className="space-y-2.5">
-                                    <label className="text-sm font-bold text-slate-700 ml-1">{t('status')}</label>
-                                    <div className="grid grid-cols-3 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] gap-1.5">
-                                        {['active', 'on_leave', 'terminated'].map((s) => {
-                                            const isSelected = formData.status === s;
-                                            const config = {
-                                                active: {
-                                                    selected: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 shadow-sm',
-                                                    dot: 'bg-emerald-500',
-                                                },
-                                                on_leave: {
-                                                    selected: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200 shadow-sm',
-                                                    dot: 'bg-amber-500',
-                                                },
-                                                terminated: {
-                                                    selected: 'bg-rose-50 text-rose-600 ring-1 ring-rose-200 shadow-sm',
-                                                    dot: 'bg-rose-500',
-                                                },
-                                            }[s]!;
-
-                                            return (
-                                                <motion.button whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                    key={s}
-                                                    type="button"
-                                                    onClick={() => setFormData({ ...formData, status: s as any })}
-                                                    className={`flex items-center justify-center gap-2 rounded-xl py-3.5 text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${isSelected ? config.selected : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
-                                                >
-                                                    <span className={`w-2 h-2 rounded-full shrink-0 transition-all duration-300 ${isSelected ? config.dot : 'bg-slate-300'}`} />
-                                                    {t(`status_${s}`) || s}
-                                                </motion.button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Notes */}
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-bold text-slate-700 ml-1">{t('notes')}</label>
-                                <textarea
-                                    className="w-full bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl py-3.5 px-4 text-slate-800 font-medium placeholder:text-slate-400/70 placeholder:font-medium focus:bg-white focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 transition-all duration-300 outline-none resize-none"
-                                    rows={3}
-                                    value={formData.notes || ''}
-                                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                    placeholder={t('notes_placeholder') || "Write some notes..."}
-                                />
+                            {/* Footer */}
+                            <div className="p-4 md:p-6 border-t border-white/50 bg-white flex justify-end gap-3 rounded-b-3xl">
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                    type="button"
+                                    onClick={onClose}
+                                    className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-white/50 hover:text-slate-700 transition-colors"
+                                >
+                                    {t('cancel')}
+                                </motion.button>
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                    onClick={handleSubmit}
+                                    disabled={loading}
+                                    className="btn-glossy-blue !w-auto !px-8 !py-3 !rounded-xl text-sm font-bold shadow-blue-500/20"
+                                >
+                                    {loading ? (
+                                        <ButtonLoader />
+                                    ) : (
+                                        <span className="flex items-center gap-2">
+                                            {initialData ? <Edit2 size={16} /> : <Plus size={16} strokeWidth={3} />}
+                                            {initialData ? t('update_staff') : t('save_staff')}
+                                        </span>
+                                    )}
+                                </motion.button>
                             </div>
-                        </form>
+                        </motion.div>
                     </div>
-
-                    {/* Footer */}
-                    <div className="p-4 md:p-6 border-t border-white/50 bg-white flex justify-end gap-3 rounded-b-3xl">
-                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                            type="button"
-                            onClick={onClose}
-                            className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-white/50 hover:text-slate-700 transition-colors"
-                        >
-                            {t('cancel')}
-                        </motion.button>
-                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                            onClick={handleSubmit}
-                            disabled={loading}
-                            className="btn-glossy-blue !w-auto !px-8 !py-3 !rounded-xl text-sm font-bold shadow-blue-500/20"
-                        >
-                            {loading ? (
-                                <ButtonLoader />
-                            ) : (
-                                <span className="flex items-center gap-2">
-                                    {initialData ? <Edit2 size={16} /> : <Plus size={16} strokeWidth={3} />}
-                                    {initialData ? t('update_staff') : t('save_staff')}
-                                </span>
-                            )}
-                        </motion.button>
-                    </div>
-                </div>
-            </div>
+                )}
+            </AnimatePresence>
         </Portal>
     );
 };
@@ -425,7 +446,12 @@ const StaffCard = React.memo(({ staff, t, isViewer, language, onSelect, onPaySal
         return `${day} ${months[d.getMonth()]} ${year}`;
     };
     return (
-        <div
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
             onClick={() => onSelect(staff)}
             className="bg-white rounded-[2rem] border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative group overflow-visible cursor-pointer"
         >
@@ -529,7 +555,7 @@ const StaffCard = React.memo(({ staff, t, isViewer, language, onSelect, onPaySal
                     )}
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 });
 
@@ -613,7 +639,7 @@ const PaySalaryModal = ({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isDropdownOpen]);
 
-    if (!isOpen) return null;
+
 
     const handleSelectStaff = (id: string) => {
         setSelectedStaffId(id);
@@ -650,219 +676,237 @@ const PaySalaryModal = ({
 
     return (
         <Portal>
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-                <div
-                    onClick={onClose}
-                    className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-                />
-                <div
-                    className="bg-white rounded-[2rem] w-full max-w-lg shadow-[0_30px_100px_rgba(0,0,0,0.15)] overflow-hidden relative z-10 border border-slate-100"
-                >
-                    {/* Header */}
-                    <div className="p-6 pb-0 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-                                <Banknote size={20} className="text-emerald-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-900">{t('pay_salary') || 'Pay Salary'}</h3>
-                        </div>
-                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+            <AnimatePresence>
+                {isOpen && (
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
                             onClick={onClose}
-                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-400 rounded-full transition-colors"
+                        />
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                            className="bg-white rounded-[2rem] w-full max-w-lg shadow-[0_30px_100px_rgba(0,0,0,0.15)] overflow-hidden relative z-10 border border-slate-100"
                         >
-                            <X size={18} />
-                        </motion.button>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                        {/* Staff Selection: Static if pre-selected, Dropdown otherwise */}
-                        {initialStaffId && selectedStaff ? (
-                            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-200/80 flex items-center justify-between">
+                            {/* Header */}
+                            <div className="p-6 pb-0 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-white shadow-sm ring-2 ring-white">
-                                        {selectedStaff.imageUrl ? (
-                                            <img src={selectedStaff.imageUrl} className="w-full h-full object-cover" alt="" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50 text-lg">
-                                                {selectedStaff.fullName.charAt(0)}
-                                            </div>
-                                        )}
+                                    <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                                        <Banknote size={20} className="text-emerald-600" />
                                     </div>
-                                    <div>
-                                        <p className="font-bold text-slate-900 text-lg">{selectedStaff.fullName}</p>
-                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t(`role_${selectedStaff.role}`) || selectedStaff.role}</p>
-                                    </div>
+                                    <h3 className="text-xl font-bold text-slate-900">{t('pay_salary') || 'Pay Salary'}</h3>
                                 </div>
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                    onClick={onClose}
+                                    className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-400 rounded-full transition-colors"
+                                >
+                                    <X size={18} />
+                                </motion.button>
                             </div>
-                        ) : (
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('select_staff') || 'Select Staff'}</label>
-                                <div className="relative" ref={dropdownRef}>
-                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                        type="button"
-                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                        className={`w-full bg-slate-50/50 border rounded-2xl py-3 px-4 flex items-center gap-3 transition-all outline-none cursor-pointer ${isDropdownOpen ? 'border-blue-400 shadow-[0_0_0_3px_rgba(59,130,246,0.06)] bg-white' : 'border-slate-200/80 hover:border-slate-300 hover:bg-white'}`}
-                                    >
-                                        {selectedStaff ? (
-                                            <>
-                                                <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 ring-2 ring-white shadow-sm">
-                                                    {selectedStaff.imageUrl ? (
-                                                        <img src={selectedStaff.imageUrl} className="w-full h-full object-cover" alt="" />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50 text-sm">
-                                                            {selectedStaff.fullName.charAt(0)}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex-1 text-left min-w-0">
-                                                    <p className="font-bold text-slate-800 text-sm truncate">{selectedStaff.fullName}</p>
-                                                    <p className="text-[10px] text-slate-400 font-semibold">{t(`role_${selectedStaff.role}`) || selectedStaff.role} · {selectedStaff.salary?.toLocaleString()} {selectedStaff.currency}</p>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-                                                    <User size={16} className="text-slate-400" />
-                                                </div>
-                                                <span className="text-sm font-semibold text-slate-400">{t('select_staff') || 'Select Staff'}...</span>
-                                            </>
-                                        )}
-                                        <div
-                                            className={`ml-auto text-slate-400 flex-shrink-0 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
-                                        >
-                                            <ChevronLeft size={16} className="-rotate-90" />
-                                        </div>
-                                    </motion.button>
 
-                                    {isDropdownOpen && (
-                                        <div
-                                            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden z-50 max-h-[240px] overflow-y-auto"
-                                            style={{ scrollbarWidth: 'thin', scrollbarColor: '#e2e8f0 transparent' }}
-                                        >
-                                            {visibleOptions.length === 0 ? (
-                                                <div className="p-6 text-center text-sm text-slate-400 font-semibold">{t('no_staff_found') || 'No staff members found'}</div>
-                                            ) : (
-                                                visibleOptions.map((staff, idx) => {
-                                                    const isSelected = staff.id === selectedStaffId;
-                                                    return (
-                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                            key={staff.id}
-                                                            type="button"
-                                                            onClick={() => handleSelectStaff(staff.id)}
-                                                            className={`w-full flex items-center gap-3 px-4 py-3 transition-all text-left ${isSelected ? 'bg-blue-50/70' : 'hover:bg-slate-50'} ${idx > 0 ? 'border-t border-slate-100/70' : ''}`}
-                                                        >
-                                                            <div className={`w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ${isSelected ? 'ring-2 ring-blue-500' : 'ring-2 ring-white'}`}>
-                                                                {staff.imageUrl ? (
-                                                                    <img src={staff.imageUrl} className="w-full h-full object-cover" alt="" />
-                                                                ) : (
-                                                                    <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50">
-                                                                        {staff.fullName.charAt(0)}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className={`font-bold text-sm truncate ${isSelected ? 'text-blue-700' : 'text-slate-800'}`}>{staff.fullName}</p>
-                                                                <div className="flex items-center gap-2 mt-0.5">
-                                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t(`role_${staff.role}`) || staff.role}</span>
-                                                                    <span className="text-slate-200">·</span>
-                                                                    <span className="text-[10px] font-bold text-emerald-600">{staff.salary?.toLocaleString()} {staff.currency}</span>
-                                                                </div>
-                                                            </div>
-                                                            {isSelected && (
-                                                                <div
-                                                                    className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0"
-                                                                >
-                                                                    <Check size={12} className="text-white stroke-[3]" />
+                            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                                {/* Staff Selection: Static if pre-selected, Dropdown otherwise */}
+                                {initialStaffId && selectedStaff ? (
+                                    <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-200/80 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 rounded-xl overflow-hidden bg-white shadow-sm ring-2 ring-white">
+                                                {selectedStaff.imageUrl ? (
+                                                    <img src={selectedStaff.imageUrl} className="w-full h-full object-cover" alt="" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50 text-lg">
+                                                        {selectedStaff.fullName.charAt(0)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-900 text-lg">{selectedStaff.fullName}</p>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t(`role_${selectedStaff.role}`) || selectedStaff.role}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('select_staff') || 'Select Staff'}</label>
+                                        <div className="relative" ref={dropdownRef}>
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                type="button"
+                                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                                className={`w-full bg-slate-50/50 border rounded-2xl py-3 px-4 flex items-center gap-3 transition-all outline-none cursor-pointer ${isDropdownOpen ? 'border-blue-400 shadow-[0_0_0_3px_rgba(59,130,246,0.06)] bg-white' : 'border-slate-200/80 hover:border-slate-300 hover:bg-white'}`}
+                                            >
+                                                {selectedStaff ? (
+                                                    <>
+                                                        <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 ring-2 ring-white shadow-sm">
+                                                            {selectedStaff.imageUrl ? (
+                                                                <img src={selectedStaff.imageUrl} className="w-full h-full object-cover" alt="" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50 text-sm">
+                                                                    {selectedStaff.fullName.charAt(0)}
                                                                 </div>
                                                             )}
-                                                        </motion.button>
-                                                    );
-                                                })
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+                                                        </div>
+                                                        <div className="flex-1 text-left min-w-0">
+                                                            <p className="font-bold text-slate-800 text-sm truncate">{selectedStaff.fullName}</p>
+                                                            <p className="text-[10px] text-slate-400 font-semibold">{t(`role_${selectedStaff.role}`) || selectedStaff.role} · {selectedStaff.salary?.toLocaleString()} {selectedStaff.currency}</p>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                                            <User size={16} className="text-slate-400" />
+                                                        </div>
+                                                        <span className="text-sm font-semibold text-slate-400">{t('select_staff') || 'Select Staff'}...</span>
+                                                    </>
+                                                )}
+                                                <div
+                                                    className={`ml-auto text-slate-400 flex-shrink-0 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                                                >
+                                                    <ChevronLeft size={16} className="-rotate-90" />
+                                                </div>
+                                            </motion.button>
 
-                        {/* Amount: Read-only display if pre-selected, Input otherwise */}
-                        {initialStaffId ? (
-                            <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/80 flex items-center justify-between group cursor-pointer" onClick={() => {
-                                // Optional: Allow edit on click if valid
-                                // For now, keep it read-only but focusable
-                            }}>
-                                <div>
-                                    <p className="text-[10px] font-black text-emerald-600/70 uppercase tracking-widest mb-0.5">{t('salary_amount') || 'Salary Amount'}</p>
-                                    <p className="text-2xl font-black text-emerald-700">
-                                        {new Intl.NumberFormat('uz-UZ').format(Number(amount))}
-                                        <span className="text-sm font-bold text-emerald-600/60 ml-1.5">{selectedStaff?.currency || 'UZS'}</span>
-                                    </p>
-                                </div>
-                                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                                    <Check size={20} className="text-emerald-600 stroke-[3]" />
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('amount') || 'Amount'}</label>
-                                <div className="relative">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">UZS</div>
-                                    <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        required
-                                        className="w-full bg-slate-50/50 border border-slate-200/80 rounded-2xl py-3.5 pl-12 pr-5 text-slate-900 font-bold text-lg focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 focus:bg-white transition-all outline-none"
-                                        value={amount ? new Intl.NumberFormat('uz-UZ').format(Number(amount)) : ''}
-                                        onChange={e => {
-                                            const val = e.target.value.replace(/[^0-9]/g, '');
-                                            setAmount(val);
-                                        }}
-                                        placeholder={t('enter_amount') || 'Enter amount'}
+                                            <AnimatePresence>
+                                                {isDropdownOpen && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                        transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                                                        className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden z-50 max-h-[240px] overflow-y-auto origin-top"
+                                                        style={{ scrollbarWidth: 'thin', scrollbarColor: '#e2e8f0 transparent' }}
+                                                    >
+                                                        {visibleOptions.length === 0 ? (
+                                                            <div className="p-6 text-center text-sm text-slate-400 font-semibold">{t('no_staff_found') || 'No staff members found'}</div>
+                                                        ) : (
+                                                            visibleOptions.map((staff, idx) => {
+                                                                const isSelected = staff.id === selectedStaffId;
+                                                                return (
+                                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                                        key={staff.id}
+                                                                        type="button"
+                                                                        onClick={() => handleSelectStaff(staff.id)}
+                                                                        className={`w-full flex items-center gap-3 px-4 py-3 transition-all text-left ${isSelected ? 'bg-blue-50/70' : 'hover:bg-slate-50'} ${idx > 0 ? 'border-t border-slate-100/70' : ''}`}
+                                                                    >
+                                                                        <div className={`w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ${isSelected ? 'ring-2 ring-blue-500' : 'ring-2 ring-white'}`}>
+                                                                            {staff.imageUrl ? (
+                                                                                <img src={staff.imageUrl} className="w-full h-full object-cover" alt="" />
+                                                                            ) : (
+                                                                                <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold bg-blue-50">
+                                                                                    {staff.fullName.charAt(0)}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className={`font-bold text-sm truncate ${isSelected ? 'text-blue-700' : 'text-slate-800'}`}>{staff.fullName}</p>
+                                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t(`role_${staff.role}`) || staff.role}</span>
+                                                                                <span className="text-slate-200">·</span>
+                                                                                <span className="text-[10px] font-bold text-emerald-600">{staff.salary?.toLocaleString()} {staff.currency}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                        {isSelected && (
+                                                                            <div
+                                                                                className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0"
+                                                                            >
+                                                                                <Check size={12} className="text-white stroke-[3]" />
+                                                                            </div>
+                                                                        )}
+                                                                    </motion.button>
+                                                                );
+                                                            })
+                                                        )}
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Amount: Read-only display if pre-selected, Input otherwise */}
+                                {initialStaffId ? (
+                                    <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/80 flex items-center justify-between group cursor-pointer" onClick={() => {
+                                        // Optional: Allow edit on click if valid
+                                        // For now, keep it read-only but focusable
+                                    }}>
+                                        <div>
+                                            <p className="text-[10px] font-black text-emerald-600/70 uppercase tracking-widest mb-0.5">{t('salary_amount') || 'Salary Amount'}</p>
+                                            <p className="text-2xl font-black text-emerald-700">
+                                                {new Intl.NumberFormat('uz-UZ').format(Number(amount))}
+                                                <span className="text-sm font-bold text-emerald-600/60 ml-1.5">{selectedStaff?.currency || 'UZS'}</span>
+                                            </p>
+                                        </div>
+                                        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                                            <Check size={20} className="text-emerald-600 stroke-[3]" />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('amount') || 'Amount'}</label>
+                                        <div className="relative">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">UZS</div>
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                required
+                                                className="w-full bg-slate-50/50 border border-slate-200/80 rounded-2xl py-3.5 pl-12 pr-5 text-slate-900 font-bold text-lg focus:ring-[3px] focus:ring-blue-500/5 focus:border-blue-400 focus:bg-white transition-all outline-none"
+                                                value={amount ? new Intl.NumberFormat('uz-UZ').format(Number(amount)) : ''}
+                                                onChange={e => {
+                                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                                    setAmount(val);
+                                                }}
+                                                placeholder={t('enter_amount') || 'Enter amount'}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Date (full width, custom picker) */}
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('date') || 'Date'}</label>
+                                    <CustomDatePicker
+                                        value={new Date(date)}
+                                        onChange={(d) => setDate(format(d, 'yyyy-MM-dd'))}
+                                        placeholder={t('select_date') || 'Select Date'}
                                     />
                                 </div>
-                            </div>
-                        )}
 
-                        {/* Date (full width, custom picker) */}
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('date') || 'Date'}</label>
-                            <CustomDatePicker
-                                value={new Date(date)}
-                                onChange={(d) => setDate(format(d, 'yyyy-MM-dd'))}
-                                placeholder={t('select_date') || 'Select Date'}
-                            />
-                        </div>
+                                {/* Note */}
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('notes') || 'Note'}</label>
+                                    <input
+                                        type="text"
+                                        value={note}
+                                        onChange={e => setNote(e.target.value)}
+                                        className="w-full bg-slate-50/50 border border-slate-200/80 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 placeholder:font-medium focus:border-blue-400 focus:ring-[3px] focus:ring-blue-500/5 focus:bg-white transition-all outline-none"
+                                        placeholder={t('add_description') || 'Add a description...'}
+                                    />
+                                </div>
 
-                        {/* Note */}
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('notes') || 'Note'}</label>
-                            <input
-                                type="text"
-                                value={note}
-                                onChange={e => setNote(e.target.value)}
-                                className="w-full bg-slate-50/50 border border-slate-200/80 rounded-2xl py-3.5 px-5 text-slate-900 font-bold placeholder:text-slate-300 placeholder:font-medium focus:border-blue-400 focus:ring-[3px] focus:ring-blue-500/5 focus:bg-white transition-all outline-none"
-                                placeholder={t('add_description') || 'Add a description...'}
-                            />
-                        </div>
-
-                        {/* Submit */}
-                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                            type="submit"
-                            disabled={loading || !selectedStaffId || !amount}
-                            className="btn-glossy-emerald w-full !py-4 text-base uppercase tracking-wide flex items-center justify-center gap-2.5 shadow-lg"
-                        >
-                            {loading ? (
-                                <ButtonLoader />
-                            ) : (
-                                <>
-                                    <Banknote size={18} />
-                                    {t('pay_salary') || 'Pay Salary'}
-                                </>
-                            )}
-                        </motion.button>
-                    </form>
-                </div>
-            </div>
+                                {/* Submit */}
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                    type="submit"
+                                    disabled={loading || !selectedStaffId || !amount}
+                                    className="btn-glossy-emerald w-full !py-4 text-base uppercase tracking-wide flex items-center justify-center gap-2.5 shadow-lg"
+                                >
+                                    {loading ? (
+                                        <ButtonLoader />
+                                    ) : (
+                                        <>
+                                            <Banknote size={18} />
+                                            {t('pay_salary') || 'Pay Salary'}
+                                        </>
+                                    )}
+                                </motion.button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </Portal>
     );
 };
@@ -873,7 +917,8 @@ const StaffDetail = ({
     onStatusChange,
     onEdit,
     onPay,
-    onDelete
+    onDelete,
+    isViewer
 }: {
     staff: Staff;
     onBack: () => void;
@@ -881,6 +926,7 @@ const StaffDetail = ({
     onEdit?: () => void;
     onPay?: () => void;
     onDelete?: () => void;
+    isViewer: boolean;
 }) => {
     const { t, language } = useLanguage();
     const { accountId } = useAccount();
@@ -1166,7 +1212,7 @@ const StaffDetail = ({
 
 
     return (
-        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-6">
             {/* Navigation */}
             <div className="flex items-center justify-between">
                 <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
@@ -1212,12 +1258,47 @@ const StaffDetail = ({
                                     <User size={12} strokeWidth={2.5} />
                                     {t(`role_${staff.role}`) || staff.role}
                                 </span>
-                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-black uppercase tracking-widest border ${staff.status === 'active' ? 'bg-emerald-50/50 text-emerald-700 border-emerald-100/50' :
-                                    staff.status === 'on_leave' ? 'bg-amber-50/50 text-amber-700 border-amber-100/50' :
-                                        'bg-slate-50 text-slate-600 border-slate-100'
-                                    }`}>
-                                    {t(staff.status === 'active' ? 'active' : staff.status) || staff.status}
-                                </span>
+                                <div className="relative">
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                        onClick={() => !isViewer && setShowStatusMenu(!showStatusMenu)}
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-black uppercase tracking-widest border transition-all duration-200 ${isViewer ? '' : 'cursor-pointer hover:shadow-sm'} ${staff.status === 'active' ? 'bg-emerald-50/50 text-emerald-700 border-emerald-100/50' :
+                                            staff.status === 'on_leave' ? 'bg-amber-50/50 text-amber-700 border-amber-100/50' :
+                                                'bg-slate-50 text-slate-600 border-slate-100'
+                                            } ${showStatusMenu ? 'ring-2 ring-blue-500/20 border-blue-200' : ''}`}
+                                    >
+                                        {t(staff.status === 'active' ? 'active' : staff.status) || staff.status}
+                                        {!isViewer && <ChevronDown size={10} strokeWidth={3} className={`ml-0.5 transition-transform duration-200 ${showStatusMenu ? 'rotate-180' : ''}`} />}
+                                    </motion.button>
+
+                                    <AnimatePresence>
+                                        {showStatusMenu && (
+                                            <motion.div
+                                                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                                                className="absolute top-full left-0 mt-2 z-[60] w-[180px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden p-1.5 origin-top-left"
+                                            >
+                                                {statusOptions.map(opt => {
+                                                    const isActive = staff.status === opt.value;
+                                                    return (
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                            key={opt.value}
+                                                            onClick={() => handleStatusChange(opt.value)}
+                                                            disabled={updatingStatus}
+                                                            className={`w-full text-left px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 flex items-center gap-2.5 ${isActive ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                                                        >
+                                                            <span className={`w-2 h-2 rounded-full shrink-0 ${opt.color}`} />
+                                                            <span className="flex-1">{opt.label}</span>
+                                                            {isActive && <Check size={14} strokeWidth={3} className="shrink-0 opacity-70" />}
+                                                            {updatingStatus && isActive && <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />}
+                                                        </motion.button>
+                                                    );
+                                                })}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1323,41 +1404,49 @@ const StaffDetail = ({
                                 )}
                             </motion.button>
 
-                            {isCategoryPickerOpen && (
-                                <div className="absolute top-full right-0 mt-2 z-[60] w-[200px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 p-1.5">
-                                    {(['all', 'income', 'expense', 'salary', 'food', 'other'] as const).map(cat => {
-                                        const isActive = filterCategory === cat;
-                                        const dotColor = {
-                                            all: 'bg-slate-400',
-                                            income: 'bg-emerald-500',
-                                            expense: 'bg-rose-500',
-                                            salary: 'bg-blue-500',
-                                            food: 'bg-amber-500',
-                                            other: 'bg-violet-500',
-                                        }[cat];
-                                        const activeBg = {
-                                            all: 'bg-slate-50 text-slate-700 ring-1 ring-slate-200',
-                                            income: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
-                                            expense: 'bg-rose-50 text-rose-700 ring-1 ring-rose-200',
-                                            salary: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
-                                            food: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
-                                            other: 'bg-violet-50 text-violet-700 ring-1 ring-violet-200',
-                                        }[cat];
+                            <AnimatePresence>
+                                {isCategoryPickerOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                                        className="absolute top-full right-0 mt-2 z-[60] w-[200px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden p-1.5 origin-top-right"
+                                    >
+                                        {(['all', 'income', 'expense', 'salary', 'food', 'other'] as const).map(cat => {
+                                            const isActive = filterCategory === cat;
+                                            const dotColor = {
+                                                all: 'bg-slate-400',
+                                                income: 'bg-emerald-500',
+                                                expense: 'bg-rose-500',
+                                                salary: 'bg-blue-500',
+                                                food: 'bg-amber-500',
+                                                other: 'bg-violet-500',
+                                            }[cat];
+                                            const activeBg = {
+                                                all: 'bg-slate-50 text-slate-700 ring-1 ring-slate-200',
+                                                income: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+                                                expense: 'bg-rose-50 text-rose-700 ring-1 ring-rose-200',
+                                                salary: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+                                                food: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+                                                other: 'bg-violet-50 text-violet-700 ring-1 ring-violet-200',
+                                            }[cat];
 
-                                        return (
-                                            <motion.button whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                key={cat}
-                                                onClick={() => { setFilterCategory(cat); setIsCategoryPickerOpen(false); }}
-                                                className={`w-full text-left px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 flex items-center gap-2.5 ${isActive ? activeBg : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                                            >
-                                                <span className={`w-2 h-2 rounded-full shrink-0 ${isActive ? dotColor : 'bg-slate-300'}`} />
-                                                <span className="flex-1">{cat === 'all' ? t('filter_all') || 'All' : t(cat)}</span>
-                                                {isActive && <Check size={14} strokeWidth={3} className="shrink-0 opacity-70" />}
-                                            </motion.button>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                                            return (
+                                                <motion.button whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                    key={cat}
+                                                    onClick={() => { setFilterCategory(cat); setIsCategoryPickerOpen(false); }}
+                                                    className={`w-full text-left px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 flex items-center gap-2.5 ${isActive ? activeBg : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                                                >
+                                                    <span className={`w-2 h-2 rounded-full shrink-0 ${isActive ? dotColor : 'bg-slate-300'}`} />
+                                                    <span className="flex-1">{cat === 'all' ? t('filter_all') || 'All' : t(cat)}</span>
+                                                    {isActive && <Check size={14} strokeWidth={3} className="shrink-0 opacity-70" />}
+                                                </motion.button>
+                                            );
+                                        })}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
 
@@ -1393,71 +1482,79 @@ const StaffDetail = ({
                             </motion.button>
 
                             {/* Dropdown */}
-                            {isMonthPickerOpen && (
-                                <div className="absolute top-full left-0 md:right-0 md:left-auto mt-2 z-[60] w-[260px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                    {/* Year Navigation */}
-                                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-white">
-                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                            onClick={() => setPickerYear(y => y - 1)}
-                                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all active:scale-90"
-                                        >
-                                            <ChevronLeft size={16} strokeWidth={2.5} />
-                                        </motion.button>
-                                        <span className="text-base font-black text-slate-800 tracking-tight">{pickerYear}</span>
-                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                            onClick={() => setPickerYear(y => y + 1)}
-                                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all active:scale-90"
-                                        >
-                                            <ChevronRight size={16} strokeWidth={2.5} />
-                                        </motion.button>
-                                    </div>
+                            <AnimatePresence>
+                                {isMonthPickerOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                                        className="absolute top-full left-0 md:right-0 md:left-auto mt-2 z-[60] w-[260px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden"
+                                    >
+                                        {/* Year Navigation */}
+                                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-white">
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                onClick={() => setPickerYear(y => y - 1)}
+                                                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all active:scale-90"
+                                            >
+                                                <ChevronLeft size={16} strokeWidth={2.5} />
+                                            </motion.button>
+                                            <span className="text-base font-black text-slate-800 tracking-tight">{pickerYear}</span>
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                onClick={() => setPickerYear(y => y + 1)}
+                                                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all active:scale-90"
+                                            >
+                                                <ChevronRight size={16} strokeWidth={2.5} />
+                                            </motion.button>
+                                        </div>
 
-                                    {/* Month Grid */}
-                                    <div className="grid grid-cols-3 gap-1.5 p-3">
-                                        {MONTH_NAMES_SHORT.map((name, idx) => {
-                                            const mm = String(idx + 1).padStart(2, '0');
-                                            const value = `${pickerYear}-${mm}`;
-                                            const isActive = selectedMonth === value;
-                                            const isCurrentMonth = new Date().getFullYear() === pickerYear && new Date().getMonth() === idx;
+                                        {/* Month Grid */}
+                                        <div className="grid grid-cols-3 gap-1.5 p-3">
+                                            {MONTH_NAMES_SHORT.map((name, idx) => {
+                                                const mm = String(idx + 1).padStart(2, '0');
+                                                const value = `${pickerYear}-${mm}`;
+                                                const isActive = selectedMonth === value;
+                                                const isCurrentMonth = new Date().getFullYear() === pickerYear && new Date().getMonth() === idx;
 
-                                            return (
-                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                    key={idx}
-                                                    onClick={() => handleSelectMonth(idx)}
-                                                    className={`relative py-3 px-1 rounded-xl text-[13px] font-bold transition-all duration-150 ${isActive
-                                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-1 ring-blue-600 z-10'
-                                                        : isCurrentMonth
-                                                            ? 'bg-blue-50/50 text-blue-600 hover:bg-blue-50 font-black ring-[1.5px] ring-blue-200'
-                                                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
-                                                        }`}
-                                                >
-                                                    {name}
-                                                </motion.button>
-                                            );
-                                        })}
-                                    </div>
+                                                return (
+                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                        key={idx}
+                                                        onClick={() => handleSelectMonth(idx)}
+                                                        className={`relative py-3 px-1 rounded-xl text-[13px] font-bold transition-all duration-150 ${isActive
+                                                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-1 ring-blue-600 z-10'
+                                                            : isCurrentMonth
+                                                                ? 'bg-blue-50/50 text-blue-600 hover:bg-blue-50 font-black ring-[1.5px] ring-blue-200'
+                                                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                                                            }`}
+                                                    >
+                                                        {name}
+                                                    </motion.button>
+                                                );
+                                            })}
+                                        </div>
 
-                                    {/* Footer */}
-                                    <div className="px-4 pb-3 flex items-center gap-2">
-                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                            onClick={handleClearMonth}
-                                            className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all"
-                                        >
-                                            {t('clear') || 'Tozalash'}
-                                        </motion.button>
-                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                            onClick={() => {
-                                                const now = new Date();
-                                                setPickerYear(now.getFullYear());
-                                                handleSelectMonth(now.getMonth());
-                                            }}
-                                            className="flex-1 py-2.5 rounded-xl text-xs font-extrabold text-blue-600 hover:bg-blue-50 transition-all bg-transparent"
-                                        >
-                                            {t('this_month') || 'Shu oy'}
-                                        </motion.button>
-                                    </div>
-                                </div>
-                            )}
+                                        {/* Footer */}
+                                        <div className="px-4 pb-3 flex items-center gap-2">
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                onClick={handleClearMonth}
+                                                className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all"
+                                            >
+                                                {t('clear') || 'Tozalash'}
+                                            </motion.button>
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                onClick={() => {
+                                                    const now = new Date();
+                                                    setPickerYear(now.getFullYear());
+                                                    handleSelectMonth(now.getMonth());
+                                                }}
+                                                className="flex-1 py-2.5 rounded-xl text-xs font-extrabold text-blue-600 hover:bg-blue-50 transition-all bg-transparent"
+                                            >
+                                                {t('this_month') || 'Shu oy'}
+                                            </motion.button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                         <button
                             onClick={() => setIsAddExpenseModalOpen(true)}
@@ -1703,7 +1800,7 @@ const StaffDetail = ({
                 staffId={staff.id}
                 staffName={staff.fullName}
             />
-        </div>
+        </div >
     );
 };
 
@@ -1721,6 +1818,7 @@ export const StaffPage = () => {
     const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
     const [loading, setLoading] = useState(true);
     const [payModalStaffId, setPayModalStaffId] = useState<string | null>(null);
+    const [selectedRole, setSelectedRole] = useState<StaffRole | 'all'>('all');
 
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
@@ -1810,10 +1908,12 @@ export const StaffPage = () => {
         }
     };
 
-    const filteredStaff = staffList.filter(s =>
-        s.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.role.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredStaff = staffList.filter(s => {
+        const matchesSearch = s.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            s.role.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesRole = selectedRole === 'all' || s.role === selectedRole;
+        return matchesSearch && matchesRole;
+    });
 
     const [staffListPage, setStaffListPage] = useState(1);
     const STAFF_LIST_ITEMS_PER_PAGE = 9;
@@ -1827,97 +1927,127 @@ export const StaffPage = () => {
 
     useEffect(() => {
         setStaffListPage(1);
-    }, [searchQuery, staffList.length]);
+    }, [searchQuery, staffList.length, selectedRole]);
 
     return (
         <div className="h-full flex flex-col p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6 relative z-10">
-            {selectedStaff ? (
-                <StaffDetail
-                    staff={selectedStaff}
-                    onBack={() => setSelectedStaff(null)}
-                    onStatusChange={async (staffId, newStatus) => {
-                        await updateStaff(staffId, { status: newStatus as any });
-                        setSelectedStaff(prev => prev ? { ...prev, status: newStatus as any } : null);
-                        success(t('status_updated_title') || 'Status Updated', t('status_updated_msg') || 'Staff status changed');
-                    }}
-                    onEdit={!isViewer ? () => { setEditingStaff(selectedStaff); setIsModalOpen(true); } : undefined}
-                    onPay={!isViewer ? () => { setPayModalStaffId(selectedStaff.id); setIsPayModalOpen(true); } : undefined}
-                    onDelete={!isViewer ? () => handleDelete(selectedStaff) : undefined}
-                />
-            ) : (
-                <>
-                    {/* Elegant Header */}
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
-                        <div className="space-y-1">
-                            <h1
-                                className="text-3xl font-bold text-slate-900 tracking-tight"
-                            >
-                                {t('staff_management') || 'Staff Management'}
-                            </h1>
-                        </div>
-                        <div className="flex items-center gap-3">
+            <AnimatePresence mode="wait">
+                {selectedStaff ? (
+                    <motion.div
+                        key="staff-detail"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                    >
+                        <StaffDetail
+                            staff={selectedStaff}
+                            onBack={() => setSelectedStaff(null)}
+                            onStatusChange={async (staffId, newStatus) => {
+                                await updateStaff(staffId, { status: newStatus as any });
+                                setSelectedStaff(prev => prev ? { ...prev, status: newStatus as any } : null);
+                                success(t('status_updated_title') || 'Status Updated', t('status_updated_msg') || 'Staff status changed');
+                            }}
+                            onEdit={!isViewer ? () => { setEditingStaff(selectedStaff); setIsModalOpen(true); } : undefined}
+                            onPay={!isViewer ? () => { setPayModalStaffId(selectedStaff.id); setIsPayModalOpen(true); } : undefined}
+                            onDelete={!isViewer ? () => handleDelete(selectedStaff) : undefined}
+                            isViewer={isViewer}
+                        />
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="staff-list"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        {/* Elegant Header */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
+                            <div className="space-y-1">
+                                <h1
+                                    className="text-3xl font-bold text-slate-900 tracking-tight"
+                                >
+                                    {t('staff_management') || 'Staff Management'}
+                                </h1>
+                                <p className="text-slate-500 text-sm font-medium">
+                                    {t('staff_subtitle') || 'Manage clinic staff, salaries and attendance'}
+                                </p>
+                            </div>
 
                             {!isViewer && (
-                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                    onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
-                                    className="btn-glossy-blue !w-auto !py-3 px-6 flex items-center gap-2.5 transition-all duration-300 self-start md:self-auto hover:scale-[1.01] hover:-translate-y-px active:scale-99"
-                                >
-                                    <Plus size={18} className="stroke-[3]" />
-                                    <span className="text-sm uppercase tracking-wider">{t('add_staff') || 'Add Staff'}</span>
-                                </motion.button>
-                            )}
-                        </div>
-                    </div>
+                                <div className="flex items-center gap-3">
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                        onClick={() => setIsPayModalOpen(true)}
+                                        className="h-11 px-5 flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200/50 hover:bg-emerald-100 hover:border-emerald-200 font-bold rounded-2xl text-[13px] transition-all shadow-sm"
+                                    >
+                                        <Banknote size={18} className="stroke-[2.5]" />
+                                        {t('pay_salary') || 'Pay Salary'}
+                                    </motion.button>
 
-                    {/* Premium White Search Bar */}
-                    <div
-                        className="bg-white p-2 rounded-2xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-4"
-                    >
-                        <div className="relative w-full md:w-[450px] group">
-                            <input
-                                type="text"
-                                placeholder={t('search_staff') || "Search by name or role..."}
-                                className="w-full pl-14 pr-12 py-4 bg-white/60 backdrop-blur-xl border border-white/40 rounded-[1.25rem] text-slate-900 placeholder:text-slate-400 font-semibold text-base shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] focus:shadow-[0_8px_30px_-5px_rgba(59,130,246,0.15)] focus:bg-white focus:border-blue-500/30 transition-all outline-none"
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                            />
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-slate-400 group-focus-within:text-blue-600 transition-all duration-300 z-10 pointer-events-none">
-                                <Search size={22} className="group-focus-within:scale-110 transition-transform" />
-                            </div>
-                            {searchQuery && (
-                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                    onClick={() => setSearchQuery('')}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20"
-                                >
-                                    <X size={14} strokeWidth={3} />
-                                </motion.button>
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                        onClick={() => { setEditingStaff(null); setIsModalOpen(true); }}
+                                        className="h-11 px-6 flex items-center justify-center gap-2 bg-blue-600 text-white font-bold rounded-2xl text-[13px] transition-all shadow-md shadow-blue-500/20 hover:bg-blue-700 active:scale-95"
+                                    >
+                                        <UserPlus size={18} strokeWidth={2.5} />
+                                        {t('add_staff') || 'Add Staff'}
+                                    </motion.button>
+                                </div>
                             )}
                         </div>
 
-                        <div className="flex items-center gap-2 pr-2">
-                            <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl">
-                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-slate-600 font-bold text-xs uppercase tracking-wider">{t('active')}: {staffList.filter(s => s.status === 'active').length}</span>
-                            </div>
-                            <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl">
-                                <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-                                <span className="text-slate-600 font-bold text-xs uppercase tracking-wider">{t('total')}: {staffList.length}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Grid */}
-                    {loading ?
-                        <StaffSkeleton />
-                        : filteredStaff.length === 0 ?
-                            <div className="flex-1 flex items-center justify-center p-12">
-                                <EmptyState
-                                    message={t('no_staff_found') || "No staff members found"}
+                        {/* Search & Filter Bar */}
+                        <div className="flex flex-col md:flex-row gap-4 items-center">
+                            <div className="relative flex-1 group w-full">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} strokeWidth={2.5} />
+                                <input
+                                    type="text"
+                                    placeholder={t('search_staff') || 'Search staff by name or role...'}
+                                    className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200/80 rounded-2xl text-slate-800 placeholder:text-slate-400 font-bold text-sm focus:outline-none focus:ring-[3px] focus:ring-blue-500/15 focus:border-blue-500/50 transition-all shadow-sm group-hover:border-slate-300"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
-                            :
+
+                            <div className="flex items-center gap-2 w-full md:w-auto">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 hidden lg:block">{t('filter_by') || 'Filter'}</span>
+                                <div className="flex items-center gap-1.5 bg-slate-100/50 p-1 rounded-xl border border-slate-200/30 overflow-x-auto no-scrollbar w-full md:w-auto">
+                                    {(['all', 'doctor', 'assistant', 'nurse', 'call_operator', 'admin', 'other'] as const).map((role) => (
+                                        <motion.button whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            key={role}
+                                            onClick={() => setSelectedRole(role)}
+                                            className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${selectedRole === role
+                                                ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200'
+                                                : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                                                }`}
+                                        >
+                                            {role === 'all' ? (t('all_roles') || 'All') : (t(`role_${role}`) || role)}
+                                        </motion.button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {loading ? (
+                            <StaffSkeleton />
+                        ) : filteredStaff.length === 0 ? (
+                            <div className="flex-1 flex items-center justify-center p-12 bg-white/50 rounded-[3rem] border border-slate-200/50 border-dashed mt-4">
+                                <EmptyState
+                                    message={t('no_staff_title') || 'No Staff Found'}
+                                    description={searchQuery || selectedRole !== 'all' ? t('no_staff_filter_msg') : t('no_staff_msg')}
+                                    action={(searchQuery || selectedRole !== 'all') ? (
+                                        <button
+                                            onClick={() => { setSearchQuery(''); setSelectedRole('all'); }}
+                                            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-bold transition-colors"
+                                        >
+                                            {t('clear_filters') || 'Clear Filters'}
+                                        </button>
+                                    ) : undefined}
+                                />
+                            </div>
+                        ) : (
                             <>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-4">
                                     {paginatedStaff.map((staff) => (
                                         <StaffCard
                                             key={staff.id}
@@ -1941,11 +2071,10 @@ export const StaffPage = () => {
                                     />
                                 )}
                             </>
-                    }
-
-
-                </>
-            )}
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <StaffModal
                 isOpen={isModalOpen}

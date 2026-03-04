@@ -304,315 +304,320 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClos
         { value: 'other', label: t('other') || 'Other' }
     ];
 
-    if (!isOpen) return null;
+
 
     return (
         <Portal>
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md font-sans">
-                <motion.div
-                    initial={{ scale: 0.95, opacity: 0, y: 10 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                    onClick={(e) => e.stopPropagation()}
-                    className={`bg-white rounded-[32px] w-full shadow-2xl shadow-blue-500/10 overflow-hidden flex flex-col max-h-[90vh] transition-all duration-300 ${mode === 'expense' ? 'max-w-md' : 'max-w-5xl'}`}
-                >
-                    <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-                        {mode === 'expense' ? (
-                            <div className="w-full flex flex-col overflow-y-auto bg-white p-6 relative no-scrollbar">
-                                <div className="flex justify-center mb-8">
-                                    <div className="bg-gray-100 p-1.5 rounded-xl flex w-full relative shadow-inner mb-8">
-                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                            onClick={() => setMode('income')}
-                                            className="flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm text-gray-500 hover:text-gray-700 hover:bg-white/50"
-                                        >
-                                            <span className="relative z-10">{t('income') || 'Kirim'}</span>
-                                        </motion.button>
-                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                            onClick={() => setMode('expense')}
-                                            className="flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm btn-glossy-red"
-                                        >
-                                            <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
-                                        </motion.button>
-                                    </div>
-                                </div>
-
-                                <div className="text-center mb-8">
-                                    <div className="text-[11px] font-black text-gray-300 uppercase tracking-widest mb-2">{t('amount') || 'Miqdor'}</div>
-                                    <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        autoFocus
-                                        value={amount ? new Intl.NumberFormat('en-US').format(amount) : ''}
-                                        onChange={e => {
-                                            const val = e.target.value.replace(/[^0-9]/g, '');
-                                            setAmount(val ? Number(val) : 0);
-                                        }}
-                                        placeholder="0"
-                                        className="w-full bg-transparent text-center text-5xl font-bold tracking-tight text-rose-500 outline-none placeholder-gray-200 caret-rose-400"
-                                    />
-                                    <div className="text-xs font-bold text-rose-200 uppercase tracking-widest mt-2">UZS</div>
-                                </div>
-
-                                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-6 isolate">
-                                    <div className="p-4 border-b border-gray-100 flex items-center gap-4 bg-white/95 backdrop-blur-sm sticky top-0 z-20 rounded-t-2xl shadow-sm transition-colors">
-                                        <div className="w-10 h-10 rounded-full overflow-hidden bg-rose-50 flex items-center justify-center shrink-0">
-                                            {patient.profileImage ? <ImageWithFallback src={patient.profileImage} alt={patient.fullName} className="w-full h-full object-cover" /> : <User size={18} className="text-rose-400" />}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('patient') || 'Bemor'}</div>
-                                            <div className="font-bold text-gray-900">{patient.fullName}</div>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 border-b border-gray-100 flex items-center gap-4 relative group hover:bg-gray-50 transition-colors cursor-pointer bg-white">
-                                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 shrink-0"><Calendar size={18} /></div>
-                                        <div className="flex-1">
-                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('date') || 'Sana'}</div>
-
-                                            <div className="font-bold text-gray-900">{format(date, 'dd MMMM yyyy', { locale: currentLocale })}</div>
-                                        </div>
-                                        <div className="absolute inset-0 opacity-0"><CustomDatePicker value={date} onChange={setDate} centered /></div>
-                                    </div>
-                                    <div className="p-4 flex items-center justify-between gap-4 relative group hover:bg-gray-50 transition-colors cursor-pointer bg-white rounded-b-2xl">
-                                        <div className="flex items-center gap-4 min-w-0">
-                                            <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 shrink-0"><Search size={18} /></div>
-                                            <div className="min-w-0">
-                                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('category') || 'Kategoriya'}</div>
-                                                <div className="font-bold text-gray-900 capitalize truncate">{t(expenseCategory) || expenseCategory}</div>
+            <AnimatePresence>
+                {isOpen && (
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className={`bg-white rounded-[32px] w-full shadow-2xl shadow-blue-500/10 overflow-hidden flex flex-col max-h-[90vh] transition-all duration-300 ${mode === 'expense' ? 'max-w-md' : 'max-w-5xl'}`}
+                        >
+                            <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+                                {mode === 'expense' ? (
+                                    <div className="w-full flex flex-col overflow-y-auto bg-white p-6 relative no-scrollbar">
+                                        <div className="flex justify-center mb-8">
+                                            <div className="bg-gray-100 p-1.5 rounded-xl flex w-full relative shadow-inner mb-8">
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                    onClick={() => setMode('income')}
+                                                    className="flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm text-gray-500 hover:text-gray-700 hover:bg-white/50"
+                                                >
+                                                    <span className="relative z-10">{t('income') || 'Kirim'}</span>
+                                                </motion.button>
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                    onClick={() => setMode('expense')}
+                                                    className="flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm btn-glossy-red"
+                                                >
+                                                    <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
+                                                </motion.button>
                                             </div>
                                         </div>
-                                        <ChevronDown size={18} className="text-gray-300" />
-                                        <div className="absolute inset-0 opacity-0"><CustomSelect options={expenseCategoryOptions} value={expenseCategory} onChange={(val) => setExpenseCategory(val as TransactionCategory)} minimal /></div>
-                                    </div>
-                                </div>
 
-                                {/* Expense Note - Moved Outside as Standalone */}
-                                <div className="mb-6">
-                                    <textarea
-                                        value={expenseDescription}
-                                        onChange={e => {
-                                            setExpenseDescription(e.target.value);
-                                            e.target.style.height = 'auto';
-                                            e.target.style.height = e.target.scrollHeight + 'px';
-                                        }}
-                                        rows={3}
-                                        placeholder={t('expense_note_placeholder') || "Xarajat haqida..."}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 text-sm font-bold text-slate-900 outline-none placeholder-slate-400 resize-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm"
-                                    />
-                                </div>
-                            </div>
-
-                        ) : (
-                            <>
-                                <div className="w-full md:w-[35%] bg-blue-50/20 p-8 flex flex-col border-b md:border-b-0 md:border-r border-blue-100/50 relative shrink-0">
-                                    <div className="flex justify-center mb-10">
-                                        <div className="bg-slate-100 p-1.5 rounded-xl flex w-full relative shadow-inner border border-slate-200/60 mb-6">
-                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                onClick={() => setMode('income')}
-                                                className="flex-1 py-2.5 text-sm font-bold rounded-lg transition-all shadow-sm btn-glossy-emerald"
-                                            >
-                                                <span className="relative z-10">{t('income') || 'Kirim'}</span>
-                                            </motion.button>
-                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                onClick={() => setMode('expense')}
-                                                className="flex-1 py-2.5 text-sm font-bold rounded-lg transition-all shadow-sm text-slate-400 hover:text-slate-600 hover:bg-white/50"
-                                            >
-                                                <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
-                                            </motion.button>
-                                        </div>
-                                    </div>
-                                    <div className="flex-1 flex flex-col justify-center items-center mb-10">
-                                        <div className="text-[11px] font-black text-gray-300 uppercase tracking-widest mb-3">{t('amount') || 'Miqdor'}</div>
-                                        <input
-                                            type="text"
-                                            inputMode="numeric"
-                                            autoFocus
-                                            value={amount ? new Intl.NumberFormat('en-US').format(amount) : ''}
-                                            onChange={e => {
-                                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                                setAmount(val ? Number(val) : 0);
-                                            }}
-                                            placeholder="0"
-                                            className="w-full bg-transparent text-center text-5xl font-bold tracking-tight text-emerald-500 outline-none placeholder-gray-200 caret-emerald-500"
-                                        />
-                                        <div className="text-xs font-bold text-gray-300 uppercase tracking-widest mt-3">UZS</div>
-                                    </div>
-                                    <div className="bg-white rounded-[1.25rem] border border-blue-100/60 shadow-[0_4px_20px_-4px_rgba(59,130,246,0.05)] overflow-hidden">
-                                        <div className="p-4 border-b border-gray-50 flex items-center gap-4 hover:bg-gray-50/50 transition-colors">
-                                            <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center shrink-0 border border-slate-100">
-                                                {patient.profileImage ? <ImageWithFallback src={patient.profileImage} alt={patient.fullName} className="w-full h-full object-cover" /> : <User size={18} className="text-slate-400" />}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{t('patient') || 'Bemor'}</div>
-                                                <div className="font-extrabold text-slate-900 text-sm truncate">{patient.fullName}</div>
-                                            </div>
-                                        </div>
-                                        <div className="p-4 border-b border-gray-50 flex items-center justify-between gap-4 relative group hover:bg-gray-50/50 transition-colors cursor-pointer">
-                                            <div className="flex items-center gap-4 min-w-0">
-                                                <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 shrink-0 border border-purple-100"><Search size={18} /></div>
-                                                <div className="min-w-0 flex flex-col justify-center">
-                                                    <div className="flex items-center gap-2 mb-0.5">
-                                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('category') || 'Kategoriya'}</div>
-                                                        {category === 'surgery' && (
-                                                            <span className="text-[9px] bg-emerald-50 text-emerald-600 border border-emerald-200/60 px-1.5 py-0.5 rounded-md font-bold tracking-widest uppercase whitespace-nowrap">
-                                                                {previousSessions === 0 ? (t('seans_1') || '1-Seans') : (t('seans_n')?.replace('{n}', `${previousSessions + 1}`) || `${previousSessions + 1}-Seans`)}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div className="font-extrabold text-slate-900 text-sm capitalize truncate">{t(category) || category}</div>
-                                                </div>
-                                            </div>
-                                            <ChevronDown size={18} className="text-slate-300" />
-                                            <div className="absolute inset-0 opacity-0"><CustomSelect options={incomeCategoryOptions} value={category} onChange={(val) => setCategory(val as TransactionCategory)} minimal /></div>
-                                        </div>
-                                        <div className="p-4 flex items-center gap-4 relative group hover:bg-gray-50/50 transition-colors cursor-pointer">
-                                            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0 border border-orange-100"><Calendar size={18} /></div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{t('date') || 'Sana'}</div>
-                                                <div className="font-extrabold text-slate-900 text-sm">{format(date, 'dd MMMM yyyy', { locale: currentLocale })}</div>
-                                            </div>
-                                            <div className="absolute inset-0 opacity-0"><CustomDatePicker value={date} onChange={setDate} centered /></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="w-full md:w-[65%] bg-white flex flex-col relative overflow-hidden">
-                                    <div className="flex-1 overflow-y-auto p-8 space-y-6">
-                                        <div>
-                                            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6">{t('distribution') || 'Taqsimot'}</h3>
-                                            <ProgressBar splits={splits} total={amount || 0} currency="UZS" />
+                                        <div className="text-center mb-8">
+                                            <div className="text-[11px] font-black text-gray-300 uppercase tracking-widest mb-2">{t('amount') || 'Miqdor'}</div>
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                autoFocus
+                                                value={amount ? new Intl.NumberFormat('en-US').format(amount) : ''}
+                                                onChange={e => {
+                                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                                    setAmount(val ? Number(val) : 0);
+                                                }}
+                                                placeholder="0"
+                                                className="w-full bg-transparent text-center text-5xl font-bold tracking-tight text-rose-500 outline-none placeholder-gray-200 caret-rose-400"
+                                            />
+                                            <div className="text-xs font-bold text-rose-200 uppercase tracking-widest mt-2">UZS</div>
                                         </div>
 
-                                        <div className="space-y-3 pb-2">
-                                            <AnimatePresence initial={false}>
-                                                {splits.map((split, i) => {
-                                                    const staff = staffList.find(s => s.id === split.staffId);
-                                                    return (
-                                                        <motion.div key={i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="group flex items-center gap-4 p-4 rounded-xl bg-white border border-slate-300 shadow-sm hover:border-slate-400 hover:shadow-md transition-all duration-200">
-
-                                                            {split.isTax ? (
-                                                                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200 shrink-0 text-slate-500"><Percent size={18} /></div>
-                                                            ) : (
-                                                                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
-                                                                    {staff?.imageUrl ? <ImageWithFallback src={staff.imageUrl} alt="staff" className="w-full h-full object-cover" /> : <User size={18} className="text-slate-400" />}
-                                                                </div>
-                                                            )}
-
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="font-bold text-slate-900 text-sm truncate">{split.note || (split.isTax ? (t('tax_exp') || 'Tax/Expense') : 'Staff')}</div>
-                                                                <div className="text-xs text-slate-500 font-medium mt-0.5">{split.isTax ? (t('tax') || 'Tax') : (staff?.role ? t(`role_${staff.role}`) || staff.role : 'staff')}</div>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-3">
-                                                                {split.isTax ? (
-                                                                    <div className="w-24 bg-slate-200 rounded-lg px-3 py-2 flex items-center border border-slate-300 focus-within:border-slate-400 focus-within:bg-white transition-all duration-200">
-                                                                        <input
-                                                                            type="number"
-                                                                            value={split.rawValue || ''}
-                                                                            onChange={e => updateSplit(i, 'rawValue', Number(e.target.value))}
-                                                                            className="w-full bg-transparent text-right text-sm font-bold text-slate-900 outline-none placeholder-slate-400"
-                                                                            placeholder="0"
-                                                                        />
-                                                                        <span className="text-xs font-bold text-slate-500 ml-1.5">%</span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="w-40 bg-slate-200 rounded-lg px-3 py-2 flex items-center border border-slate-300 focus-within:border-slate-400 focus-within:bg-white transition-all duration-200">
-                                                                        <input
-                                                                            type="text"
-                                                                            inputMode="numeric"
-                                                                            value={split.amount ? new Intl.NumberFormat('en-US').format(split.amount) : ''}
-                                                                            onChange={e => { const val = e.target.value.replace(/[^0-9]/g, ''); updateSplit(i, 'amount', val ? Number(val) : 0); }}
-                                                                            className="w-full bg-transparent text-right text-sm font-bold text-slate-900 outline-none placeholder-slate-400 font-mono"
-                                                                            placeholder="0"
-                                                                        />
-                                                                        <span className="text-[11px] font-bold text-slate-400 uppercase ml-2">UZS</span>
-                                                                    </div>
-                                                                )}
-
-                                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                                    onClick={() => removeSplit(i)}
-                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
-                                                                >
-                                                                    <Trash2 size={16} />
-                                                                </motion.button>
-                                                            </div>
-                                                        </motion.div>
-                                                    );
-                                                })}
-                                            </AnimatePresence>
-
-                                            {/* Clinic Residual Row (Professional) */}
-                                            <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                                                <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center border border-slate-200 shrink-0 text-slate-400">
-                                                    <Building2 size={18} />
+                                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-6 isolate">
+                                            <div className="p-4 border-b border-gray-100 flex items-center gap-4 bg-white/95 backdrop-blur-sm sticky top-0 z-20 rounded-t-2xl shadow-sm transition-colors">
+                                                <div className="w-10 h-10 rounded-full overflow-hidden bg-rose-50 flex items-center justify-center shrink-0">
+                                                    {patient.profileImage ? <ImageWithFallback src={patient.profileImage} alt={patient.fullName} className="w-full h-full object-cover" /> : <User size={18} className="text-rose-400" />}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <div className="font-bold text-slate-700 text-sm">{t('clinic_remainder') || 'Klinika (Qoldiq)'}</div>
+                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('patient') || 'Bemor'}</div>
+                                                    <div className="font-bold text-gray-900">{patient.fullName}</div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <div className={`text-base font-mono font-bold ${isOverBudget ? 'text-rose-600' : 'text-slate-900'}`}>
-                                                        {new Intl.NumberFormat('en-US').format(Math.abs(remainder))} <span className="text-[10px] text-slate-400 uppercase tracking-wide">UZS</span>
+                                            </div>
+                                            <div className="p-4 border-b border-gray-100 flex items-center gap-4 relative group hover:bg-gray-50 transition-colors cursor-pointer bg-white">
+                                                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 shrink-0"><Calendar size={18} /></div>
+                                                <div className="flex-1">
+                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('date') || 'Sana'}</div>
+
+                                                    <div className="font-bold text-gray-900">{format(date, 'dd MMMM yyyy', { locale: currentLocale })}</div>
+                                                </div>
+                                                <div className="absolute inset-0 opacity-0"><CustomDatePicker value={date} onChange={setDate} centered /></div>
+                                            </div>
+                                            <div className="p-4 flex items-center justify-between gap-4 relative group hover:bg-gray-50 transition-colors cursor-pointer bg-white rounded-b-2xl">
+                                                <div className="flex items-center gap-4 min-w-0">
+                                                    <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 shrink-0"><Search size={18} /></div>
+                                                    <div className="min-w-0">
+                                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t('category') || 'Kategoriya'}</div>
+                                                        <div className="font-bold text-gray-900 capitalize truncate">{t(expenseCategory) || expenseCategory}</div>
+                                                    </div>
+                                                </div>
+                                                <ChevronDown size={18} className="text-gray-300" />
+                                                <div className="absolute inset-0 opacity-0"><CustomSelect options={expenseCategoryOptions} value={expenseCategory} onChange={(val) => setExpenseCategory(val as TransactionCategory)} minimal /></div>
+                                            </div>
+                                        </div>
+
+                                        {/* Expense Note - Moved Outside as Standalone */}
+                                        <div className="mb-6">
+                                            <textarea
+                                                value={expenseDescription}
+                                                onChange={e => {
+                                                    setExpenseDescription(e.target.value);
+                                                    e.target.style.height = 'auto';
+                                                    e.target.style.height = e.target.scrollHeight + 'px';
+                                                }}
+                                                rows={3}
+                                                placeholder={t('expense_note_placeholder') || "Xarajat haqida..."}
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 text-sm font-bold text-slate-900 outline-none placeholder-slate-400 resize-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                ) : (
+                                    <>
+                                        <div className="w-full md:w-[35%] bg-blue-50/20 p-8 flex flex-col border-b md:border-b-0 md:border-r border-blue-100/50 relative shrink-0">
+                                            <div className="flex justify-center mb-10">
+                                                <div className="bg-slate-100 p-1.5 rounded-xl flex w-full relative shadow-inner border border-slate-200/60 mb-6">
+                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                        onClick={() => setMode('income')}
+                                                        className="flex-1 py-2.5 text-sm font-bold rounded-lg transition-all shadow-sm btn-glossy-emerald"
+                                                    >
+                                                        <span className="relative z-10">{t('income') || 'Kirim'}</span>
+                                                    </motion.button>
+                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                        onClick={() => setMode('expense')}
+                                                        className="flex-1 py-2.5 text-sm font-bold rounded-lg transition-all shadow-sm text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                                                    >
+                                                        <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
+                                                    </motion.button>
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 flex flex-col justify-center items-center mb-10">
+                                                <div className="text-[11px] font-black text-gray-300 uppercase tracking-widest mb-3">{t('amount') || 'Miqdor'}</div>
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    autoFocus
+                                                    value={amount ? new Intl.NumberFormat('en-US').format(amount) : ''}
+                                                    onChange={e => {
+                                                        const val = e.target.value.replace(/[^0-9]/g, '');
+                                                        setAmount(val ? Number(val) : 0);
+                                                    }}
+                                                    placeholder="0"
+                                                    className="w-full bg-transparent text-center text-5xl font-bold tracking-tight text-emerald-500 outline-none placeholder-gray-200 caret-emerald-500"
+                                                />
+                                                <div className="text-xs font-bold text-gray-300 uppercase tracking-widest mt-3">UZS</div>
+                                            </div>
+                                            <div className="bg-white rounded-[1.25rem] border border-blue-100/60 shadow-[0_4px_20px_-4px_rgba(59,130,246,0.05)] overflow-hidden">
+                                                <div className="p-4 border-b border-gray-50 flex items-center gap-4 hover:bg-gray-50/50 transition-colors">
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center shrink-0 border border-slate-100">
+                                                        {patient.profileImage ? <ImageWithFallback src={patient.profileImage} alt={patient.fullName} className="w-full h-full object-cover" /> : <User size={18} className="text-slate-400" />}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{t('patient') || 'Bemor'}</div>
+                                                        <div className="font-extrabold text-slate-900 text-sm truncate">{patient.fullName}</div>
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 border-b border-gray-50 flex items-center justify-between gap-4 relative group hover:bg-gray-50/50 transition-colors cursor-pointer">
+                                                    <div className="flex items-center gap-4 min-w-0">
+                                                        <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 shrink-0 border border-purple-100"><Search size={18} /></div>
+                                                        <div className="min-w-0 flex flex-col justify-center">
+                                                            <div className="flex items-center gap-2 mb-0.5">
+                                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('category') || 'Kategoriya'}</div>
+                                                                {category === 'surgery' && (
+                                                                    <span className="text-[9px] bg-emerald-50 text-emerald-600 border border-emerald-200/60 px-1.5 py-0.5 rounded-md font-bold tracking-widest uppercase whitespace-nowrap">
+                                                                        {previousSessions === 0 ? (t('seans_1') || '1-Seans') : (t('seans_n')?.replace('{n}', `${previousSessions + 1}`) || `${previousSessions + 1}-Seans`)}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="font-extrabold text-slate-900 text-sm capitalize truncate">{t(category) || category}</div>
+                                                        </div>
+                                                    </div>
+                                                    <ChevronDown size={18} className="text-slate-300" />
+                                                    <div className="absolute inset-0 opacity-0"><CustomSelect options={incomeCategoryOptions} value={category} onChange={(val) => setCategory(val as TransactionCategory)} minimal /></div>
+                                                </div>
+                                                <div className="p-4 flex items-center gap-4 relative group hover:bg-gray-50/50 transition-colors cursor-pointer">
+                                                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0 border border-orange-100"><Calendar size={18} /></div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{t('date') || 'Sana'}</div>
+                                                        <div className="font-extrabold text-slate-900 text-sm">{format(date, 'dd MMMM yyyy', { locale: currentLocale })}</div>
+                                                    </div>
+                                                    <div className="absolute inset-0 opacity-0"><CustomDatePicker value={date} onChange={setDate} centered /></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="w-full md:w-[65%] bg-white flex flex-col relative overflow-hidden">
+                                            <div className="flex-1 overflow-y-auto p-8 space-y-6">
+                                                <div>
+                                                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6">{t('distribution') || 'Taqsimot'}</h3>
+                                                    <ProgressBar splits={splits} total={amount || 0} currency="UZS" />
+                                                </div>
+
+                                                <div className="space-y-3 pb-2">
+                                                    <AnimatePresence initial={false}>
+                                                        {splits.map((split, i) => {
+                                                            const staff = staffList.find(s => s.id === split.staffId);
+                                                            return (
+                                                                <motion.div key={i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="group flex items-center gap-4 p-4 rounded-xl bg-white border border-slate-300 shadow-sm hover:border-slate-400 hover:shadow-md transition-all duration-200">
+
+                                                                    {split.isTax ? (
+                                                                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200 shrink-0 text-slate-500"><Percent size={18} /></div>
+                                                                    ) : (
+                                                                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
+                                                                            {staff?.imageUrl ? <ImageWithFallback src={staff.imageUrl} alt="staff" className="w-full h-full object-cover" /> : <User size={18} className="text-slate-400" />}
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="font-bold text-slate-900 text-sm truncate">{split.note || (split.isTax ? (t('tax_exp') || 'Tax/Expense') : 'Staff')}</div>
+                                                                        <div className="text-xs text-slate-500 font-medium mt-0.5">{split.isTax ? (t('tax') || 'Tax') : (staff?.role ? t(`role_${staff.role}`) || staff.role : 'staff')}</div>
+                                                                    </div>
+
+                                                                    <div className="flex items-center gap-3">
+                                                                        {split.isTax ? (
+                                                                            <div className="w-24 bg-slate-200 rounded-lg px-3 py-2 flex items-center border border-slate-300 focus-within:border-slate-400 focus-within:bg-white transition-all duration-200">
+                                                                                <input
+                                                                                    type="number"
+                                                                                    value={split.rawValue || ''}
+                                                                                    onChange={e => updateSplit(i, 'rawValue', Number(e.target.value))}
+                                                                                    className="w-full bg-transparent text-right text-sm font-bold text-slate-900 outline-none placeholder-slate-400"
+                                                                                    placeholder="0"
+                                                                                />
+                                                                                <span className="text-xs font-bold text-slate-500 ml-1.5">%</span>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="w-40 bg-slate-200 rounded-lg px-3 py-2 flex items-center border border-slate-300 focus-within:border-slate-400 focus-within:bg-white transition-all duration-200">
+                                                                                <input
+                                                                                    type="text"
+                                                                                    inputMode="numeric"
+                                                                                    value={split.amount ? new Intl.NumberFormat('en-US').format(split.amount) : ''}
+                                                                                    onChange={e => { const val = e.target.value.replace(/[^0-9]/g, ''); updateSplit(i, 'amount', val ? Number(val) : 0); }}
+                                                                                    className="w-full bg-transparent text-right text-sm font-bold text-slate-900 outline-none placeholder-slate-400 font-mono"
+                                                                                    placeholder="0"
+                                                                                />
+                                                                                <span className="text-[11px] font-bold text-slate-400 uppercase ml-2">UZS</span>
+                                                                            </div>
+                                                                        )}
+
+                                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                                            onClick={() => removeSplit(i)}
+                                                                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                                        >
+                                                                            <Trash2 size={16} />
+                                                                        </motion.button>
+                                                                    </div>
+                                                                </motion.div>
+                                                            );
+                                                        })}
+                                                    </AnimatePresence>
+
+                                                    {/* Clinic Residual Row (Professional) */}
+                                                    <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                                        <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center border border-slate-200 shrink-0 text-slate-400">
+                                                            <Building2 size={18} />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="font-bold text-slate-700 text-sm">{t('clinic_remainder') || 'Klinika (Qoldiq)'}</div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className={`text-base font-mono font-bold ${isOverBudget ? 'text-rose-600' : 'text-slate-900'}`}>
+                                                                {new Intl.NumberFormat('en-US').format(Math.abs(remainder))} <span className="text-[10px] text-slate-400 uppercase tracking-wide">UZS</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Notes / Description Field */}
+                                                    <div className="mt-6">
+                                                        <textarea
+                                                            value={note}
+                                                            onChange={e => {
+                                                                setNote(e.target.value);
+                                                                e.target.style.height = 'auto';
+                                                                e.target.style.height = e.target.scrollHeight + 'px';
+                                                            }}
+                                                            rows={3}
+                                                            placeholder={t('add_note_placeholder') || "Izoh qo'shish..."}
+                                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-bold text-slate-900 outline-none placeholder-slate-400 resize-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm"
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            {/* Notes / Description Field */}
-                                            <div className="mt-6">
-                                                <textarea
-                                                    value={note}
-                                                    onChange={e => {
-                                                        setNote(e.target.value);
-                                                        e.target.style.height = 'auto';
-                                                        e.target.style.height = e.target.scrollHeight + 'px';
-                                                    }}
-                                                    rows={3}
-                                                    placeholder={t('add_note_placeholder') || "Izoh qo'shish..."}
-                                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-bold text-slate-900 outline-none placeholder-slate-400 resize-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm"
-                                                />
+                                            <div className="p-4 border-t border-gray-50 bg-white relative z-20">
+                                                {!isStaffPickerOpen ? (
+                                                    <div className="flex gap-3">
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => addSplit(false)} className="flex-1 py-3.5 flex items-center justify-center gap-2 text-white font-bold bg-gradient-to-b from-blue-500 to-blue-600 shadow-sm hover:shadow-md hover:from-blue-400 hover:to-blue-600 border border-transparent rounded-xl transition-all text-sm group active:scale-95"><User size={18} className="group-hover:scale-110 transition-transform" /><span>+ {t('staff') || 'Xodimlar'}</span></motion.button>
+                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => addSplit(true)} className="flex-1 py-3.5 flex items-center justify-center gap-2 text-white font-bold bg-gradient-to-b from-rose-500 to-rose-600 shadow-sm hover:shadow-md hover:from-rose-400 hover:to-rose-600 border border-transparent rounded-xl transition-all text-sm group active:scale-95"><Percent size={18} className="group-hover:scale-110 transition-transform" /><span>+ {t('tax_exp') || 'Tax/Expense'}</span></motion.button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-blue-100 shadow-2xl shadow-blue-500/10 rounded-2xl p-3 z-50 animate-in fade-in slide-in-from-bottom-2">
+                                                        <div className="flex items-center gap-2 mb-2 p-1 border-b border-gray-50">
+                                                            <Search size={16} className="text-blue-500 ml-1" />
+                                                            <input autoFocus type="text" value={staffSearch} onChange={e => setStaffSearch(e.target.value)} className="flex-1 bg-transparent px-2 py-1 text-sm font-bold text-gray-900 outline-none placeholder-gray-300" placeholder={t('search_staff') || "Search staff..."} />
+                                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => setIsStaffPickerOpen(false)} className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors"><X size={16} /></motion.button>
+                                                        </div>
+                                                        <div className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar">
+                                                            {filteredStaff.map(staff => (
+                                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} key={staff.id} onClick={() => handleStaffSelect(staff.id)} className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-blue-50 hover:text-blue-600 text-left transition-colors group">
+                                                                    <div className="relative">
+                                                                        <Avatar src={staff.imageUrl} alt={staff.fullName} fallback={<User size={14} />} className="w-8 h-8 rounded-full border border-gray-100 group-hover:border-blue-200" />
+                                                                    </div>
+                                                                    <div><div className="font-bold text-xs text-gray-800 group-hover:text-blue-700">{staff.fullName}</div></div>
+                                                                </motion.button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className="p-4 border-t border-gray-50 bg-white relative z-20">
-                                        {!isStaffPickerOpen ? (
-                                            <div className="flex gap-3">
-                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => addSplit(false)} className="flex-1 py-3.5 flex items-center justify-center gap-2 text-white font-bold bg-gradient-to-b from-blue-500 to-blue-600 shadow-sm hover:shadow-md hover:from-blue-400 hover:to-blue-600 border border-transparent rounded-xl transition-all text-sm group active:scale-95"><User size={18} className="group-hover:scale-110 transition-transform" /><span>+ {t('staff') || 'Xodimlar'}</span></motion.button>
-                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => addSplit(true)} className="flex-1 py-3.5 flex items-center justify-center gap-2 text-white font-bold bg-gradient-to-b from-rose-500 to-rose-600 shadow-sm hover:shadow-md hover:from-rose-400 hover:to-rose-600 border border-transparent rounded-xl transition-all text-sm group active:scale-95"><Percent size={18} className="group-hover:scale-110 transition-transform" /><span>+ {t('tax_exp') || 'Tax/Expense'}</span></motion.button>
-                                            </div>
-                                        ) : (
-                                            <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-blue-100 shadow-2xl shadow-blue-500/10 rounded-2xl p-3 z-50 animate-in fade-in slide-in-from-bottom-2">
-                                                <div className="flex items-center gap-2 mb-2 p-1 border-b border-gray-50">
-                                                    <Search size={16} className="text-blue-500 ml-1" />
-                                                    <input autoFocus type="text" value={staffSearch} onChange={e => setStaffSearch(e.target.value)} className="flex-1 bg-transparent px-2 py-1 text-sm font-bold text-gray-900 outline-none placeholder-gray-300" placeholder={t('search_staff') || "Search staff..."} />
-                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={() => setIsStaffPickerOpen(false)} className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors"><X size={16} /></motion.button>
-                                                </div>
-                                                <div className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar">
-                                                    {filteredStaff.map(staff => (
-                                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} key={staff.id} onClick={() => handleStaffSelect(staff.id)} className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-blue-50 hover:text-blue-600 text-left transition-colors group">
-                                                            <div className="relative">
-                                                                <Avatar src={staff.imageUrl} alt={staff.fullName} fallback={<User size={14} />} className="w-8 h-8 rounded-full border border-gray-100 group-hover:border-blue-200" />
-                                                            </div>
-                                                            <div><div className="font-bold text-xs text-gray-800 group-hover:text-blue-700">{staff.fullName}</div></div>
-                                                        </motion.button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </>
-                        )}
+                                    </>
+                                )}
+                            </div>
+                            {/* ── FOOTER ── */}
+                            <div className="px-8 py-5 border-t border-gray-50 flex items-center justify-end gap-3 shrink-0 bg-white">
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="px-6 py-3 rounded-2xl font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors text-sm">
+                                    {t('cancel') || 'Bekor qilish'}
+                                </motion.button>
+                                <motion.button whileTap={{ scale: 0.98 }} onClick={handleSubmit} disabled={loading || !amount || (mode === 'income' && isOverBudget)} className={`px-10 py-4 rounded-xl font-bold text-white text-lg shadow-xl shadow-blue-600/40 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-b from-blue-400 to-blue-700 hover:from-blue-400 hover:to-blue-600 ring-1 ring-white/20`}>
+                                    {loading ? <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (t('save') || 'Saqlash')}
+                                </motion.button>
+                            </div>
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="md:hidden absolute top-4 right-4 z-50 p-2 bg-white rounded-full shadow-sm text-gray-500"><X size={20} /></motion.button>
+                        </motion.div>
                     </div>
-                    {/* ── FOOTER ── */}
-                    <div className="px-8 py-5 border-t border-gray-50 flex items-center justify-end gap-3 shrink-0 bg-white">
-                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="px-6 py-3 rounded-2xl font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors text-sm">
-                            {t('cancel') || 'Bekor qilish'}
-                        </motion.button>
-                        <motion.button whileTap={{ scale: 0.98 }} onClick={handleSubmit} disabled={loading || !amount || (mode === 'income' && isOverBudget)} className={`px-10 py-4 rounded-xl font-bold text-white text-lg shadow-xl shadow-blue-600/40 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-b from-blue-400 to-blue-700 hover:from-blue-400 hover:to-blue-600 ring-1 ring-white/20`}>
-                            {loading ? <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (t('save') || 'Saqlash')}
-                        </motion.button>
-                    </div>
-                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="md:hidden absolute top-4 right-4 z-50 p-2 bg-white rounded-full shadow-sm text-gray-500"><X size={20} /></motion.button>
-                </motion.div>
-            </div >
-        </Portal >
+                )}
+            </AnimatePresence>
+        </Portal>
     );
 };

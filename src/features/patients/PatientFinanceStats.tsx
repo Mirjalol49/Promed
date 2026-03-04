@@ -347,7 +347,7 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-6 animate-in fade-in duration-500">
             {/* ── Summary Stats ── */}
             <div className="flex flex-wrap items-center justify-between gap-4 p-6 bg-white rounded-3xl border border-slate-200 shadow-sm">
                 <div className="flex items-center gap-8">
@@ -362,6 +362,14 @@ export const PatientFinanceStats: React.FC<PatientFinanceStatsProps> = ({ patien
                             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('expense') || 'Xarajat'}</div>
                             <div className="text-2xl font-black text-rose-500">
                                 {formatWithSpaces(stats.totalExpenses)} <span className="text-xs text-slate-400">UZS</span>
+                            </div>
+                        </div>
+                    )}
+                    {(stats.totalPaid > 0 || stats.totalExpenses > 0) && (
+                        <div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('profit')}</div>
+                            <div className="text-2xl font-black text-promed-primary">
+                                {formatWithSpaces(stats.totalPaid - stats.totalExpenses)} <span className="text-xs text-slate-400">UZS</span>
                             </div>
                         </div>
                     )}

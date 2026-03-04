@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Portal } from '../../components/ui/Portal';
 import { Transaction, TransactionType, TransactionCategory, Staff, Patient } from '../../types';
 import { X, Plus, Trash2, User, Building2, Calculator, Calendar, Building, Info, MousePointerClick, Search, Percent, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -312,281 +312,297 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
     const filteredStaff = staffList.filter(s => s.fullName.toLowerCase().includes(staffSearch.toLowerCase()));
 
-    if (!isOpen) return null;
+    return (
+        <Portal>
+            <AnimatePresence>
+                {isOpen && (
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+                            onClick={onClose}
+                        />
 
-    return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200 font-sans">
-            <motion.div
-                initial={{ scale: 0.95, opacity: 0, y: 10 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                className="bg-white rounded-[32px] w-full max-w-5xl shadow-2xl flex flex-col md:flex-row max-h-[90vh] overflow-y-auto md:overflow-hidden relative"
-            >
-                {/* Mobile Sticky Close Button */}
-                <div className="sticky top-0 z-50 flex justify-end p-4 md:hidden pointer-events-none">
-                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                        onClick={onClose}
-                        className="bg-white/80 backdrop-blur-md p-2 rounded-full shadow-sm text-slate-500 hover:text-slate-700 pointer-events-auto border border-slate-100"
-                    >
-                        <X size={20} />
-                    </motion.button>
-                </div>
-                {/* --- LEFT PANEL: THE SOURCE (40%) --- */}
-                <div className="w-full md:w-[40%] bg-white p-6 flex flex-col border-b md:border-b-0 md:border-r border-gray-100 relative z-10">
-                    {/* ... Left Panel Content ... */}
-                    {/* Header Toggle */}
-                    <div className="bg-gray-100 p-1.5 rounded-xl flex w-full mb-8">
-                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                            onClick={() => setType('income')}
-                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm ${type === 'income' ? 'btn-glossy-emerald' : 'text-gray-500 hover:text-gray-700'}`}
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                            className="relative bg-white rounded-[32px] w-full max-w-5xl shadow-2xl flex flex-col md:flex-row max-h-[90vh] overflow-y-auto md:overflow-hidden"
+                            onClick={e => e.stopPropagation()}
                         >
-                            <span className="relative z-10">{t('income') || 'Kirim'}</span>
-                        </motion.button>
-                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                            onClick={() => setType('expense')}
-                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm ${type === 'expense' ? 'btn-glossy-red' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                            <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
-                        </motion.button>
-                    </div>
-
-                    <div className="flex flex-col items-center justify-center mb-8 px-4">
-                        <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 opacity-60">{t('amount') || 'SUMMA'}</div>
-                        <div className="relative w-full group">
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                autoFocus
-                                value={formData.amount ? new Intl.NumberFormat('ru-RU').format(formData.amount) : ''}
-                                onChange={e => {
-                                    const val = e.target.value.replace(/[^0-9]/g, '');
-                                    setFormData({ ...formData, amount: val ? Number(val) : 0 });
-                                }}
-                                placeholder="0"
-                                className="w-full bg-transparent text-center text-3xl md:text-4xl font-black text-slate-800 outline-none placeholder-slate-200 transition-all caret-emerald-500 py-2 border-b-2 border-slate-100 group-hover:border-slate-300 focus:border-emerald-400 tracking-tight"
-                            />
-                            <div className="text-center mt-2">
-                                <span className="text-xs font-black text-slate-300 tracking-widest bg-slate-50 px-2 py-1 rounded-md">UZS</span>
+                            {/* Mobile Sticky Close Button */}
+                            <div className="sticky top-0 z-50 flex justify-end p-4 md:hidden pointer-events-none">
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                    onClick={onClose}
+                                    className="bg-white/80 backdrop-blur-md p-2 rounded-full shadow-sm text-slate-500 hover:text-slate-700 pointer-events-auto border border-slate-100"
+                                >
+                                    <X size={20} />
+                                </motion.button>
                             </div>
-                        </div>
-                    </div>
+                            {/* --- LEFT PANEL: THE SOURCE (40%) --- */}
+                            <div className="w-full md:w-[40%] bg-white p-6 flex flex-col border-b md:border-b-0 md:border-r border-gray-100 relative z-10">
+                                {/* ... Left Panel Content ... */}
+                                {/* Header Toggle */}
+                                <div className="bg-gray-100 p-1.5 rounded-xl flex w-full mb-8">
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                        onClick={() => setType('income')}
+                                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm ${type === 'income' ? 'btn-glossy-emerald' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        <span className="relative z-10">{t('income') || 'Kirim'}</span>
+                                    </motion.button>
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                        onClick={() => setType('expense')}
+                                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all shadow-sm ${type === 'expense' ? 'btn-glossy-red' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        <span className="relative z-10">{t('expense') || 'Xarajat'}</span>
+                                    </motion.button>
+                                </div>
 
-                    {/* SMART INFO CARD */}
-                    <AnimatePresence>
-                        {smartData && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10, height: 0 }}
-                                animate={{ opacity: 1, y: 0, height: 'auto' }}
-                                exit={{ opacity: 0, y: -10, height: 0 }}
-                                className="mb-6 overflow-hidden"
-                            >
-                                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center relative overflow-hidden">
-                                    {/* Background decoration */}
-                                    <div className={`absolute top-0 left-0 w-full h-1 ${smartData.color.replace('text-', 'bg-')}`} />
-
-                                    <div className={`text-xs font-extrabold uppercase tracking-widest mb-1 ${smartData.color}`}>
-                                        {smartData.label}
-                                    </div>
-                                    <div className="text-xl font-black text-slate-800 mb-1">
-                                        {smartData.value}
-                                    </div>
-                                    {smartData.subValue && (
-                                        <div className="text-[10px] font-bold text-slate-400">
-                                            {smartData.subValue}
+                                <div className="flex flex-col items-center justify-center mb-8 px-4">
+                                    <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 opacity-60">{t('amount') || 'SUMMA'}</div>
+                                    <div className="relative w-full group">
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            autoFocus
+                                            value={formData.amount ? new Intl.NumberFormat('ru-RU').format(formData.amount) : ''}
+                                            onChange={e => {
+                                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                                setFormData({ ...formData, amount: val ? Number(val) : 0 });
+                                            }}
+                                            placeholder="0"
+                                            className="w-full bg-transparent text-center text-3xl md:text-4xl font-black text-slate-800 outline-none placeholder-slate-200 transition-all caret-emerald-500 py-2 border-b-2 border-slate-100 group-hover:border-slate-300 focus:border-emerald-400 tracking-tight"
+                                        />
+                                        <div className="text-center mt-2">
+                                            <span className="text-xs font-black text-slate-300 tracking-widest bg-slate-50 px-2 py-1 rounded-md">UZS</span>
                                         </div>
-                                    )}
+                                    </div>
+                                </div>
 
-                                    {smartData.action && (
-                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                            onClick={smartData.action.onClick}
-                                            className="mt-3 text-xs font-bold bg-white border border-slate-200 shadow-sm text-slate-600 px-3 py-1.5 rounded-lg hover:text-rose-500 hover:border-rose-200 transition-colors flex items-center gap-1.5"
+                                {/* SMART INFO CARD */}
+                                <AnimatePresence>
+                                    {smartData && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10, height: 0 }}
+                                            animate={{ opacity: 1, y: 0, height: 'auto' }}
+                                            exit={{ opacity: 0, y: -10, height: 0 }}
+                                            className="mb-6 overflow-hidden"
                                         >
-                                            <Calculator className="w-3 h-3" />
-                                            {smartData.action.label}
-                                        </motion.button>
+                                            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center relative overflow-hidden">
+                                                {/* Background decoration */}
+                                                <div className={`absolute top-0 left-0 w-full h-1 ${smartData.color.replace('text-', 'bg-')}`} />
+
+                                                <div className={`text-xs font-extrabold uppercase tracking-widest mb-1 ${smartData.color}`}>
+                                                    {smartData.label}
+                                                </div>
+                                                <div className="text-xl font-black text-slate-800 mb-1">
+                                                    {smartData.value}
+                                                </div>
+                                                {smartData.subValue && (
+                                                    <div className="text-[10px] font-bold text-slate-400">
+                                                        {smartData.subValue}
+                                                    </div>
+                                                )}
+
+                                                {smartData.action && (
+                                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                        onClick={smartData.action.onClick}
+                                                        className="mt-3 text-xs font-bold bg-white border border-slate-200 shadow-sm text-slate-600 px-3 py-1.5 rounded-lg hover:text-rose-500 hover:border-rose-200 transition-colors flex items-center gap-1.5"
+                                                    >
+                                                        <Calculator className="w-3 h-3" />
+                                                        {smartData.action.label}
+                                                    </motion.button>
+                                                )}
+                                            </div>
+                                        </motion.div>
                                     )}
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                </AnimatePresence>
 
-                    {/* Source Details - Simplified Left Panel */}
-                    <div className="space-y-4 flex-1">
+                                {/* Source Details - Simplified Left Panel */}
+                                <div className="space-y-4 flex-1">
 
-                        {/* Category */}
-                        <div>
-                            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('category') || 'Kategoriya'}</label>
-                            <div className="relative group bg-white border border-slate-200 shadow-sm rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
-                                        <Info size={20} />
+                                    {/* Category */}
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('category') || 'Kategoriya'}</label>
+                                        <div className="relative group bg-white border border-slate-200 shadow-sm rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+                                                    <Info size={20} />
+                                                </div>
+                                                <div className="font-bold text-slate-800 text-sm capitalize">{t(formData.category) || formData.category}</div>
+                                            </div>
+                                            <ChevronDown size={18} className="text-slate-300" />
+
+                                            <div className="absolute inset-0 opacity-0">
+                                                <CustomSelect
+                                                    options={(type === 'income' ? ['surgery', 'consultation', 'injection', 'shampoo', 'other'] : ['salary', 'tax', 'rent', 'marketing', 'equipment', 'food', 'pills', 'other']).map(c => ({ value: c, label: t(c) || c }))}
+                                                    value={formData.category}
+                                                    onChange={(v) => {
+                                                        const newCategory = v as TransactionCategory;
+                                                        // Reset patient/staff if switching to 'other' or irrelevant category
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            category: newCategory,
+                                                            patientId: '',
+                                                            staffId: ''
+                                                        }));
+                                                    }}
+                                                    minimal
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="font-bold text-slate-800 text-sm capitalize">{t(formData.category) || formData.category}</div>
-                                </div>
-                                <ChevronDown size={18} className="text-slate-300" />
 
-                                <div className="absolute inset-0 opacity-0">
-                                    <CustomSelect
-                                        options={(type === 'income' ? ['surgery', 'consultation', 'injection', 'shampoo', 'other'] : ['salary', 'tax', 'rent', 'marketing', 'equipment', 'food', 'pills', 'other']).map(c => ({ value: c, label: t(c) || c }))}
-                                        value={formData.category}
-                                        onChange={(v) => {
-                                            const newCategory = v as TransactionCategory;
-                                            // Reset patient/staff if switching to 'other' or irrelevant category
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                category: newCategory,
-                                                patientId: '',
-                                                staffId: ''
-                                            }));
-                                        }}
-                                        minimal
-                                    />
+                                    {/* Date */}
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('date') || 'Sana'}</label>
+                                        <div className="relative group bg-white border border-slate-200 shadow-sm rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all">
+                                            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+                                                <Calendar size={20} />
+                                            </div>
+                                            <div className="font-bold text-slate-800 text-sm">
+                                                {format(new Date(formData.date), 'dd MMMM yyyy')}
+                                            </div>
+                                            <div className="absolute inset-0 opacity-0 flex">
+                                                <CustomDatePicker value={new Date(formData.date)} onChange={(d) => setFormData({ ...formData, date: d.toISOString() })} />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Date */}
-                        <div>
-                            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('date') || 'Sana'}</label>
-                            <div className="relative group bg-white border border-slate-200 shadow-sm rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all">
-                                <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
-                                    <Calendar size={20} />
-                                </div>
-                                <div className="font-bold text-slate-800 text-sm">
-                                    {format(new Date(formData.date), 'dd MMMM yyyy')}
-                                </div>
-                                <div className="absolute inset-0 opacity-0 flex">
-                                    <CustomDatePicker value={new Date(formData.date)} onChange={(d) => setFormData({ ...formData, date: d.toISOString() })} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                            {/* --- RIGHT PANEL: THE DISTRIBUTION ENGINE (60%) --- */}
+                            <div className="w-full md:w-[60%] bg-white p-6 md:p-10 flex flex-col relative h-full">
 
-                {/* --- RIGHT PANEL: THE DISTRIBUTION ENGINE (60%) --- */}
-                <div className="w-full md:w-[60%] bg-white p-6 md:p-10 flex flex-col relative h-full">
+                                <div className="flex-1 flex flex-col">
+                                    {/* Header */}
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t('transaction_details') || 'Tranzaksiya Tafsilotlari'}</h2>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="hidden md:block p-2 -mr-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+                                            <X size={24} strokeWidth={2.5} />
+                                        </motion.button>
+                                    </div>
 
-                    <div className="flex-1 flex flex-col">
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t('transaction_details') || 'Tranzaksiya Tafsilotlari'}</h2>
-                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="hidden md:block p-2 -mr-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
-                                <X size={24} strokeWidth={2.5} />
-                            </motion.button>
-                        </div>
+                                    {/* --- DYNAMIC CONTEXTUAL INPUTS --- */}
+                                    <div className="space-y-6 flex-1">
 
-                        {/* --- DYNAMIC CONTEXTUAL INPUTS --- */}
-                        <div className="space-y-6 flex-1">
+                                        {/* 1. PATIENT SELECTOR (Type: Income + Category: surgery/consultation/injection OR Type: Expense + Category: pills) */}
+                                        {((type === 'income' && formData.category !== 'other' && formData.category !== 'shampoo') || (type === 'expense' && formData.category === 'pills')) && (
+                                            <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                                                <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('patient') || 'BEMOR'}</label>
+                                                <div className="relative group bg-white border border-slate-200 shadow-sm rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all h-[64px]">
+                                                    <div className="flex items-center gap-3 w-full overflow-hidden">
+                                                        {formData.patientId ? (
+                                                            <>
+                                                                <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 shrink-0 border border-slate-100">
+                                                                    <ImageWithFallback
+                                                                        src={patientList.find(p => p.id === formData.patientId)?.profileImage || ''}
+                                                                        alt="Patient"
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                </div>
+                                                                <div className="flex flex-col overflow-hidden">
+                                                                    <span className="font-bold text-slate-800 text-sm truncate">{patientList.find(p => p.id === formData.patientId)?.fullName}</span>
+                                                                    <span className="text-[11px] text-slate-400 font-bold truncate">{patientList.find(p => p.id === formData.patientId)?.phone}</span>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-slate-400 font-medium text-sm pl-2">{t('select_patient') || 'Select Patient...'}</span>
+                                                        )}
+                                                    </div>
+                                                    <ChevronDown size={18} className="text-slate-300 ml-2" />
 
-                            {/* 1. PATIENT SELECTOR (Type: Income + Category: surgery/consultation/injection OR Type: Expense + Category: pills) */}
-                            {((type === 'income' && formData.category !== 'other' && formData.category !== 'shampoo') || (type === 'expense' && formData.category === 'pills')) && (
-                                <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-                                    <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('patient') || 'BEMOR'}</label>
-                                    <div className="relative group bg-white border border-slate-200 shadow-sm rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all h-[64px]">
-                                        <div className="flex items-center gap-3 w-full overflow-hidden">
-                                            {formData.patientId ? (
-                                                <>
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 shrink-0 border border-slate-100">
-                                                        <ImageWithFallback
-                                                            src={patientList.find(p => p.id === formData.patientId)?.profileImage || ''}
-                                                            alt="Patient"
-                                                            className="w-full h-full object-cover"
+                                                    <div className="absolute inset-0 opacity-0">
+                                                        <CustomSelect
+                                                            options={patientList.map(p => ({ value: p.id, label: p.fullName }))}
+                                                            value={formData.patientId || ''}
+                                                            onChange={(v) => setFormData({ ...formData, patientId: v })}
+                                                            searchable
+                                                            minimal
                                                         />
                                                     </div>
-                                                    <div className="flex flex-col overflow-hidden">
-                                                        <span className="font-bold text-slate-800 text-sm truncate">{patientList.find(p => p.id === formData.patientId)?.fullName}</span>
-                                                        <span className="text-[11px] text-slate-400 font-bold truncate">{patientList.find(p => p.id === formData.patientId)?.phone}</span>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <span className="text-slate-400 font-medium text-sm pl-2">{t('select_patient') || 'Select Patient...'}</span>
-                                            )}
-                                        </div>
-                                        <ChevronDown size={18} className="text-slate-300 ml-2" />
+                                                </div>
+                                            </div>
+                                        )}
 
-                                        <div className="absolute inset-0 opacity-0">
-                                            <CustomSelect
-                                                options={patientList.map(p => ({ value: p.id, label: p.fullName }))}
-                                                value={formData.patientId || ''}
-                                                onChange={(v) => setFormData({ ...formData, patientId: v })}
-                                                searchable
-                                                minimal
+                                        {/* 2. STAFF SELECTOR (Type: Expense + Category: Salary/Food) */}
+                                        {(type === 'expense' && (formData.category === 'salary' || formData.category === 'food')) && (
+                                            <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                                                <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('staff_member_label') || 'XODIM'}</label>
+                                                <div className="relative bg-white border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-rose-300 hover:shadow-sm transition-all h-[64px]">
+                                                    <div className="flex items-center gap-3 w-full overflow-hidden">
+                                                        {formData.staffId ? (
+                                                            <>
+                                                                <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 shrink-0 border border-slate-100">
+                                                                    <ImageWithFallback
+                                                                        src={staffList.find(s => s.id === formData.staffId)?.imageUrl || ''}
+                                                                        alt="Staff"
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                </div>
+                                                                <div className="flex flex-col overflow-hidden">
+                                                                    <span className="font-bold text-slate-800 text-sm truncate">{staffList.find(s => s.id === formData.staffId)?.fullName}</span>
+                                                                    <span className="text-[11px] text-slate-400 font-bold truncate capitalize">{staffList.find(s => s.id === formData.staffId)?.role}</span>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-slate-400 font-medium text-sm pl-2">{t('select_staff') || 'Select Staff'}</span>
+                                                        )}
+                                                    </div>
+                                                    <ChevronDown size={18} className="text-slate-300 mr-1" />
+                                                    <div className="absolute inset-0 opacity-0">
+                                                        <CustomSelect
+                                                            options={staffList.map(s => ({ value: s.id, label: s.fullName }))}
+                                                            value={formData.staffId || ''}
+                                                            onChange={(v) => setFormData({ ...formData, staffId: v })}
+                                                            searchable
+                                                            minimal
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Description Textarea */}
+                                        <div className="flex flex-col h-full">
+                                            <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('description') || 'TAVSIF'}</label>
+                                            <textarea
+                                                value={formData.description || ''}
+                                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                placeholder={t('add_description') || "Izoh qo'shing..."}
+                                                className="w-full flex-1 min-h-[140px] bg-slate-50/50 border border-slate-200 rounded-2xl p-5 text-sm font-medium text-slate-700 outline-none resize-none placeholder-slate-400 focus:bg-white focus:border-slate-300 focus:ring-4 focus:ring-slate-500/10 transition-all shadow-inner"
                                             />
                                         </div>
                                     </div>
-                                </div>
-                            )}
 
-                            {/* 2. STAFF SELECTOR (Type: Expense + Category: Salary/Food) */}
-                            {(type === 'expense' && (formData.category === 'salary' || formData.category === 'food')) && (
-                                <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-                                    <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('staff_member_label') || 'XODIM'}</label>
-                                    <div className="relative bg-white border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-rose-300 hover:shadow-sm transition-all h-[64px]">
-                                        <div className="flex items-center gap-3 w-full overflow-hidden">
-                                            {formData.staffId ? (
-                                                <>
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 shrink-0 border border-slate-100">
-                                                        <ImageWithFallback
-                                                            src={staffList.find(s => s.id === formData.staffId)?.imageUrl || ''}
-                                                            alt="Staff"
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    </div>
-                                                    <div className="flex flex-col overflow-hidden">
-                                                        <span className="font-bold text-slate-800 text-sm truncate">{staffList.find(s => s.id === formData.staffId)?.fullName}</span>
-                                                        <span className="text-[11px] text-slate-400 font-bold truncate capitalize">{staffList.find(s => s.id === formData.staffId)?.role}</span>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <span className="text-slate-400 font-medium text-sm pl-2">{t('select_staff') || 'Select Staff'}</span>
-                                            )}
-                                        </div>
-                                        <ChevronDown size={18} className="text-slate-300 mr-1" />
-                                        <div className="absolute inset-0 opacity-0">
-                                            <CustomSelect
-                                                options={staffList.map(s => ({ value: s.id, label: s.fullName }))}
-                                                value={formData.staffId || ''}
-                                                onChange={(v) => setFormData({ ...formData, staffId: v })}
-                                                searchable
-                                                minimal
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Description Textarea */}
-                            <div className="flex flex-col h-full">
-                                <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('description') || 'TAVSIF'}</label>
-                                <textarea
-                                    value={formData.description || ''}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    placeholder={t('add_description') || "Izoh qo'shing..."}
-                                    className="w-full flex-1 min-h-[140px] bg-slate-50/50 border border-slate-200 rounded-2xl p-5 text-sm font-medium text-slate-700 outline-none resize-none placeholder-slate-400 focus:bg-white focus:border-slate-300 focus:ring-4 focus:ring-slate-500/10 transition-all shadow-inner"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Footer / Button */}
-                        <div className="mt-8">
-                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                onClick={handleSubmit}
-                                disabled={loading || !formData.amount || (type === 'income' && formData.category !== 'other' && formData.category !== 'shampoo' && !formData.patientId) || (type === 'expense' && formData.category === 'pills' && !formData.patientId) || (type === 'expense' && (formData.category === 'salary' || formData.category === 'food') && !formData.staffId)}
-                                className={`
+                                    {/* Footer / Button */}
+                                    <div className="mt-8">
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            onClick={handleSubmit}
+                                            disabled={loading || !formData.amount || (type === 'income' && formData.category !== 'other' && formData.category !== 'shampoo' && !formData.patientId) || (type === 'expense' && formData.category === 'pills' && !formData.patientId) || (type === 'expense' && (formData.category === 'salary' || formData.category === 'food') && !formData.staffId)}
+                                            className={`
                                     w-full !py-4 text-base uppercase tracking-wide shadow-lg
                                     ${type === 'income' ? 'btn-glossy-emerald' : 'btn-glossy-red'}
                                 `}
-                            >
-                                {loading ? (t('saving') || 'Saving...') : (type === 'income' ? (t('confirm_income') || 'Kirimni Tasdiqlash') : (t('confirm_expense') || 'Chiqimni Tasdiqlash'))}
-                            </motion.button>
-                        </div>
+                                        >
+                                            {loading ? (t('saving') || 'Saving...') : (type === 'income' ? (t('confirm_income') || 'Kirimni Tasdiqlash') : (t('confirm_expense') || 'Chiqimni Tasdiqlash'))}
+                                        </motion.button>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            {/* Mobile Close */}
+
+                        </motion.div>
                     </div>
-
-                </div>
-
-                {/* Mobile Close */}
-
-            </motion.div>
-        </div>,
-        document.body
+                )}
+            </AnimatePresence>
+        </Portal>
     );
 };

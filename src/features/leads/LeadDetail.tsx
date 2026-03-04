@@ -284,16 +284,17 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                     className="absolute inset-0 bg-black/20 backdrop-blur-sm"
                     onClick={onClose}
                 />
 
                 {/* Modal */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                    transition={{ duration: 0.2 }}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
                     className="relative w-full md:max-w-4xl h-full md:h-[80vh] md:max-h-[800px] bg-white rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
                 >
                     {/* Premium Glossy Blue Header */}

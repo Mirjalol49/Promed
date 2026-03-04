@@ -14,7 +14,8 @@ import {
   MessageSquare,
   Briefcase,
   Wallet,
-  UserCog
+  UserCog,
+  Plus
 } from 'lucide-react';
 import { Patient, PageView } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -153,58 +154,62 @@ const Layout: React.FC<LayoutProps> = ({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 mt-2 px-4 overflow-y-auto no-scrollbar space-y-2 text-slate-900">
+        <nav className="flex-1 mt-2 px-4 overflow-y-auto no-scrollbar space-y-1 text-slate-900">
+
+
+          {/* Primary — Daily Use */}
           {(can(SCOPES.canViewDashboard) || role === 'nurse') && <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />}
           {can(SCOPES.canViewPatients) && <NavItem page="PATIENTS" icon={Users} label={t('patients')} id="add-patient-btn" />}
-          {can(SCOPES.canViewLeads) && <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />}
           {can(SCOPES.canViewMessages) && <NavItem page="MESSAGES" icon={MessageSquare} label={t('messages')} badge={totalUnread} />}
-          {can(SCOPES.canViewNotes) && <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />}
-          {can(SCOPES.canViewStaff) && <NavItem page="STAFF" icon={Briefcase} label={t('staff')} />}
+          {can(SCOPES.canViewLeads) && <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />}
           {can(SCOPES.canViewFinance) && <NavItem page="FINANCE" icon={Wallet} label={t('finance')} />}
 
-          {(can(SCOPES.canViewRoles) || can(SCOPES.canViewAdmin)) && (
-            <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">
+          {/* Secondary — Admin & Setup */}
+          {(can(SCOPES.canViewStaff) || can(SCOPES.canViewRoles) || can(SCOPES.canViewNotes) || can(SCOPES.canViewAdmin)) && (
+            <div className="pt-3 mt-3 border-t border-slate-100 space-y-1">
               <p className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{t('management')}</p>
+              {can(SCOPES.canViewStaff) && <NavItem page="STAFF" icon={Briefcase} label={t('staff')} />}
               {can(SCOPES.canViewRoles) && <NavItem page="ROLES" icon={UserCog} label={t('roles') || 'Roles'} />}
-
+              {can(SCOPES.canViewNotes) && <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />}
             </div>
           )}
         </nav>
 
         {/* Sidebar Footer with Profile & Lock */}
-        <div className="p-4 mt-auto border-t border-slate-100 bg-premium-card space-y-2">
-
-          {isLockEnabled && (
-            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-              onClick={onLock}
-              className="w-full flex items-center space-x-3 text-slate-900 hover:bg-promed-primary/10 px-4 py-3 rounded-2xl font-medium transition active:scale-95 group"
-            >
-              <Lock size={20} />
-              <span className="text-base font-sans font-medium group-hover:font-semibold transition-all duration-200">{t('lock_app')}</span>
-            </motion.button>
-          )}
-
+        <div className="p-4 mt-auto border-t border-slate-100 bg-premium-card">
           <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
             onClick={() => {
               onNavigate('SETTINGS');
               setIsSidebarOpen(false);
               setIsMobileMenuOpen(false);
             }}
-            className="flex items-center w-full space-x-3 group px-4 py-3 rounded-2xl hover:bg-promed-primary/5 transition duration-200 border border-transparent hover:border-promed-primary/10"
+            title={userName || t('dr_name')}
+            className="flex items-center w-full space-x-2 group px-2 py-2.5 rounded-2xl hover:bg-promed-primary/5 transition duration-200 border border-transparent hover:border-promed-primary/10"
           >
-            <div className="relative">
-              <ProfileAvatar src={userImage} alt="Profile" size={44} className="rounded-lg  shadow-slate-200 border border-slate-100 group-hover:border-slate-300 transition-colors" optimisticId={`${userId}_profile`} />
-
+            <div className="relative flex-shrink-0">
+              <ProfileAvatar src={userImage} alt="Profile" size={36} className="rounded-xl border border-slate-100 group-hover:border-slate-300 transition-colors" optimisticId={`${userId}_profile`} />
             </div>
-            <div className="text-left overflow-hidden flex-1">
-              <p className="text-sm font-sans font-medium group-hover:font-semibold text-slate-900 truncate group-hover:text-promed-primary transition-all duration-200">{userName || t('dr_name')}</p>
+            <div className="text-left overflow-hidden flex-1 min-w-0">
+              <p className="text-sm font-sans font-semibold text-slate-900 truncate group-hover:text-promed-primary transition-colors duration-200 leading-tight">{userName || t('dr_name')}</p>
+              <p className="text-xs text-[#2C3E50] font-bold mt-0.5 leading-tight">{t('settings')}</p>
             </div>
-            <Settings
-              size={20}
-              className="ml-auto text-slate-900 transition-colors"
-            />
+            <div className="flex items-center gap-1 ml-auto flex-shrink-0 bg-slate-100/80 p-1 rounded-xl border border-slate-200/50">
+              {isLockEnabled && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onLock(); }}
+                  className="p-1.5 text-[#2C3E50] hover:text-[#1E40AF] hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-slate-200/50"
+                  title={t('lock_app')}
+                >
+                  <Lock size={14} strokeWidth={2.5} />
+                </button>
+              )}
+              <div className="p-1.5 text-[#2C3E50] group-hover:text-[#1E40AF] transition-colors rounded-lg">
+                <Settings size={14} strokeWidth={2.5} />
+              </div>
+            </div>
           </motion.button>
         </div>
+
       </aside>
 
       {/* Main Content */}
@@ -288,39 +293,29 @@ const Layout: React.FC<LayoutProps> = ({
               </div>
 
               {/* Drawer Nav */}
-              <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2 no-scrollbar">
+              <div className="flex-1 overflow-y-auto py-4 px-4 space-y-1 no-scrollbar">
+
+
+                {/* Primary */}
                 {can(SCOPES.canViewDashboard) && <NavItem page="DASHBOARD" icon={LayoutDashboard} label={t('dashboard')} />}
                 {can(SCOPES.canViewPatients) && <NavItem page="PATIENTS" icon={Users} label={t('patients')} id="add-patient-btn-mobile" />}
-                {can(SCOPES.canViewLeads) && <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />}
                 {can(SCOPES.canViewMessages) && <NavItem page="MESSAGES" icon={MessageSquare} label={t('messages')} badge={totalUnread} />}
-                {can(SCOPES.canViewNotes) && <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />}
-                {can(SCOPES.canViewStaff) && <NavItem page="STAFF" icon={Briefcase} label={t('staff')} />}
+                {can(SCOPES.canViewLeads) && <NavItem page="LEADS" icon={LayoutList} label={t('leads')} />}
                 {can(SCOPES.canViewFinance) && <NavItem page="FINANCE" icon={Wallet} label={t('finance')} />}
 
-                {(can(SCOPES.canViewRoles) || can(SCOPES.canViewAdmin)) && (
-                  <div className="pt-4 mt-4 border-t border-slate-100 space-y-1">
+                {/* Secondary */}
+                {(can(SCOPES.canViewStaff) || can(SCOPES.canViewRoles) || can(SCOPES.canViewNotes) || can(SCOPES.canViewAdmin)) && (
+                  <div className="pt-3 mt-3 border-t border-slate-100 space-y-1">
                     <p className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{t('management')}</p>
+                    {can(SCOPES.canViewStaff) && <NavItem page="STAFF" icon={Briefcase} label={t('staff')} />}
                     {can(SCOPES.canViewRoles) && <NavItem page="ROLES" icon={UserCog} label={t('roles') || 'Roles'} />}
-
+                    {can(SCOPES.canViewNotes) && <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />}
                   </div>
                 )}
               </div>
 
               {/* Drawer Footer */}
-              <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-2">
-                {isLockEnabled && (
-                  <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                    onClick={() => {
-                      onLock();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="w-full flex items-center space-x-3 text-slate-700 hover:bg-white hover:shadow-sm px-4 py-3 rounded-2xl font-medium transition active:scale-95 group border border-transparent hover:border-slate-200"
-                  >
-                    <Lock size={20} />
-                    <span className="text-base font-sans font-medium">{t('lock_app')}</span>
-                  </motion.button>
-                )}
-
+              <div className="p-4 border-t border-slate-100 bg-slate-50/50">
                 <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                   onClick={() => {
                     onNavigate('SETTINGS');
@@ -333,9 +328,22 @@ const Layout: React.FC<LayoutProps> = ({
                   </div>
                   <div className="text-left overflow-hidden flex-1">
                     <p className="text-sm font-sans font-bold text-slate-900 truncate">{userName || t('dr_name')}</p>
-                    <p className="text-xs text-slate-500 truncate">{userEmail}</p>
+                    <p className="text-[#2C3E50] font-bold text-xs truncate mt-0.5">{t('settings')}</p>
                   </div>
-                  <Settings size={18} className="text-slate-400" />
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    {isLockEnabled && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onLock(); setIsMobileMenuOpen(false); }}
+                        className="p-2 text-[#2C3E50] hover:text-promed-primary hover:bg-white rounded-lg transition-all shadow-sm"
+                        title={t('lock_app')}
+                      >
+                        <Lock size={16} strokeWidth={2.5} />
+                      </button>
+                    )}
+                    <div className="p-2 text-[#2C3E50]">
+                      <Settings size={18} strokeWidth={2.5} className="flex-shrink-0" />
+                    </div>
+                  </div>
                 </motion.button>
               </div>
             </motion.div>

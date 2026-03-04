@@ -136,65 +136,81 @@ const InjectionModal: React.FC<{
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
     <Portal>
-      <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-3xl w-full max-w-[90vw] md:max-w-md p-6 md:p-8 transform scale-100 transition-all border border-slate-200 shadow-2xl">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-2xl font-black text-slate-800 tracking-tight">{initialData ? t('edit_injection') : t('add_injection')}</h3>
-            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="text-slate-400 hover:text-slate-800 transition p-2 hover:bg-slate-100 rounded-full bg-slate-50"><X size={20} /></motion.button>
-          </div>
-
-          <div className="space-y-6">
-            <div className="space-y-4">
-              {/* DATE PICKER */}
-              <div>
-                <DatePicker
-                  label={t('date')}
-                  value={date}
-                  onChange={setDate}
-                />
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              onClick={onClose}
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+              className="relative bg-white rounded-3xl w-full max-w-[90vw] md:max-w-md p-6 md:p-8 border border-slate-200 shadow-2xl overflow-hidden"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-black text-slate-800 tracking-tight">{initialData ? t('edit_injection') : t('add_injection')}</h3>
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="text-slate-400 hover:text-slate-800 transition p-2 hover:bg-slate-100 rounded-full bg-slate-50"><X size={20} /></motion.button>
               </div>
 
-              {/* TIME PICKER */}
-              <div>
-                <TimePicker
-                  label={t('time') || "Time"}
-                  value={time}
-                  onChange={setTime}
-                />
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  {/* DATE PICKER */}
+                  <div>
+                    <DatePicker
+                      label={t('date')}
+                      value={date}
+                      onChange={setDate}
+                    />
+                  </div>
+
+                  {/* TIME PICKER */}
+                  <div>
+                    <TimePicker
+                      label={t('time') || "Time"}
+                      value={time}
+                      onChange={setTime}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">{t('notes')}</label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full p-4 bg-slate-50 border-2 border-slate-100 focus:border-promed-primary/30 rounded-2xl h-32 resize-none transition-all text-slate-900 placeholder-slate-400 font-medium focus:bg-white outline-none"
+                    placeholder={t('enter_notes')}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                    onClick={onClose}
+                    className="h-12 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-900 text-[15px] font-semibold rounded-2xl transition-colors active:scale-95 duration-200 whitespace-nowrap"
+                  >
+                    {t('cancel')}
+                  </motion.button>
+                  <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                    onClick={handleSave}
+                    className="btn-premium-blue h-12 flex items-center justify-center active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
+                  >
+                    <span>{t('save')}</span>
+                  </motion.button>
+                </div>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">{t('notes')}</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full p-4 bg-slate-50 border-2 border-slate-100 focus:border-promed-primary/30 rounded-2xl h-32 resize-none transition-all text-slate-900 placeholder-slate-400 font-medium focus:bg-white outline-none"
-                placeholder={t('enter_notes')}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                onClick={onClose}
-                className="h-12 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-900 text-[15px] font-semibold rounded-2xl transition-colors active:scale-95 duration-200 whitespace-nowrap"
-              >
-                {t('cancel')}
-              </motion.button>
-              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                onClick={handleSave}
-                className="btn-premium-blue h-12 flex items-center justify-center active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
-              >
-                <span>{t('save')}</span>
-              </motion.button>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      </div>
+        )}
+      </AnimatePresence>
     </Portal>
   );
 };
@@ -210,7 +226,7 @@ const PhotoLabelModal: React.FC<{
   const [value, setValue] = useState('');
   const [unit, setUnit] = useState('Months');
 
-  if (!isOpen || !image) return null;
+
 
   const handleSave = () => {
     if (!value) return;
@@ -222,63 +238,81 @@ const PhotoLabelModal: React.FC<{
 
   return (
     <Portal>
-      <div className="fixed inset-0 z-[9999] bg-slate-900/70 flex items-center justify-center p-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-2xl w-full max-w-md p-6 border border-slate-200 shadow-apple">
-          <h3 className="text-xl font-bold mb-4 text-slate-800">{t('photo_label_title')}</h3>
-          <div className="flex justify-center mb-6 bg-slate-50 rounded-xl p-2 border border-slate-200">
-            <div className="h-48 w-full max-w-[300px] mx-auto overflow-hidden rounded-lg border border-slate-100 flex items-center justify-center bg-black/5">
-              {isVideo || isVideoUrl(image) ? (
-                <video src={image} className="w-full h-full object-contain" controls playsInline />
-              ) : (
-                <img src={image} alt="Preview" className="w-full h-full object-contain" />
-              )}
-            </div>
-          </div>
-          <div className="space-y-4">
-            <p className="text-sm font-bold text-slate-700">{t('time_since_op')}</p>
-            <div className="flex space-x-3">
-              <div className="flex-1">
-                <label className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-1.5">{t('value')}</label>
-                <input
-                  type="number"
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-400 rounded-xl outline-none transition-all text-slate-900 font-medium"
-                  placeholder="3"
-                  autoFocus
-                />
+      <AnimatePresence>
+        {(isOpen && image) && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-slate-900/70 border border-slate-200"
+              onClick={onClose}
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+              className="relative bg-white rounded-2xl w-full max-w-md p-6 shadow-apple overflow-hidden"
+            >
+              <h3 className="text-xl font-bold mb-4 text-slate-800">{t('photo_label_title')}</h3>
+              <div className="flex justify-center mb-6 bg-slate-50 rounded-xl p-2 border border-slate-200">
+                <div className="h-48 w-full max-w-[300px] mx-auto overflow-hidden rounded-lg border border-slate-100 flex items-center justify-center bg-black/5">
+                  {isVideo || isVideoUrl(image) ? (
+                    <video src={image} className="w-full h-full object-contain" controls playsInline />
+                  ) : (
+                    <img src={image} alt="Preview" className="w-full h-full object-contain" />
+                  )}
+                </div>
               </div>
-              <div className="w-1/3">
-                <label className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-1.5">{t('unit')}</label>
-                <CustomSelect
-                  value={unit}
-                  onChange={setUnit}
-                  options={[
-                    { value: 'Days', label: t('days') },
-                    { value: 'Weeks', label: t('weeks') },
-                    { value: 'Months', label: t('months') },
-                  ]}
-                />
+              <div className="space-y-4">
+                <p className="text-sm font-bold text-slate-700">{t('time_since_op')}</p>
+                <div className="flex space-x-3">
+                  <div className="flex-1">
+                    <label className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-1.5">{t('value')}</label>
+                    <input
+                      type="number"
+                      value={value}
+                      onChange={(e) => setValue(e.target.value)}
+                      className="w-full p-3 bg-white border border-slate-400 rounded-xl outline-none transition-all text-slate-900 font-medium"
+                      placeholder="3"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="w-1/3">
+                    <label className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-1.5">{t('unit')}</label>
+                    <CustomSelect
+                      value={unit}
+                      onChange={setUnit}
+                      options={[
+                        { value: 'Days', label: t('days') },
+                        { value: 'Weeks', label: t('weeks') },
+                        { value: 'Months', label: t('months') },
+                      ]}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 mt-6">
+                  <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                    onClick={onClose}
+                    className="h-12 flex items-center justify-center bg-white border border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all active:scale-[0.98] shadow-sm whitespace-nowrap px-1"
+                  >
+                    {t('cancel')}
+                  </motion.button>
+                  <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                    onClick={handleSave}
+                    disabled={!value}
+                    className="btn-premium-blue h-12 flex items-center justify-center active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
+                  >
+                    <span>{t('save')}</span>
+                  </motion.button>
+                </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 mt-6">
-              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                onClick={onClose}
-                className="h-12 flex items-center justify-center bg-white border border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all active:scale-[0.98] shadow-sm whitespace-nowrap px-1"
-              >
-                {t('cancel')}
-              </motion.button>
-              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                onClick={handleSave}
-                disabled={!value}
-                className="btn-premium-blue h-12 flex items-center justify-center active:scale-95 duration-200 shadow-md shadow-promed-primary/20 text-[15px] font-semibold whitespace-nowrap"
-              >
-                <span>{t('save')}</span>
-              </motion.button>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      </div>
+        )}
+      </AnimatePresence>
     </Portal>
   );
 };
@@ -747,7 +781,7 @@ export const PatientDetail: React.FC<{
       : [];
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8">
       <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onBack} className="flex items-center space-x-2 text-slate-500 hover:text-promed-primary transition mb-2 font-bold hover:-translate-x-1 duration-200 px-1">
         <ChevronLeft size={20} />
         <span>{t('back_to_list')}</span>
@@ -889,7 +923,7 @@ export const PatientDetail: React.FC<{
 
       {
         activeTab === 'general' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Col: Photos */}
             <div className="lg:col-span-1 space-y-8">
               <div className="bg-white rounded-2xl p-6 shadow-apple border border-slate-200">
@@ -1053,7 +1087,7 @@ export const PatientDetail: React.FC<{
             </div>
           </div>
         ) : (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="">
             {accountId && <PatientFinanceStats patient={patient} accountId={accountId} />}
           </div>
         )
@@ -1061,31 +1095,49 @@ export const PatientDetail: React.FC<{
 
 
       {/* Image Full View Modal */}
-      {
-        selectedImage && (
-          <Portal>
-            <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setSelectedImage(null)}>
-              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} className="absolute top-6 right-6 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition z-[10000]">
+      <Portal>
+        <AnimatePresence>
+          {selectedImage && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-black/95 backdrop-blur-md"
+                onClick={() => setSelectedImage(null)}
+              />
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                onClick={() => setSelectedImage(null)}
+                className="absolute top-6 right-6 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition z-[10000]"
+              >
                 <X size={36} />
               </motion.button>
-              <div className="max-w-full max-h-[90vh] rounded-xl overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-300 bg-black/20 relative" onClick={e => e.stopPropagation()}>
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                className="relative max-w-full max-h-[90vh] rounded-xl overflow-hidden shadow-2xl bg-black/20"
+                onClick={e => e.stopPropagation()}
+              >
                 {(() => {
                   const matchedImg = patient.afterImages.find(img => img.url === selectedImage);
                   const isVideo = (matchedImg?.type === 'video') || isVideoUrl(selectedImage);
 
                   return isVideo ? (
-                    <>
-                      <video src={selectedImage} controls className="max-w-full max-h-[90vh]" />
-                    </>
+                    <video src={selectedImage} controls className="max-w-full max-h-[90vh]" />
                   ) : (
                     <img src={selectedImage} alt="Full view" className="max-w-full max-h-[90vh]" />
                   );
                 })()}
-              </div>
+              </motion.div>
             </div>
-          </Portal>
-        )
-      }
+          )}
+        </AnimatePresence>
+      </Portal>
 
       {/* Injection Add/Edit Modal */}
       <InjectionModal
@@ -1425,353 +1477,363 @@ export const AddPatientForm: React.FC<{
 
   return (
     <Portal>
-      <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center p-0 md:p-4 lg:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={onCancel}>
-        <div
-          className="bg-white w-full max-w-5xl rounded-t-3xl md:rounded-3xl flex flex-col max-h-[95vh] md:max-h-[90vh] overflow-hidden transform scale-100 transition-all border-t md:border border-slate-100 shadow-2xl"
-          onClick={e => e.stopPropagation()}
-        >
-          {/* Premium Header */}
-          <div className="px-4 sm:px-6 md:px-8 py-4 md:py-6 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-20">
-            <div>
-              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2 md:gap-3">
-                {initialData ? t('edit_patient_title') : t('new_patient_reg')}
-              </h3>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center p-0 md:p-4 lg:p-6">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            onClick={onCancel}
+          />
 
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+            className="relative bg-white w-full max-w-5xl rounded-t-3xl md:rounded-3xl flex flex-col max-h-[95vh] md:max-h-[90vh] overflow-hidden border-t md:border border-slate-100 shadow-2xl"
+          >
+            {/* Premium Header */}
+            <div className="px-4 sm:px-6 md:px-8 py-4 md:py-6 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-20">
+              <div>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2 md:gap-3">
+                  {initialData ? t('edit_patient_title') : t('new_patient_reg')}
+                </h3>
+
+              </div>
+              <div className="flex items-center gap-2">
+                {/* ✨ Magic Auto-Fill Button (Dev Tool) */}
+
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onCancel} className="text-slate-400 hover:text-slate-800 hover:bg-slate-100 p-2 md:p-2.5 rounded-full transition duration-200">
+                  <X size={20} className="sm:w-6 sm:h-6" />
+                </motion.button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              {/* ✨ Magic Auto-Fill Button (Dev Tool) */}
 
-              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onCancel} className="text-slate-400 hover:text-slate-800 hover:bg-slate-100 p-2 md:p-2.5 rounded-full transition duration-200">
-                <X size={20} className="sm:w-6 sm:h-6" />
-              </motion.button>
-            </div>
-          </div>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto bg-premium-card overscroll-contain">
+              <form id="patient-form" onSubmit={handleSubmit} className="p-4 pb-10 sm:p-6 md:p-8" onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+                  e.preventDefault();
+                }
+              }}>
+                <div className="flex flex-col lg:flex-row gap-6 md:gap-8">
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto bg-premium-card overscroll-contain">
-            <form id="patient-form" onSubmit={handleSubmit} className="p-4 pb-10 sm:p-6 md:p-8" onKeyDown={(e) => {
-              if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
-                e.preventDefault();
-              }
-            }}>
-              <div className="flex flex-col lg:flex-row gap-6 md:gap-8">
+                  {/* Left Column: Photos & Visuals */}
+                  <div className="w-full lg:w-1/3 flex flex-col gap-6 lg:sticky lg:top-8 self-start">
+                    {/* Profile Photo Card */}
+                    <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 flex flex-col items-center text-center transition-all duration-300 group relative overflow-hidden">
+                      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-promed-primary to-teal-400"></div>
+                      <h4 className="font-bold text-slate-800 mb-4 self-start flex items-center gap-2 text-sm uppercase tracking-wide">
+                        <User size={16} className="text-promed-primary" />
+                        {t('profile_photo')}
+                      </h4>
 
-                {/* Left Column: Photos & Visuals */}
-                <div className="w-full lg:w-1/3 flex flex-col gap-6 lg:sticky lg:top-8 self-start">
-                  {/* Profile Photo Card */}
-                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 flex flex-col items-center text-center transition-all duration-300 group relative overflow-hidden">
-                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-promed-primary to-teal-400"></div>
-                    <h4 className="font-bold text-slate-800 mb-4 self-start flex items-center gap-2 text-sm uppercase tracking-wide">
-                      <User size={16} className="text-promed-primary" />
-                      {t('profile_photo')}
-                    </h4>
-
-                    <label className="relative mb-4 cursor-pointer group/photo">
-                      <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-100 ring-4 ring-slate-50 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 transition-all duration-500 relative">
-                        {profileImage ? (
-                          (profileImageFile && isVideoFile(profileImageFile)) || (!profileImageFile && isVideoUrl(profileImage)) ? (
-                            <div className="relative w-full h-full bg-black/5">
-                              <video src={profileImage} className="w-full h-full object-cover" muted playsInline />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-                                <div className="w-10 h-10 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center border border-white/50 shadow-lg">
-                                  <Play size={20} className="text-white fill-white ml-0.5" />
+                      <label className="relative mb-4 cursor-pointer group/photo">
+                        <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-100 ring-4 ring-slate-50 group-hover/photo:ring-promed-primary/30 group-hover/photo:scale-105 transition-all duration-500 relative">
+                          {profileImage ? (
+                            (profileImageFile && isVideoFile(profileImageFile)) || (!profileImageFile && isVideoUrl(profileImage)) ? (
+                              <div className="relative w-full h-full bg-black/5">
+                                <video src={profileImage} className="w-full h-full object-cover" muted playsInline />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                                  <div className="w-10 h-10 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center border border-white/50 shadow-lg">
+                                    <Play size={20} className="text-white fill-white ml-0.5" />
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ) : (
-                            <ImageWithFallback src={profileImage} alt="Profile" className="w-full h-full object-cover group-hover/photo:scale-110 transition duration-700" fallbackType="user" />
-                          )
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-slate-300 group-hover/photo:bg-promed-primary/5 transition-colors duration-500">
-                            <User size={64} strokeWidth={1.5} className="group-hover/photo:scale-110 transition-transform duration-500" />
-                          </div>
-                        )}
-                        {/* Hover Overlay */}
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity duration-500">
-                          <Camera className="w-8 h-8 text-white transform scale-90 group-hover/photo:scale-110 group-hover/photo:-translate-y-1 transition duration-500" />
-                        </div>
-                      </div>
-
-                      {/* Floating camera icon cue */}
-                      <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1 z-20 flex items-center justify-center">
-                        <Camera className="w-[18px] h-[18px] text-slate-400 group-hover/photo:text-white" />
-                      </div>
-
-                      {isProfileUploading && <ImageUploadingOverlay language={language as any} />}
-
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setProfileImage, setProfileImageFile, setIsProfileUploading)} />
-                    </label>
-                    <p className="text-xs text-slate-500 font-medium">{t('click_upload')}</p>
-                  </div>
-
-                  {/* Before Photo Card */}
-                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 transition-all duration-300 group relative overflow-hidden flex flex-col">
-                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-promed-primary to-teal-400"></div>
-                    <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wide shrink-0">
-                      <ImageIcon size={16} className="text-promed-primary" />
-                      {t('before_media')}
-                    </h4>
-
-                    {beforeMediaItems.length === 0 ? (
-                      <label className="cursor-pointer w-full aspect-video rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-500 bg-slate-50/50 group/upload mt-1">
-                        <div className="flex flex-col items-center p-6">
-                          <PlusCircle size={36} className="group-hover/upload:scale-110 group-hover/upload:-translate-y-1 transition-all duration-400 mb-3 opacity-40 group-hover/upload:opacity-100 text-promed-primary" />
-                          <span className="text-xs font-black uppercase tracking-widest text-center text-slate-500 group-hover/upload:text-promed-primary transition-colors">{t('add_media') || "Add Media"}</span>
-                          <span className="text-[10px] text-slate-400 mt-2 font-medium max-w-[180px] text-center leading-relaxed opacity-80 group-hover/upload:opacity-100 transition-opacity flex items-center gap-1.5"><ImageIcon size={12} />{t('click_upload') || "Upload images or videos"}</span>
-                        </div>
-                        <input type="file" multiple className="hidden" accept="image/*,video/*" onChange={handleMultipleBeforeImageUpload} />
-                      </label>
-                    ) : (
-                      <div className="grid grid-cols-2 content-start gap-3 overflow-y-auto w-full pr-2 pb-2 max-h-[350px]">
-                        {beforeMediaItems.map((item, idx) => (
-                          <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group">
-                            {((item.file && isVideoFile(item.file)) || (!item.file && isVideoUrl(item.url))) ? (
-                              <VideoPreview src={item.url} />
                             ) : (
-                              <div className="w-full h-full relative group/img">
-                                <ImageWithFallback src={item.url} className="w-full h-full object-cover" alt="Before" />
-                                <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors pointer-events-none" />
-                              </div>
-                            )}
-
-                            {/* Delete Button */}
-                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                              type="button"
-                              onClick={() => removeBeforeMedia(idx)}
-                              className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-md text-red-500 rounded-lg hover:bg-red-50 hover:text-red-600 shadow-lg transition-all hover:scale-110 border border-slate-200 opacity-0 group-hover:opacity-100 z-10"
-                            >
-                              <Trash2 size={14} />
-                            </motion.button>
+                              <ImageWithFallback src={profileImage} alt="Profile" className="w-full h-full object-cover group-hover/photo:scale-110 transition duration-700" fallbackType="user" />
+                            )
+                          ) : (
+                            <div className="flex items-center justify-center h-full text-slate-300 group-hover/photo:bg-promed-primary/5 transition-colors duration-500">
+                              <User size={64} strokeWidth={1.5} className="group-hover/photo:scale-110 transition-transform duration-500" />
+                            </div>
+                          )}
+                          {/* Hover Overlay */}
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity duration-500">
+                            <Camera className="w-8 h-8 text-white transform scale-90 group-hover/photo:scale-110 group-hover/photo:-translate-y-1 transition duration-500" />
                           </div>
-                        ))}
+                        </div>
 
-                        <label className="cursor-pointer aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-300 bg-slate-50/50 group">
-                          <div className="flex flex-col items-center">
-                            <PlusCircle size={28} className="group-hover:scale-110 transition-transform mb-1 opacity-60 group-hover:opacity-100" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('add_media') || "Add Media"}</span>
+                        {/* Floating camera icon cue */}
+                        <div className="absolute bottom-0 right-0 p-2 bg-white rounded-full border border-slate-100 text-slate-600 group-hover/photo:bg-promed-primary group-hover/photo:text-white transition-all duration-300 group-hover/photo:scale-110 group-hover/photo:translate-x-1 z-20 flex items-center justify-center">
+                          <Camera className="w-[18px] h-[18px] text-slate-400 group-hover/photo:text-white" />
+                        </div>
+
+                        {isProfileUploading && <ImageUploadingOverlay language={language as any} />}
+
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setProfileImage, setProfileImageFile, setIsProfileUploading)} />
+                      </label>
+                      <p className="text-xs text-slate-500 font-medium">{t('click_upload')}</p>
+                    </div>
+
+                    {/* Before Photo Card */}
+                    <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200 transition-all duration-300 group relative overflow-hidden flex flex-col">
+                      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-promed-primary to-teal-400"></div>
+                      <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wide shrink-0">
+                        <ImageIcon size={16} className="text-promed-primary" />
+                        {t('before_media')}
+                      </h4>
+
+                      {beforeMediaItems.length === 0 ? (
+                        <label className="cursor-pointer w-full aspect-video rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-500 bg-slate-50/50 group/upload mt-1">
+                          <div className="flex flex-col items-center p-6">
+                            <PlusCircle size={36} className="group-hover/upload:scale-110 group-hover/upload:-translate-y-1 transition-all duration-400 mb-3 opacity-40 group-hover/upload:opacity-100 text-promed-primary" />
+                            <span className="text-xs font-black uppercase tracking-widest text-center text-slate-500 group-hover/upload:text-promed-primary transition-colors">{t('add_media') || "Add Media"}</span>
+                            <span className="text-[10px] text-slate-400 mt-2 font-medium max-w-[180px] text-center leading-relaxed opacity-80 group-hover/upload:opacity-100 transition-opacity flex items-center gap-1.5"><ImageIcon size={12} />{t('click_upload') || "Upload images or videos"}</span>
                           </div>
                           <input type="file" multiple className="hidden" accept="image/*,video/*" onChange={handleMultipleBeforeImageUpload} />
                         </label>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="grid grid-cols-2 content-start gap-3 overflow-y-auto w-full pr-2 pb-2 max-h-[350px]">
+                          {beforeMediaItems.map((item, idx) => (
+                            <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group">
+                              {((item.file && isVideoFile(item.file)) || (!item.file && isVideoUrl(item.url))) ? (
+                                <VideoPreview src={item.url} />
+                              ) : (
+                                <div className="w-full h-full relative group/img">
+                                  <ImageWithFallback src={item.url} className="w-full h-full object-cover" alt="Before" />
+                                  <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors pointer-events-none" />
+                                </div>
+                              )}
 
-                    {isBeforeUploading && (
-                      <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-20">
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="w-16 h-16"><Lottie animationData={loadingAnimation} loop={true} /></div>
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 animate-pulse">{t('uploading') || "Uploading..."}</span>
+                              {/* Delete Button */}
+                              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                type="button"
+                                onClick={() => removeBeforeMedia(idx)}
+                                className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-md text-red-500 rounded-lg hover:bg-red-50 hover:text-red-600 shadow-lg transition-all hover:scale-110 border border-slate-200 opacity-0 group-hover:opacity-100 z-10"
+                              >
+                                <Trash2 size={14} />
+                              </motion.button>
+                            </div>
+                          ))}
+
+                          <label className="cursor-pointer aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-promed-primary hover:text-promed-primary hover:bg-promed-primary/5 transition-all duration-300 bg-slate-50/50 group">
+                            <div className="flex flex-col items-center">
+                              <PlusCircle size={28} className="group-hover:scale-110 transition-transform mb-1 opacity-60 group-hover:opacity-100" />
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('add_media') || "Add Media"}</span>
+                            </div>
+                            <input type="file" multiple className="hidden" accept="image/*,video/*" onChange={handleMultipleBeforeImageUpload} />
+                          </label>
                         </div>
-                      </div>
-                    )}
+                      )}
+
+                      {isBeforeUploading && (
+                        <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-20">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="w-16 h-16"><Lottie animationData={loadingAnimation} loop={true} /></div>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 animate-pulse">{t('uploading') || "Uploading..."}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Right Column: Form Inputs */}
-                <div className="w-full lg:w-2/3 space-y-8">
-                  {/* Personal Specs */}
-                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200">
-                    <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 text-sm uppercase tracking-wide border-b border-slate-100 pb-2">
-                      <User size={18} className="text-promed-primary" />
-                      {t('personal_info')}
-                    </h4>
+                  {/* Right Column: Form Inputs */}
+                  <div className="w-full lg:w-2/3 space-y-8">
+                    {/* Personal Specs */}
+                    <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200">
+                      <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 text-sm uppercase tracking-wide border-b border-slate-100 pb-2">
+                        <User size={18} className="text-promed-primary" />
+                        {t('personal_info')}
+                      </h4>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('full_name')}</label>
-                        <div className="relative group">
-                          <User size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
-                          <input required type="text" value={fullName} onChange={e => setFullName(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3.5 bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl focus:bg-white outline-none transition-all duration-300 font-bold text-slate-800 focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 placeholder:text-slate-400/70 placeholder:font-medium"
-                            placeholder="Mirjalol Shamsiddinov" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('full_name')}</label>
+                          <div className="relative group">
+                            <User size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
+                            <input required type="text" value={fullName} onChange={e => setFullName(e.target.value)}
+                              className="w-full pl-10 pr-4 py-3.5 bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl focus:bg-white outline-none transition-all duration-300 font-bold text-slate-800 focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 placeholder:text-slate-400/70 placeholder:font-medium"
+                              placeholder="Mirjalol Shamsiddinov" />
+                          </div>
                         </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('phone_number')}</label>
+                          <div className="relative group">
+                            <Phone className="absolute left-3.5 top-3.5 w-[18px] h-[18px] text-slate-400 group-focus-within:text-promed-primary transition-colors" />
+                            <input
+                              required
+                              type="tel"
+                              value={phone}
+                              onChange={e => setPhone(formatUzbekPhoneNumber(e.target.value))}
+                              onKeyDown={(e) => {
+                                // Prevent deleting the +998 prefix
+                                if (e.key === 'Backspace' && phone === '+998 ') {
+                                  e.preventDefault();
+                                }
+                                // Handle case where user tries to move cursor before prefix
+                                const input = e.target as HTMLInputElement;
+                                if (input.selectionStart !== null && input.selectionStart < 5 && e.key !== 'ArrowRight' && e.key !== 'ArrowDown') {
+                                  // For simplicity, we just allow ArrowRight/Down to let them out, 
+                                  // otherwise we jump them back to the end of the prefix
+                                  // input.setSelectionRange(5, 5);
+                                }
+                              }}
+                              className="w-full pl-10 pr-4 py-3.5 bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl focus:bg-white outline-none transition-all duration-300 font-bold tracking-wide text-slate-800 focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 placeholder:text-slate-400/70 placeholder:font-medium"
+                              placeholder="+998 93 748 91 41"
+                            />
+                          </div>
+                        </div>
+
                       </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('phone_number')}</label>
-                        <div className="relative group">
-                          <Phone className="absolute left-3.5 top-3.5 w-[18px] h-[18px] text-slate-400 group-focus-within:text-promed-primary transition-colors" />
-                          <input
-                            required
-                            type="tel"
-                            value={phone}
-                            onChange={e => setPhone(formatUzbekPhoneNumber(e.target.value))}
-                            onKeyDown={(e) => {
-                              // Prevent deleting the +998 prefix
-                              if (e.key === 'Backspace' && phone === '+998 ') {
-                                e.preventDefault();
-                              }
-                              // Handle case where user tries to move cursor before prefix
-                              const input = e.target as HTMLInputElement;
-                              if (input.selectionStart !== null && input.selectionStart < 5 && e.key !== 'ArrowRight' && e.key !== 'ArrowDown') {
-                                // For simplicity, we just allow ArrowRight/Down to let them out, 
-                                // otherwise we jump them back to the end of the prefix
-                                // input.setSelectionRange(5, 5);
-                              }
-                            }}
-                            className="w-full pl-10 pr-4 py-3.5 bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl focus:bg-white outline-none transition-all duration-300 font-bold tracking-wide text-slate-800 focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 placeholder:text-slate-400/70 placeholder:font-medium"
-                            placeholder="+998 93 748 91 41"
+
+                      <div className="grid grid-cols-2 gap-6 mt-6">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('age')}</label>
+                          <input required type="number" value={age} onChange={e => setAge(e.target.value)}
+                            className="w-full px-4 py-3.5 bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl focus:bg-white outline-none transition-all duration-300 font-bold text-slate-800 focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 placeholder:text-slate-400/70 placeholder:font-medium"
+                            placeholder="32" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('gender')}</label>
+                          <CustomSelect
+                            value={gender}
+                            onChange={(val) => setGender(val as any)}
+                            options={[
+                              { value: 'Male', label: t('gender_male') },
+                              { value: 'Female', label: t('gender_female') },
+                            ]}
                           />
                         </div>
-                      </div>
-
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6 mt-6">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('age')}</label>
-                        <input required type="number" value={age} onChange={e => setAge(e.target.value)}
-                          className="w-full px-4 py-3.5 bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl focus:bg-white outline-none transition-all duration-300 font-bold text-slate-800 focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 placeholder:text-slate-400/70 placeholder:font-medium"
-                          placeholder="32" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('gender')}</label>
-                        <CustomSelect
-                          value={gender}
-                          onChange={(val) => setGender(val as any)}
-                          options={[
-                            { value: 'Male', label: t('gender_male') },
-                            { value: 'Female', label: t('gender_female') },
-                          ]}
-                        />
-                      </div>
-                      <div className="space-y-1.5 col-span-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('tier') || 'Status'}</label>
-                        <div
-                          onClick={() => setTier(tier === 'regular' ? 'pro' : 'regular')}
-                          className={`w-full flex items-center justify-between p-3 rounded-xl border-[1.5px] md:border-2 cursor-pointer transition-all duration-300 relative overflow-hidden group ${tier === 'pro'
-                            ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-yellow-400 shadow-apple'
-                            : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50'
-                            }`}
-                        >
-                          <div className="flex items-center gap-2.5 md:gap-3 relative z-10 min-w-0 flex-1 pr-2">
-                            <div className={`w-9 h-9 md:w-10 md:h-10 shrink-0 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden ${tier === 'pro' ? 'bg-yellow-100 text-yellow-900 shadow-sm scale-110' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
-                              }`}>
-                              {tier === 'pro' ? (
-                                <ProBadge size={40} />
-                              ) : (
-                                <Crown size={18} className="text-slate-400" />
-                              )}
+                        <div className="space-y-1.5 col-span-2">
+                          <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('tier') || 'Status'}</label>
+                          <div
+                            onClick={() => setTier(tier === 'regular' ? 'pro' : 'regular')}
+                            className={`w-full flex items-center justify-between p-3 rounded-xl border-[1.5px] md:border-2 cursor-pointer transition-all duration-300 relative overflow-hidden group ${tier === 'pro'
+                              ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-yellow-400 shadow-apple'
+                              : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                              }`}
+                          >
+                            <div className="flex items-center gap-2.5 md:gap-3 relative z-10 min-w-0 flex-1 pr-2">
+                              <div className={`w-9 h-9 md:w-10 md:h-10 shrink-0 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden ${tier === 'pro' ? 'bg-yellow-100 text-yellow-900 shadow-sm scale-110' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
+                                }`}>
+                                {tier === 'pro' ? (
+                                  <ProBadge size={40} />
+                                ) : (
+                                  <Crown size={18} className="text-slate-400" />
+                                )}
+                              </div>
+                              <div className="flex flex-col min-w-0 justify-center">
+                                <span className={`font-bold text-[13px] md:text-sm truncate transition-colors ${tier === 'pro' ? 'text-yellow-900' : 'text-slate-600'}`}>
+                                  {t('tier_pro') || 'Pro Patient (Bonus)'}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex flex-col min-w-0 justify-center">
-                              <span className={`font-bold text-[13px] md:text-sm truncate transition-colors ${tier === 'pro' ? 'text-yellow-900' : 'text-slate-600'}`}>
-                                {t('tier_pro') || 'Pro Patient (Bonus)'}
-                              </span>
-                            </div>
-                          </div>
 
-                          {/* Custom Toggle Switch */}
-                          <div className={`shrink-0 w-11 h-6 md:w-16 md:h-9 rounded-full transition-colors duration-300 relative z-10 ${tier === 'pro' ? 'bg-yellow-400' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
-                            <div className={`absolute top-[3px] md:top-1 w-4.5 h-4.5 md:w-7 md:h-7 rounded-full bg-white shadow-sm transition-transform duration-300 ${tier === 'pro' ? 'translate-x-[22px] md:translate-x-8' : 'translate-x-[3px] md:translate-x-1'} aspect-square`} style={{ height: 'calc(100% - 6px)', width: 'calc(100% / 2.2)' }} />
+                            {/* Custom Toggle Switch */}
+                            <div className={`shrink-0 w-11 h-6 md:w-16 md:h-9 rounded-full transition-colors duration-300 relative z-10 ${tier === 'pro' ? 'bg-yellow-400' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
+                              <div className={`absolute top-[3px] md:top-1 w-4.5 h-4.5 md:w-7 md:h-7 rounded-full bg-white shadow-sm transition-transform duration-300 ${tier === 'pro' ? 'translate-x-[22px] md:translate-x-8' : 'translate-x-[3px] md:translate-x-1'} aspect-square`} style={{ height: 'calc(100% - 6px)', width: 'calc(100% / 2.2)' }} />
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Medical Specs */}
-                  <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200">
-                    <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 text-sm uppercase tracking-wide border-b border-slate-100 pb-2">
-                      <Activity size={18} className="text-promed-primary" />
-                      {t('medical_details')}
-                    </h4>
+                    {/* Medical Specs */}
+                    <div className="bg-white p-6 rounded-2xl shadow-premium border border-slate-200">
+                      <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 text-sm uppercase tracking-wide border-b border-slate-100 pb-2">
+                        <Activity size={18} className="text-promed-primary" />
+                        {t('medical_details')}
+                      </h4>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('operation_date')}</label>
-                        <DatePicker
-                          value={operationDate}
-                          onChange={setOperationDate}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('technique')}</label>
-                        <CustomSelect
-                          value={technique}
-                          onChange={setTechnique}
-                          placeholder={t('select_tech')}
-                          options={[
-                            { value: 'Hair', label: t('transplant_hair') },
-                            { value: 'Eyebrow', label: t('transplant_eyebrow') },
-                            { value: 'Beard', label: t('transplant_beard') },
-                          ]}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('grafts')}</label>
-                        <div className="relative group">
-                          <Hash size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
-                          <input type="number" value={grafts} onChange={e => setGrafts(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-400 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
-                            placeholder="2500" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('operation_date')}</label>
+                          <DatePicker
+                            value={operationDate}
+                            onChange={setOperationDate}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('technique')}</label>
+                          <CustomSelect
+                            value={technique}
+                            onChange={setTechnique}
+                            placeholder={t('select_tech')}
+                            options={[
+                              { value: 'Hair', label: t('transplant_hair') },
+                              { value: 'Eyebrow', label: t('transplant_eyebrow') },
+                              { value: 'Beard', label: t('transplant_beard') },
+                            ]}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('grafts')}</label>
+                          <div className="relative group">
+                            <Hash size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
+                            <input type="number" value={grafts} onChange={e => setGrafts(e.target.value)}
+                              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-400 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                              placeholder="2500" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    {/* Finance Specs */}
+                      {/* Finance Specs */}
 
+                    </div>
                   </div>
                 </div>
+
+              </form>
+            </div>
+
+            {/* Fixed Footer */}
+            <div className="px-4 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-white flex-shrink-0 z-20">
+              {/* Validation Error Display */}
+              {validationError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm font-medium">
+                  <X size={16} className="flex-shrink-0" />
+                  <span>{t(validationError)}</span>
+                </div>
+              )}
+              <div className="grid grid-cols-2 md:flex md:justify-end gap-3 md:gap-4">
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                  type="button"
+                  onClick={onCancel}
+                  className="w-full md:w-auto px-6 py-3.5 text-slate-500 font-bold hover:text-slate-800 transition rounded-xl bg-slate-100 hover:bg-slate-200 text-sm active:scale-95 duration-200"
+                >
+                  {t('cancel')}
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                  type="submit"
+                  form="patient-form"
+                  disabled={saving || isSubmitting}
+                  className="w-full md:w-auto btn-premium-blue !px-8 !py-3.5 flex items-center justify-center gap-2"
+                >
+                  {isSubmitting || saving ? (
+                    <ButtonLoader />
+                  ) : (
+                    <Save size={18} className="relative z-10" />
+                  )}
+                  <span>{isSubmitting || saving ? t('saving') : t('save')}</span>
+                </motion.button>
               </div>
+            </div>
 
-            </form>
-          </div>
-
-          {/* Fixed Footer */}
-          <div className="px-4 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-white flex-shrink-0 z-20">
-            {/* Validation Error Display */}
-            {validationError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm font-medium">
-                <X size={16} className="flex-shrink-0" />
-                <span>{t(validationError)}</span>
+            {/* Custom Mascot Loader Overlay for Modal */}
+            {(saving || isSubmitting || isProfileUploading || isBeforeUploading) && (
+              <div className="absolute inset-0 z-[10000] bg-white/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300 rounded-3xl">
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 bg-blue-400/20 blur-2xl rounded-full animate-pulse" />
+                  <div className="relative w-32 h-32 md:w-40 md:h-40">
+                    <Lottie
+                      animationData={loadingAnimation}
+                      loop={true}
+                      autoplay={true}
+                      rendererSettings={{
+                        preserveAspectRatio: 'xMidYMid meet'
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             )}
-            <div className="grid grid-cols-2 md:flex md:justify-end gap-3 md:gap-4">
-              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                type="button"
-                onClick={onCancel}
-                className="w-full md:w-auto px-6 py-3.5 text-slate-500 font-bold hover:text-slate-800 transition rounded-xl bg-slate-100 hover:bg-slate-200 text-sm active:scale-95 duration-200"
-              >
-                {t('cancel')}
-              </motion.button>
-              <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                type="submit"
-                form="patient-form"
-                disabled={saving || isSubmitting}
-                className="w-full md:w-auto btn-premium-blue !px-8 !py-3.5 flex items-center justify-center gap-2"
-              >
-                {isSubmitting || saving ? (
-                  <ButtonLoader />
-                ) : (
-                  <Save size={18} className="relative z-10" />
-                )}
-                <span>{isSubmitting || saving ? t('saving') : t('save')}</span>
-              </motion.button>
-            </div>
-          </div>
-
-          {/* Custom Mascot Loader Overlay for Modal */}
-          {(saving || isSubmitting || isProfileUploading || isBeforeUploading) && (
-            <div className="absolute inset-0 z-[10000] bg-white/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300 rounded-3xl">
-              <div className="relative mb-6">
-                <div className="absolute inset-0 bg-blue-400/20 blur-2xl rounded-full animate-pulse" />
-                <div className="relative w-32 h-32 md:w-40 md:h-40">
-                  <Lottie
-                    animationData={loadingAnimation}
-                    loop={true}
-                    autoplay={true}
-                  />
-                </div>
-              </div>
-              <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-2">
-                {(isProfileUploading || isBeforeUploading) ? (t('uploading') || "Yuklanmoqda...") : (t('saving') || "Saqlanmoqda...")}
-              </h2>
-              <p className="text-slate-500 font-medium text-sm animate-pulse">
-                {(isProfileUploading || isBeforeUploading)
-                  ? (t('uploading_large_image') || "Uploading large image...")
-                  : (t('saving_patient_data') || "Saving patient data...")}
-              </p>
-            </div>
-          )}
+          </motion.div>
         </div>
-      </div>
-    </Portal>
+      </AnimatePresence>
+    </Portal >
   );
 };

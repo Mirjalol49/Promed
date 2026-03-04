@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import React, { useState } from 'react';
 import { X, Save, Instagram, Send, User, Users, Phone } from 'lucide-react';
@@ -142,101 +142,120 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
         }
     };
 
-    if (!isOpen) return null;
+
 
     return (
         <Portal>
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-bold text-slate-900">
-                            {leadToEdit ? t('edit_lead') : t('add_new_lead')}
-                        </h2>
-                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600">
-                            <X size={20} />
-                        </motion.button>
-                    </div>
+            <AnimatePresence>
+                {isOpen && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                            onClick={onClose}
+                        />
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Name */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('full_name') || 'Ism Familiya'} *</label>
-                            <input
-                                type="text"
-                                required
-                                value={formData.full_name}
-                                onChange={e => setFormData({ ...formData, full_name: e.target.value })}
-                                className="w-full px-4 py-2 bg-slate-50 border border-slate-400 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
-                                placeholder={t('full_name_placeholder') || 'Masalan: Mirjalol Shamsiddinov'}
-                            />
-                        </div>
+                        {/* Modal Content */}
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                            className="relative bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 overflow-hidden"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-lg font-bold text-slate-900">
+                                    {leadToEdit ? t('edit_lead') : t('add_new_lead')}
+                                </h2>
+                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600">
+                                    <X size={20} />
+                                </motion.button>
+                            </div>
 
-                        {/* Phone */}
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{t('phone_number') || t('phone') || 'Telefon Raqami'}</label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Phone className="h-5 w-5 text-slate-400" />
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                {/* Name */}
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('full_name') || 'Ism Familiya'} *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.full_name}
+                                        onChange={e => setFormData({ ...formData, full_name: e.target.value })}
+                                        className="w-full px-4 py-2 bg-slate-50 border border-slate-400 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                                        placeholder={t('full_name_placeholder') || 'Masalan: Mirjalol Shamsiddinov'}
+                                    />
                                 </div>
-                                <input
-                                    type="tel"
-                                    required
-                                    value={formData.phone_number}
-                                    onChange={handlePhoneChange}
-                                    className="w-full pl-10 pr-4 py-3 bg-white border border-slate-400/60 rounded-xl focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary outline-none transition-all font-medium text-slate-700 text-lg"
-                                    placeholder="+998 90 123 45 67"
-                                />
-                            </div>
-                        </div>
 
-                        {/* Source */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">{t('source_label') || t('source') || 'Manba'}</label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {sources.map(s => {
-                                    const Icon = s.icon;
-                                    const isSelected = formData.source === s.id;
-                                    return (
-                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                            key={s.id}
-                                            type="button"
-                                            onClick={() => setFormData({ ...formData, source: s.id })}
-                                            className={`
-                                                flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold transition-all border
-                                                ${isSelected
-                                                    ? 'bg-blue-50 text-blue-600 border-blue-500 ring-1 ring-blue-500 shadow-sm'
-                                                    : 'bg-white text-slate-600 border-slate-300 hover:border-slate-400 hover:bg-slate-50'}
-                                            `}
-                                        >
-                                            <Icon size={16} />
-                                            <span>{s.label}</span>
-                                        </motion.button>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                                {/* Phone */}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{t('phone_number') || t('phone') || 'Telefon Raqami'}</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <Phone className="h-5 w-5 text-slate-400" />
+                                        </div>
+                                        <input
+                                            type="tel"
+                                            required
+                                            value={formData.phone_number}
+                                            onChange={handlePhoneChange}
+                                            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-400/60 rounded-xl focus:ring-4 focus:ring-promed-primary/10 focus:border-promed-primary outline-none transition-all font-medium text-slate-700 text-lg"
+                                            placeholder="+998 90 123 45 67"
+                                        />
+                                    </div>
+                                </div>
 
+                                {/* Source */}
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">{t('source_label') || t('source') || 'Manba'}</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {sources.map(s => {
+                                            const Icon = s.icon;
+                                            const isSelected = formData.source === s.id;
+                                            return (
+                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                    key={s.id}
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, source: s.id })}
+                                                    className={`
+                                                        flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold transition-all border
+                                                        ${isSelected
+                                                            ? 'bg-blue-50 text-blue-600 border-blue-500 ring-1 ring-blue-500 shadow-sm'
+                                                            : 'bg-white text-slate-600 border-slate-300 hover:border-slate-400 hover:bg-slate-50'}
+                                                    `}
+                                                >
+                                                    <Icon size={16} />
+                                                    <span>{s.label}</span>
+                                                </motion.button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
 
-
-                        <div className="pt-4">
-                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full btn-premium-blue py-3 shadow-lg shadow-promed-primary/20"
-                            >
-                                {isLoading ? (
-                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                ) : (
-                                    <>
-                                        <Save size={18} className="relative z-10" />
-                                        <span>{t('save') || 'Saqlash'}</span>
-                                    </>
-                                )}
-                            </motion.button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+                                <div className="pt-4">
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="w-full btn-premium-blue py-3 shadow-lg shadow-promed-primary/20"
+                                    >
+                                        {isLoading ? (
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>
+                                        ) : (
+                                            <>
+                                                <Save size={18} className="relative z-10" />
+                                                <span>{t('save') || 'Saqlash'}</span>
+                                            </>
+                                        )}
+                                    </motion.button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </Portal>
     );
 };

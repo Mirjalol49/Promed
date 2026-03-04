@@ -69,7 +69,7 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
     }
 
     return (
-        <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-200 mb-6">
+        <div className="bg-white rounded-[2rem] p-4 sm:p-6 shadow-sm border border-slate-200 mb-6">
             <h3 className="font-extrabold text-slate-800 flex items-center gap-3 mb-6 text-[16px]">
                 <div className="p-1.5 bg-blue-50 rounded-xl text-blue-600 border border-blue-100">
                     <Activity size={18} strokeWidth={2.5} />
@@ -96,15 +96,15 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                     return (
                         <div key={income.id} className="border border-slate-100 rounded-[2rem] overflow-hidden bg-slate-50/30 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
                             {/* Session Header */}
-                            <div className="bg-white px-5 py-4 flex items-center justify-between border-b border-slate-100">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center font-black text-sm border border-violet-100">
+                            <div className="bg-white px-4 sm:px-5 py-3.5 sm:py-4 flex items-center justify-between border-b border-slate-100 gap-2">
+                                <div className="flex items-center gap-2.5 sm:gap-3">
+                                    <div className="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center font-black text-sm border border-violet-100 flex-shrink-0">
                                         {sessionNumber}
                                     </div>
-                                    <h4 className="font-extrabold text-slate-800 text-[15px]">{t('seans_n')?.replace('{n}', String(sessionNumber)).toLowerCase() || `${sessionNumber}-seans`}</h4>
+                                    <h4 className="font-extrabold text-slate-800 text-[14px] sm:text-[15px] truncate">{t('seans_n')?.replace('{n}', String(sessionNumber)).toLowerCase() || `${sessionNumber}-seans`}</h4>
                                 </div>
-                                <div className="flex items-center gap-2 text-[12px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/60">
-                                    <Calendar size={13} className="text-slate-400" strokeWidth={2.5} />
+                                <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[12px] font-bold text-slate-500 bg-slate-100 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-slate-200/60 shrink-0">
+                                    <Calendar size={12} className="text-slate-400" strokeWidth={2.5} />
                                     {format(new Date(date), 'dd MMM yyyy', { locale: currentLocale })}
                                 </div>
                             </div>
@@ -118,8 +118,8 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                     const splitPercent = totalIncome > 0 ? Math.round((splitAmount / totalIncome) * 100) : 0;
 
                                     return (
-                                        <div key={split.id || sIdx} className="flex items-center justify-between bg-white px-4 py-3 md:py-3.5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group">
-                                            <div className="flex items-center gap-3 w-full">
+                                        <div key={split.id || sIdx} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white px-4 py-3 md:py-3.5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group gap-2">
+                                            <div className="flex items-center gap-3 min-w-0">
                                                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm border border-slate-200/60 bg-slate-100 group-hover:scale-105 transition-transform duration-300">
                                                     {staff?.imageUrl ? (
                                                         <img src={staff.imageUrl} alt={displayName} className="w-full h-full object-cover" />
@@ -141,16 +141,16 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="text-[16px] font-black text-violet-600 flex items-baseline gap-1 shrink-0">
-                                                {formatWithSpaces(splitAmount)} <span className="text-[11px] text-violet-400">UZS</span>
+                                            <div className="text-[13px] sm:text-[16px] font-black text-violet-600 flex items-baseline gap-1 shrink-0 self-end sm:self-center bg-violet-50/30 sm:bg-transparent px-2 py-0.5 sm:p-0 rounded-lg">
+                                                {formatWithSpaces(splitAmount)} <span className="text-[10px] sm:text-[11px] text-violet-400">UZS</span>
                                             </div>
                                         </div>
                                     );
                                 })}
 
                                 {/* Klinika Net Profit */}
-                                <div className="flex items-center justify-between bg-emerald-50/60 px-4 py-3 md:py-3.5 rounded-2xl border border-emerald-100/60 shadow-sm group hover:shadow-md transition-shadow">
-                                    <div className="flex items-center gap-3 w-full">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-emerald-50/60 px-4 py-3 md:py-3.5 rounded-2xl border border-emerald-100/60 shadow-sm group hover:shadow-md transition-shadow gap-2">
+                                    <div className="flex items-center gap-3 min-w-0">
                                         <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center relative shadow-sm bg-white border border-emerald-200/60 group-hover:scale-105 transition-transform duration-300">
                                             <Building2 size={16} className="text-emerald-500" strokeWidth={2.5} />
                                         </div>
@@ -166,17 +166,17 @@ export const OperationProgressTracker: React.FC<{ patientId: string }> = ({ pati
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-[16px] font-black text-emerald-600 flex items-baseline gap-1 shrink-0">
-                                        {formatWithSpaces(clinicAmount)} <span className="text-[11px] text-emerald-500">UZS</span>
+                                    <div className="text-[13px] sm:text-[16px] font-black text-emerald-600 flex items-baseline gap-1 shrink-0 self-end sm:self-center bg-emerald-100/30 sm:bg-transparent px-2 py-0.5 sm:p-0 rounded-lg">
+                                        {formatWithSpaces(clinicAmount)} <span className="text-[10px] sm:text-[11px] text-emerald-500">UZS</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Total Summary Footer */}
-                            <div className="bg-slate-100/50 px-5 py-4 border-t border-slate-100 flex items-center justify-between">
-                                <span className="text-[13px] font-black tracking-widest text-slate-800 uppercase">{t('total') || 'JAMI'}</span>
-                                <div className="text-[18px] font-black text-slate-800 flex items-baseline gap-1">
-                                    {formatWithSpaces(totalIncome)} <span className="text-[13px] text-slate-400">UZS</span>
+                            <div className="bg-slate-100/50 px-5 py-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                                <span className="text-[11px] sm:text-[13px] font-black tracking-widest text-slate-800 uppercase shrink-0">{t('total') || 'JAMI'}</span>
+                                <div className="text-[15px] sm:text-[18px] font-black text-slate-800 flex items-baseline gap-1 truncate text-right">
+                                    {formatWithSpaces(totalIncome)} <span className="text-[10px] sm:text-[13px] text-slate-400 shrink-0">UZS</span>
                                 </div>
                             </div>
                         </div>

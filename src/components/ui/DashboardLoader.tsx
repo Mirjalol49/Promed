@@ -38,12 +38,6 @@ export const DashboardLoader: React.FC = () => {
                         />
                     </motion.div>
                 </div>
-
-                <div className="mt-4 flex flex-col items-center gap-4">
-                    <p className="text-slate-500 font-bold text-lg tracking-tight animate-pulse">
-                        {t('loading_pleasewait') || 'Iltimos kuting...'}
-                    </p>
-                </div>
             </div>
         </motion.div>,
         document.body

@@ -16,6 +16,7 @@ import { AddNoteModal } from './AddNoteModal';
 import { TimelineNote } from './TimelineNote';
 import DeleteModal from '../../components/ui/DeleteModal';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 
 export const NotesPage: React.FC = () => {
     const { t } = useLanguage();
@@ -296,12 +297,12 @@ export const NotesPage: React.FC = () => {
                 {/* Background Line for Timeline (only visible in todo mode, rendered conditionally below or via CSS) - Actually better handled in the item loop container or a wrapper */}
 
                 {isLoading ? (
-                    <div className="flex items-center justify-center h-40">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
+                    <div className="flex items-center justify-center h-[50vh]">
+                        <LoadingSpinner size="lg" />
                     </div>
                 ) : !activeFolder ? (
                     /* FOLDERS VIEW */
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 animate-in fade-in duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 pb-40">
                         <FolderCard
                             type="urgent"
                             count={urgentNotes.length}
@@ -357,7 +358,7 @@ export const NotesPage: React.FC = () => {
                     </div>
                 ) : (
                     /* STANDARD GRID VIEW FOR OTHERS */
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-300 pb-20">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
                         <AnimatePresence mode="popLayout">
                             {displayNotes.map(note => (
                                 <NoteCard

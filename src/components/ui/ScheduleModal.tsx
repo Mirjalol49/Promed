@@ -174,7 +174,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
     };
 
     // Use React Portal to break out of any stacking context (like sticky headers)
-    if (!isOpen) return null;
+
 
     const formatTime = (date: Date) => {
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -187,147 +187,162 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
     };
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in font-sans">
-            <div
-                className="bg-white text-slate-900 rounded-xl shadow-2xl w-[340px] overflow-hidden transform transition-all scale-100 border border-slate-100"
-                style={{ boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)' }}
-            >
-                {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                    <h3 className="font-medium text-[17px] tracking-tight flex items-center gap-2 text-slate-900">
-                        {showCalendar ? (
-                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                onClick={() => setShowCalendar(false)}
-                                className="flex items-center gap-1 text-[#3390EC] hover:text-[#3390EC]/80 transition-colors -ml-1"
-                            >
-                                <ChevronLeft size={18} />
-                                {t('back')}
+        <AnimatePresence>
+            {isOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+                        onClick={onClose}
+                    />
+
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.9, opacity: 0 }}
+                        transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                        className="relative bg-white text-slate-900 rounded-xl shadow-2xl w-[340px] overflow-hidden border border-slate-100"
+                        style={{ boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)' }}
+                    >
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                            <h3 className="font-medium text-[17px] tracking-tight flex items-center gap-2 text-slate-900">
+                                {showCalendar ? (
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                        onClick={() => setShowCalendar(false)}
+                                        className="flex items-center gap-1 text-[#3390EC] hover:text-[#3390EC]/80 transition-colors -ml-1"
+                                    >
+                                        <ChevronLeft size={18} />
+                                        {t('back')}
+                                    </motion.button>
+                                ) : (
+                                    t('schedule_message_title')
+                                )}
+                            </h3>
+                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-50 hover:bg-slate-100 p-1 rounded-full">
+                                <X size={18} />
                             </motion.button>
-                        ) : (
-                            t('schedule_message_title')
-                        )}
-                    </h3>
-                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }} onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-50 hover:bg-slate-100 p-1 rounded-full">
-                        <X size={18} />
-                    </motion.button>
-                </div>
+                        </div>
 
-                {/* Content */}
-                <div className="p-5">
+                        {/* Content */}
+                        <div className="p-5">
 
-                    {!showCalendar ? (
-                        <>
-                            {/* Date Tabs */}
-                            <div className="flex bg-slate-100 rounded-xl p-1 mb-6 border border-slate-300 relative isolate">
-                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                    onClick={() => handleDateSelect('today')}
-                                    className={`relative flex-1 py-2 text-sm rounded-lg transition-colors duration-200 z-10 font-bold ${activeTab === 'today' ? 'text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'}`}
-                                >
-                                    {activeTab === 'today' && (
-                                        <motion.div
-                                            layoutId="activeTab"
-                                            className="absolute inset-0 rounded-lg bg-gradient-to-b from-[#4C6FFF] to-[#3344EC] shadow-[0_2px_4px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.35)]"
-                                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                                            style={{ zIndex: -1 }}
-                                        />
-                                    )}
-                                    <span className="relative z-10 drop-shadow-sm">{t('schedule_today')}</span>
-                                </motion.button>
+                            {!showCalendar ? (
+                                <>
+                                    {/* Date Tabs */}
+                                    <div className="flex bg-slate-100 rounded-xl p-1 mb-6 border border-slate-300 relative isolate">
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            onClick={() => handleDateSelect('today')}
+                                            className={`relative flex-1 py-2 text-sm rounded-lg transition-colors duration-200 z-10 font-bold ${activeTab === 'today' ? 'text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'}`}
+                                        >
+                                            {activeTab === 'today' && (
+                                                <motion.div
+                                                    layoutId="activeTab"
+                                                    className="absolute inset-0 rounded-lg bg-gradient-to-b from-[#4C6FFF] to-[#3344EC] shadow-[0_2px_4px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.35)]"
+                                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                                    style={{ zIndex: -1 }}
+                                                />
+                                            )}
+                                            <span className="relative z-10 drop-shadow-sm">{t('schedule_today')}</span>
+                                        </motion.button>
 
-                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                    onClick={() => handleDateSelect('tomorrow')}
-                                    className={`relative flex-1 py-2 text-sm rounded-lg transition-colors duration-200 z-10 font-bold ${activeTab === 'tomorrow' ? 'text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'}`}
-                                >
-                                    {activeTab === 'tomorrow' && (
-                                        <motion.div
-                                            layoutId="activeTab"
-                                            className="absolute inset-0 rounded-lg bg-gradient-to-b from-[#4C6FFF] to-[#3344EC] shadow-[0_2px_4px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.35)]"
-                                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                                            style={{ zIndex: -1 }}
-                                        />
-                                    )}
-                                    <span className="relative z-10 drop-shadow-sm">{t('schedule_tomorrow')}</span>
-                                </motion.button>
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            onClick={() => handleDateSelect('tomorrow')}
+                                            className={`relative flex-1 py-2 text-sm rounded-lg transition-colors duration-200 z-10 font-bold ${activeTab === 'tomorrow' ? 'text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'}`}
+                                        >
+                                            {activeTab === 'tomorrow' && (
+                                                <motion.div
+                                                    layoutId="activeTab"
+                                                    className="absolute inset-0 rounded-lg bg-gradient-to-b from-[#4C6FFF] to-[#3344EC] shadow-[0_2px_4px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.35)]"
+                                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                                    style={{ zIndex: -1 }}
+                                                />
+                                            )}
+                                            <span className="relative z-10 drop-shadow-sm">{t('schedule_tomorrow')}</span>
+                                        </motion.button>
 
-                                {/* Calendar Trigger */}
-                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                    onClick={() => { setShowCalendar(true); setCurrentMonth(selectedDate); }}
-                                    className={`relative px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center justify-center z-10 ${activeTab === 'custom' ? 'text-white' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'}`}
-                                    title={t('pick_date')}
-                                >
-                                    {activeTab === 'custom' && (
-                                        <motion.div
-                                            layoutId="activeTab"
-                                            className="absolute inset-0 rounded-lg bg-gradient-to-b from-[#4C6FFF] to-[#3344EC] shadow-[0_2px_4px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.35)]"
-                                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                                            style={{ zIndex: -1 }}
-                                        />
-                                    )}
-                                    <span className="relative z-10 drop-shadow-sm"><CalendarIcon size={18} /></span>
-                                </motion.button>
-                            </div>
-
-                            {/* Time Inputs */}
-                            <div className="flex flex-col items-center mb-8">
-                                <div className="flex items-center justify-center gap-3">
-                                    <div className="bg-white border-2 border-slate-300 rounded-2xl p-1 flex items-center justify-center shadow-sm w-[88px] h-[88px]">
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            max="23"
-                                            value={selectedDate.getHours().toString().padStart(2, '0')}
-                                            onChange={(e) => handleTimeChange('hour', e.target.value)}
-                                            className="bg-transparent w-full h-full text-center text-4xl font-medium focus:outline-none focus:text-[#3390EC] text-slate-800 transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none m-0"
-                                        />
+                                        {/* Calendar Trigger */}
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            onClick={() => { setShowCalendar(true); setCurrentMonth(selectedDate); }}
+                                            className={`relative px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center justify-center z-10 ${activeTab === 'custom' ? 'text-white' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'}`}
+                                            title={t('pick_date')}
+                                        >
+                                            {activeTab === 'custom' && (
+                                                <motion.div
+                                                    layoutId="activeTab"
+                                                    className="absolute inset-0 rounded-lg bg-gradient-to-b from-[#4C6FFF] to-[#3344EC] shadow-[0_2px_4px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.35)]"
+                                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                                    style={{ zIndex: -1 }}
+                                                />
+                                            )}
+                                            <span className="relative z-10 drop-shadow-sm"><CalendarIcon size={18} /></span>
+                                        </motion.button>
                                     </div>
-                                    <span className="text-4xl font-light text-slate-400 -mt-1">:</span>
-                                    <div className="bg-white border-2 border-slate-300 rounded-2xl p-1 flex items-center justify-center shadow-sm w-[88px] h-[88px]">
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            max="59"
-                                            value={selectedDate.getMinutes().toString().padStart(2, '0')}
-                                            onChange={(e) => handleTimeChange('minute', e.target.value)}
-                                            className="bg-transparent w-full h-full text-center text-4xl font-medium focus:outline-none focus:text-[#3390EC] text-slate-800 transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none m-0"
-                                        />
+
+                                    {/* Time Inputs */}
+                                    <div className="flex flex-col items-center mb-8">
+                                        <div className="flex items-center justify-center gap-3">
+                                            <div className="bg-white border-2 border-slate-300 rounded-2xl p-1 flex items-center justify-center shadow-sm w-[88px] h-[88px]">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="23"
+                                                    value={selectedDate.getHours().toString().padStart(2, '0')}
+                                                    onChange={(e) => handleTimeChange('hour', e.target.value)}
+                                                    className="bg-transparent w-full h-full text-center text-4xl font-medium focus:outline-none focus:text-[#3390EC] text-slate-800 transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none m-0"
+                                                />
+                                            </div>
+                                            <span className="text-4xl font-light text-slate-400 -mt-1">:</span>
+                                            <div className="bg-white border-2 border-slate-300 rounded-2xl p-1 flex items-center justify-center shadow-sm w-[88px] h-[88px]">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="59"
+                                                    value={selectedDate.getMinutes().toString().padStart(2, '0')}
+                                                    onChange={(e) => handleTimeChange('minute', e.target.value)}
+                                                    className="bg-transparent w-full h-full text-center text-4xl font-medium focus:outline-none focus:text-[#3390EC] text-slate-800 transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none m-0"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="mt-3 text-xs text-slate-400 font-medium">
+                                            {format(selectedDate, "MMMM d, yyyy")}
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="mt-3 text-xs text-slate-400 font-medium">
-                                    {format(selectedDate, "MMMM d, yyyy")}
-                                </div>
-                            </div>
 
-                            {/* Send Button */}
-                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                onClick={() => {
-                                    const now = new Date();
-                                    if (selectedDate < now) {
-                                        // Simple alert for now, or use toast if available in props (it's not, need to use hook)
-                                        // We'll use window.alert for immediate feedback as getting useToast might break imports
-                                        alert(t('alert_future_time'));
-                                        return;
-                                    }
-                                    onSchedule(selectedDate);
-                                }}
-                                className={`w-full py-3.5 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg ${selectedDate < new Date() ? 'bg-slate-200 text-slate-400 cursor-not-allowed font-medium' : 'btn-premium-blue font-bold tracking-wide'}`}
-                            >
-                                <span>
-                                    {activeTab === 'today' && `${t('schedule_send_today')} ${formatTime(selectedDate)}`}
-                                    {activeTab === 'tomorrow' && `${t('schedule_send_tomorrow')} ${formatTime(selectedDate)}`}
-                                    {activeTab === 'custom' && `${t('schedule_send_date')} ${formatDateTab()} ${t('schedule_at')} ${formatTime(selectedDate)}`}
-                                </span>
-                            </motion.button>
-                        </>
-                    ) : (
-                        renderCalendar()
-                    )}
+                                    {/* Send Button */}
+                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                        onClick={() => {
+                                            const now = new Date();
+                                            if (selectedDate < now) {
+                                                // Simple alert for now, or use toast if available in props (it's not, need to use hook)
+                                                // We'll use window.alert for immediate feedback as getting useToast might break imports
+                                                alert(t('alert_future_time'));
+                                                return;
+                                            }
+                                            onSchedule(selectedDate);
+                                        }}
+                                        className={`w-full py-3.5 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg ${selectedDate < new Date() ? 'bg-slate-200 text-slate-400 cursor-not-allowed font-medium' : 'btn-premium-blue font-bold tracking-wide'}`}
+                                    >
+                                        <span>
+                                            {activeTab === 'today' && `${t('schedule_send_today')} ${formatTime(selectedDate)}`}
+                                            {activeTab === 'tomorrow' && `${t('schedule_send_tomorrow')} ${formatTime(selectedDate)}`}
+                                            {activeTab === 'custom' && `${t('schedule_send_date')} ${formatDateTab()} ${t('schedule_at')} ${formatTime(selectedDate)}`}
+                                        </span>
+                                    </motion.button>
+                                </>
+                            ) : (
+                                renderCalendar()
+                            )}
 
+                        </div>
+                    </motion.div>
                 </div>
-            </div>
-
-            {/* Backdrop click to close */}
-            <div className="absolute inset-0 z-[-1]" onClick={onClose}></div>
-        </div>,
+            )}
+        </AnimatePresence>,
         document.body
     );
 };

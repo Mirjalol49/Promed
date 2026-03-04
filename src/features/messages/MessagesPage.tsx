@@ -1,6 +1,6 @@
 // @ts-ignore
 import imageCompression from 'browser-image-compression';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import EmojiPicker, { EmojiStyle, Theme } from 'emoji-picker-react';
@@ -15,6 +15,7 @@ import { uz, ru, enGB } from 'date-fns/locale';
 import { useToast } from '../../contexts/ToastContext';
 import DeleteModal from '../../components/ui/DeleteModal';
 import { ScheduleModal } from '../../components/ui/ScheduleModal'; // NEW
+import { BroadcastModal } from './BroadcastModal';
 import { ProBadge } from '../../components/ui/ProBadge';
 import { db, storage, rtdb } from '../../lib/firebase';
 import { ref as dbRef, onValue, set as rtdbSet } from 'firebase/database';
@@ -24,7 +25,7 @@ import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebas
 
 
 
-import { Play, Pause, Loader2, MoreHorizontal } from 'lucide-react';
+import { Play, Pause, Loader2, MoreHorizontal, Megaphone } from 'lucide-react';
 import { ButtonLoader } from '../../components/ui/LoadingSpinner';
 import Lottie from 'lottie-react';
 import chatAnimation from '../../assets/images/mascots/chat.json';
@@ -66,11 +67,14 @@ interface Message {
 }
 
 import { useAccount } from '../../contexts/AccountContext';
+import { useAppSounds } from '../../hooks/useAppSounds';
 
 export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVisible = true }) => {
     const { t, language } = useLanguage();
     const { accountId, userId } = useAccount(); // Get auth context
+    const { playNotification } = useAppSounds();
     const [permissionError, setPermissionError] = useState(false); // New state for rule debugging
+    const prevMessageCountRef = useRef<number>(0); // Track message count for notification sound
 
     const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
     const [messageInput, setMessageInput] = useState('');
@@ -101,6 +105,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
     // Context Menu State (Global Fixed Positioning)
     const [msgContextMenu, setMsgContextMenu] = useState<{ id: string, x: number, y: number } | null>(null);
+    const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
 
     // Optimization State
     const [hasMore, setHasMore] = useState(true);
@@ -119,7 +124,6 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     const selectedPatient = patients.find(p => p.id === selectedPatientId);
 
     // Get Pinned Messages (Multiple support)
-    const pinnedMessages = messages.filter(m => m.isPinned).reverse(); // Oldest first? Or Newest? Telegram usually cycles. Let's do Standard order (Newest at bottom of list, so maybe reverse to cycle up? or down?)
     // Actually, typical cycle is: You are at bottom. You click pin. It jumps to the *latest* pinned message (nearest to bottom). Click again -> jumps to *previous* pinned message (further up).
     // So let's sort them by time descending (Newest first).
     // messages is likely newest first or oldest first? 
@@ -259,6 +263,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             limit(30)
         );
 
+        prevMessageCountRef.current = 0; // Reset on patient switch
+
         const unsubscribe = onSnapshot(q, (snapshot) => {
             console.log(`📨 Snapshot received: ${snapshot.docs.length} messages (from ${snapshot.metadata.fromCache ? 'CACHE' : 'SERVER'})`);
 
@@ -275,6 +281,17 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                 }
                 return { id: doc.id, ...data };
             }).reverse() as Message[];
+
+            // 🔔 Detect NEW incoming message and play notification sound
+            if (prevMessageCountRef.current > 0 && msgs.length > prevMessageCountRef.current && !snapshot.metadata.fromCache) {
+                // Only check messages that are genuinely new (not from loadMore prepend)
+                const latestMsg = msgs[msgs.length - 1];
+                if (latestMsg && latestMsg.sender === 'user') {
+                    console.log('🔔 New incoming message detected, playing notification');
+                    try { playNotification(); } catch (e) { /* sound failed silently */ }
+                }
+            }
+            prevMessageCountRef.current = msgs.length;
 
             setMessages(msgs);
 
@@ -384,11 +401,19 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
         }
     };
 
-    // REMOVED: Auto-mark as read useEffect
+    // AUTO mark-as-read: When doctor opens/views a patient's chat, reset unread count immediately (Telegram-style)
+    useEffect(() => {
+        if (!selectedPatientId) return;
+        const patient = patients.find(p => p.id === selectedPatientId);
+        if (patient && patient.unreadCount && patient.unreadCount > 0) {
+            console.log('👀 Auto-marking as read for patient:', selectedPatientId);
+            updateDoc(doc(db, 'patients', selectedPatientId), { unreadCount: 0 })
+                .catch(err => console.warn('Failed to auto-mark as read:', err));
+        }
+    }, [selectedPatientId, patients]);
 
 
-    // NEW: Mark messages as SEEN in Firestore (Batched) - Only when page is visible
-    // NEW: Mark messages as SEEN in Firestore (Batched) - Only when page is visible
+    // Mark messages as SEEN in Firestore (Batched) - Only when page is visible
     useEffect(() => {
         if (!selectedPatientId || messages.length === 0) return;
 
@@ -537,7 +562,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
     const adjustTextareaHeight = () => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight} px`;
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
         }
     };
 
@@ -773,10 +798,12 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
 
     const handleUpdateMessage = async (messageId: string) => {
-        if (!selectedPatientId || !messageInput.trim()) return;
+        if (!selectedPatientId || !messageInput.trim() || isSending) return;
 
         const messageToUpdate = messages.find(m => m.id === messageId);
         if (!messageToUpdate) return;
+
+        setIsSending(true);
 
         try {
             const newText = messageInput.trim();
@@ -791,51 +818,48 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             // 2. Sync with Telegram Bot
             if (messageToUpdate.telegramMessageId && selectedPatient?.telegramChatId) {
                 console.log("✅ Condition Met! Sending EDIT action to bot...");
-                await addDoc(collection(db, 'outbound_messages'), {
-                    telegramChatId: selectedPatient.telegramChatId,
-                    telegramMessageId: messageToUpdate.telegramMessageId,
-                    text: newText,
-                    action: 'EDIT',
-                    status: 'PENDING',
-                    patientName: selectedPatient.fullName,
-                    createdAt: new Date().toISOString()
-                });
+                try {
+                    await addDoc(collection(db, 'outbound_messages'), {
+                        telegramChatId: selectedPatient.telegramChatId,
+                        telegramMessageId: messageToUpdate.telegramMessageId,
+                        text: newText,
+                        action: 'EDIT',
+                        status: 'PENDING',
+                        patientName: selectedPatient.fullName,
+                        createdAt: new Date().toISOString()
+                    });
+                } catch (botErr) {
+                    console.warn('⚠️ Trigger bot edit failed (non-fatal):', botErr);
+                }
             }
 
-            // 3. SYNC: Always strictly enforce synchronization with the actual DB state
-            // Fetch the authoritative latest message from Firestore
-            const latestMsgQuery = query(
-                collection(db, 'patients', selectedPatientId, 'messages'),
-                orderBy('createdAt', 'desc'),
-                limit(1)
-            );
+            // 3. SYNC: Update sidebar preview using local state (reliable)
+            try {
+                const latestMsg = messages[messages.length - 1];
+                if (latestMsg) {
+                    // If we edited the latest message, use the new text; otherwise use existing
+                    const isLatest = latestMsg.id === messageId;
+                    const newPreviewText = isLatest
+                        ? newText || (latestMsg.video ? '[Video]' : '') || (latestMsg.image ? '[Rasm]' : '') || (latestMsg.voice ? '[Audio]' : '')
+                        : latestMsg.text || (latestMsg.video ? '[Video]' : '') || (latestMsg.image ? '[Rasm]' : '') || (latestMsg.voice ? '[Audio]' : '');
 
-            const latestSnapshot = await getDocs(latestMsgQuery);
-
-            if (!latestSnapshot.empty) {
-                const latestMsgDoc = latestSnapshot.docs[0];
-                const latestMsgData = latestMsgDoc.data();
-
-                // If the message we just edited IS the latest one (by ID), OR if the latest one happens to be this one
-                // Actually, we should just update the patient doc with whatever is CURRENTLY the latest in DB.
-                // This self-heals any discrepancies.
-
-                const newPreviewText = latestMsgData.text || (latestMsgData.image ? '[Rasm]' : '') || (latestMsgData.voice ? '[Audio]' : '');
-
-                console.log("🔄 Syncing sidebar preview with authoritative latest:", newPreviewText);
-
-                await updateDoc(doc(db, 'patients', selectedPatientId), {
-                    lastMessage: newPreviewText,
-                    lastMessageTimestamp: latestMsgData.createdAt,
-                    lastMessageTime: new Date(latestMsgData.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-                });
+                    await updateDoc(doc(db, 'patients', selectedPatientId), {
+                        lastMessage: newPreviewText,
+                        lastMessageTimestamp: latestMsg.createdAt,
+                        lastMessageTime: new Date(latestMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+                    });
+                }
+            } catch (syncErr) {
+                console.warn('⚠️ Sidebar sync failed (non-fatal):', syncErr);
             }
-
-            setEditingMessageId(null);
-            setMessageInput('');
-            if (textareaRef.current) textareaRef.current.style.height = 'auto';
         } catch (error) {
             console.error('Error updating message:', error);
+            showToastError('Xatolik', 'Xabarni yangilashda xatolik yuz berdi');
+        } finally {
+            setEditingMessageId(null);
+            setMessageInput('');
+            setIsSending(false);
+            if (textareaRef.current) textareaRef.current.style.height = 'auto';
         }
     };
 
@@ -875,38 +899,43 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             await deleteDoc(doc(db, 'patients', selectedPatientId, 'messages', msg.id));
 
             // 2. If it's a scheduled message, also delete from outbound_messages queue
-            const scheduledTime = msg.scheduledFor || msg.scheduledTimestamp;
-            if (msg.status === 'scheduled' && scheduledTime && selectedPatient?.telegramChatId) {
-                // Query for matching queued message in outbound_messages
-                const outboundQuery = query(
-                    collection(db, 'outbound_messages'),
-                    where('telegramChatId', '==', selectedPatient.telegramChatId),
-                    where('status', '==', 'QUEUED'),
-                    where('scheduledFor', '==', scheduledTime),
-                    where('text', '==', msg.text)
-                );
+            try {
+                const scheduledTime = msg.scheduledFor || msg.scheduledTimestamp;
+                if (msg.status === 'scheduled' && scheduledTime && selectedPatient?.telegramChatId) {
+                    const outboundQuery = query(
+                        collection(db, 'outbound_messages'),
+                        where('telegramChatId', '==', selectedPatient.telegramChatId),
+                        where('status', '==', 'QUEUED'),
+                        where('scheduledFor', '==', scheduledTime),
+                        where('text', '==', msg.text)
+                    );
 
-                const outboundSnapshot = await getDocs(outboundQuery);
+                    const outboundSnapshot = await getDocs(outboundQuery);
 
-                // Delete all matching queued messages
-                const deleteBatch = writeBatch(db);
-                outboundSnapshot.docs.forEach(doc => {
-                    deleteBatch.delete(doc.ref);
-                });
-                await deleteBatch.commit();
+                    const deleteBatch = writeBatch(db);
+                    outboundSnapshot.docs.forEach(doc => {
+                        deleteBatch.delete(doc.ref);
+                    });
+                    await deleteBatch.commit();
+                }
+            } catch (queueErr) {
+                console.warn('⚠️ Outbound queue cleanup failed (non-fatal):', queueErr);
             }
 
             // 3. If it has a Telegram ID (already sent), trigger bot deletion
-            // NOTE: This runs in background now since modal is closed
-            if (msg.telegramMessageId && selectedPatient?.telegramChatId) {
-                await addDoc(collection(db, 'outbound_messages'), {
-                    telegramChatId: selectedPatient.telegramChatId,
-                    telegramMessageId: msg.telegramMessageId,
-                    action: 'DELETE',
-                    status: 'PENDING',
-                    patientName: selectedPatient.fullName,
-                    createdAt: new Date().toISOString()
-                });
+            try {
+                if (msg.telegramMessageId && selectedPatient?.telegramChatId) {
+                    await addDoc(collection(db, 'outbound_messages'), {
+                        telegramChatId: selectedPatient.telegramChatId,
+                        telegramMessageId: msg.telegramMessageId,
+                        action: 'DELETE',
+                        status: 'PENDING',
+                        patientName: selectedPatient.fullName,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+            } catch (botErr) {
+                console.warn('⚠️ Bot delete trigger failed (non-fatal):', botErr);
             }
 
             // 3b. Clean up media from Firebase Storage (fully isolated — never triggers error toast)
@@ -942,34 +971,41 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                 }
             }
 
-            // 4. SYNC: Update Patient's lastMessage field (isolated — non-fatal)
+            // 4. SYNC: Update Patient's lastMessage field using LOCAL state (more reliable than re-querying Firestore)
             try {
-                const latestMsgQuery = query(
-                    collection(db, 'patients', selectedPatientId, 'messages'),
-                    orderBy('createdAt', 'desc'),
-                    limit(1)
-                );
-                const latestSnapshot = await getDocs(latestMsgQuery);
                 const patientRef = doc(db, 'patients', selectedPatientId);
 
-                if (!latestSnapshot.empty) {
-                    const newLastMsg = latestSnapshot.docs[0].data();
-                    const createdAt = newLastMsg.createdAt;
-                    // Safely handle both ISO strings and Firestore Timestamp objects
-                    const timestamp = typeof createdAt === 'string' ? createdAt : (createdAt?.toDate?.() || new Date()).toISOString();
+                // Use already-loaded messages, filter out the one we just deleted
+                const remainingMessages = messages
+                    .filter(m => m.id !== msg.id && m.status !== 'scheduled')
+                    .sort((a, b) => {
+                        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                        return timeB - timeA; // Newest first
+                    });
+
+                if (remainingMessages.length > 0) {
+                    const latestMsg = remainingMessages[0];
+                    const previewText = latestMsg.text
+                        || (latestMsg.video ? '[Video]' : '')
+                        || (latestMsg.image ? '[Rasm]' : '')
+                        || (latestMsg.voice ? '[Audio]' : '');
+                    const timestamp = latestMsg.createdAt || new Date().toISOString();
                     const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
                     await updateDoc(patientRef, {
-                        lastMessage: newLastMsg.text || (newLastMsg.video ? '[Video]' : '') || (newLastMsg.image ? '[Image]' : '') || (newLastMsg.voice ? '[Voice]' : ''),
+                        lastMessage: previewText,
                         lastMessageTimestamp: timestamp,
                         lastMessageTime: timeStr
                     });
+                    console.log('✅ Sidebar synced to:', previewText);
                 } else {
                     await updateDoc(patientRef, {
                         lastMessage: '',
                         lastMessageTimestamp: null,
                         lastMessageTime: ''
                     });
+                    console.log('✅ Sidebar cleared (no messages left)');
                 }
             } catch (metaErr) {
                 console.warn('⚠️ Patient metadata sync after delete failed (non-fatal):', metaErr);
@@ -1030,7 +1066,16 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             {/* Sidebar */}
             <div className={`w-full md:w-96 border-r border-slate-300 flex-col bg-white ${selectedPatientId ? 'hidden md:flex' : 'flex'}`}>
                 <div className="p-4 md:p-5 border-b border-slate-300">
-                    <h2 className="font-bold text-xl md:text-2xl text-slate-800 mb-3 md:mb-4 tracking-tight">{t('messages')}</h2>
+                    <div className="flex justify-between items-center mb-3 md:mb-4">
+                        <h2 className="font-bold text-xl md:text-2xl text-slate-800 tracking-tight">{t('messages')}</h2>
+                        <button
+                            onClick={() => setIsBroadcastModalOpen(true)}
+                            className="bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 rounded-xl transition-colors flex items-center justify-center shadow-sm"
+                            title="Barchaga xabar yuborish"
+                        >
+                            <Megaphone size={18} />
+                        </button>
+                    </div>
                     <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
@@ -1503,9 +1548,15 @@ match /patients/{patientId}/messages/{messageId} {
                         {/* Input Area - White Theme */}
                         < div className="p-2 md:p-3 bg-white relative z-10" >
                             {/* Emoji Picker Popover */}
-                            {
-                                showEmojiPicker && (
-                                    <div className="absolute bottom-16 md:bottom-20 left-0 md:left-2 z-50 shadow-xl rounded-2xl border border-slate-100 max-w-[calc(100vw-16px)]">
+                            <AnimatePresence>
+                                {showEmojiPicker && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                                        className="absolute bottom-16 md:bottom-20 left-0 md:left-2 z-50 shadow-2xl rounded-2xl border border-slate-100 max-w-[calc(100vw-16px)] overflow-hidden"
+                                    >
                                         <div className="relative">
                                             <EmojiPicker
                                                 emojiStyle={EmojiStyle.APPLE}
@@ -1515,63 +1566,75 @@ match /patients/{patientId}/messages/{messageId} {
                                                 theme={Theme.LIGHT}
                                                 lazyLoadEmojis={true}
                                                 searchDisabled={false}
-                                                width={typeof window !== 'undefined' && window.innerWidth < 640 ? Math.min(window.innerWidth - 16, 300) : 300}
-                                                height={350}
+                                                width={typeof window !== 'undefined' && window.innerWidth < 640 ? Math.min(window.innerWidth - 16, 310) : 310}
+                                                height={380}
                                                 previewConfig={{ showPreview: false }}
                                             />
                                         </div>
-                                        <div className="fixed inset-0 z-[-1]" onClick={() => setShowEmojiPicker(false)} />
-                                    </div>
-                                )
-                            }
+                                        <div className="fixed inset-0 z-[-1] pointer-events-auto" onClick={() => setShowEmojiPicker(false)} />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
-                            {/* Reply Indicator (Banner) */}
-                            {
-                                replyingToMessage && (
-                                    <div className="flex items-center justify-between px-3 md:px-4 py-2 border-t border-l border-r border-promed-primary/20 bg-white mx-1 md:mx-2 border-b-0 rounded-t-xl mb-[-4px] relative z-0 animate-slide-up shadow-sm">
+                            <AnimatePresence mode="wait">
+                                {replyingToMessage && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0, y: 10 }}
+                                        animate={{ height: 'auto', opacity: 1, y: 0 }}
+                                        exit={{ height: 0, opacity: 0, y: 10 }}
+                                        transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                                        className="flex items-center justify-between px-3 md:px-4 py-3 border-t border-l border-r border-promed-primary/20 bg-white mx-1 md:mx-2 border-b-0 rounded-t-[20px] mb-[-4px] relative z-0 shadow-sm overflow-hidden"
+                                    >
                                         <div className="flex items-center gap-2 md:gap-3 overflow-hidden min-w-0 flex-1">
-                                            <div className="h-8 w-1 bg-promed-primary rounded-full flex-shrink-0"></div>
+                                            <div className="h-10 w-1 bg-promed-primary rounded-full flex-shrink-0"></div>
                                             <div className="flex flex-col min-w-0">
                                                 <span className="text-promed-primary text-[10px] md:text-xs font-black uppercase tracking-wide flex items-center gap-1">
-                                                    <Reply size={12} />
-                                                    <span className="truncate">Reply to {replyingToMessage.sender === 'doctor' ? 'Yourself' : selectedPatient.fullName}</span>
+                                                    <Reply size={14} className="stroke-[2.5]" />
+                                                    <span className="truncate">Reply to {replyingToMessage.sender === 'doctor' ? 'Yourself' : selectedPatient?.fullName}</span>
                                                 </span>
-                                                <span className="text-slate-600 text-xs truncate max-w-[150px] sm:max-w-[200px] md:max-w-xs font-black">{replyingToMessage.text}</span>
+                                                <span className="text-slate-600 text-sm truncate max-w-[200px] sm:max-w-[400px] md:max-w-xl font-bold">{replyingToMessage.text}</span>
                                             </div>
                                         </div>
-                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                        <motion.button whileTap={{ scale: 0.92 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => setReplyingToMessage(null)}
-                                            className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+                                            className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
                                         >
-                                            <X size={16} />
+                                            <X size={18} strokeWidth={2.5} />
                                         </motion.button>
-                                    </div>
-                                )
-                            }
+                                    </motion.div>
+                                )}
 
-                            {/* Edit Mode Indicator */}
-                            {
-                                editingMessageId && (
-                                    <div className="flex items-center justify-between px-4 py-2 border-t border-l border-r border-promed-primary/20 bg-promed-light/80 backdrop-blur-sm rounded-t-xl mb-[-1px] relative z-20 animate-slide-up">
+                                {editingMessageId && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0, y: 10 }}
+                                        animate={{ height: 'auto', opacity: 1, y: 0 }}
+                                        exit={{ height: 0, opacity: 0, y: 10 }}
+                                        transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                                        className="flex items-center justify-between px-3 md:px-4 py-3 border-t border-l border-r border-promed-primary/20 bg-promed-light/40 backdrop-blur-md mx-1 md:mx-2 border-b-0 rounded-t-[20px] mb-[-1px] relative z-0 shadow-sm overflow-hidden"
+                                    >
                                         <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className="h-8 w-1 bg-promed-primary rounded-full"></div>
+                                            <div className="h-10 w-1 bg-promed-primary rounded-full"></div>
                                             <div className="flex flex-col">
-                                                <span className="text-promed-primary text-xs font-black uppercase tracking-wide">Edit Message</span>
-                                                <span className="text-slate-600 text-xs truncate max-w-[200px] md:max-w-xs font-black">{messages.find(m => m.id === editingMessageId)?.text}</span>
+                                                <span className="text-promed-primary text-[10px] md:text-xs font-black uppercase tracking-wide flex items-center gap-1">
+                                                    <Edit2 size={14} className="stroke-[2.5]" />
+                                                    <span>Edit Message</span>
+                                                </span>
+                                                <span className="text-slate-600 text-sm truncate max-w-[200px] md:max-w-xl font-bold">{messages.find(m => m.id === editingMessageId)?.text}</span>
                                             </div>
                                         </div>
-                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                        <motion.button whileTap={{ scale: 0.92 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                             onClick={() => {
                                                 setEditingMessageId(null);
                                                 setMessageInput('');
+                                                if (textareaRef.current) textareaRef.current.style.height = 'auto';
                                             }}
-                                            className="p-1 hover:bg-promed-light rounded-full text-slate-400 hover:text-promed-primary transition-colors"
+                                            className="p-1.5 hover:bg-white/50 rounded-full text-slate-400 hover:text-promed-primary transition-colors"
                                         >
-                                            <X size={18} />
+                                            <X size={18} strokeWidth={2.5} />
                                         </motion.button>
-                                    </div>
-                                )
-                            }
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             <div className="flex items-end gap-2 bg-slate-100 p-2 rounded-2xl relative">
 
@@ -1587,145 +1650,180 @@ match /patients/{patientId}/messages/{messageId} {
                                 />
 
                                 {/* Send Button Context Menu */}
-                                {sendButtonContextMenu && (
-                                    <>
-                                        <div
-                                            className="fixed inset-0 z-40"
-                                            onClick={() => setSendButtonContextMenu(null)}
-                                            onContextMenu={(e) => { e.preventDefault(); setSendButtonContextMenu(null); }}
-                                        ></div>
-                                        <div
-                                            className="fixed z-50 bg-[#1C1C1E]/90 backdrop-blur-md text-white rounded-lg shadow-2xl py-1 w-48 border border-white/10 animate-scale-in origin-bottom-right"
-                                            style={{ top: sendButtonContextMenu.y - 110, left: sendButtonContextMenu.x - 180 }}
-                                        >
-                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                onClick={() => {
-                                                    setSendButtonContextMenu(null);
-                                                    setIsScheduleModalOpen(true);
-                                                }}
-                                                className="w-full text-left px-4 py-2.5 hover:bg-white/10 flex items-center gap-3 transition-colors"
-                                            >
-                                                <CalendarClock size={16} />
-                                                <span className="text-sm font-medium">Schedule Message</span>
-                                            </motion.button>
-                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                onClick={() => {
-                                                    setSendButtonContextMenu(null);
-                                                    handleSendMessage(); // Just send normally? Or send silent? 
-                                                    // For now, keep it simple or implement Silent later
-                                                }}
-                                                className="w-full text-left px-4 py-2.5 hover:bg-white/10 flex items-center gap-3 transition-colors text-white/90"
-                                            >
-                                                <BellOff size={16} />
-                                                <span className="text-sm font-medium">Send Without Sound</span>
-                                            </motion.button>
-                                        </div>
-                                    </>
-                                )}
-
-                                {/* Telegram Style Media Attachment Preview Modal (Light Version) */}
-                                {fileAttachment && (
-                                    <Portal lockScroll={true}>
-                                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 md:p-8 text-slate-800 animate-fade-in">
-                                            <div className="bg-white shadow-2xl w-full max-w-lg md:max-w-2xl flex flex-col relative scale-100 animate-scale-in" style={{ borderRadius: '24px' }}>
-                                                {/* Header */}
-                                                <div className="flex items-center justify-between px-4 py-3 relative z-10 w-full">
-                                                    <motion.button whileTap={{ scale: 0.9 }}
-                                                        onClick={() => { setFileAttachment(null); setVideoThumbnail(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                                        className="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors order-1"
+                                <AnimatePresence>
+                                    {sendButtonContextMenu && (
+                                        <Portal lockScroll={false}>
+                                            <div className="fixed inset-0 z-[99999] pointer-events-none">
+                                                <motion.div
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    exit={{ opacity: 0 }}
+                                                    transition={{ duration: 0.15 }}
+                                                    className="absolute inset-0 bg-black/5 pointer-events-auto"
+                                                    onClick={() => setSendButtonContextMenu(null)}
+                                                    onContextMenu={(e) => { e.preventDefault(); setSendButtonContextMenu(null); }}
+                                                />
+                                                <motion.div
+                                                    initial={{ scale: 0.9, opacity: 0, y: 10 }}
+                                                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                                                    exit={{ scale: 0.9, opacity: 0, y: 10 }}
+                                                    transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                                                    className="fixed z-[100000] bg-[#1C1C1E]/95 backdrop-blur-xl text-white rounded-[20px] shadow-2xl py-1.5 w-56 border border-white/10 pointer-events-auto overflow-hidden"
+                                                    style={{
+                                                        top: sendButtonContextMenu.y - 120,
+                                                        left: Math.min(sendButtonContextMenu.x - 210, window.innerWidth - 240)
+                                                    }}
+                                                >
+                                                    <motion.button whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                        onClick={() => {
+                                                            setSendButtonContextMenu(null);
+                                                            setIsScheduleModalOpen(true);
+                                                        }}
+                                                        className="w-full text-left px-4 py-3 hover:bg-white/10 flex items-center gap-3 transition-colors active:bg-white/20"
                                                     >
-                                                        <X size={20} />
+                                                        <CalendarClock size={18} className="text-white/70" />
+                                                        <span className="text-sm font-bold tracking-tight">Schedule Message</span>
                                                     </motion.button>
-                                                    <div className="text-[16px] font-semibold tracking-wide order-2 text-slate-800">
-                                                        1 Media
-                                                    </div>
-                                                    <div className="w-8 order-3"></div> {/* Placeholder to keep header balanced */}
-                                                </div>
+                                                    <div className="h-px bg-white/10 mx-2" />
+                                                    <motion.button whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                        onClick={() => {
+                                                            setSendButtonContextMenu(null);
+                                                            handleSendMessage(); // Just send normally? Or send silent? 
+                                                            // For now, keep it simple or implement Silent later
+                                                        }}
+                                                        className="w-full text-left px-4 py-3 hover:bg-white/10 flex items-center gap-3 transition-colors text-white/90 active:bg-white/20"
+                                                    >
+                                                        <BellOff size={18} className="text-white/70" />
+                                                        <span className="text-sm font-bold tracking-tight">Send Without Sound</span>
+                                                    </motion.button>
+                                                </motion.div>
+                                            </div>
+                                        </Portal>
+                                    )}
+                                </AnimatePresence>
 
-                                                {/* Media Canvas */}
-                                                <div className="w-full flex items-center justify-center bg-slate-50 relative overflow-hidden group border-y border-slate-100" style={{ minHeight: '30vh', maxHeight: '55vh' }}>
-                                                    {fileAttachment.type.startsWith('video/') ? (
-                                                        videoThumbnail ? (
-                                                            <>
-                                                                <img src={videoThumbnail} alt="Video preview" className="max-w-full max-h-[55vh] object-contain" />
-                                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                                    <div className="bg-white/80 backdrop-blur-md rounded-full p-4 shadow-sm border border-slate-200">
-                                                                        <Play size={32} className="text-black ml-1" fill="currentColor" />
-                                                                    </div>
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <FileVideo size={64} className="text-slate-300" />
-                                                        )
-                                                    ) : (
-                                                        <img src={URL.createObjectURL(fileAttachment)} className="max-w-full max-h-[55vh] object-contain" />
-                                                    )}
+                                <AnimatePresence>
+                                    {fileAttachment && (
+                                        <Portal lockScroll={true}>
+                                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 overflow-hidden pointer-events-none">
+                                                {/* Backdrop */}
+                                                <motion.div
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    exit={{ opacity: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
+                                                    onClick={() => { setFileAttachment(null); setVideoThumbnail(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                                />
 
-                                                    {/* Upload progress overlay */}
-                                                    {isSending && uploadProgress > 0 && (
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm z-20">
-                                                            <div className="relative flex items-center justify-center w-20 h-20">
-                                                                <svg className="animate-spin text-blue-500 w-16 h-16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                </svg>
-                                                                <span className="absolute text-sm font-bold text-slate-800 shadow-sm">{uploadProgress}%</span>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Editing / Input Area attached at the bottom */}
-                                                <div className="p-3 md:p-4 w-full bg-white rounded-b-[24px]">
-                                                    <div className="flex bg-slate-100 rounded-2xl items-end relative w-full border border-slate-200">
+                                                {/* Modal Content */}
+                                                <motion.div
+                                                    initial={{ scale: 0.9, opacity: 0 }}
+                                                    animate={{ scale: 1, opacity: 1 }}
+                                                    exit={{ scale: 0.9, opacity: 0 }}
+                                                    transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                                                    className="bg-white shadow-2xl w-full max-w-lg md:max-w-2xl flex flex-col relative pointer-events-auto overflow-hidden"
+                                                    style={{ borderRadius: '24px' }}
+                                                >
+                                                    {/* Header */}
+                                                    <div className="flex items-center justify-between px-4 py-3 relative z-10 w-full">
                                                         <motion.button whileTap={{ scale: 0.9 }}
-                                                            onClick={(e) => { e.preventDefault(); setShowEmojiPicker(!showEmojiPicker); }}
-                                                            className="p-3 text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0"
-                                                            disabled={isSending}
+                                                            onClick={() => { setFileAttachment(null); setVideoThumbnail(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                                            className="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors order-1"
                                                         >
-                                                            <Smile size={24} />
+                                                            <X size={20} />
                                                         </motion.button>
+                                                        <div className="text-[16px] font-semibold tracking-wide order-2 text-slate-800">
+                                                            1 Media
+                                                        </div>
+                                                        <div className="w-8 order-3"></div> {/* Placeholder to keep header balanced */}
+                                                    </div>
 
-                                                        <textarea
-                                                            autoFocus
-                                                            value={messageInput}
-                                                            onChange={(e) => {
-                                                                setMessageInput(e.target.value);
-                                                                handleTyping();
-                                                            }}
-                                                            placeholder="Write a message..."
-                                                            disabled={isSending}
-                                                            className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 px-1 py-3.5 text-[15px] resize-none min-h-[44px] max-h-[120px] w-full placeholder:text-slate-400 text-slate-800 font-medium my-auto mt-0.5"
-                                                            rows={1}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === 'Enter' && !e.shiftKey) {
-                                                                    e.preventDefault();
-                                                                    if (isScheduledView) setIsScheduleModalOpen(true);
-                                                                    else handleSendMessage();
-                                                                }
-                                                            }}
-                                                        />
+                                                    {/* Media Canvas */}
+                                                    <div className="w-full flex items-center justify-center bg-slate-50 relative overflow-hidden group border-y border-slate-100" style={{ minHeight: '30vh', maxHeight: '55vh' }}>
+                                                        {fileAttachment.type.startsWith('video/') ? (
+                                                            videoThumbnail ? (
+                                                                <>
+                                                                    <img src={videoThumbnail} alt="Video preview" className="max-w-full max-h-[55vh] object-contain" />
+                                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                                        <div className="bg-white/80 backdrop-blur-md rounded-full p-4 shadow-sm border border-slate-200">
+                                                                            <Play size={32} className="text-black ml-1" fill="currentColor" />
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <FileVideo size={64} className="text-slate-300" />
+                                                            )
+                                                        ) : (
+                                                            <img src={URL.createObjectURL(fileAttachment)} className="max-w-full max-h-[55vh] object-contain" />
+                                                        )}
 
-                                                        <div className="p-2 flex-shrink-0 mb-0.5 mr-0.5">
+                                                        {/* Upload progress overlay */}
+                                                        {isSending && uploadProgress > 0 && (
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm z-20">
+                                                                <div className="relative flex items-center justify-center w-20 h-20">
+                                                                    <svg className="animate-spin text-blue-500 w-16 h-16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                    </svg>
+                                                                    <span className="absolute text-sm font-bold text-slate-800 shadow-sm">{uploadProgress}%</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Editing / Input Area attached at the bottom */}
+                                                    <div className="p-3 md:p-4 w-full bg-white rounded-b-[24px]">
+                                                        <div className="flex bg-slate-100 rounded-2xl items-end relative w-full border border-slate-200">
                                                             <motion.button whileTap={{ scale: 0.9 }}
-                                                                onClick={() => {
-                                                                    if (!isSending) {
+                                                                onClick={(e) => { e.preventDefault(); setShowEmojiPicker(!showEmojiPicker); }}
+                                                                className="p-3 text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0"
+                                                                disabled={isSending}
+                                                            >
+                                                                <Smile size={24} />
+                                                            </motion.button>
+
+                                                            <textarea
+                                                                autoFocus
+                                                                value={messageInput}
+                                                                onChange={(e) => {
+                                                                    setMessageInput(e.target.value);
+                                                                    handleTyping();
+                                                                }}
+                                                                placeholder="Write a message..."
+                                                                disabled={isSending}
+                                                                className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 px-1 py-3.5 text-[15px] resize-none min-h-[44px] max-h-[120px] w-full placeholder:text-slate-400 text-slate-800 font-medium my-auto mt-0.5"
+                                                                rows={1}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                                        e.preventDefault();
                                                                         if (isScheduledView) setIsScheduleModalOpen(true);
                                                                         else handleSendMessage();
                                                                     }
                                                                 }}
-                                                                disabled={isSending}
-                                                                className={`w-10 h-10 rounded-full transition-all flex items-center justify-center ${isSending ? 'bg-slate-300 text-white' : 'gel-blue-style text-white shadow-md hover:shadow-lg active:scale-95 border-none'}`}
-                                                            >
-                                                                <Send size={18} className="ml-1" />
-                                                            </motion.button>
+                                                            />
+
+                                                            <div className="p-2 flex-shrink-0 mb-0.5 mr-0.5">
+                                                                <motion.button whileTap={{ scale: 0.9 }}
+                                                                    onClick={() => {
+                                                                        if (!isSending) {
+                                                                            if (isScheduledView) setIsScheduleModalOpen(true);
+                                                                            else handleSendMessage();
+                                                                        }
+                                                                    }}
+                                                                    disabled={isSending}
+                                                                    className={`w-10 h-10 rounded-full transition-all flex items-center justify-center ${isSending ? 'bg-slate-300 text-white' : 'gel-blue-style text-white shadow-md hover:shadow-lg active:scale-95 border-none'}`}
+                                                                >
+                                                                    <Send size={18} className="ml-1" />
+                                                                </motion.button>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                </motion.div>
                                             </div>
-                                        </div>
-                                    </Portal>
-                                )}
+                                        </Portal>
+                                    )}
+                                </AnimatePresence>
 
                                 <input
                                     type="file"
@@ -1877,22 +1975,24 @@ match /patients/{patientId}/messages/{messageId} {
             </div >
             {/* Global Message Context Menu Overlay */}
             {/* Global Message Context Menu Overlay */}
-            {
-                msgContextMenu && (
+            <AnimatePresence>
+                {msgContextMenu && (
                     <Portal lockScroll={false}>
-                        <div
-                            className="fixed inset-0 z-[99999] isolate flex items-start justify-start"
-                            onMouseDown={(e) => {
-                                // Only close if the mousedown happened on the backdrop itself
-                                if (e.target === e.currentTarget) {
-                                    e.preventDefault();
-                                    setMsgContextMenu(null);
-                                }
-                            }}
-                            onContextMenu={(e) => { e.preventDefault(); setMsgContextMenu(null); }}
-                        >
-                            {/* Semi-transparent backdrop for visual only, click handled by parent */}
-                            <div className="absolute inset-0 bg-black/5 pointer-events-none" />
+                        <div className="fixed inset-0 z-[99999] pointer-events-none">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute inset-0 bg-black/5 pointer-events-auto"
+                                onMouseDown={(e) => {
+                                    if (e.target === e.currentTarget) {
+                                        e.preventDefault();
+                                        setMsgContextMenu(null);
+                                    }
+                                }}
+                                onContextMenu={(e) => { e.preventDefault(); setMsgContextMenu(null); }}
+                            />
 
                             {(() => {
                                 const targetMsg = messages.find(m => m.id === msgContextMenu.id);
@@ -1911,8 +2011,12 @@ match /patients/{patientId}/messages/{messageId} {
                                 if (y < 0) y = 10;
 
                                 return (
-                                    <div
-                                        className="fixed z-[100000] animate-in fade-in zoom-in-95 duration-200 shadow-2xl rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-xl p-1.5 flex flex-col gap-0.5 min-w-[200px]"
+                                    <motion.div
+                                        initial={{ scale: 0.9, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        exit={{ scale: 0.9, opacity: 0 }}
+                                        transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                                        className="fixed z-[100000] shadow-2xl rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-xl p-1.5 flex flex-col gap-0.5 min-w-[200px] pointer-events-auto"
                                         style={{ top: y, left: x }}
                                         onMouseDown={(e) => e.stopPropagation()}
                                         onClick={(e) => e.stopPropagation()}
@@ -2005,13 +2109,13 @@ match /patients/{patientId}/messages/{messageId} {
                                                 </motion.button>
                                             </>
                                         )}
-                                    </div>
+                                    </motion.div>
                                 );
                             })()}
                         </div>
                     </Portal>
-                )
-            }
+                )}
+            </AnimatePresence>
 
             {/* Delete Confirmation Modal */}
             <DeleteModal
@@ -2021,6 +2125,13 @@ match /patients/{patientId}/messages/{messageId} {
                     setMessageToDelete(null);
                 }}
                 onConfirm={confirmDeleteMessage}
+            />
+
+            {/* Broadcast Modal */}
+            <BroadcastModal
+                isOpen={isBroadcastModalOpen}
+                onClose={() => setIsBroadcastModalOpen(false)}
+                patients={patients}
             />
         </div >
     );

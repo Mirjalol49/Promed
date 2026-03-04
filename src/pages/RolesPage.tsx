@@ -558,9 +558,10 @@ export const RolesPage: React.FC = () => {
                                 className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
                             />
                             <motion.div
-                                initial={{ scale: 0.95, opacity: 0 }}
+                                initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.95, opacity: 0 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
                                 className="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-premium-card rounded-3xl shadow-2xl overflow-hidden m-auto"
                             >
                                 {/* Header */}
