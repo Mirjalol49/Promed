@@ -308,10 +308,10 @@ const App: React.FC = () => {
   const { playNotification } = useAppSounds();
 
   useEffect(() => {
-    // Calculate total currently unread
+    // Calculate total currently unread across ALL patients
     const currentUnread = patients.reduce((acc, p) => acc + (p.unreadCount || 0), 0);
 
-    // 🔴 APP BADGE: Update iOS home screen badge count
+    // 🔴 APP BADGE: Always sync badge with total unread count
     if ('setAppBadge' in navigator) {
       if (currentUnread > 0) {
         (navigator as any).setAppBadge(currentUnread).catch(() => { });
@@ -320,13 +320,16 @@ const App: React.FC = () => {
       }
     }
 
+    // How many NEW messages arrived since last check
+    const newCount = currentUnread - prevUnreadCountRef.current;
+
     // If count INCREASED and we are NOT on messages page
-    if (currentUnread > prevUnreadCountRef.current && view !== 'MESSAGES' && !loading) {
-      console.log("🔔 New Message Detected! Previous:", prevUnreadCountRef.current, "Current:", currentUnread);
+    if (newCount > 0 && view !== 'MESSAGES' && !loading) {
+      console.log(`🔔 +${newCount} new messages. Total unread: ${currentUnread}`);
 
       playNotification();
 
-      // Find who sent it (patient with highest unread count and most recent message)
+      // Find the most recent sender
       const activePatient = patients
         .filter(p => (p.unreadCount || 0) > 0)
         .sort((a, b) => {
@@ -335,21 +338,15 @@ const App: React.FC = () => {
           return timeB - timeA;
         })[0];
 
-      const senderName = activePatient?.fullName || t('patient');
-      const unreadFromSender = activePatient?.unreadCount || 1;
-
-      // 🔔 Professional iOS Notification
+      // 🔔 Notification — unique tag per message so iOS doesn't replace previous ones
       if ('Notification' in window && Notification.permission === 'granted') {
-        // Show the actual message text, or fallback to generic
         const notifBody = activePatient?.lastMessage || t('sent_message');
 
         new Notification('Graft', {
           body: notifBody,
           icon: '/apple-touch-icon.png',
           badge: '/favicon-96x96.png',
-          tag: `graft-chat-${activePatient?.id || 'general'}`,
-          // @ts-ignore
-          renotify: true,
+          tag: `graft-msg-${Date.now()}`, // Unique per message — no replacement
         });
       }
     }
