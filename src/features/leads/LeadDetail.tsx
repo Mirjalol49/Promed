@@ -3,7 +3,7 @@ import {
     X, Phone, MessageCircle, Clock, Edit2, Trash2,
     Send, Plus, User, Activity, FileText, Bell, Check,
     ChevronDown, AlertCircle, ExternalLink, Calendar,
-    Copy
+    Copy, Sparkles, Stethoscope, Archive, Banknote
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { uz, ru } from 'date-fns/locale';
@@ -31,6 +31,15 @@ const STATUS_COLORS: Record<LeadStatus, { color: string; bg: string }> = {
 
 // Only these 4 statuses appear in the dropdown (matching Kanban tabs)
 const VISIBLE_STATUSES: LeadStatus[] = ['NEW', 'CONTACTED', 'BOOKED', 'LOST'];
+
+const STATUS_ICONS: Record<string, React.ElementType> = {
+    'NEW': Sparkles,
+    'CONTACTED': Phone,
+    'PHOTOS_SENT': Send,
+    'PRICE_GIVEN': Banknote,
+    'BOOKED': Stethoscope,
+    'LOST': Archive
+};
 
 interface LeadDetailProps {
     lead: Lead;
@@ -393,7 +402,10 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                             className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-200 shadow-sm ${statusColors.color} ${isStatusOpen ? 'border-blue-400 ring-2 ring-blue-400/20 bg-white' : 'border-slate-200 hover:border-slate-300 bg-white/80'} ${isViewer ? 'opacity-90 cursor-default' : 'cursor-pointer'}`}
                                         >
                                             <div className="flex items-center gap-2">
-                                                <div className={`w-2 h-2 rounded-full ${statusColors.bg.replace('100', '500')}`} />
+                                                {(() => {
+                                                    const ActiveIcon = STATUS_ICONS[lead.status] || Sparkles;
+                                                    return <ActiveIcon size={14} className={statusColors.color.replace('700', '500')} />;
+                                                })()}
                                                 <span className="font-semibold text-xs md:text-sm">{getStatusLabel(lead.status)}</span>
                                             </div>
                                             {!isViewer && <ChevronDown size={14} className={`md:w-4 md:h-4 transition-transform ${isStatusOpen ? 'rotate-180' : ''}`} />}
@@ -432,7 +444,10 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                                                                     <div className="flex items-center gap-3 relative z-10">
                                                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isActive ? 'bg-white/80' : 'bg-slate-100 group-hover:bg-white group-hover:shadow-sm'
                                                                             }`}>
-                                                                            <div className={`w-2.5 h-2.5 rounded-full ${colors.bg.replace('100', '500')}`} />
+                                                                            {(() => {
+                                                                                const Icon = STATUS_ICONS[key] || Sparkles;
+                                                                                return <Icon size={15} className={colors.color.replace('700', '500')} />;
+                                                                            })()}
                                                                         </div>
                                                                         <span className={`text-sm font-bold ${isActive ? colors.color : ''}`}>
                                                                             {getStatusLabel(key)}

@@ -112,7 +112,10 @@ export const leadService = {
                 updated_at: serverTimestamp(),
                 last_contact_date: serverTimestamp()
             };
-            const docRef = await addDoc(collection(db, LEADS_COLLECTION), newLead);
+            const docRef = await Promise.race([
+                addDoc(collection(db, LEADS_COLLECTION), newLead),
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Network timeout: Could not create lead.")), 15000))
+            ]);
             return docRef.id;
         } catch (error) {
             console.error("Error creating lead:", error);
@@ -124,11 +127,14 @@ export const leadService = {
     async updateLeadStatus(id: string, newStatus: LeadStatus): Promise<void> {
         try {
             const leadRef = doc(db, LEADS_COLLECTION, id);
-            await updateDoc(leadRef, {
-                status: newStatus,
-                updated_at: serverTimestamp(),
-                last_contact_date: serverTimestamp() // Assuming moving status implies contact/action
-            });
+            await Promise.race([
+                updateDoc(leadRef, {
+                    status: newStatus,
+                    updated_at: serverTimestamp(),
+                    last_contact_date: serverTimestamp() // Assuming moving status implies contact/action
+                }),
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Network timeout: Could not update lead status.")), 15000))
+            ]);
         } catch (error) {
             console.error("Error updating lead status:", error);
             throw error;
@@ -139,10 +145,13 @@ export const leadService = {
     async updateLead(id: string, data: Partial<Lead>): Promise<void> {
         try {
             const leadRef = doc(db, LEADS_COLLECTION, id);
-            await updateDoc(leadRef, {
-                ...data,
-                updated_at: serverTimestamp()
-            });
+            await Promise.race([
+                updateDoc(leadRef, {
+                    ...data,
+                    updated_at: serverTimestamp()
+                }),
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Network timeout: Could not update lead.")), 15000))
+            ]);
         } catch (error) {
             console.error("Error updating lead:", error);
             throw error;
@@ -152,7 +161,10 @@ export const leadService = {
     // Delete lead (Optional, but good for cleanup)
     async deleteLead(id: string): Promise<void> {
         try {
-            await deleteDoc(doc(db, LEADS_COLLECTION, id));
+            await Promise.race([
+                deleteDoc(doc(db, LEADS_COLLECTION, id)),
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Network timeout: Could not delete lead.")), 15000))
+            ]);
         } catch (error) {
             console.error("Error deleting lead:", error);
             throw error;
@@ -195,7 +207,10 @@ export const leadService = {
             });
 
             // 2. Update Lead
-            await this.updateLead(leadId, { reminder: reminderData });
+            await Promise.race([
+                this.updateLead(leadId, { reminder: reminderData as any }),
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Network timeout: Could not set reminder.")), 15000))
+            ]);
 
         } catch (error) {
             console.error("Error setting reminder:", error);
@@ -227,9 +242,12 @@ export const leadService = {
             });
 
             // Also update main doc updated_at
-            await updateDoc(leadRef, {
-                updated_at: serverTimestamp()
-            });
+            await Promise.race([
+                updateDoc(leadRef, {
+                    updated_at: serverTimestamp()
+                }),
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Network timeout: Could not add timeline event.")), 15000))
+            ]);
 
         } catch (error) {
             console.error("Error adding timeline event:", error);
@@ -259,10 +277,13 @@ export const leadService = {
             const eventRef = doc(db, LEADS_COLLECTION, leadId, 'timeline', eventId);
             const updatePayload = typeof data === 'string' ? { content: data } : data;
 
-            await updateDoc(eventRef, {
-                ...updatePayload,
-                updated_at: serverTimestamp()
-            });
+            await Promise.race([
+                updateDoc(eventRef, {
+                    ...updatePayload,
+                    updated_at: serverTimestamp()
+                }),
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Network timeout: Could not update event.")), 15000))
+            ]);
         } catch (error) {
             console.error("Error updating timeline event:", error);
             throw error;
@@ -273,7 +294,10 @@ export const leadService = {
     async deleteTimelineEvent(leadId: string, eventId: string): Promise<void> {
         try {
             const eventRef = doc(db, LEADS_COLLECTION, leadId, 'timeline', eventId);
-            await deleteDoc(eventRef);
+            await Promise.race([
+                deleteDoc(eventRef),
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Network timeout: Could not delete event.")), 15000))
+            ]);
         } catch (error) {
             console.error("Error deleting timeline event:", error);
             throw error;

@@ -37,7 +37,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Legacy support accessor
     const activeToast = toasts.length > 0 ? toasts[toasts.length - 1] : null;
 
-    const { playToaster, playPop, playError } = useAppSounds();
+    const { playToaster, playNotification, playError } = useAppSounds();
 
     const dismissToast = useCallback((id: string) => {
         setToasts(prev => prev.filter(t => t.id !== id));
@@ -66,7 +66,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (sound) {
             if (type === 'success') {
                 // Routine success might be silent or subtle, Critical (action) gets pop
-                if (action) playPop();
+                if (action) playNotification();
                 // else playToaster(); // Maybe keep silent for routine saves as requested?
                 // User said: "Routine Success (Save/Edit) -> No Sound". 
                 // checking if it is routine... usually simple success is routine.
@@ -85,7 +85,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
             return current;
         });
-    }, [playToaster, playPop, playError]);
+    }, [playToaster, playNotification, playError]);
 
     // Enhanced helpers
     const success = useCallback((title: string, message: string, options?: { mascot?: string, duration?: number, action?: ToastAction, sound?: boolean } | string) => {

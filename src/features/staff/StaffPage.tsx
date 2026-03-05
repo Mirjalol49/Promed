@@ -540,19 +540,7 @@ const StaffCard = React.memo(({ staff, t, isViewer, language, onSelect, onPaySal
                         </div>
                     </div>
 
-                    {/* Pay Button - Compact */}
-                    {!isViewer && staff.salary != null && staff.salary > 0 && (
-                        <motion.button whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onPaySalary(staff.id);
-                            }}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200 hover:bg-emerald-100 hover:ring-emerald-300 transition-all duration-300 mt-1"
-                        >
-                            <Banknote size={15} className="stroke-[2.5]" />
-                            {t('pay_salary')}
-                        </motion.button>
-                    )}
+                    {/* Pay Button removed as per user request */}
                 </div>
             </div>
         </motion.div>
@@ -945,27 +933,21 @@ const StaffDetail = ({
     const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const monthPickerRef = useRef<HTMLDivElement>(null);
-    const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
-    const categoryPickerRef = useRef<HTMLDivElement>(null);
     const [showStatusMenu, setShowStatusMenu] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
-    const [filterCategory, setFilterCategory] = useState<'all' | 'income' | 'expense' | 'salary' | 'food' | 'other'>('all');
 
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 10;
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [filterCategory, selectedMonth]);
+    }, [selectedMonth]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
                 setIsMonthPickerOpen(false);
-            }
-            if (categoryPickerRef.current && !categoryPickerRef.current.contains(event.target as Node)) {
-                setIsCategoryPickerOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -1108,20 +1090,8 @@ const StaffDetail = ({
         let list = selectedMonth === 'all'
             ? payments
             : paymentsByMonth[selectedMonth]?.payments || [];
-
-        if (filterCategory !== 'all') {
-            if (filterCategory === 'income') {
-                // For staff, salary and splits (which the clinic marks as expense) are their income
-                list = list.filter(p => p.type === 'income' || p.category === 'salary');
-            } else if (filterCategory === 'expense') {
-                // Everything else (like food or deductions) is staff expense
-                list = list.filter(p => p.type === 'expense' && p.category !== 'salary');
-            } else {
-                list = list.filter(p => p.category === filterCategory);
-            }
-        }
         return list;
-    }, [payments, selectedMonth, filterCategory, paymentsByMonth]);
+    }, [payments, selectedMonth, paymentsByMonth]);
 
     const sortedPayments = [...filteredPayments].sort((a, b) => {
         const dateA = new Date(a.createdAt || `${a.date}T${a.time || '00:00'}`).getTime();
@@ -1225,50 +1195,46 @@ const StaffDetail = ({
             </div>
 
             {/* Header Info - Professional Layered Design */}
-            <div className="bg-white rounded-[2rem] p-6 border border-slate-200/60 shadow-sm flex flex-col gap-8">
-                {/* 1. Top Row: Identity & Actions */}
-                <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-6">
-                    {/* Identity */}
-                    <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-                        <div className="relative group">
+            <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200/60 shadow-sm flex flex-col gap-8">
+                <div className="flex flex-col xl:flex-row gap-8 items-start justify-between">
+
+                    {/* Left: Identity */}
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 w-full xl:w-auto">
+                        <div className="relative shrink-0">
                             {staff.imageUrl ? (
                                 <img
                                     src={staff.imageUrl}
                                     alt={staff.fullName}
-                                    className="w-24 h-24 object-cover rounded-[1.5rem] border-4 border-white shadow-lg group-hover:scale-105 transition-transform duration-300 ring-1 ring-slate-100"
+                                    className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-[1.5rem] shadow-sm ring-1 ring-slate-100"
                                 />
                             ) : (
-                                <div className="w-24 h-24 rounded-[1.5rem] flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600 text-3xl font-bold border-4 border-white shadow-lg ring-1 ring-slate-100">
+                                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[1.5rem] flex items-center justify-center bg-blue-50 text-blue-600 text-4xl font-bold shadow-sm ring-1 ring-slate-100">
                                     {staff.fullName.charAt(0)}
                                 </div>
                             )}
-                            <div className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-[3px] border-white flex items-center justify-center shadow-md ${staff.status === 'active' ? 'bg-emerald-500' :
-                                staff.status === 'on_leave' ? 'bg-amber-500' : 'bg-slate-400'
-                                }`}>
-                                {staff.status === 'active' && <div className="w-2 h-2 bg-white rounded-full animate-pulse" />}
+                            <div className={`absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full border-[3px] border-white flex items-center justify-center shadow-md ${staff.status === 'active' ? 'bg-emerald-500' : staff.status === 'on_leave' ? 'bg-amber-500' : 'bg-slate-400'}`}>
+                                {staff.status === 'active' && <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse" />}
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <h2 className="text-3xl font-bold text-slate-900 tracking-tight leading-none">
+                        <div className="flex flex-col items-center sm:items-start text-center sm:text-left pt-1">
+                            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
                                 {staff.fullName}
                             </h2>
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50/50 text-blue-700 text-[11px] font-black uppercase tracking-widest border border-blue-100/50">
-                                    <User size={12} strokeWidth={2.5} />
+                            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50/80 text-blue-700 text-xs font-black uppercase tracking-widest border border-blue-100/50">
+                                    <User size={14} strokeWidth={2.5} />
                                     {t(`role_${staff.role}`) || staff.role}
                                 </span>
+
                                 <div className="relative">
-                                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                    <button
                                         onClick={() => !isViewer && setShowStatusMenu(!showStatusMenu)}
-                                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-black uppercase tracking-widest border transition-all duration-200 ${isViewer ? '' : 'cursor-pointer hover:shadow-sm'} ${staff.status === 'active' ? 'bg-emerald-50/50 text-emerald-700 border-emerald-100/50' :
-                                            staff.status === 'on_leave' ? 'bg-amber-50/50 text-amber-700 border-amber-100/50' :
-                                                'bg-slate-50 text-slate-600 border-slate-100'
-                                            } ${showStatusMenu ? 'ring-2 ring-blue-500/20 border-blue-200' : ''}`}
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest border transition-all ${isViewer ? 'cursor-default' : 'hover:scale-[0.98] active:scale-95'} ${staff.status === 'active' ? 'bg-emerald-50/80 text-emerald-700 border-emerald-100/50' : staff.status === 'on_leave' ? 'bg-amber-50/80 text-amber-700 border-amber-100/50' : 'bg-slate-50 text-slate-600 border-slate-200'}`}
                                     >
                                         {t(staff.status === 'active' ? 'active' : staff.status) || staff.status}
-                                        {!isViewer && <ChevronDown size={10} strokeWidth={3} className={`ml-0.5 transition-transform duration-200 ${showStatusMenu ? 'rotate-180' : ''}`} />}
-                                    </motion.button>
+                                        {!isViewer && <ChevronDown size={14} strokeWidth={3} className={`ml-0.5 transition-transform duration-200 ${showStatusMenu ? 'rotate-180' : ''}`} />}
+                                    </button>
 
                                     <AnimatePresence>
                                         {showStatusMenu && (
@@ -1303,67 +1269,69 @@ const StaffDetail = ({
                         </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 w-full md:w-auto">
-                        {onEdit && (
-                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                onClick={onEdit}
-                                className="flex-1 lg:flex-none h-12 px-6 flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 hover:text-blue-600 font-bold rounded-2xl text-sm transition-all shadow-sm group"
-                            >
-                                <Edit2 size={18} strokeWidth={2.5} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
-                                {t('edit') || 'Edit'}
-                            </motion.button>
-                        )}
-                        {onDelete && (
-                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                onClick={onDelete}
-                                className="flex-1 lg:flex-none h-12 px-6 flex items-center justify-center gap-2 bg-white/50 border border-slate-200 text-rose-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 hover:shadow-sm font-bold rounded-2xl text-sm transition-all"
-                                title={t('delete') || 'Delete'}
-                            >
-                                <Trash2 size={18} strokeWidth={2.5} />
-                                {t('delete') || "O'chirish"}
-                            </motion.button>
-                        )}
-                        {onPay && staff.salary != null && staff.salary > 0 && (
-                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                onClick={onPay}
-                                className="w-full lg:w-auto btn-glossy-emerald h-12 px-8 flex items-center justify-center gap-2 rounded-2xl uppercase tracking-wide shadow-lg shadow-emerald-500/20"
-                            >
-                                <Banknote size={18} className="stroke-[2.5]" />
-                                <span className="font-black text-xs md:text-sm">{t('pay_salary')}</span>
-                            </motion.button>
-                        )}
-                    </div>
-                </div>
-
-                {/* 2. Bottom Row: Stats/Metrics - Phone & Salary */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white rounded-[1.5rem] p-4 flex items-center justify-between group border border-slate-200 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:border-slate-300 transition-all duration-300">
-                        <div className="flex-1 min-w-0 pr-4">
-                            <p className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-1.5">{t('phone') || 'Phone'}</p>
-                            <p className="text-xl font-bold text-slate-800 tracking-tight truncate group-hover:text-blue-600 transition-colors">
-                                {staff.phone.replace(/(\+998)(\d{2})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5')}
-                            </p>
-                        </div>
-                        <div className="w-12 h-12 flex-shrink-0 rounded-2xl bg-blue-50/50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm border border-blue-100/50">
-                            <Phone size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-300" />
-                        </div>
-                    </div>
-
-                    {staff.salary != null && staff.salary > 0 && (
-                        <div className="bg-white rounded-[1.5rem] p-4 flex items-center justify-between group border border-slate-200 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:border-slate-300 transition-all duration-300">
-                            <div className="flex-1 min-w-0 pr-4">
-                                <p className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-1.5">{t('salary') || 'Salary'}</p>
-                                <p className="text-2xl font-black text-slate-900 tracking-tight leading-none truncate overflow-visible">
-                                    {staff.salary?.toLocaleString()}
-                                    <span className="text-sm font-bold text-slate-400 ml-1.5 uppercase tracking-wide">{staff.currency}</span>
-                                </p>
+                    {/* Right: Actions & Stats */}
+                    <div className="flex flex-col gap-5 w-full xl:w-auto">
+                        {/* Stats Row */}
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="bg-slate-50/80 rounded-[1.25rem] p-4 flex items-center gap-4 border border-slate-100 flex-1 min-w-[200px]">
+                                <div className="w-12 h-12 rounded-[1rem] bg-white flex items-center justify-center text-blue-500 shadow-sm shrink-0 border border-slate-100/50">
+                                    <Phone size={20} strokeWidth={2.5} />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">{t('phone') || 'Phone'}</p>
+                                    <p className="text-base sm:text-lg font-bold text-slate-900 whitespace-nowrap tracking-tight">
+                                        {staff.phone.replace(/(\+998)(\d{2})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5')}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="w-12 h-12 flex-shrink-0 rounded-2xl bg-emerald-50/50 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300 shadow-sm border border-emerald-100/50">
-                                <Banknote size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-300" />
-                            </div>
+
+                            {staff.salary != null && staff.salary > 0 && (
+                                <div className="bg-emerald-50/50 rounded-[1.25rem] p-4 flex items-center gap-4 border border-emerald-100/50 flex-1 min-w-[200px]">
+                                    <div className="w-12 h-12 rounded-[1rem] bg-white flex items-center justify-center text-emerald-500 shadow-sm shrink-0 border border-emerald-50">
+                                        <Banknote size={20} strokeWidth={2.5} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600/70 mb-0.5">{t('salary') || 'Salary'}</p>
+                                        <p className="text-base sm:text-lg font-black text-emerald-700 whitespace-nowrap tracking-tight">
+                                            {staff.salary?.toLocaleString()}
+                                            <span className="text-xs font-bold ml-1.5 uppercase opacity-70">{staff.currency}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        {/* Actions Row */}
+                        <div className="flex items-center gap-3 justify-end mt-1 sm:mt-0 flex-wrap sm:flex-nowrap">
+                            {onEdit && (
+                                <motion.button whileTap={{ scale: 0.98 }}
+                                    onClick={onEdit}
+                                    className="flex-1 sm:flex-none h-[46px] px-5 flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-blue-600 font-bold rounded-[1rem] text-sm transition-all shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
+                                >
+                                    <Edit2 size={16} strokeWidth={2.5} className="text-slate-400" />
+                                    {t('edit') || 'Edit'}
+                                </motion.button>
+                            )}
+                            {onDelete && (
+                                <motion.button whileTap={{ scale: 0.98 }}
+                                    onClick={onDelete}
+                                    className="flex-1 sm:flex-none h-[46px] px-5 flex items-center justify-center gap-2 bg-white border border-rose-200/80 text-rose-500 hover:bg-rose-50 font-bold rounded-[1rem] text-sm transition-all shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
+                                >
+                                    <Trash2 size={16} strokeWidth={2.5} />
+                                    {t('delete') || "O'chirish"}
+                                </motion.button>
+                            )}
+                            {onPay && staff.salary != null && staff.salary > 0 && (
+                                <motion.button whileTap={{ scale: 0.98 }}
+                                    onClick={onPay}
+                                    className="w-full sm:w-auto h-[46px] px-8 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-[1rem] text-sm transition-colors shadow-lg shadow-emerald-500/20"
+                                >
+                                    <Banknote size={16} className="stroke-[2.5]" />
+                                    {t('pay_salary')}
+                                </motion.button>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1379,75 +1347,6 @@ const StaffDetail = ({
                                 </span>
                             )}
                         </h3>
-
-                        {/* Transaction Categories Filter Dropdown */}
-                        <div className="relative" ref={categoryPickerRef}>
-                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                onClick={() => setIsCategoryPickerOpen(!isCategoryPickerOpen)}
-                                className={`flex items-center gap-2 pl-3.5 pr-3 py-1.5 rounded-[0.55rem] text-[13px] font-bold transition-all duration-200 border h-9 ${filterCategory !== 'all'
-                                    ? 'bg-blue-50/50 border-blue-200 text-blue-600 hover:bg-blue-50'
-                                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
-                                    } ${isCategoryPickerOpen ? 'ring-2 ring-blue-500/20 shadow-sm shadow-blue-500/5 !border-blue-400' : ''}`}
-                            >
-                                <span className="whitespace-nowrap tabular-nums uppercase font-black text-[11px] tracking-wider translate-y-[0.5px]">
-                                    {filterCategory === 'all' ? t('filter_all') || 'All' : t(filterCategory)}
-                                </span>
-                                {filterCategory !== 'all' ? (
-                                    <span
-                                        onClick={(e) => { e.stopPropagation(); setFilterCategory('all'); setIsCategoryPickerOpen(false); }}
-                                        className="ml-0.5 p-0.5 rounded-full hover:bg-blue-100 transition-colors cursor-pointer text-blue-400 hover:text-blue-600"
-                                    >
-                                        <X size={14} strokeWidth={3} />
-                                    </span>
-                                ) : (
-                                    <ChevronDown size={14} strokeWidth={2.5} className="ml-1 text-slate-400" />
-                                )}
-                            </motion.button>
-
-                            <AnimatePresence>
-                                {isCategoryPickerOpen && (
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                        transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
-                                        className="absolute top-full right-0 mt-2 z-[60] w-[200px] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden p-1.5 origin-top-right"
-                                    >
-                                        {(['all', 'income', 'expense', 'salary', 'food', 'other'] as const).map(cat => {
-                                            const isActive = filterCategory === cat;
-                                            const dotColor = {
-                                                all: 'bg-slate-400',
-                                                income: 'bg-emerald-500',
-                                                expense: 'bg-rose-500',
-                                                salary: 'bg-blue-500',
-                                                food: 'bg-amber-500',
-                                                other: 'bg-violet-500',
-                                            }[cat];
-                                            const activeBg = {
-                                                all: 'bg-slate-50 text-slate-700 ring-1 ring-slate-200',
-                                                income: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
-                                                expense: 'bg-rose-50 text-rose-700 ring-1 ring-rose-200',
-                                                salary: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
-                                                food: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
-                                                other: 'bg-violet-50 text-violet-700 ring-1 ring-violet-200',
-                                            }[cat];
-
-                                            return (
-                                                <motion.button whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                    key={cat}
-                                                    onClick={() => { setFilterCategory(cat); setIsCategoryPickerOpen(false); }}
-                                                    className={`w-full text-left px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 flex items-center gap-2.5 ${isActive ? activeBg : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                                                >
-                                                    <span className={`w-2 h-2 rounded-full shrink-0 ${isActive ? dotColor : 'bg-slate-300'}`} />
-                                                    <span className="flex-1">{cat === 'all' ? t('filter_all') || 'All' : t(cat)}</span>
-                                                    {isActive && <Check size={14} strokeWidth={3} className="shrink-0 opacity-70" />}
-                                                </motion.button>
-                                            );
-                                        })}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
                     </div>
 
                     <div className="flex items-center gap-2 w-full md:w-auto mt-1 md:mt-0 relative">
@@ -1794,13 +1693,14 @@ const StaffDetail = ({
                     )}
                 </div>
             </div>
+
             <AddStaffExpenseModal
                 isOpen={isAddExpenseModalOpen}
                 onClose={() => setIsAddExpenseModalOpen(false)}
                 staffId={staff.id}
                 staffName={staff.fullName}
             />
-        </div >
+        </div>
     );
 };
 
@@ -1818,7 +1718,6 @@ export const StaffPage = () => {
     const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
     const [loading, setLoading] = useState(true);
     const [payModalStaffId, setPayModalStaffId] = useState<string | null>(null);
-    const [selectedRole, setSelectedRole] = useState<StaffRole | 'all'>('all');
 
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
@@ -1843,8 +1742,6 @@ export const StaffPage = () => {
             setTimeout(() => unsub(), 0);
         };
     }, [accountId]);
-
-
 
     const handleSave = async (data: StaffFormData, imageFile?: File) => {
         try {
@@ -1909,10 +1806,8 @@ export const StaffPage = () => {
     };
 
     const filteredStaff = staffList.filter(s => {
-        const matchesSearch = s.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        return s.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
             s.role.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesRole = selectedRole === 'all' || s.role === selectedRole;
-        return matchesSearch && matchesRole;
     });
 
     const [staffListPage, setStaffListPage] = useState(1);
@@ -1927,7 +1822,7 @@ export const StaffPage = () => {
 
     useEffect(() => {
         setStaffListPage(1);
-    }, [searchQuery, staffList.length, selectedRole]);
+    }, [searchQuery, staffList.length]);
 
     return (
         <div className="h-full flex flex-col p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6 relative z-10">
@@ -1970,9 +1865,6 @@ export const StaffPage = () => {
                                 >
                                     {t('staff_management') || 'Staff Management'}
                                 </h1>
-                                <p className="text-slate-500 text-sm font-medium">
-                                    {t('staff_subtitle') || 'Manage clinic staff, salaries and attendance'}
-                                </p>
                             </div>
 
                             {!isViewer && (
@@ -1998,7 +1890,7 @@ export const StaffPage = () => {
 
                         {/* Search & Filter Bar */}
                         <div className="flex flex-col md:flex-row gap-4 items-center">
-                            <div className="relative flex-1 group w-full">
+                            <div className="relative group w-full md:w-[500px]">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} strokeWidth={2.5} />
                                 <input
                                     type="text"
@@ -2009,23 +1901,6 @@ export const StaffPage = () => {
                                 />
                             </div>
 
-                            <div className="flex items-center gap-2 w-full md:w-auto">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 hidden lg:block">{t('filter_by') || 'Filter'}</span>
-                                <div className="flex items-center gap-1.5 bg-slate-100/50 p-1 rounded-xl border border-slate-200/30 overflow-x-auto no-scrollbar w-full md:w-auto">
-                                    {(['all', 'doctor', 'assistant', 'nurse', 'call_operator', 'admin', 'other'] as const).map((role) => (
-                                        <motion.button whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                            key={role}
-                                            onClick={() => setSelectedRole(role)}
-                                            className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${selectedRole === role
-                                                ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200'
-                                                : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
-                                                }`}
-                                        >
-                                            {role === 'all' ? (t('all_roles') || 'All') : (t(`role_${role}`) || role)}
-                                        </motion.button>
-                                    ))}
-                                </div>
-                            </div>
                         </div>
 
                         {loading ? (
@@ -2034,10 +1909,10 @@ export const StaffPage = () => {
                             <div className="flex-1 flex items-center justify-center p-12 bg-white/50 rounded-[3rem] border border-slate-200/50 border-dashed mt-4">
                                 <EmptyState
                                     message={t('no_staff_title') || 'No Staff Found'}
-                                    description={searchQuery || selectedRole !== 'all' ? t('no_staff_filter_msg') : t('no_staff_msg')}
-                                    action={(searchQuery || selectedRole !== 'all') ? (
+                                    description={searchQuery ? t('no_staff_filter_msg') : t('no_staff_msg')}
+                                    action={searchQuery ? (
                                         <button
-                                            onClick={() => { setSearchQuery(''); setSelectedRole('all'); }}
+                                            onClick={() => setSearchQuery('')}
                                             className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-bold transition-colors"
                                         >
                                             {t('clear_filters') || 'Clear Filters'}
@@ -2047,7 +1922,7 @@ export const StaffPage = () => {
                             </div>
                         ) : (
                             <>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 xl:gap-10 mt-8">
                                     {paginatedStaff.map((staff) => (
                                         <StaffCard
                                             key={staff.id}

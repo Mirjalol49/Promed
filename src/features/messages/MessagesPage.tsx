@@ -198,39 +198,25 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
 
     // Restore scroll after messages load or view switch
-    // Restore scroll after messages load or view switch
     useEffect(() => {
         if (!selectedPatientId || !messagesContentRef.current) return;
 
-        // Wait for messages to populate before restoring scroll (unless it's truly empty, handled below)
+        // Wait for messages to populate before restoring scroll (unless it's truly empty)
         if (messages.length === 0 && !isScheduledView) return;
 
-        // If we just switched patients/views, attempt to restore position
+        // If we just switched patients/views, attempt to position
         if (justSwitchedRef.current) {
-            const key = `${selectedPatientId}_${isScheduledView ? 'sched' : 'chat'}`;
-            const savedPos = scrollMemory.current.get(key);
-
-            console.log(`📌 View switch (${isScheduledView ? 'Sched' : 'Chat'}) - saved position for ${selectedPatientId}:`, savedPos);
-
-            if (savedPos !== undefined) {
-                // Restore saved position
-                if (messagesContentRef.current) {
-                    messagesContentRef.current.scrollTop = savedPos;
-                    // Double check in next frame ensures layout is stable
-                    requestAnimationFrame(() => {
-                        if (messagesContentRef.current) messagesContentRef.current.scrollTop = savedPos;
-                        justSwitchedRef.current = false;
-                    });
-                }
-            } else {
-                // First time visiting: Scroll to bottom for Chat, Top for Scheduled
-                if (!isScheduledView) {
+            if (!isScheduledView) {
+                // ALWAYS scroll to bottom for Chat when opening
+                messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+                // Double check in next frame ensures layout is stable for large images
+                requestAnimationFrame(() => {
                     messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
                     justSwitchedRef.current = false;
-                } else {
-                    if (messagesContentRef.current) messagesContentRef.current.scrollTop = 0;
-                    justSwitchedRef.current = false;
-                }
+                });
+            } else {
+                if (messagesContentRef.current) messagesContentRef.current.scrollTop = 0;
+                justSwitchedRef.current = false;
             }
         }
         // If NOT switching views, check if we should auto-scroll due to USER sending a message
@@ -239,6 +225,16 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             if (lastMsg && lastMsg.sender === 'doctor' && !isScheduledView) {
                 messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                 isUserSendingMessage.current = false; // Reset flag
+            }
+        }
+        // Also auto-scroll if a NEW incoming message arrives
+        else {
+            const lastMsg = messages[messages.length - 1];
+            if (lastMsg && lastMsg.sender === 'user' && !isScheduledView) {
+                // Checking if the incoming message is new (based on count tracking done in snapshot listener)
+                // The snapshot listener updates prevMessageCountRef BEFORE setting state, but the length is compared there. 
+                // We can just rely on smooth scrolling to bottom if the last message is from the user.
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             }
         }
     }, [messages, selectedPatientId, isScheduledView]);

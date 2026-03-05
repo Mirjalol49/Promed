@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from 'lottie-react';
-import successAnimation from '../../assets/images/mascots/success.json';
-import trashAnimation from '../../assets/images/mascots/trash.json';
 
 import { ToastAction } from '../../contexts/ToastContext';
 
@@ -85,7 +83,7 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
                 titleColor: 'text-emerald-600',
                 progressColor: 'bg-emerald-500',
                 id: 'delete',
-                animation: trashAnimation
+                animation: null
             };
         }
 
@@ -112,7 +110,7 @@ const SyncToast = React.forwardRef<HTMLDivElement, SyncToastProps>(({ id, title,
                     titleColor: 'text-emerald-600',
                     progressColor: 'bg-emerald-500',
                     id: 'success',
-                    animation: successAnimation
+                    animation: null
                 };
             default:
                 return {

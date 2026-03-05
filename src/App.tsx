@@ -518,12 +518,17 @@ const App: React.FC = () => {
           }
 
           if (profile.lockEnabled !== undefined) {
-            if (profile.lockEnabled !== isLockEnabled) setIsLockEnabled(profile.lockEnabled);
+            setIsLockEnabled(profile.lockEnabled);
           }
 
-          if (profile.lockPassword && profile.lockPassword !== userPassword) {
-            console.log("🔐 [Profile Sync] Updating Lock Password from DB");
-            setUserPassword(profile.lockPassword);
+          if (profile.lockPassword) {
+            setUserPassword(prev => {
+              if (prev !== profile.lockPassword) {
+                console.log("🔐 [Profile Sync] Updating Lock Password from DB");
+                return profile.lockPassword;
+              }
+              return prev;
+            });
           }
           // ... rest of logic
         }
