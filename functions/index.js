@@ -678,6 +678,69 @@ bot.on('text', async (ctx) => {
             unreadCount: admin.firestore.FieldValue.increment(1)
         });
 
+        // 3. BROADCAST TO STAFF (MANDATORY FOR iOS LOCKED STATE)
+        const accountId = patientData.account_id || patientData.accountId || patientData.staffId;
+
+        let staffTokens = [];
+        try {
+            // Find tokens for Admins and Doctors belonging to this patient's account
+            const tokenSnap = await db.collection('fcmTokens').get();
+            const allTokens = tokenSnap.docs.map(t => t.data());
+
+            // Simple logic: if patient belongs to an account, find staff in that account
+            if (accountId) {
+                const staffSnap = await db.collection('profiles')
+                    .where('account_id', '==', accountId)
+                    .get();
+
+                const staffIds = staffSnap.docs.map(s => s.id);
+                staffTokens = allTokens.filter(t => staffIds.includes(t.userId)).map(t => t.token);
+            } else {
+                // Global fallback - send to superadmins if no account linked
+                const adminSnap = await db.collection('profiles').where('role', '==', 'admin').get();
+                const adminIds = adminSnap.docs.map(s => s.id);
+                staffTokens = allTokens.filter(t => adminIds.includes(t.userId)).map(t => t.token);
+            }
+
+            if (staffTokens.length > 0) {
+                // CRITICAL PAYLOAD: iOS will ONLY wake a completely closed PWA
+                // if BOTH 'notification' and high 'Urgency' webpush headers are provided!
+                const fcmMessage = {
+                    notification: {
+                        title: patientData.fullName || patientData.name || "Bemor",
+                        body: messageData.text,
+                    },
+                    webpush: {
+                        headers: {
+                            "Urgency": "high"
+                        }
+                    },
+                    data: {
+                        patientName: patientData.fullName || patientData.name || "Bemor",
+                        patientId: patientId,
+                        text: messageData.text,
+                        type: "CHAT_MESSAGE"
+                    },
+                    tokens: staffTokens
+                };
+
+                const response = await admin.messaging().sendEachForMulticast(fcmMessage);
+                console.log(`✅ FCM Broadcast: Sent to ${response.successCount}/${staffTokens.length} staff devices.`);
+
+                if (response.failureCount > 0) {
+                    response.responses.forEach((resp, idx) => {
+                        if (!resp.success) {
+                            console.log(`❌ FCM Token failure: ${resp.error.message}`);
+                        }
+                    });
+                }
+            } else {
+                console.log(`ℹ️ No FCM tokens found for staff assigned to patient ${patientId}`);
+            }
+        } catch (fcmErr) {
+            console.error("❌ FCM Broadcast Error:", fcmErr.message);
+        }
+
     } catch (e) {
         console.error("Error syncing message:", e);
     }
@@ -1299,3 +1362,62 @@ exports.processMessageQueue = onSchedule({
         console.error("❌ Scheduler Error:", e);
     }
 });
+
+// --- PWA NATIVE PUSH NOTIFICATION SENDER (MANDATORY FOR iOS LOCKED STATE) ---
+// Listens for new docs in 'notifications' (Targeted at UI Users/Admins/Doctors)
+exports.sendFCMNotification = onDocumentCreated({ document: "notifications/{notificationId}", region: "us-central1" }, async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
+
+    const data = snapshot.data();
+    const { userId, title, content } = data;
+
+    if (!userId) return; // Must have a target user
+
+    try {
+        // Retrieve the FCM token saved by the frontend's usePushNotifications hook
+        const tokenDoc = await db.collection('fcmTokens').doc(userId).get();
+        if (!tokenDoc.exists) {
+            console.log(`ℹ️ No FCM token found for user ${userId}. Push skipped.`);
+            return;
+        }
+
+        const tokenData = tokenDoc.data();
+        const fcmToken = tokenData.token;
+
+        if (!fcmToken) return;
+
+        // CRITICAL PAYLOAD: iOS will ONLY wake a completely closed PWA
+        // if BOTH 'notification' and high 'Urgency' webpush headers are provided!
+        const message = {
+            token: fcmToken,
+            notification: {
+                title: title || "Graft Klinikasi",
+                body: content || "Sizda yangi bildirishnoma bor",
+            },
+            webpush: {
+                headers: {
+                    "Urgency": "high"
+                }
+            },
+            data: {
+                // Keep data payload so the SW can route URLs, etc.
+                text: content || "Sizda yangi bildirishnoma bor",
+                type: "NOTIFICATION_SYNC"
+            }
+        };
+
+        const response = await admin.messaging().send(message);
+        console.log(`✅ FCM Push successfully delivered to ${userId}:`, response);
+
+    } catch (error) {
+        console.error(`❌ FCM Push Failed for ${userId}:`, error.message);
+
+        // Auto-cleanup stale/invalid tokens so we don't keep trying
+        if (error.code === 'messaging/registration-token-not-registered') {
+            await db.collection('fcmTokens').doc(userId).delete();
+            console.log(`🗑️ Removed invalid FCM token for user ${userId}`);
+        }
+    }
+});
+
