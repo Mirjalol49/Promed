@@ -5,7 +5,6 @@ import { clientsClaim } from 'workbox-core';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 
 declare const self: ServiceWorkerGlobalScope;
-declare const firebase: any;
 declare function importScripts(...urls: string[]): void;
 
 // ===== 1. WORKBOX: Precaching & Routing =====
@@ -17,24 +16,11 @@ cleanupOutdatedCaches();
 
 registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')));
 
-// ===== 2. FIREBASE MESSAGING =====
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
-
-firebase.initializeApp({
-    apiKey: "AIzaSyD_FGKU1Lzdp-DJRr7tgXehH2JmuAZKMYc",
-    authDomain: "graft-dashboard.firebaseapp.com",
-    projectId: "graft-dashboard",
-    storageBucket: "graft-dashboard.firebasestorage.app",
-    messagingSenderId: "120238255414",
-    appId: "1:120238255414:web:f0aa109b5f80644e845797",
-    measurementId: "G-VSREQ7WEVP",
-    databaseURL: "https://graft-dashboard-default-rtdb.firebaseio.com"
-});
-
-const messaging = firebase.messaging();
+// Firebase scripts removed to provide 100% Native Web Push Control.
+// By NOT initializing firebase.messaging() in the SW, we prevent FCM from intercepting and duplicating pushes.
+// This allows iOS APNs to wake the device using standard notification payloads natively.
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent || '');
-console.log('[SW] Unified. iOS:', isIOS);
+console.log('[SW] Unified Native Push initialized. iOS:', isIOS);
 
 // ===== 3. IndexedDB =====
 function saveToIndexedDB(data: Record<string, string>) {
