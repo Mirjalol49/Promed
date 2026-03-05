@@ -15,6 +15,22 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// iOS Detection: Safari SW doesn't support vibrate, requireInteraction, etc.
+const isIOS = /iPad|iPhone|iPod/.test(self.navigator?.userAgent || '');
+
+console.log('[ServiceWorker] Initialized. iOS:', isIOS);
+
+// CRITICAL FOR iOS: Take control immediately on install
+self.addEventListener('install', (event) => {
+    console.log('[ServiceWorker] Install event');
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+    console.log('[ServiceWorker] Activate event');
+    event.waitUntil(self.clients.claim());
+});
+
 // 2. Local DB Helper: Save to IndexedDB immediately for zero-loading state
 function saveToIndexedDB(messageData) {
     return new Promise((resolve, reject) => {
@@ -36,7 +52,7 @@ function saveToIndexedDB(messageData) {
 
             const payload = {
                 ...messageData,
-                savedAt: Date.now(), // timestamp for ordering the UI
+                savedAt: Date.now(),
             };
 
             const addRequest = store.add(payload);
@@ -51,6 +67,26 @@ function saveToIndexedDB(messageData) {
     });
 }
 
+// Helper: Safely broadcast to foreground app
+function broadcastToApp(messageType, payload) {
+    try {
+        if ('BroadcastChannel' in self) {
+            const channel = new BroadcastChannel('fcm_data_messages');
+            channel.postMessage({ type: messageType, payload });
+            // Close after a tick to avoid resource leaks
+            setTimeout(() => channel.close(), 100);
+        }
+    } catch (e) {
+        console.warn('[ServiceWorker] BroadcastChannel failed, using clients.matchAll fallback:', e);
+        // Fallback: Use postMessage to all clients directly (iOS compatible)
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+            clients.forEach((client) => {
+                client.postMessage({ type: messageType, payload });
+            });
+        });
+    }
+}
+
 // 3. The Interceptor: Handle the silent data payload
 messaging.onBackgroundMessage((payload) => {
     console.log('[ServiceWorker] Intercepted silent Data Message:', payload);
@@ -63,25 +99,33 @@ messaging.onBackgroundMessage((payload) => {
     // Determine target URL for click handling
     const customUrl = patientId ? `/?patient=${patientId}&view=chat` : `/`;
 
+    // Build notification options (iOS-safe: no vibrate, no requireInteraction)
+    const notificationOptions = {
+        body: messageText,
+        icon: '/apple-touch-icon.png',
+        badge: '/favicon-96x96.png',
+        tag: `graft-msg-${patientId || 'general'}`, // Prevent duplicate notifications
+        renotify: true, // Re-alert even with same tag
+        data: { url: customUrl },
+    };
+
+    // Add features only supported on Android/Desktop (NOT iOS Safari)
+    if (!isIOS) {
+        notificationOptions.vibrate = [500, 110, 500, 110, 450, 110, 200, 110, 170, 40, 450, 110, 200, 110, 170, 40, 500];
+        notificationOptions.requireInteraction = true;
+    }
+
     // Chain: Save -> Broadcast -> Render Notification
     const promiseChain = saveToIndexedDB(data).then((savedData) => {
+        // Broadcast to foreground app if open
+        broadcastToApp('BACKGROUND_DATA_SYNC', savedData);
 
-        // A. Broadcast to foreground app if open to instantly inject to UI state
-        if ('BroadcastChannel' in self) {
-            const channel = new BroadcastChannel('fcm_data_messages');
-            channel.postMessage({ type: 'BACKGROUND_DATA_SYNC', payload: savedData });
-        }
-
-        // B. Manually trigger standard OS notification with medical UI/UX
-        return self.registration.showNotification(patientName, {
-            body: messageText,
-            icon: '/apple-touch-icon.png', // Best for medical/pro feel
-            badge: '/favicon-96x96.png', // Small icon for android status bar
-            // Custom Pulse Vibration (Simulates Heartbeat/Urgency)
-            vibrate: [500, 110, 500, 110, 450, 110, 200, 110, 170, 40, 450, 110, 200, 110, 170, 40, 500],
-            data: { url: customUrl }, // Attach click destination
-            requireInteraction: true // Keep on screen for doctors who are busy
-        });
+        // Trigger OS notification
+        return self.registration.showNotification(patientName, notificationOptions);
+    }).catch((err) => {
+        console.error('[ServiceWorker] Error in background message handler:', err);
+        // Still try to show notification even if save fails
+        return self.registration.showNotification(patientName, notificationOptions);
     });
 
     return promiseChain;
@@ -91,10 +135,9 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
 
-    const urlToOpen = new URL(event.notification.data.url || '/', self.location.origin).href;
+    const urlToOpen = new URL(event.notification.data?.url || '/', self.location.origin).href;
 
-    // Check all open windows for this PWA
-    const promiseChain = clients.matchAll({
+    const promiseChain = self.clients.matchAll({
         type: 'window',
         includeUncontrolled: true
     }).then((windowClients) => {
@@ -109,20 +152,34 @@ self.addEventListener('notificationclick', (event) => {
         }
 
         if (openAppClient) {
-            // Already open: Focus the tab
             openAppClient.focus();
 
-            // Tell the React router to navigate without heavy reload
-            if ('BroadcastChannel' in self) {
-                const channel = new BroadcastChannel('fcm_data_messages');
-                channel.postMessage({ type: 'NAVIGATE', payload: { url: urlToOpen } });
-            }
+            // Tell the React app to navigate
+            broadcastToApp('NAVIGATE', { url: urlToOpen });
+
             return openAppClient;
         } else {
-            // App is completely closed: Launch fresh to URL
-            return clients.openWindow(urlToOpen);
+            return self.clients.openWindow(urlToOpen);
         }
     });
 
     event.waitUntil(promiseChain);
 });
+
+// 5. Handle push events directly (fallback for when FCM compat doesn't trigger)
+self.addEventListener('push', (event) => {
+    // Only handle if FCM compat didn't already handle it
+    if (!event.data) return;
+
+    try {
+        const payload = event.data.json();
+        console.log('[ServiceWorker] Raw push event:', payload);
+
+        // If this has a notification key, FCM compat will handle it
+        // If it's data-only, our onBackgroundMessage handles it
+        // This is a safety net
+    } catch (e) {
+        console.warn('[ServiceWorker] Could not parse push event data:', e);
+    }
+});
+
