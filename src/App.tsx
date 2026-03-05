@@ -304,7 +304,8 @@ const App: React.FC = () => {
   }, []);
 
   // 🔥 GLOBAL NOTIFICATION LISTENER + APP BADGE
-  const prevUnreadCountRef = React.useRef(0);
+  const prevTimestampsRef = React.useRef<Record<string, string>>({});
+  const initialLoadRef = React.useRef(true);
   const { playNotification } = useAppSounds();
 
   useEffect(() => {
@@ -320,38 +321,52 @@ const App: React.FC = () => {
       }
     } catch { /* badge API not available */ }
 
-    // How many NEW messages arrived since last check
-    const newCount = currentUnread - prevUnreadCountRef.current;
+    // Skip notification on initial load (don't notify for existing messages)
+    if (initialLoadRef.current) {
+      // Build initial timestamp map
+      const initial: Record<string, string> = {};
+      patients.forEach(p => {
+        if (p.lastMessageTimestamp) initial[p.id] = p.lastMessageTimestamp;
+      });
+      prevTimestampsRef.current = initial;
+      initialLoadRef.current = false;
+      return;
+    }
 
-    // If count INCREASED and we are NOT on messages page
-    if (newCount > 0 && view !== 'MESSAGES' && !loading) {
-      console.log(`🔔 +${newCount} new messages. Total unread: ${currentUnread}`);
+    // Compare timestamps: find patients whose lastMessageTimestamp CHANGED
+    if (view !== 'MESSAGES' && !loading) {
+      const prev = prevTimestampsRef.current;
 
-      playNotification();
+      for (const p of patients) {
+        const ts = p.lastMessageTimestamp;
+        if (!ts) continue;
 
-      // Find the most recent sender
-      const activePatient = patients
-        .filter(p => (p.unreadCount || 0) > 0)
-        .sort((a, b) => {
-          const timeA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp).getTime() : 0;
-          const timeB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp).getTime() : 0;
-          return timeB - timeA;
-        })[0];
+        const prevTs = prev[p.id];
 
-      // 🔔 Show banner notification from top of screen
-      if ('Notification' in window && Notification.permission === 'granted') {
-        const notifBody = activePatient?.lastMessage || t('sent_message');
+        // New timestamp that's different from last known = new message!
+        if (ts !== prevTs && (p.unreadCount || 0) > 0) {
+          console.log(`🔔 New message from ${p.fullName}: "${p.lastMessage}" (ts: ${ts})`);
 
-        new Notification('Graft', {
-          body: notifBody,
-          icon: '/apple-touch-icon.png',
-          tag: `graft-msg-${Date.now()}`,
-        });
+          playNotification();
+
+          // 🔔 Show banner notification
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Graft', {
+              body: p.lastMessage || t('sent_message'),
+              icon: '/apple-touch-icon.png',
+              tag: `graft-msg-${Date.now()}-${p.id}`,
+            });
+          }
+        }
       }
     }
 
-    // Update ref for next render
-    prevUnreadCountRef.current = currentUnread;
+    // Update timestamp map for next comparison
+    const updated: Record<string, string> = {};
+    patients.forEach(p => {
+      if (p.lastMessageTimestamp) updated[p.id] = p.lastMessageTimestamp;
+    });
+    prevTimestampsRef.current = updated;
   }, [patients, view, loading, playNotification, t]);
 
   // Handle Supabase Auth Events (especially password recovery)
