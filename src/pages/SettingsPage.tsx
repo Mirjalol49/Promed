@@ -344,54 +344,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                         </div>
                     </div>
 
-                    {/* Notification Reliability Setup */}
-                    <div className="pt-2">
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 block">{t('pwa_setup_title')}</label>
-                        <div className="bg-gradient-to-br from-promed-primary/10 to-blue-50/50 p-6 rounded-[24px] border border-promed-primary/10 shadow-sm">
-                            <h4 className="text-[14px] font-bold text-promed-primary mb-2">{t('pwa_setup_title')}</h4>
-                            <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-                                {t('pwa_setup_desc')}
-                            </p>
-
-                            <div className="space-y-4">
-                                <div className="flex gap-4">
-                                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-promed-primary/20 text-[10px] font-bold text-promed-primary shrink-0 transition-transform group-hover:scale-110">1</div>
-                                    <div>
-                                        <p className="text-[13px] font-bold text-slate-800">{t('pwa_step_ios_title')}</p>
-                                        <p className="text-[12px] text-slate-500 mt-0.5">{t('pwa_step_ios_desc')}</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-4">
-                                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-promed-primary/20 text-[10px] font-bold text-promed-primary shrink-0">2</div>
-                                    <div>
-                                        <p className="text-[13px] font-bold text-slate-800">{t('pwa_step_android_title')}</p>
-                                        <p className="text-[12px] text-slate-500 mt-0.5">{t('pwa_step_android_desc')}</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-4">
-                                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-promed-primary/20 text-[10px] font-bold text-promed-primary shrink-0">3</div>
-                                    <div>
-                                        <p className="text-[13px] font-bold text-slate-800">{t('security')}</p>
-                                        <p className="text-[12px] text-slate-500 mt-0.5">{t('pwa_step_bg_refresh')}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="mt-8 pt-6 border-t border-promed-primary/10">
-                                <h5 className="text-[13px] font-bold text-slate-800 mb-1">{t('pwa_repair_title')}</h5>
-                                <p className="text-[11px] text-slate-500 mb-4 leading-relaxed">{t('pwa_repair_desc')}</p>
-                                <motion.button whileTap={{ scale: 0.98 }}
-                                    onClick={handleRepairPush}
-                                    className="w-full py-3 bg-white border border-promed-primary/20 text-promed-primary rounded-xl text-xs font-bold hover:bg-promed-primary/5 transition-colors flex items-center justify-center gap-2 shadow-sm"
-                                >
-                                    <Smartphone size={14} />
-                                    {t('pwa_repair_btn')}
-                                </motion.button>
-                            </div>
-                        </div>
-                    </div>
 
                     {/* Security - Moved Above PIN Fields */}
                     <div>

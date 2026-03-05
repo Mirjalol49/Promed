@@ -96,9 +96,13 @@ service cloud.firestore {
 
     // --- COLLECTION RULES ---
 
-    // System Alerts: Global read for authenticated users
+    // System Alerts: Read for own account or global (MASTER/null)
     match /system_alerts/{alertId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        resource.data.accountId == null || 
+        resource.data.accountId == getUserAccountId() || 
+        resource.data.accountId == 'MASTER'
+      );
       allow write: if isAdminOrDoctor();
     }
 
@@ -109,7 +113,11 @@ service cloud.firestore {
 
     // Profiles
     match /profiles/{userId} {
-      allow create: if isAuthenticated() && (request.auth.uid == userId || isAdminOrDoctor() || isSystemAdmin());
+      allow create: if isAuthenticated() && (
+        request.auth.uid == userId || 
+        (isAdminOrDoctor() && writesToAccount(request.resource.data)) || 
+        isSystemAdmin()
+      );
       
       // get (single doc): check ownership or account membership
       allow get: if isSystemAdmin() || (isAuthenticated() && (

@@ -20,11 +20,13 @@ import { createSystemAlert, sendTargetedNotifications, clearAlerts } from '../li
 import { Profile } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAccount } from '../contexts/AccountContext';
 import { createSystemUser } from '../lib/adminService';
 import { auth } from '../lib/firebase';
 import { AdminRegistrySkeleton } from '../components/ui/Skeletons';
 
 export const AdminDashboard: React.FC = () => {
+    const { accountId } = useAccount();
     const [profiles, setProfiles] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -60,9 +62,11 @@ export const AdminDashboard: React.FC = () => {
     const { t } = useLanguage();
 
     useEffect(() => {
-        console.log("🚀 AdminDashboard: Mounting & Subscribing...");
+        if (!accountId) return;
+        console.log("🚀 AdminDashboard: Mounting & Subscribing for Account:", accountId);
         setLoading(true);
         const unsubscribe = subscribeToAllProfiles(
+            accountId,
             (data) => {
                 console.log("📋 AdminDashboard: Received profiles:", data.length);
                 setProfiles(data);
@@ -77,7 +81,7 @@ export const AdminDashboard: React.FC = () => {
             console.log("AdminDashboard: Cleaning up...");
             unsubscribe();
         };
-    }, []);
+    }, [accountId]);
 
 
     const filteredProfiles = useMemo(() => {
@@ -123,7 +127,8 @@ export const AdminDashboard: React.FC = () => {
             } else {
                 await createSystemAlert({
                     ...broadcastData,
-                    category: notificationCategory
+                    category: notificationCategory,
+                    accountId: accountId // Ensure alert is scoped to THIS account
                 });
             }
             success(t('megaphone_title'), t('broadcast_success'));
@@ -176,8 +181,9 @@ export const AdminDashboard: React.FC = () => {
     };
 
     const handleClearAlerts = async () => {
+        if (!accountId) return;
         try {
-            await clearAlerts();
+            await clearAlerts(accountId);
             success(t('clear'), t('photo_deleted_msg'));
         } catch (err) {
             error(t('toast_error_title'), t('toast_save_failed'));

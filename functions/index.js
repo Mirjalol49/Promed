@@ -962,18 +962,22 @@ exports.doctorEveningReminder = onSchedule({
 
         console.log(`📋 Found ${tomorrowPatients.length} patient(s) with injections tomorrow.`);
 
-        // 2. Get all doctor/admin profiles to notify
+        // 2. Get all doctor/admin profiles and group them by account
         const profilesSnap = await db.collection('profiles').get();
-        const doctorIds = [];
+        const staffByAccount = new Map();
 
         profilesSnap.forEach(docSnap => {
             const profile = docSnap.data();
             if (profile.role === 'admin' || profile.role === 'doctor') {
-                doctorIds.push(docSnap.id);
+                const accId = profile.account_id || profile.accountId || 'MASTER';
+                if (!staffByAccount.has(accId)) {
+                    staffByAccount.set(accId, []);
+                }
+                staffByAccount.get(accId).push(docSnap.id);
             }
         });
 
-        if (doctorIds.length === 0) {
+        if (staffByAccount.size === 0) {
             console.warn("⚠️ No doctor/admin profiles found.");
             return;
         }
@@ -981,12 +985,15 @@ exports.doctorEveningReminder = onSchedule({
         // 3. Create notification content
         const createdAt = new Date().toISOString();
         const batch = db.batch();
+        let totalNotifs = 0;
 
-        // 4. Write notification for each patient to each doctor/admin
+        // 4. Write notification for each patient to relevant doctors/admins
         tomorrowPatients.forEach(p => {
             const title = `💉 Ertaga soat ${p.time}`;
+            const patientAccId = p.accountId || 'MASTER';
+            const relevantStaff = staffByAccount.get(patientAccId) || [];
 
-            doctorIds.forEach(userId => {
+            relevantStaff.forEach(userId => {
                 const docRef = db.collection('notifications').doc();
                 batch.set(docRef, {
                     title: title,
@@ -1002,11 +1009,16 @@ exports.doctorEveningReminder = onSchedule({
                     patientName: p.name,
                     patientImage: p.image
                 });
+                totalNotifs++;
             });
         });
 
-        await batch.commit();
-        console.log(`✅ Sent evening reminders to ${doctorIds.length} doctor(s) about ${tomorrowPatients.length} patient(s).`);
+        if (totalNotifs > 0) {
+            await batch.commit();
+            console.log(`✅ Sent ${totalNotifs} evening reminders to relevant staff about ${tomorrowPatients.length} patient(s).`);
+        } else {
+            console.log("ℹ️ No relevant staff found for any scheduled patients.");
+        }
 
     } catch (error) {
         console.error("❌ Doctor Evening Reminder Error:", error);

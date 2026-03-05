@@ -246,12 +246,14 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
                                                 }}
                                                 className="flex items-stretch cursor-pointer relative"
                                             >
-                                                {/* Left Icon Panel (No Time Needed) */}
+                                                {/* Left Icon Panel (Showing Time for Injections) */}
                                                 <div className="w-[60px] md:w-[80px] flex items-center justify-center flex-shrink-0 transition-colors gel-blue-style">
                                                     {primaryEvent.type === 'Operation' ? (
                                                         <Activity className="w-6 h-6 md:w-8 md:h-8 text-white drop-shadow-sm opacity-90" />
                                                     ) : (
-                                                        <Syringe className="w-6 h-6 md:w-8 md:h-8 text-white drop-shadow-sm opacity-90" />
+                                                        <span className="text-white font-black text-xl md:text-2xl drop-shadow-md leading-none tracking-tight">
+                                                            {format(primaryEvent.date, 'HH:mm')}
+                                                        </span>
                                                     )}
                                                 </div>
 

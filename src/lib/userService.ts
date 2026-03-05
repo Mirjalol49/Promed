@@ -7,6 +7,7 @@ import {
   onSnapshot,
   collection,
   query,
+  where,
   orderBy,
   getDocs
 } from 'firebase/firestore';
@@ -133,19 +134,19 @@ export const subscribeToUserProfile = (
 };
 
 /**
- * Super Admin: Subscribe to all profiles in the system
+ * Super Admin / Admin: Subscribe to all profiles in the system OR a specific account
  */
 export const subscribeToAllProfiles = (
+  accountId: string,
   onUpdate: (profiles: any[]) => void,
   onError?: (error: any) => void
 ) => {
-  // Use a safe query that doesn't rely on complex ordering if it causes issues,
-  // or ensure we handle the snapshot safely.
-  // For now, keeping the query but adding cleanup safety.
-  const q = query(
-    collection(db, "profiles"),
-    orderBy("created_at", "desc")
-  );
+  // If we have an accountId, filter by it. 
+  // Safety: MASTER accounts or Super Admins might pass "" to see all, 
+  // but for safety we usually want to scope.
+  const q = accountId
+    ? query(collection(db, "profiles"), where("account_id", "==", accountId), orderBy("created_at", "desc"))
+    : query(collection(db, "profiles"), orderBy("created_at", "desc"));
 
   let unsub: (() => void) | null = null;
   let isUnsubscribed = false;

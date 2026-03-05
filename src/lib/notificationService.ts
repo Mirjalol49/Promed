@@ -25,39 +25,50 @@ export interface SystemAlert {
     patientId?: string;
     patientName?: string;
     patientImage?: string;
+    accountId?: string;
 }
 
 /**
  * Subscribe to the most recent system alerts
  */
 export const subscribeToSystemAlerts = (
+    accountId: string,
     onUpdate: (alerts: SystemAlert[]) => void,
     onError?: (error: any) => void
 ) => {
+    // Note: We fetch more than we need to allow for client-side filtering 
+    // of global broadcast vs account-specific broadcast if needed later.
+    // However, primarily we want to query for this account or global (null accountId).
     const q = query(
         collection(db, "system_alerts"),
+        where("is_active", "==", true),
         orderBy("created_at", "desc"),
-        limit(10)
+        limit(15)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        const alerts: SystemAlert[] = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                title: data.title,
-                content: data.content,
-                type: data.type,
-                category: data.category,
-                is_active: data.is_active,
-                created_at: data.created_at,
-                viewed_at: data.viewed_at,
-                is_read: data.is_read,
-                patientId: data.patientId,
-                patientName: data.patientName,
-                patientImage: data.patientImage
-            };
-        });
+        const alerts: SystemAlert[] = snapshot.docs
+            .map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    title: data.title,
+                    content: data.content,
+                    type: data.type,
+                    category: data.category,
+                    is_active: data.is_active,
+                    created_at: data.created_at,
+                    viewed_at: data.viewed_at,
+                    is_read: data.is_read,
+                    patientId: data.patientId,
+                    patientName: data.patientName,
+                    patientImage: data.patientImage,
+                    accountId: data.accountId || data.account_id
+                };
+            })
+            // Filter: Only show alerts for THIS account OR global alerts (no accountId)
+            .filter(a => !a.accountId || a.accountId === accountId);
+
         onUpdate(alerts);
     }, (error) => {
         console.error("System alerts subscription error:", error);
@@ -78,10 +89,16 @@ export const createSystemAlert = async (alert: {
     type: 'info' | 'warning' | 'danger' | 'success';
     category?: 'billing' | 'congratulations' | 'message';
     expires_at?: string;
+    accountId?: string;
 }): Promise<void> => {
-    console.log("📣 broadcastAlert: current user:", auth.currentUser?.uid);
-    // First, deactivate all previous alerts
-    const q = query(collection(db, "system_alerts"), where("is_active", "==", true));
+    console.log("📣 broadcastAlert: current user:", auth.currentUser?.uid, "Account:", alert.accountId);
+
+    // First, deactivate all previous alerts FOR THIS ACCOUNT ONLY
+    const q = query(
+        collection(db, "system_alerts"),
+        where("is_active", "==", true),
+        where("accountId", "==", alert.accountId || "")
+    );
     const snapshot = await getDocs(q);
 
     const batch = writeBatch(db);
@@ -103,8 +120,14 @@ export const createSystemAlert = async (alert: {
 /**
  * Admin: Clear current alert
  */
-export const clearAlerts = async (): Promise<void> => {
-    const q = query(collection(db, "system_alerts"), where("is_active", "==", true));
+export const clearAlerts = async (accountId: string): Promise<void> => {
+    if (!accountId) return;
+
+    const q = query(
+        collection(db, "system_alerts"),
+        where("is_active", "==", true),
+        where("accountId", "==", accountId)
+    );
     const snapshot = await getDocs(q);
 
     const batch = writeBatch(db);

@@ -20,7 +20,7 @@ interface SystemAlertContextType {
 const SystemAlertContext = createContext<SystemAlertContextType | undefined>(undefined);
 
 export const SystemAlertProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const { userId, createdAt } = useAccount();
+    const { userId, createdAt, accountId } = useAccount();
     const [globalAlerts, setGlobalAlerts] = useState<SystemAlert[]>([]);
     const [userAlerts, setUserAlerts] = useState<SystemAlert[]>([]);
     const [activeAlert, setActiveAlert] = useState<SystemAlert | null>(null);
@@ -44,11 +44,12 @@ export const SystemAlertProvider: React.FC<{ children: ReactNode }> = ({ childre
 
     // Subscribe to Global Broadcasts
     useEffect(() => {
-        const unsubscribe = subscribeToSystemAlerts((newAlerts) => {
+        if (!accountId) return;
+        const unsubscribe = subscribeToSystemAlerts(accountId, (newAlerts) => {
             setGlobalAlerts(newAlerts);
         });
         return () => unsubscribe();
-    }, []);
+    }, [accountId]);
 
     // Subscribe to Targeted Notifications
     useEffect(() => {
@@ -66,10 +67,12 @@ export const SystemAlertProvider: React.FC<{ children: ReactNode }> = ({ childre
 
     // Filter old alerts for new accounts
     const alerts = useMemo(() => {
-        // Filter global alerts: Only show those created after the user joined
+        // Filter global alerts: Only show those created after the user joined AND relevant to this account
         const visibleGlobalAlerts = globalAlerts.filter(alert => {
-            if (!createdAt) return false; // Don't show global alerts until we know the user's creation time
-            return new Date(alert.created_at) >= new Date(createdAt);
+            if (!createdAt) return false;
+            const isRelevantTime = new Date(alert.created_at) >= new Date(createdAt);
+            const isRelevantAccount = !alert.accountId || alert.accountId === accountId || alert.accountId === 'MASTER';
+            return isRelevantTime && isRelevantAccount;
         });
 
         return [...userAlerts, ...visibleGlobalAlerts].sort((a, b) =>
