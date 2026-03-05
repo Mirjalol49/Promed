@@ -306,16 +306,16 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                 aria-expanded={isOpen}
                 aria-label={value ? `Selected date: ${format(value, 'PPP', { locale })}` : (placeholder || 'Select date')}
                 className={`
-                    w-full flex items-center justify-center gap-1 md:gap-2 transition-all duration-200 outline-none group
+                    w-full flex items-center justify-start gap-3 md:gap-4 transition-all duration-200 outline-none group
                     ${minimal
                         ? 'bg-transparent border-none px-2 md:px-3 h-full'
-                        : `bg-slate-50 border border-slate-300 rounded-2xl py-3 md:py-3.5 px-3 md:px-4 ${isOpen ? 'ring-4 ring-blue-600/10 border-blue-600 bg-white' : 'hover:border-slate-400 hover:bg-white'}`
+                        : `bg-slate-50 border border-slate-300 rounded-2xl h-[52px] px-3 md:px-4 ${isOpen ? 'ring-4 ring-blue-600/10 border-blue-600 bg-white' : 'hover:border-slate-400 hover:bg-white'}`
                     }
-                    text-slate-700 font-bold
+                    text-slate-800 font-bold
                 `}
             >
                 <CalendarIcon className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-colors ${isOpen ? 'text-blue-600' : 'group-hover:text-slate-600'} flex-shrink-0`} />
-                <span className="flex-1 text-center whitespace-nowrap text-[11px] sm:text-[13px] tracking-wide">
+                <span className="flex-1 text-left whitespace-nowrap text-[14px] tracking-wide">
                     {value ? format(value, 'dd MMMM yyyy', { locale }) : (placeholder || t('select_date') || 'Sanani tanlang')}
                 </span>
                 <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />

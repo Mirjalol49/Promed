@@ -1650,7 +1650,7 @@ export const AddPatientForm: React.FC<{
                         <div className="space-y-1.5">
                           <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('full_name')}</label>
                           <div className="relative group">
-                            <User size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
+                            <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                             <input required type="text" value={fullName} onChange={e => setFullName(e.target.value)}
                               className="w-full pl-10 pr-4 py-3.5 bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl focus:bg-white outline-none transition-all duration-300 font-bold text-slate-800 focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 placeholder:text-slate-400/70 placeholder:font-medium"
                               placeholder="Mirjalol Shamsiddinov" />
@@ -1659,7 +1659,7 @@ export const AddPatientForm: React.FC<{
                         <div className="space-y-1.5">
                           <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('phone_number')}</label>
                           <div className="relative group">
-                            <Phone className="absolute left-3.5 top-3.5 w-[18px] h-[18px] text-slate-400 group-focus-within:text-promed-primary transition-colors" />
+                            <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                             <input
                               required
                               type="tel"
@@ -1774,9 +1774,9 @@ export const AddPatientForm: React.FC<{
                         <div className="space-y-1.5">
                           <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('grafts')}</label>
                           <div className="relative group">
-                            <Hash size={18} className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
+                            <Hash size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-promed-primary transition-colors" />
                             <input type="number" value={grafts} onChange={e => setGrafts(e.target.value)}
-                              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-400 rounded-xl focus:bg-white outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                              className="w-full pl-10 pr-4 py-3.5 bg-white border border-slate-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] rounded-2xl focus:bg-white outline-none transition-all duration-300 font-bold text-slate-800 focus:border-blue-500/50 focus:ring-[3px] focus:ring-blue-500/20 hover:border-slate-300 placeholder:text-slate-400/70 placeholder:font-medium"
                               placeholder="2500" />
                           </div>
                         </div>
