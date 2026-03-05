@@ -94,26 +94,30 @@ self.addEventListener('push', (event) => {
         opts.requireInteraction = true;
     }
 
-    // CRITICAL FIX: To ensure notifications deliver reliably on locked iOS devices,
-    // we must immediately call showNotification without blocking on IndexedDB,
-    // which can hang when the iOS device is locked (Data Protection enabled).
-    const notificationPromise = self.registration.showNotification(name, opts);
+    // We only pass the notification promise to waitUntil.
+    // This absolutely guarantees iOS will display the notification before we even touch IndexedDB.
+    const notificationPromise = self.registration.showNotification(name, opts).then(() => {
+        // AFTER the OS has confirmed the notification, we SAFELY try to update the local DB
+        try {
+            // Some iOS versions throw synchronously immediately on locked devices
+            const dbPromise = saveToIndexedDB(d)
+                .then(saved => broadcastToApp('BACKGROUND_DATA_SYNC', saved))
+                .catch(err => console.warn('[SW] Async IDB save failed:', err));
 
-    const dataTask = saveToIndexedDB(d)
-        .then(saved => {
-            broadcastToApp('BACKGROUND_DATA_SYNC', saved);
-        })
-        .catch(err => {
-            console.warn('[SW] IDB save failed (iOS locked state?):', err);
-        });
+            // Timeout hack for IndexedDB hanging
+            return Promise.race([
+                dbPromise,
+                new Promise(resolve => setTimeout(resolve, 2000))
+            ]);
+        } catch (syncErr) {
+            console.warn('[SW] Sync IDB blocked by OS:', syncErr);
+            return Promise.resolve();
+        }
+    }).catch(err => {
+        console.error('[SW] Notification display failed:', err);
+    });
 
-    // Provide a 3-second timeout for IDB to prevent the SW from hanging if IDB is locked
-    const safeDataTask = Promise.race([
-        dataTask,
-        new Promise(resolve => setTimeout(resolve, 3000))
-    ]);
-
-    event.waitUntil(Promise.all([notificationPromise, safeDataTask]));
+    event.waitUntil(notificationPromise);
 });
 
 // ===== 6. Click handler =====

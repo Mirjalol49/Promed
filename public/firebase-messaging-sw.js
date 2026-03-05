@@ -113,26 +113,30 @@ self.addEventListener('push', (event) => {
         notificationOptions.requireInteraction = true;
     }
 
-    // CRITICAL FIX FOR iOS LOCKED STATE:
-    // When an iPhone is locked, its Data Protection prevents IDB writes from completing.
-    // So we MUST immediately request the OS to show the notification without waiting for IDB!
-    const notificationPromise = self.registration.showNotification(patientName, notificationOptions);
+    // We only pass the notification promise to waitUntil.
+    // This absolutely guarantees iOS will display the notification before we even touch IndexedDB.
+    const notificationPromise = self.registration.showNotification(patientName, notificationOptions).then(() => {
+        // AFTER the OS has confirmed the notification, we SAFELY try to update the local DB
+        try {
+            // Some iOS versions throw synchronously immediately on locked devices
+            const dbPromise = saveToIndexedDB(d)
+                .then(savedData => broadcastToApp('BACKGROUND_DATA_SYNC', savedData))
+                .catch(err => console.warn('[ServiceWorker] Async IDB save failed:', err));
 
-    const dataTask = saveToIndexedDB(d)
-        .then(savedData => {
-            broadcastToApp('BACKGROUND_DATA_SYNC', savedData);
-        })
-        .catch(err => {
-            console.warn('[ServiceWorker] Array write IDB failed (expected on iOS lock):', err);
-        });
+            // Timeout hack for IndexedDB hanging
+            return Promise.race([
+                dbPromise,
+                new Promise(resolve => setTimeout(resolve, 2000))
+            ]);
+        } catch (syncErr) {
+            console.warn('[ServiceWorker] Sync IDB blocked by OS:', syncErr);
+            return Promise.resolve();
+        }
+    }).catch(err => {
+        console.error('[ServiceWorker] Notification display failed:', err);
+    });
 
-    // Provide a small timeout for IDB to prevent SW hang
-    const safeDataTask = Promise.race([
-        dataTask,
-        new Promise(resolve => setTimeout(resolve, 3000))
-    ]);
-
-    event.waitUntil(Promise.all([notificationPromise, safeDataTask]));
+    event.waitUntil(notificationPromise);
 });
 
 // 4. Custom Click Logic (Focus or New Window)
