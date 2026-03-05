@@ -338,20 +338,15 @@ const App: React.FC = () => {
           return timeB - timeA;
         })[0];
 
-      // 🔔 Show notification via ServiceWorker (required for iOS PWA!)
-      // IMPORTANT: `new Notification()` does NOT work on iOS Safari PWA.
-      // Must use `registration.showNotification()` instead.
-      if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+      // 🔔 Show banner notification from top of screen
+      if ('Notification' in window && Notification.permission === 'granted') {
         const notifBody = activePatient?.lastMessage || t('sent_message');
 
-        navigator.serviceWorker.ready.then((reg) => {
-          reg.showNotification('Graft', {
-            body: notifBody,
-            icon: '/apple-touch-icon.png',
-            badge: '/favicon-96x96.png',
-            tag: `graft-msg-${Date.now()}`,
-          });
-        }).catch((err) => console.warn('🔔 Notification error:', err));
+        new Notification('Graft', {
+          body: notifBody,
+          icon: '/apple-touch-icon.png',
+          tag: `graft-msg-${Date.now()}`,
+        });
       }
     }
 

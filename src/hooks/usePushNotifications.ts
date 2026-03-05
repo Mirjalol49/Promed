@@ -60,18 +60,16 @@ export const usePushNotifications = (userId: string | null) => {
                 );
                 console.log('🔔 Token saved');
 
-                // Foreground message handler
+                // Foreground FCM message handler
                 onMessage(messaging, (payload) => {
                     console.log('🔔 Foreground FCM message:', payload);
                     const data = payload.data || {};
                     const body = data.text || payload.notification?.body || 'Yangi xabar';
 
-                    // Use ServiceWorker showNotification (required for iOS PWA)
                     if (Notification.permission === 'granted') {
-                        swRegistration.showNotification('Graft', {
+                        new Notification('Graft', {
                             body,
                             icon: '/apple-touch-icon.png',
-                            badge: '/favicon-96x96.png',
                             tag: `graft-fcm-${Date.now()}`,
                         });
                     }
