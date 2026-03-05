@@ -312,13 +312,13 @@ const App: React.FC = () => {
     const currentUnread = patients.reduce((acc, p) => acc + (p.unreadCount || 0), 0);
 
     // 🔴 APP BADGE: Always sync badge with total unread count
-    if ('setAppBadge' in navigator) {
-      if (currentUnread > 0) {
-        (navigator as any).setAppBadge(currentUnread).catch(() => { });
-      } else {
-        (navigator as any).clearAppBadge().catch(() => { });
+    try {
+      if ('setAppBadge' in navigator && currentUnread > 0) {
+        (navigator as any).setAppBadge(currentUnread);
+      } else if ('clearAppBadge' in navigator && currentUnread === 0) {
+        (navigator as any).clearAppBadge();
       }
-    }
+    } catch { /* badge API not available */ }
 
     // How many NEW messages arrived since last check
     const newCount = currentUnread - prevUnreadCountRef.current;
@@ -338,16 +338,20 @@ const App: React.FC = () => {
           return timeB - timeA;
         })[0];
 
-      // 🔔 Notification — unique tag per message so iOS doesn't replace previous ones
-      if ('Notification' in window && Notification.permission === 'granted') {
+      // 🔔 Show notification via ServiceWorker (required for iOS PWA!)
+      // IMPORTANT: `new Notification()` does NOT work on iOS Safari PWA.
+      // Must use `registration.showNotification()` instead.
+      if ('serviceWorker' in navigator && Notification.permission === 'granted') {
         const notifBody = activePatient?.lastMessage || t('sent_message');
 
-        new Notification('Graft', {
-          body: notifBody,
-          icon: '/apple-touch-icon.png',
-          badge: '/favicon-96x96.png',
-          tag: `graft-msg-${Date.now()}`, // Unique per message — no replacement
-        });
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.showNotification('Graft', {
+            body: notifBody,
+            icon: '/apple-touch-icon.png',
+            badge: '/favicon-96x96.png',
+            tag: `graft-msg-${Date.now()}`,
+          });
+        }).catch((err) => console.warn('🔔 Notification error:', err));
       }
     }
 

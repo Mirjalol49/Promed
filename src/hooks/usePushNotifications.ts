@@ -62,16 +62,17 @@ export const usePushNotifications = (userId: string | null) => {
 
                 // Foreground message handler
                 onMessage(messaging, (payload) => {
-                    console.log('🔔 Foreground message:', payload);
+                    console.log('🔔 Foreground FCM message:', payload);
                     const data = payload.data || {};
-                    const title = data.patientName || payload.notification?.title || 'Graft';
                     const body = data.text || payload.notification?.body || 'Yangi xabar';
 
+                    // Use ServiceWorker showNotification (required for iOS PWA)
                     if (Notification.permission === 'granted') {
-                        new Notification(title, {
+                        swRegistration.showNotification('Graft', {
                             body,
                             icon: '/apple-touch-icon.png',
                             badge: '/favicon-96x96.png',
+                            tag: `graft-fcm-${Date.now()}`,
                         });
                     }
                 });
