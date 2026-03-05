@@ -1561,6 +1561,7 @@ const App: React.FC = () => {
       userName={accountName}
       onLogout={handleLogout}
       patients={patients}
+      onPatientSelect={handleSelectPatient}
     >
       <ErrorBoundary>
         <React.Suspense fallback={<DashboardLoader />}>

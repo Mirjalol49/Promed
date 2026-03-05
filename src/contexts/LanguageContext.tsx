@@ -249,6 +249,15 @@ export const translations = {
     toast_injection_updated: "Injection updated successfully",
     toast_injection_deleted: "Injection deleted successfully",
 
+    // PWA Reliability
+    pwa_setup_title: "Push Reliability (Must Read)",
+    pwa_setup_desc: "To ensure you get instant alerts even when the app is closed, please follow these steps:",
+    pwa_step_ios_title: "iOS (iPhone/iPad)",
+    pwa_step_ios_desc: "Tap the 'Share' icon and select 'Add to Home Screen'. Notifications only work from the home screen icon.",
+    pwa_step_android_title: "Android",
+    pwa_step_android_desc: "Long press the app icon > App Info > Battery > Set to 'Unrestricted'.",
+    pwa_step_bg_refresh: "Ensure 'Background App Refresh' is enabled in system settings.",
+
     // Validation Errors
     error_invalid_email: "Invalid email address",
     error_password_short: "Password must be at least 6 characters",
@@ -940,6 +949,15 @@ export const translations = {
     toast_injection_added: "Inyeksiya muvaffaqiyatli qo'shildi",
     toast_injection_updated: "Inyeksiya muvaffaqiyatli yangilandi",
     toast_injection_deleted: "Inyeksiya muvaffaqiyatli o'chirildi",
+
+    // PWA Reliability
+    pwa_setup_title: "Bildirishnomalar (Muhim)",
+    pwa_setup_desc: "Ilova yopiq bo'lsa ham xabarlarni vaqtida olish uchun quyidagilarni bajaring:",
+    pwa_step_ios_title: "iOS (iPhone/iPad)",
+    pwa_step_ios_desc: "Safari-da 'Ulashish' iconkasini bosing va 'Add to Home Screen' tanlang. Bildirishnomalar faqat asosiy ekrandagi iconka orqali ishlaydi.",
+    pwa_step_android_title: "Android",
+    pwa_step_android_desc: "Ilova belgisini bosib turing > App Info > Battery > 'Unrestricted' (Cheklovsiz) rejimiga qo'ying.",
+    pwa_step_bg_refresh: "Tizim sozlamalarida 'Background App Refresh' yoqilganligiga ishonch hosil qiling.",
 
     // Validation Errors
     error_invalid_email: "Noto'g'ri elektron pochta",
@@ -1686,6 +1704,15 @@ export const translations = {
     toast_injection_added: "Инъекция успешно добавлена",
     toast_injection_updated: "Инъекция успешно обновлена",
     toast_injection_deleted: "Инъекция успешно удалена",
+
+    // PWA Reliability
+    pwa_setup_title: "Настройка уведомлений",
+    pwa_setup_desc: "Чтобы получать уведомления, даже когда приложение закрыто, выполните следующие шаги:",
+    pwa_step_ios_title: "iOS (iPhone/iPad)",
+    pwa_step_ios_desc: "Нажмите иконку 'Поделиться' и выберите 'На экран Домой'. Уведомления работают только через иконку на главном экране.",
+    pwa_step_android_title: "Android",
+    pwa_step_android_desc: "Зажмите иконку приложения > О приложении > Батарея > Установите 'Не ограничено'.",
+    pwa_step_bg_refresh: "Убедитесь, что 'Обновление контента' включено в настройках системы.",
 
     // Validation Errors
     error_invalid_email: "Неверный адрес электронной почты",

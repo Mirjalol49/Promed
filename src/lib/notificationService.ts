@@ -22,6 +22,9 @@ export interface SystemAlert {
     created_at: string;
     viewed_at?: string;
     is_read?: boolean;
+    patientId?: string;
+    patientName?: string;
+    patientImage?: string;
 }
 
 /**
@@ -49,7 +52,10 @@ export const subscribeToSystemAlerts = (
                 is_active: data.is_active,
                 created_at: data.created_at,
                 viewed_at: data.viewed_at,
-                is_read: data.is_read
+                is_read: data.is_read,
+                patientId: data.patientId,
+                patientName: data.patientName,
+                patientImage: data.patientImage
             };
         });
         onUpdate(alerts);
@@ -171,7 +177,10 @@ export const subscribeToUserNotifications = (
                     viewed_at: data.viewed_at,
                     is_read: data.is_read,
                     // @ts-ignore
-                    category: data.category
+                    category: data.category,
+                    patientId: data.patientId,
+                    patientName: data.patientName,
+                    patientImage: data.patientImage
                 };
             })
             // Client-side filtering and sorting

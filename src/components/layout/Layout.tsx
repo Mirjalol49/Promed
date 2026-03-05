@@ -46,6 +46,7 @@ interface LayoutProps {
   userName: string;
   onLogout: () => void;
   patients?: Patient[];
+  onPatientSelect?: (id: string) => void;
 }
 
 const Layout: React.FC<LayoutProps> = ({
@@ -62,7 +63,8 @@ const Layout: React.FC<LayoutProps> = ({
   onToggleLock,
   userPassword,
   onUpdateProfile,
-  patients = []
+  patients = [],
+  onPatientSelect
 }) => {
   const { role, can } = useRBAC();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -249,7 +251,7 @@ const Layout: React.FC<LayoutProps> = ({
 
             {/* Right Section: Notification & Profile */}
             <div className="flex items-center space-x-2 md:space-x-4">
-              <NotificationBell />
+              <NotificationBell onPatientSelect={onPatientSelect} />
             </div>
           </div>
         </header>

@@ -382,11 +382,33 @@ exports.verifyOtp = onCall({ cors: true }, async (request) => {
 // --- BOT LOGIC ---
 
 bot.start((ctx) => {
-    ctx.reply(TEXTS.uz.welcome, Markup.inlineKeyboard([
-        [Markup.button.callback('🇺🇿 O\'zbekcha', 'lang_uz')],
-        [Markup.button.callback('🇷🇺 Русский', 'lang_ru')],
-        [Markup.button.callback('🇬🇧 English', 'lang_en')]
-    ]));
+    ctx.reply(TEXTS.uz.welcome + "\n\n🔄 *Hisobni almashtirish uchun:* /logout", {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([
+            [Markup.button.callback('🇺🇿 O\'zbekcha', 'lang_uz')],
+            [Markup.button.callback('🇷🇺 Русский', 'lang_ru')],
+            [Markup.button.callback('🇬🇧 English', 'lang_en')]
+        ])
+    });
+});
+
+// Logout / Reset Command
+bot.command('logout', async (ctx) => {
+    const userId = ctx.from.id.toString();
+    try {
+        const batch = db.batch();
+        const patients = await db.collection('patients').where('telegramChatId', '==', userId).get();
+        const profiles = await db.collection('profiles').where('telegramChatId', '==', userId).get();
+
+        patients.forEach(doc => batch.update(doc.ref, { telegramChatId: admin.firestore.FieldValue.delete() }));
+        profiles.forEach(doc => batch.update(doc.ref, { telegramChatId: admin.firestore.FieldValue.delete() }));
+
+        await batch.commit();
+        await ctx.reply("🚪 *Profildan chiqildi.*\nEndi tizim sizni tanimaydi. Qaytadan bog'lanish uchun /start ni bosing.", { parse_mode: 'Markdown' });
+    } catch (e) {
+        console.error("Logout error:", e);
+        ctx.reply("❌ Xatolik yuz berdi.");
+    }
 });
 
 // Join Request Auto-Approve (Keep existing logic)
@@ -472,6 +494,22 @@ bot.on('contact', async (ctx) => {
         const patientsRef = db.collection('patients');
         const profilesRef = db.collection('profiles');
 
+        // --- STEP A: CLEANUP OLD LINKS ---
+        // Ensure this Telegram ID is not stuck on any old or incorrect records
+        const [oldPatients, oldProfiles] = await Promise.all([
+            patientsRef.where("telegramChatId", "==", userId).get(),
+            profilesRef.where("telegramChatId", "==", userId).get()
+        ]);
+
+        if (!oldPatients.empty || !oldProfiles.empty) {
+            const cleanupBatch = db.batch();
+            oldPatients.forEach(d => cleanupBatch.update(d.ref, { telegramChatId: admin.firestore.FieldValue.delete() }));
+            oldProfiles.forEach(d => cleanupBatch.update(d.ref, { telegramChatId: admin.firestore.FieldValue.delete() }));
+            await cleanupBatch.commit();
+            console.log(`🧹 Cleaned up old links for Telegram ID: ${userId}`);
+        }
+
+        // --- STEP B: FIND NEW RECORDS ---
         const [patientSnap, profileSnap] = await Promise.all([
             patientsRef.where("phone", "in", variants).limit(1).get(),
             profilesRef.where("phone", "in", variants).limit(1).get()
@@ -909,7 +947,9 @@ exports.doctorEveningReminder = onSchedule({
                     tomorrowPatients.push({
                         name: patient.fullName || patient.name || "Bemor",
                         time,
-                        accountId: patient.account_id || patient.accountId || null
+                        accountId: patient.account_id || patient.accountId || null,
+                        patientId: docSnap.id,
+                        image: patient.profileImage || null
                     });
                 }
             }
@@ -942,32 +982,26 @@ exports.doctorEveningReminder = onSchedule({
         const createdAt = new Date().toISOString();
         const batch = db.batch();
 
-        // Build a clear summary
-        let notifContent = '';
-        if (tomorrowPatients.length === 1) {
-            const p = tomorrowPatients[0];
-            notifContent = `${p.name} — ertaga soat ${p.time} da keladi (${dateDisplay})`;
-        } else {
-            notifContent = `Ertaga ${tomorrowPatients.length} ta bemor keladi (${dateDisplay}):\n`;
-            tomorrowPatients.forEach((p, i) => {
-                notifContent += `${i + 1}. ${p.name} — ${p.time}\n`;
-            });
-            notifContent = notifContent.trim();
-        }
+        // 4. Write notification for each patient to each doctor/admin
+        tomorrowPatients.forEach(p => {
+            const title = `💉 Ertaga soat ${p.time}`;
 
-        // 4. Write notification for each doctor/admin
-        doctorIds.forEach(userId => {
-            const docRef = db.collection('notifications').doc();
-            batch.set(docRef, {
-                title: `📋 Ertangi jadval`,
-                content: notifContent,
-                type: 'info',
-                category: 'message',
-                userId,
-                is_active: true,
-                is_read: false,
-                created_at: createdAt,
-                viewed_at: null
+            doctorIds.forEach(userId => {
+                const docRef = db.collection('notifications').doc();
+                batch.set(docRef, {
+                    title: title,
+                    content: p.name,
+                    type: 'info',
+                    category: 'message',
+                    userId,
+                    is_active: true,
+                    is_read: false,
+                    created_at: createdAt,
+                    viewed_at: null,
+                    patientId: p.patientId,
+                    patientName: p.name,
+                    patientImage: p.image
+                });
             });
         });
 
@@ -1457,7 +1491,10 @@ exports.sendFCMNotification = onDocumentCreated({ document: "notifications/{noti
             },
             data: {
                 text: content || "Sizda yangi bildirishnoma bor",
-                type: "NOTIFICATION_SYNC"
+                type: "NOTIFICATION_SYNC",
+                patientId: data.patientId || "",
+                patientName: data.patientName || "",
+                patientImage: data.patientImage || ""
             }
         };
 

@@ -5,7 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { dismissNotification } from '../../lib/notificationService';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export const NotificationBell: React.FC<{ className?: string }> = ({ className = 'text-slate-600 hover:bg-slate-100 hover:text-promed-primary' }) => {
+export const NotificationBell: React.FC<{ className?: string, onPatientSelect?: (id: string) => void }> = ({ className = 'text-slate-600 hover:bg-slate-100 hover:text-promed-primary', onPatientSelect }) => {
     const { alerts, unreadCount, markAllAsRead } = useSystemAlert();
     const { t } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
@@ -28,6 +28,17 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
     };
 
     const getIcon = (alert: any) => {
+        // 0. Patient Image Support
+        if (alert.patientImage) {
+            return (
+                <img
+                    src={alert.patientImage}
+                    alt={alert.patientName || 'Patient'}
+                    className="w-full h-full object-cover rounded-lg"
+                />
+            );
+        }
+
         const text = ((alert.title || '') + ' ' + (alert.content || '')).toLowerCase();
 
         // 1. Billing / Payment / Finance
@@ -136,14 +147,23 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
                             ) : (
                                 <div className="divide-y divide-slate-50">
                                     {alerts.map((alert) => (
-                                        <div key={alert.id} className={`p-4 hover:bg-slate-50 transition-colors group cursor-default ${alert.is_active ? 'bg-blue-50/20' : ''}`}>
+                                        <div
+                                            key={alert.id}
+                                            onClick={() => {
+                                                if (alert.patientId && onPatientSelect) {
+                                                    onPatientSelect(alert.patientId);
+                                                    setIsOpen(false);
+                                                }
+                                            }}
+                                            className={`p-4 hover:bg-slate-50 transition-colors group ${alert.patientId && onPatientSelect ? 'cursor-pointer' : 'cursor-default'} ${alert.is_active ? 'bg-blue-50/20' : ''}`}
+                                        >
                                             <div className="flex gap-4">
-                                                <div className="p-2.5 bg-white rounded-xl shadow-sm border border-slate-100 flex-shrink-0 self-start group-hover:scale-110 transition-transform">
+                                                <div className="p-0.5 w-[44px] h-[44px] bg-white rounded-xl shadow-sm border border-slate-100 flex-shrink-0 self-start group-hover:scale-105 transition-transform overflow-hidden">
                                                     {getIcon(alert)}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-start gap-2">
-                                                        <h4 className="font-bold text-sm text-slate-900 mb-0.5 leading-tight">{alert.title}</h4>
+                                                        <h4 className="font-bold text-sm text-slate-900 mb-0.5 leading-tight truncate">{alert.title}</h4>
                                                         <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
