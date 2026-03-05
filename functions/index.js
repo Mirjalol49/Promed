@@ -1477,6 +1477,9 @@ exports.sendFCMNotification = onDocumentCreated({ document: "notifications/{noti
         const fcmToken = tokenData.token;
         if (!fcmToken) return;
 
+        const pid = data.patientId || "";
+        const customUrl = pid ? `/?patient=${pid}&view=chat` : "/";
+
         // CRITICAL PAYLOAD: iOS will ONLY wake a completely closed PWA
         const message = {
             token: fcmToken,
@@ -1486,13 +1489,17 @@ exports.sendFCMNotification = onDocumentCreated({ document: "notifications/{noti
             },
             webpush: {
                 headers: {
-                    "Urgency": "high"
+                    "Urgency": "high",
+                    "TTL": "86400"
+                },
+                fcm_options: {
+                    link: customUrl
                 }
             },
             data: {
                 text: content || "Sizda yangi bildirishnoma bor",
                 type: "NOTIFICATION_SYNC",
-                patientId: data.patientId || "",
+                patientId: pid,
                 patientName: data.patientName || "",
                 patientImage: data.patientImage || ""
             }

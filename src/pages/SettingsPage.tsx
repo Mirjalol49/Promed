@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Lock, Mail, User, LogOut, Shield, Eye, EyeOff, Volume2, VolumeX, Phone } from 'lucide-react';
+import { Camera, Lock, Mail, User, LogOut, Shield, Eye, EyeOff, Volume2, VolumeX, Phone, Smartphone } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { useToast } from '../contexts/ToastContext';
@@ -195,6 +195,23 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
         }
     };
 
+    const handleRepairPush = async () => {
+        try {
+            if ('serviceWorker' in navigator) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (let reg of regs) {
+                    await reg.unregister();
+                }
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                success(t('toast_success_title'), t('toast_repair_success'));
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        } catch (e: any) {
+            showError('Error', e.message);
+        }
+    };
+
     return (
         <div className="max-w-3xl mx-auto space-y-6 pb-20">
 
@@ -360,6 +377,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId }) => {
                                         <p className="text-[12px] text-slate-500 mt-0.5">{t('pwa_step_bg_refresh')}</p>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="mt-8 pt-6 border-t border-promed-primary/10">
+                                <h5 className="text-[13px] font-bold text-slate-800 mb-1">{t('pwa_repair_title')}</h5>
+                                <p className="text-[11px] text-slate-500 mb-4 leading-relaxed">{t('pwa_repair_desc')}</p>
+                                <motion.button whileTap={{ scale: 0.98 }}
+                                    onClick={handleRepairPush}
+                                    className="w-full py-3 bg-white border border-promed-primary/20 text-promed-primary rounded-xl text-xs font-bold hover:bg-promed-primary/5 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                >
+                                    <Smartphone size={14} />
+                                    {t('pwa_repair_btn')}
+                                </motion.button>
                             </div>
                         </div>
                     </div>

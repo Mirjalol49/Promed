@@ -257,6 +257,10 @@ export const translations = {
     pwa_step_android_title: "Android",
     pwa_step_android_desc: "Long press the app icon > App Info > Battery > Set to 'Unrestricted'.",
     pwa_step_bg_refresh: "Ensure 'Background App Refresh' is enabled in system settings.",
+    pwa_repair_title: "Repair Notifications",
+    pwa_repair_desc: "If you aren't receiving alerts, click below to reset the background worker and register again (Must be on Home Screen).",
+    pwa_repair_btn: "Repair & Sync Now",
+    toast_repair_success: "Background worker reset! App will reload.",
 
     // Validation Errors
     error_invalid_email: "Invalid email address",
@@ -958,6 +962,10 @@ export const translations = {
     pwa_step_android_title: "Android",
     pwa_step_android_desc: "Ilova belgisini bosib turing > App Info > Battery > 'Unrestricted' (Cheklovsiz) rejimiga qo'ying.",
     pwa_step_bg_refresh: "Tizim sozlamalarida 'Background App Refresh' yoqilganligiga ishonch hosil qiling.",
+    pwa_repair_title: "Bildirishnomalarni tuzatish",
+    pwa_repair_desc: "Agar bildirishnomalar kelmayotgan bo'lsa, xizmatni qayta sozlashingiz mumkin (Asosiy ekranda bo'lishi shart).",
+    pwa_repair_btn: "Hozir tuzatish",
+    toast_repair_success: "Tizim qayta sozlandi! Ilova qayta yuklanmoqda.",
 
     // Validation Errors
     error_invalid_email: "Noto'g'ri elektron pochta",
@@ -1713,6 +1721,10 @@ export const translations = {
     pwa_step_android_title: "Android",
     pwa_step_android_desc: "Зажмите иконку приложения > О приложении > Батарея > Установите 'Не ограничено'.",
     pwa_step_bg_refresh: "Убедитесь, что 'Обновление контента' включено в настройках системы.",
+    pwa_repair_title: "Исправить уведомления",
+    pwa_repair_desc: "Если вы не получаете оповещения, нажмите ниже, чтобы сбросить фоновую службу и зарегистрироваться снова.",
+    pwa_repair_btn: "Исправить сейчас",
+    toast_repair_success: "Фоновая служба сброшена! Приложение перезагружается.",
 
     // Validation Errors
     error_invalid_email: "Неверный адрес электронной почты",
