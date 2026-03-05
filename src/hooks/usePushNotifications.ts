@@ -17,7 +17,16 @@ import { doc, setDoc } from 'firebase/firestore';
 
 const VAPID_KEY = 'BDx38ssfDhZj2vgnTSuGNPg9rkYifrHw4gSABIVg0ztUEivhusbPKacJC5prsaW_4GuaitbpBq51yzK7V5w-wfs';
 
+import { useState } from 'react';
+
 export const usePushNotifications = (userId: string | null) => {
+    const [isPushSupported, setIsPushSupported] = useState<boolean>(true);
+    const [permission, setPermission] = useState<NotificationPermission | null>(
+        typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : null
+    );
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
     const registeredRef = useRef(false);
     const attemptedRef = useRef(false);
 
@@ -85,20 +94,34 @@ export const usePushNotifications = (userId: string | null) => {
     }, [userId]);
 
     const requestAndRegister = useCallback(async () => {
-        if (attemptedRef.current) return;
+        if (attemptedRef.current) return false;
         attemptedRef.current = true;
+        setIsLoading(true);
+        setError(null);
 
         try {
-            if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-
-            const permission = await Notification.requestPermission();
-            console.log('🔔 Permission:', permission);
-
-            if (permission === 'granted') {
-                await registerPushToken();
+            if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+                setIsPushSupported(false);
+                setIsLoading(false);
+                return false;
             }
+
+            const perm = await Notification.requestPermission();
+            console.log('🔔 Permission:', perm);
+            setPermission(perm);
+
+            if (perm === 'granted') {
+                await registerPushToken();
+                setIsLoading(false);
+                return true;
+            }
+            setIsLoading(false);
+            return false;
         } catch (err) {
             console.error('🔔 Permission error:', err);
+            setError((err as Error).message || 'Server xatosi');
+            setIsLoading(false);
+            return false;
         }
     }, [registerPushToken]);
 
@@ -106,6 +129,9 @@ export const usePushNotifications = (userId: string | null) => {
         if (!userId) return;
         if (typeof window === 'undefined') return;
         if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+        isSupported().then(supported => {
+            setIsPushSupported(supported);
+        }).catch(() => setIsPushSupported(false));
 
         // Already granted → register immediately
         if (Notification.permission === 'granted') {
@@ -134,6 +160,14 @@ export const usePushNotifications = (userId: string | null) => {
             document.removeEventListener('touchstart', handleFirstInteraction);
         };
     }, [userId, registerPushToken, requestAndRegister]);
+
+    return {
+        isSupported: isPushSupported,
+        permission,
+        isLoading,
+        error,
+        requestPermission: requestAndRegister
+    };
 };
 
 function getPlatform(): string {

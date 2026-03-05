@@ -23,6 +23,7 @@ import { ProfileAvatar } from './ProfileAvatar';
 import { useAccount } from '../../contexts/AccountContext';
 import { NotificationBell } from './NotificationBell';
 import { useSystemAlert } from '../../contexts/SystemAlertContext';
+import { SupportCard } from './SupportCard';
 import { useRBAC } from '../../hooks/useRBAC';
 import { SCOPES } from '../../config/permissions';
 import lockIcon from '../../assets/images/lock.png';
@@ -154,7 +155,7 @@ const Layout: React.FC<LayoutProps> = ({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 mt-2 px-4 overflow-y-auto no-scrollbar space-y-1 text-slate-900">
+        <nav className="flex-1 mt-2 px-4 overflow-y-auto no-scrollbar scroll-smooth space-y-1 text-slate-900">
 
 
           {/* Primary — Daily Use */}
@@ -173,6 +174,9 @@ const Layout: React.FC<LayoutProps> = ({
               {can(SCOPES.canViewNotes) && <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />}
             </div>
           )}
+
+          {/* Help & Support Card */}
+          <SupportCard />
         </nav>
 
         {/* Sidebar Footer with Profile & Lock */}
@@ -293,7 +297,7 @@ const Layout: React.FC<LayoutProps> = ({
               </div>
 
               {/* Drawer Nav */}
-              <div className="flex-1 overflow-y-auto py-4 px-4 space-y-1 no-scrollbar">
+              <div className="flex-1 overflow-y-auto scroll-smooth py-4 px-4 space-y-1 no-scrollbar">
 
 
                 {/* Primary */}
@@ -312,6 +316,9 @@ const Layout: React.FC<LayoutProps> = ({
                     {can(SCOPES.canViewNotes) && <NavItem page="NOTES" icon={StickyNote} label={t('notes')} />}
                   </div>
                 )}
+
+                {/* Help & Support Card - Mobile */}
+                <SupportCard />
               </div>
 
               {/* Drawer Footer */}

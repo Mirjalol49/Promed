@@ -72,8 +72,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {/* Tour Guide */}
             <TourGuide />
 
-
-
             <div className="space-y-10 p-2 sm:p-4 w-full">
                 {/* Vitals Strip */}
                 <div className="space-y-4 w-full">

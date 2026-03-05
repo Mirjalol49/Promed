@@ -245,18 +245,103 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
     if (profileDoc.exists()) {
       profileData = profileDoc.data();
-      if (profileData.status === 'banned' || profileData.status === 'frozen') {
-        const msg = profileData.status === 'banned' ? t('login_banned_msg') : t('login_frozen_msg');
-        setError(msg);
-        setShake(true);
-        playError();
-        const { signOut } = await import('firebase/auth');
-        await signOut(auth);
 
-        setShowSkeleton(false);
-        setLoading(false);
-        return;
+      // Auto-Heal: If this is a Staff member, we ALWAYS fetch their latest clinic accountId
+      // from the 'staff' collection so they aren't thrown into an empty dashboard or an old clinic.
+      const isPrimaryRole = profileData.role === 'admin' || profileData.role === 'doctor';
+
+      if (!isPrimaryRole) {
+        console.log("🛠️ Staff profile logged in. Syncing latest accountId from 'staff' collection...");
+        try {
+          const { collection, query, where, getDocs, setDoc } = await import('firebase/firestore');
+          const staffRef = collection(db, 'staff');
+
+          // Use the profile's phone if the state 'phone' is still default/empty (Email Login case)
+          const lookupPhone = (profileData.phone || profileData.phoneNumber || phone).replace(/\s/g, '');
+
+          let q = query(staffRef, where('phone', '==', lookupPhone));
+          let querySnapshot = await getDocs(q);
+
+          if (querySnapshot.empty && !lookupPhone.startsWith('+')) {
+            q = query(staffRef, where('phone', '==', '+998' + lookupPhone));
+            querySnapshot = await getDocs(q);
+          }
+
+          if (!querySnapshot.empty) {
+            const staffData = querySnapshot.docs[0].data();
+            if (staffData.accountId) {
+              console.log("✅ Healed missing accountId for staff:", staffData.accountId);
+              profileData.accountId = staffData.accountId;
+              profileData.account_id = staffData.accountId;
+
+              await setDoc(doc(db, 'profiles', user.uid), {
+                accountId: staffData.accountId,
+                account_id: staffData.accountId
+              }, { merge: true });
+            }
+          } else {
+            console.warn("❌ Could not heal staff member: not found in staff collection.");
+          }
+        } catch (e) {
+          console.error("Staff auto-heal failed:", e);
+        }
       }
+    } else {
+      console.log("⚠️ Profile not found in 'profiles' or 'users'. Checking 'staff' collection by phone...");
+      const { collection, query, where, getDocs, setDoc } = await import('firebase/firestore');
+
+      const staffRef = collection(db, 'staff');
+      const lookupPhone = phone.replace(/\s/g, '');
+
+      let q = query(staffRef, where('phone', '==', lookupPhone));
+      let querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty && !lookupPhone.startsWith('+')) {
+        q = query(staffRef, where('phone', '==', '+998' + lookupPhone));
+        querySnapshot = await getDocs(q);
+      }
+
+      if (!querySnapshot.empty) {
+        console.log("✅ Found Staff Document for newly logged in user!");
+        const staffDoc = querySnapshot.docs[0];
+        const staffData = staffDoc.data();
+
+        profileData = {
+          role: staffData.role || 'staff',
+          accountId: staffData.accountId,
+          account_id: staffData.accountId,
+          fullName: staffData.fullName,
+          phone: staffData.phone,
+          status: 'active'
+        };
+
+        try {
+          await setDoc(doc(db, 'profiles', user.uid), {
+            ...profileData,
+            created_at: new Date().toISOString(),
+            migrated_from_staff: true
+          }, { merge: true });
+
+          await setDoc(staffDoc.ref, { uid: user.uid }, { merge: true });
+        } catch (e) {
+          console.error("Staff to Profile Migration Failed:", e);
+        }
+      } else {
+        console.warn("❌ Could NOT find any staff matching phone:", phone);
+      }
+    }
+
+    if (profileData.status === 'banned' || profileData.status === 'frozen') {
+      const msg = profileData.status === 'banned' ? t('login_banned_msg') : t('login_frozen_msg');
+      setError(msg);
+      setShake(true);
+      playError();
+      const { signOut } = await import('firebase/auth');
+      await signOut(auth);
+
+      setShowSkeleton(false);
+      setLoading(false);
+      return;
     }
 
     playUnlock();
@@ -265,10 +350,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       const targetRole = profileData.role || 'doctor';
       const isPrimaryTenant = targetRole === 'admin' || targetRole === 'doctor';
 
-      // CRITICAL FIX: Primary tenants (Owners) MUST ONLY be tied to their own UIDs.
-      // This enforces isolation across clinics even if browser localStorage is contaminated.
       let targetAccountId = profileData.account_id || profileData.accountId;
-      if (isPrimaryTenant) {
+      if (!targetAccountId && isPrimaryTenant) {
         targetAccountId = 'account_' + user.uid;
       } else if (!targetAccountId) {
         // Fallback legacy behavior

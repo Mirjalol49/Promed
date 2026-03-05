@@ -184,7 +184,7 @@ service cloud.firestore {
     // Staff
     // Note: imageUrl is strictly optional and not required to add staff.
     match /staff/{staffId} {
-      allow read: if isAuthenticated() && (isAdminOrDoctor() || getRole() == 'viewer' || getRole() == 'nurse') && (resource == null || belongsToAccount(resource));
+      allow read: if isAuthenticated() && (isAdminOrDoctor() || getRole() == 'viewer' || getRole() == 'nurse' || getRole() == 'staff') && (resource == null || belongsToAccount(resource));
       allow write: if isAuthenticated() && isAdminOrDoctor() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));
     }
 

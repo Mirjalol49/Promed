@@ -43,7 +43,10 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const stored = getStored();
 
-  const [accountId, setAccountId] = useState<string>(stored?.id || '');
+  // FIX: If stored.id is missing but we know it's a primary tenant, auto-infer it instead of waiting for DB
+  const inferAccountId = stored ? (stored.id || ((stored.role === 'admin' || stored.role === 'doctor') ? `account_${stored.userId}` : '')) : '';
+
+  const [accountId, setAccountId] = useState<string>(inferAccountId);
   const [userId, setUserId] = useState<string>(stored?.userId || '');
   const [accountName, setAccountName] = useState<string>(stored?.name || '');
   const [userEmail, setUserEmail] = useState<string>(stored?.email || '');
@@ -104,14 +107,10 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
 
           let remoteAccountId = data.account_id || data.accountId;
 
-          if (isPrimaryTenant) {
+          // WARNING: We must NOT forcefully rewrite remoteAccountId because older accounts 
+          // might not have 'account_' prefixes. We just use what's in the DB.
+          if (!remoteAccountId && isPrimaryTenant) {
             remoteAccountId = `account_${userId}`;
-
-            // Self-heal the database silently if it was polluted
-            if (data.account_id !== remoteAccountId) {
-              const { updateDoc } = await import('firebase/firestore');
-              updateDoc(docRef, { account_id: remoteAccountId, accountId: remoteAccountId }).catch(() => { });
-            }
           }
 
           if (remoteAccountId && remoteAccountId !== accountId) {
@@ -139,6 +138,10 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
         }
       } else {
         console.warn('⚠️ AccountContext: Profile not found in Firestore. Ignoring to avoid fresh-registration logouts.');
+        if ((role === 'admin' || role === 'doctor') && userId && !accountId) {
+          console.log("🛠️ AccountContext: Self-healing missing accountId for Primary Tenant.");
+          setAccountId(`account_${userId}`);
+        }
       }
     } catch (e) {
       console.error('Error refreshing profile:', e);

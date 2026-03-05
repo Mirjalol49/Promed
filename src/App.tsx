@@ -357,7 +357,7 @@ const App: React.FC = () => {
     }
 
     // Compare timestamps: find patients whose lastMessageTimestamp CHANGED
-    if (view !== 'MESSAGES' && !loading) {
+    if (!loading) {
       const prev = prevTimestampsRef.current;
 
       for (const p of patients) {
@@ -368,27 +368,32 @@ const App: React.FC = () => {
 
         // New timestamp that's different from last known = new message!
         if (ts !== prevTs && (p.unreadCount || 0) > 0) {
-          console.log(`🔔 New message from ${p.fullName}: "${p.lastMessage}" (ts: ${ts})`);
+          // If we are currently IN THE CHAT with this exact patient AND app is focused, skip notification
+          const isActiveChat = view === 'MESSAGES' && selectedPatientId === p.id && document.hasFocus();
 
-          playNotification();
+          if (!isActiveChat) {
+            console.log(`🔔 New message from ${p.fullName}: "${p.lastMessage}" (ts: ${ts})`);
 
-          // 🔔 Show banner notification
-          if ('Notification' in window && Notification.permission === 'granted') {
-            const notifBody = p.lastMessage || t('sent_message');
-            const patientId = p.id;
+            playNotification();
 
-            const notif = new Notification('Graft', {
-              body: notifBody,
-              icon: '/apple-touch-icon.png',
-              tag: `graft-msg-${Date.now()}-${patientId}`,
-            });
+            // 🔔 Show banner notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+              const notifBody = p.lastMessage || t('sent_message');
+              const patientId = p.id;
 
-            // 📱 Tap notification → go directly to that patient's chat
-            notif.onclick = () => {
-              window.focus();
-              setNotificationPatientId(patientId);
-              setView('MESSAGES');
-            };
+              const notif = new Notification('Graft', {
+                body: notifBody,
+                icon: '/apple-touch-icon.png',
+                tag: `graft-msg-${Date.now()}-${patientId}`,
+              });
+
+              // 📱 Tap notification → go directly to that patient's chat
+              notif.onclick = () => {
+                window.focus();
+                setNotificationPatientId(patientId);
+                setView('MESSAGES');
+              };
+            }
           }
         }
       }
@@ -400,7 +405,7 @@ const App: React.FC = () => {
       if (p.lastMessageTimestamp) updated[p.id] = p.lastMessageTimestamp;
     });
     prevTimestampsRef.current = updated;
-  }, [patients, view, loading, playNotification, t]);
+  }, [patients, view, loading, selectedPatientId, playNotification, t]);
 
   // Handle Supabase Auth Events (especially password recovery)
   // MOVED TO AuthContext - skipping specific listener here for now or assuming AuthContext handles it.
@@ -643,8 +648,8 @@ const App: React.FC = () => {
               .filter(p => !pendingDeletes.has(p.id))
               .map(p => ({
                 ...p,
-                injections: (p.injections || []).filter(inj => !pendingDeletes.has(inj.id)),
-                afterImages: (p.afterImages || []).filter(img => !pendingDeletes.has(img.id))
+                injections: Array.isArray(p.injections) ? p.injections.filter(inj => !pendingDeletes.has(inj?.id)) : [],
+                afterImages: Array.isArray(p.afterImages) ? p.afterImages.filter(img => !pendingDeletes.has(img?.id)) : []
               }));
 
             const optimisticPatients = prev.filter(p =>
