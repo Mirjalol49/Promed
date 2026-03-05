@@ -87,14 +87,25 @@ function broadcastToApp(messageType, payload) {
     }
 }
 
-// 3. The Interceptor: Handle the silent data payload
-messaging.onBackgroundMessage((payload) => {
-    console.log('[ServiceWorker] Intercepted silent Data Message:', payload);
-    const data = payload.data || {};
+// 3. The Interceptor: Handle the silent data payload natively
+self.addEventListener('push', (event) => {
+    if (!event.data) return;
 
-    const patientName = data.patientName || 'Medical Alert';
-    const messageText = data.text || 'Yangi xabar qabul qilindi';
-    const patientId = data.patientId || null;
+    let payload = {};
+    try {
+        payload = event.data.json();
+    } catch (e) {
+        return;
+    }
+
+    console.log('[ServiceWorker] Intercepted Push Event:', payload);
+
+    const d = payload.data || {};
+    const n = payload.notification || {};
+
+    const patientName = d.patientName || n.title || 'Medical Alert';
+    const messageText = d.text || n.body || 'Yangi xabar qabul qilindi';
+    const patientId = d.patientId || null;
 
     // Determine target URL for click handling
     const customUrl = patientId ? `/?patient=${patientId}&view=chat` : `/`;
@@ -104,7 +115,7 @@ messaging.onBackgroundMessage((payload) => {
         body: messageText,
         icon: '/apple-touch-icon.png',
         badge: '/favicon-96x96.png',
-        tag: `graft-msg-${patientId || 'general'}`, // Prevent duplicate notifications
+        tag: `graft-msg-${patientId || Date.now()}`, // Prevent duplicate notifications
         renotify: true, // Re-alert even with same tag
         data: { url: customUrl },
     };
@@ -115,20 +126,26 @@ messaging.onBackgroundMessage((payload) => {
         notificationOptions.requireInteraction = true;
     }
 
-    // Chain: Save -> Broadcast -> Render Notification
-    const promiseChain = saveToIndexedDB(data).then((savedData) => {
-        // Broadcast to foreground app if open
-        broadcastToApp('BACKGROUND_DATA_SYNC', savedData);
+    // CRITICAL FIX FOR iOS LOCKED STATE:
+    // When an iPhone is locked, its Data Protection prevents IDB writes from completing.
+    // So we MUST immediately request the OS to show the notification without waiting for IDB!
+    const notificationPromise = self.registration.showNotification(patientName, notificationOptions);
 
-        // Trigger OS notification
-        return self.registration.showNotification(patientName, notificationOptions);
-    }).catch((err) => {
-        console.error('[ServiceWorker] Error in background message handler:', err);
-        // Still try to show notification even if save fails
-        return self.registration.showNotification(patientName, notificationOptions);
-    });
+    const dataTask = saveToIndexedDB(d)
+        .then(savedData => {
+            broadcastToApp('BACKGROUND_DATA_SYNC', savedData);
+        })
+        .catch(err => {
+            console.warn('[ServiceWorker] Array write IDB failed (expected on iOS lock):', err);
+        });
 
-    return promiseChain;
+    // Provide a small timeout for IDB to prevent SW hang
+    const safeDataTask = Promise.race([
+        dataTask,
+        new Promise(resolve => setTimeout(resolve, 3000))
+    ]);
+
+    event.waitUntil(Promise.all([notificationPromise, safeDataTask]));
 });
 
 // 4. Custom Click Logic (Focus or New Window)
@@ -166,20 +183,5 @@ self.addEventListener('notificationclick', (event) => {
     event.waitUntil(promiseChain);
 });
 
-// 5. Handle push events directly (fallback for when FCM compat doesn't trigger)
-self.addEventListener('push', (event) => {
-    // Only handle if FCM compat didn't already handle it
-    if (!event.data) return;
-
-    try {
-        const payload = event.data.json();
-        console.log('[ServiceWorker] Raw push event:', payload);
-
-        // If this has a notification key, FCM compat will handle it
-        // If it's data-only, our onBackgroundMessage handles it
-        // This is a safety net
-    } catch (e) {
-        console.warn('[ServiceWorker] Could not parse push event data:', e);
-    }
-});
+// 5. Redundant push fallback removed (Handled comprehensively above)
 

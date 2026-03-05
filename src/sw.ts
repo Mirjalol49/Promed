@@ -73,34 +73,61 @@ function broadcastToApp(type: string, payload: unknown) {
     }
 }
 
-// ===== 5. Background messages =====
-messaging.onBackgroundMessage((payload: any) => {
-    console.log('[SW] BG msg:', payload);
+// ===== 5. Background / Push messages explicitly handled for iOS/PWA reliability =====
+self.addEventListener('push', (event) => {
+    if (!event.data) return;
+
+    let payload: any = {};
+    try {
+        payload = event.data.json();
+    } catch (e) {
+        return;
+    }
+
+    console.log('[SW] Push Event intercepted:', payload);
+
     const d = payload.data || {};
-    const name = d.patientName || 'Medical Alert';
-    const text = d.text || 'Yangi xabar qabul qilindi';
+    const n = payload.notification || {};
+
+    const name = d.patientName || n.title || 'Graft';
+    const text = d.text || n.body || 'Yangi xabar qabul qilindi';
     const pid = d.patientId || null;
     const url = pid ? `/?patient=${pid}&view=chat` : '/';
 
     const opts: any = {
-        body: `${name}: ${text}`,
+        body: text, // Don't prepend name because we use name as the title
         icon: '/apple-touch-icon.png',
         badge: '/favicon-96x96.png',
-        tag: `graft-${pid || 'gen'}`,
+        tag: `graft-${pid || Date.now()}`,
         renotify: true,
         data: { url },
     };
+
     if (!isIOS) {
         opts.vibrate = [500, 110, 500, 110, 450, 110, 200, 110, 170, 40, 450, 110, 200, 110, 170, 40, 500];
         opts.requireInteraction = true;
     }
 
-    return saveToIndexedDB(d)
+    // CRITICAL FIX: To ensure notifications deliver reliably on locked iOS devices,
+    // we must immediately call showNotification without blocking on IndexedDB,
+    // which can hang when the iOS device is locked (Data Protection enabled).
+    const notificationPromise = self.registration.showNotification(name, opts);
+
+    const dataTask = saveToIndexedDB(d)
         .then(saved => {
             broadcastToApp('BACKGROUND_DATA_SYNC', saved);
-            return self.registration.showNotification('Graft', opts);
         })
-        .catch(() => self.registration.showNotification('Graft', opts));
+        .catch(err => {
+            console.warn('[SW] IDB save failed (iOS locked state?):', err);
+        });
+
+    // Provide a 3-second timeout for IDB to prevent the SW from hanging if IDB is locked
+    const safeDataTask = Promise.race([
+        dataTask,
+        new Promise(resolve => setTimeout(resolve, 3000))
+    ]);
+
+    event.waitUntil(Promise.all([notificationPromise, safeDataTask]));
 });
 
 // ===== 6. Click handler =====
@@ -122,8 +149,4 @@ self.addEventListener('notificationclick', (event) => {
     );
 });
 
-// ===== 7. Push safety net =====
-self.addEventListener('push', (event) => {
-    if (!event.data) return;
-    try { console.log('[SW] Push:', event.data.json()); } catch { /* noop */ }
-});
+// ===== 7. Push safety net removed (Redundant since we explicitly catch push above) =====
