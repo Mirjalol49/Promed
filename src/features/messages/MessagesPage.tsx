@@ -32,7 +32,8 @@ import chatAnimation from '../../assets/images/mascots/chat.json';
 
 interface MessagesPageProps {
     patients?: Patient[];
-    isVisible?: boolean; // NEW
+    isVisible?: boolean;
+    initialPatientId?: string | null;
 }
 
 interface Message {
@@ -69,14 +70,21 @@ interface Message {
 import { useAccount } from '../../contexts/AccountContext';
 import { useAppSounds } from '../../hooks/useAppSounds';
 
-export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVisible = true }) => {
+export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVisible = true, initialPatientId = null }) => {
     const { t, language } = useLanguage();
     const { accountId, userId } = useAccount(); // Get auth context
     const { playNotification } = useAppSounds();
     const [permissionError, setPermissionError] = useState(false); // New state for rule debugging
     const prevMessageCountRef = useRef<number>(0); // Track message count for notification sound
 
-    const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+    const [selectedPatientId, setSelectedPatientId] = useState<string | null>(initialPatientId);
+
+    // Auto-select patient from notification tap
+    useEffect(() => {
+        if (initialPatientId && initialPatientId !== selectedPatientId) {
+            setSelectedPatientId(initialPatientId);
+        }
+    }, [initialPatientId]);
     const [messageInput, setMessageInput] = useState('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [searchText, setSearchText] = useState('');

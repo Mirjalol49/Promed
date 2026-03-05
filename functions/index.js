@@ -762,6 +762,119 @@ exports.dailyReminder = onSchedule({
         console.error("Reminder Job Error:", error);
     }
 });
+
+// 2b. Doctor Evening Reminder — 9 PM night before injection
+// Sends in-app notification to all doctors/admins about tomorrow's patients
+exports.doctorEveningReminder = onSchedule({
+    schedule: "0 21 * * *", // 9:00 PM every day
+    timeZone: "Asia/Tashkent",
+    region: "us-central1"
+}, async (event) => {
+    console.log("🌙 Running Doctor Evening Reminder (9 PM)...");
+
+    try {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+        // Format display date: DD.MM.YYYY
+        const d = new Date(tomorrowStr);
+        const dateDisplay = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+
+        console.log(`📅 Checking injections for: ${tomorrowStr} (${dateDisplay})`);
+
+        // 1. Find all patients with injections tomorrow
+        const patientsSnap = await db.collection('patients').get();
+        const tomorrowPatients = [];
+
+        patientsSnap.forEach(docSnap => {
+            const patient = docSnap.data();
+            if (patient.injections && Array.isArray(patient.injections)) {
+                const injectionDue = patient.injections.find(inj =>
+                    inj.status === 'Scheduled' &&
+                    inj.date &&
+                    inj.date.startsWith(tomorrowStr)
+                );
+
+                if (injectionDue) {
+                    let time = "09:00";
+                    if (injectionDue.date.includes('T')) {
+                        time = injectionDue.date.split('T')[1].substring(0, 5);
+                    }
+
+                    tomorrowPatients.push({
+                        name: patient.fullName || patient.name || "Bemor",
+                        time,
+                        accountId: patient.account_id || patient.accountId || null
+                    });
+                }
+            }
+        });
+
+        if (tomorrowPatients.length === 0) {
+            console.log("✅ No injections tomorrow. No reminders needed.");
+            return;
+        }
+
+        console.log(`📋 Found ${tomorrowPatients.length} patient(s) with injections tomorrow.`);
+
+        // 2. Get all doctor/admin profiles to notify
+        const profilesSnap = await db.collection('profiles').get();
+        const doctorIds = [];
+
+        profilesSnap.forEach(docSnap => {
+            const profile = docSnap.data();
+            if (profile.role === 'admin' || profile.role === 'doctor') {
+                doctorIds.push(docSnap.id);
+            }
+        });
+
+        if (doctorIds.length === 0) {
+            console.warn("⚠️ No doctor/admin profiles found.");
+            return;
+        }
+
+        // 3. Create notification content
+        const createdAt = new Date().toISOString();
+        const batch = db.batch();
+
+        // Build a clear summary
+        let notifContent = '';
+        if (tomorrowPatients.length === 1) {
+            const p = tomorrowPatients[0];
+            notifContent = `${p.name} — ertaga soat ${p.time} da keladi (${dateDisplay})`;
+        } else {
+            notifContent = `Ertaga ${tomorrowPatients.length} ta bemor keladi (${dateDisplay}):\n`;
+            tomorrowPatients.forEach((p, i) => {
+                notifContent += `${i + 1}. ${p.name} — ${p.time}\n`;
+            });
+            notifContent = notifContent.trim();
+        }
+
+        // 4. Write notification for each doctor/admin
+        doctorIds.forEach(userId => {
+            const docRef = db.collection('notifications').doc();
+            batch.set(docRef, {
+                title: `📋 Ertangi jadval`,
+                content: notifContent,
+                type: 'info',
+                category: 'message',
+                userId,
+                is_active: true,
+                is_read: false,
+                created_at: createdAt,
+                viewed_at: null
+            });
+        });
+
+        await batch.commit();
+        console.log(`✅ Sent evening reminders to ${doctorIds.length} doctor(s) about ${tomorrowPatients.length} patient(s).`);
+
+    } catch (error) {
+        console.error("❌ Doctor Evening Reminder Error:", error);
+    }
+});
+
 // 3. Notification Sender (Real-time Firestore Trigger)
 // Listens for new documents in 'outbound_messages' and sends them via Telegram.
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");

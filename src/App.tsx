@@ -266,6 +266,7 @@ const App: React.FC = () => {
   const [selectedInjectionId, setSelectedInjectionId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightTransactionId, setHighlightTransactionId] = useState<string | null>(null);
+  const [notificationPatientId, setNotificationPatientId] = useState<string | null>(null);
   // Initialize lock state from localStorage to persist across refreshes
   const [isLocked, setIsLocked] = useState(() => {
     const savedLockState = localStorage.getItem('appLockState');
@@ -297,10 +298,32 @@ const App: React.FC = () => {
       setResetCode(oobCode);
     }
 
-    // Request Notification Permission - REMOVED: Requires user gesture
-    // if ('Notification' in window && Notification.permission !== 'granted') {
-    //   Notification.requestPermission();
-    // }
+    // 📱 Handle notification tap → navigate to patient chat
+    const urlParams = new URLSearchParams(window.location.search);
+    const notifPatient = urlParams.get('patient');
+    const notifView = urlParams.get('view');
+    if (notifPatient && notifView === 'chat') {
+      console.log('📱 Notification deep link → patient:', notifPatient);
+      setNotificationPatientId(notifPatient);
+      setView('MESSAGES');
+      // Clean URL without page reload
+      window.history.replaceState({}, '', '/');
+    }
+
+    // Listen for SW NAVIGATE broadcasts (when notification tapped while app is open)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data?.type === 'NAVIGATE' && event.data?.payload?.url) {
+          const url = new URL(event.data.payload.url, window.location.origin);
+          const pid = url.searchParams.get('patient');
+          if (pid) {
+            console.log('📱 SW Navigate → patient:', pid);
+            setNotificationPatientId(pid);
+            setView('MESSAGES');
+          }
+        }
+      });
+    }
   }, []);
 
   // 🔥 GLOBAL NOTIFICATION LISTENER + APP BADGE
@@ -351,11 +374,21 @@ const App: React.FC = () => {
 
           // 🔔 Show banner notification
           if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Graft', {
-              body: p.lastMessage || t('sent_message'),
+            const notifBody = p.lastMessage || t('sent_message');
+            const patientId = p.id;
+
+            const notif = new Notification('Graft', {
+              body: notifBody,
               icon: '/apple-touch-icon.png',
-              tag: `graft-msg-${Date.now()}-${p.id}`,
+              tag: `graft-msg-${Date.now()}-${patientId}`,
             });
+
+            // 📱 Tap notification → go directly to that patient's chat
+            notif.onclick = () => {
+              window.focus();
+              setNotificationPatientId(patientId);
+              setView('MESSAGES');
+            };
           }
         }
       }
@@ -1427,7 +1460,7 @@ const App: React.FC = () => {
 
         {view === 'MESSAGES' && (
           <PageTransition key="messages">
-            <MessagesPage patients={patients} isVisible={view === 'MESSAGES'} />
+            <MessagesPage patients={patients} isVisible={view === 'MESSAGES'} initialPatientId={notificationPatientId} />
           </PageTransition>
         )}
       </AnimatePresence>

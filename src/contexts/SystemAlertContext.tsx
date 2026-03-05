@@ -113,6 +113,15 @@ export const SystemAlertProvider: React.FC<{ children: ReactNode }> = ({ childre
                         console.log("🔔 Ding! Fresh Alert:", currentActive.title);
                         playNotification();
                         playedSoundIds.current.add(currentActive.id);
+
+                        // 📱 Also show phone banner notification
+                        if ('Notification' in window && Notification.permission === 'granted') {
+                            new Notification('Graft', {
+                                body: currentActive.content || currentActive.title,
+                                icon: '/apple-touch-icon.png',
+                                tag: `graft-alert-${currentActive.id}`,
+                            });
+                        }
                     } else {
                         console.log("🔕 Silent (Old/Stale or Already Played):", currentActive.title);
                     }
