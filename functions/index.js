@@ -470,29 +470,54 @@ bot.on('contact', async (ctx) => {
         }
 
         const patientsRef = db.collection('patients');
-        const snapshot = await patientsRef.where("phone", "in", variants).limit(1).get();
+        const profilesRef = db.collection('profiles');
 
-        if (snapshot.empty) {
+        const [patientSnap, profileSnap] = await Promise.all([
+            patientsRef.where("phone", "in", variants).limit(1).get(),
+            profilesRef.where("phone", "in", variants).limit(1).get()
+        ]);
+
+        if (patientSnap.empty && profileSnap.empty) {
             return ctx.reply(TEXTS[lang].not_found);
         }
 
-        const patientDoc = snapshot.docs[0];
-        const patientData = patientDoc.data();
-        await patientDoc.ref.update({
-            telegramChatId: userId.toString(),
-            botLanguage: lang
-        });
+        let isLinked = false;
 
-        // Robust Name Extraction
-        const patientName = patientData.fullName || patientData.name || patientData.full_name ||
-            (patientData.firstName ? `${patientData.firstName} ${patientData.lastName || ''}` : "Bemor");
-        await ctx.reply(TEXTS[lang].success(patientName), { parse_mode: 'Markdown' });
+        // Link Patient
+        if (!patientSnap.empty) {
+            const patientDoc = patientSnap.docs[0];
+            const patientData = patientDoc.data();
+            await patientDoc.ref.update({
+                telegramChatId: userId.toString(),
+                botLanguage: lang
+            });
+            isLinked = true;
 
-        // Revised Keyboard: Check Schedule + Write to Doctor
-        await ctx.reply("👇", Markup.keyboard([
-            [TEXTS[lang].check_btn],
-            [TEXTS[lang].chat_btn]
-        ]).resize());
+            const pName = patientData.fullName || patientData.name || patientData.full_name || "Bemor";
+            await ctx.reply(`✅ Bemorni (Patient) profili bog'landi: **${pName}**`, { parse_mode: 'Markdown' });
+        }
+
+        // Link Staff/Admin (Professional Fallback support)
+        if (!profileSnap.empty) {
+            const profileDoc = profileSnap.docs[0];
+            const profileData = profileDoc.data();
+            await profileDoc.ref.update({
+                telegramChatId: userId.toString(),
+                botLanguage: lang
+            });
+            isLinked = true;
+
+            const sName = profileData.fullName || profileData.name || profileData.full_name || "Xodim";
+            await ctx.reply(`✅ Xodim (Staff/Admin) profili bog'landi: **${sName}**`, { parse_mode: 'Markdown' });
+        }
+
+        if (isLinked) {
+            await ctx.reply(TEXTS[lang].success(''), { parse_mode: 'Markdown' });
+            await ctx.reply("👇", Markup.keyboard([
+                [TEXTS[lang].check_btn],
+                [TEXTS[lang].chat_btn]
+            ]).resize());
+        }
 
     } catch (error) {
         console.error("Error during verification:", error);
@@ -682,24 +707,40 @@ bot.on('text', async (ctx) => {
         const accountId = patientData.account_id || patientData.accountId || patientData.staffId;
 
         let staffTokens = [];
+        let staffChatIds = [];
         try {
             // Find tokens for Admins and Doctors belonging to this patient's account
             const tokenSnap = await db.collection('fcmTokens').get();
             const allTokens = tokenSnap.docs.map(t => t.data());
 
-            // Simple logic: if patient belongs to an account, find staff in that account
+            let staffProfiles = [];
             if (accountId) {
                 const staffSnap = await db.collection('profiles')
                     .where('account_id', '==', accountId)
                     .get();
-
-                const staffIds = staffSnap.docs.map(s => s.id);
-                staffTokens = allTokens.filter(t => staffIds.includes(t.userId)).map(t => t.token);
+                staffProfiles = staffSnap.docs.map(s => ({ id: s.id, ...s.data() }));
             } else {
-                // Global fallback - send to superadmins if no account linked
                 const adminSnap = await db.collection('profiles').where('role', '==', 'admin').get();
-                const adminIds = adminSnap.docs.map(s => s.id);
-                staffTokens = allTokens.filter(t => adminIds.includes(t.userId)).map(t => t.token);
+                staffProfiles = adminSnap.docs.map(s => ({ id: s.id, ...s.data() }));
+            }
+
+            const staffIds = staffProfiles.map(s => s.id);
+            staffTokens = allTokens.filter(t => staffIds.includes(t.userId)).map(t => t.token);
+            staffChatIds = staffProfiles.filter(s => s.telegramChatId).map(s => s.telegramChatId);
+
+            // 3a. TELEGRAM FALLBACK (100% Reliability)
+            if (staffChatIds.length > 0) {
+                const pName = patientData.fullName || patientData.name || "Bemor";
+                const alertMsg = `📩 *Yangi xabar* (${pName}):\n\n${messageData.text}`;
+
+                for (const chatId of staffChatIds) {
+                    try {
+                        await bot.telegram.sendMessage(chatId, alertMsg, { parse_mode: 'Markdown' });
+                        console.log(`📡 Telegram Fallback sent to staff: ${chatId}`);
+                    } catch (tgErr) {
+                        console.error(`❌ Telegram Fallback failed for staff ${chatId}:`, tgErr.message);
+                    }
+                }
             }
 
             if (staffTokens.length > 0) {
@@ -1375,20 +1416,34 @@ exports.sendFCMNotification = onDocumentCreated({ document: "notifications/{noti
     if (!userId) return; // Must have a target user
 
     try {
-        // Retrieve the FCM token saved by the frontend's usePushNotifications hook
+        // 1. Resolve User and Telegram ID
+        const profileDoc = await db.collection('profiles').doc(userId).get();
+        const profileData = profileDoc.exists ? profileDoc.data() : {};
+        const staffChatId = profileData.telegramChatId;
+
+        // 3a. TELEGRAM FALLBACK (100% Reliability)
+        if (staffChatId) {
+            try {
+                const alertMsg = `🔔 *Bildirishnoma*:\n\n*${title || "Graft"}*\n${content || ""}`;
+                await bot.telegram.sendMessage(staffChatId, alertMsg, { parse_mode: 'Markdown' });
+                console.log(`📡 Telegram Notification fallback sent to staff: ${userId}`);
+            } catch (tgErr) {
+                console.error(`❌ Telegram Notification fallback failed for staff ${userId}:`, tgErr.message);
+            }
+        }
+
+        // 2. Resolve FCM Token
         const tokenDoc = await db.collection('fcmTokens').doc(userId).get();
         if (!tokenDoc.exists) {
-            console.log(`ℹ️ No FCM token found for user ${userId}. Push skipped.`);
+            console.log(`ℹ️ No FCM token found for user ${userId}. PWA Push skipped.`);
             return;
         }
 
         const tokenData = tokenDoc.data();
         const fcmToken = tokenData.token;
-
         if (!fcmToken) return;
 
         // CRITICAL PAYLOAD: iOS will ONLY wake a completely closed PWA
-        // if BOTH 'notification' and high 'Urgency' webpush headers are provided!
         const message = {
             token: fcmToken,
             notification: {
@@ -1401,7 +1456,6 @@ exports.sendFCMNotification = onDocumentCreated({ document: "notifications/{noti
                 }
             },
             data: {
-                // Keep data payload so the SW can route URLs, etc.
                 text: content || "Sizda yangi bildirishnoma bor",
                 type: "NOTIFICATION_SYNC"
             }
