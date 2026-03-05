@@ -25,19 +25,18 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
-      workbox: {
-        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // Fix PWA Precaching limitation
-        skipWaiting: true,
-        clientsClaim: true,
-        cleanupOutdatedCaches: true,
-        sourcemap: true
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       },
       devOptions: {
         enabled: true,
         type: 'module',
       },
-      includeAssets: ['favicon.ico', 'favicon.svg', 'favicon-96x96.png', 'apple-touch-icon.png', 'site.webmanifest', 'firebase-messaging-sw.js'],
+      includeAssets: ['favicon.ico', 'favicon.svg', 'favicon-96x96.png', 'apple-touch-icon.png', 'site.webmanifest'],
       manifestFilename: 'site.webmanifest',
       manifest: {
         name: 'Graft | Jarrohlik Markazi',

@@ -25,7 +25,6 @@ import { NotificationBell } from './NotificationBell';
 import { useSystemAlert } from '../../contexts/SystemAlertContext';
 import { useRBAC } from '../../hooks/useRBAC';
 import { SCOPES } from '../../config/permissions';
-import { NotificationPrompt } from '../ui/NotificationPrompt';
 import lockIcon from '../../assets/images/lock.png';
 const logoImg = "/images/logo_graft.png";
 // MobileDock removed
@@ -260,9 +259,6 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         </main>
       </div>
-
-      {/* Push Notification Permission Prompt (iOS Safari PWA) */}
-      <NotificationPrompt userId={userId} />
 
       {/* Mobile Navigation Overlay */}
       <AnimatePresence>

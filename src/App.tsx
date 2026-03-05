@@ -222,6 +222,7 @@ const LockScreen: React.FC<{ onUnlock: () => void; correctPassword: string }> = 
 
 
 import { useAuth } from './contexts/AuthContext';
+import { usePushNotifications } from './hooks/usePushNotifications';
 
 const App: React.FC = () => {
   const { accountId, userId, role, isLoading: accountLoading, accountName, userEmail, userImage, setAccount, isLoggedIn, logout } = useAccount();
@@ -231,6 +232,9 @@ const App: React.FC = () => {
 
   // Enable global reminder notifications
   useReminderNotifications();
+
+  // Auto-enable push notifications (silently registers on first tap)
+  usePushNotifications(userId);
 
 
   const [view, setView] = useState<PageView>(() => {
@@ -299,7 +303,7 @@ const App: React.FC = () => {
     // }
   }, []);
 
-  // 🔥 GLOBAL NOTIFICATION LISTENER
+  // 🔥 GLOBAL NOTIFICATION LISTENER + APP BADGE
   const prevUnreadCountRef = React.useRef(0);
   const { playNotification } = useAppSounds();
 
@@ -307,26 +311,47 @@ const App: React.FC = () => {
     // Calculate total currently unread
     const currentUnread = patients.reduce((acc, p) => acc + (p.unreadCount || 0), 0);
 
+    // 🔴 APP BADGE: Update iOS home screen badge count
+    if ('setAppBadge' in navigator) {
+      if (currentUnread > 0) {
+        (navigator as any).setAppBadge(currentUnread).catch(() => { });
+      } else {
+        (navigator as any).clearAppBadge().catch(() => { });
+      }
+    }
+
     // If count INCREASED and we are NOT on messages page
     if (currentUnread > prevUnreadCountRef.current && view !== 'MESSAGES' && !loading) {
       console.log("🔔 New Message Detected! Previous:", prevUnreadCountRef.current, "Current:", currentUnread);
 
       playNotification();
 
-      // Find who sent it (heuristic: patient with unread > 0 and latest message time)
-      const activePatient = patients.find(p => (p.unreadCount || 0) > 0);
-      const senderName = activePatient ? activePatient.fullName : t('patient');
+      // Find who sent it (patient with highest unread count and most recent message)
+      const activePatient = patients
+        .filter(p => (p.unreadCount || 0) > 0)
+        .sort((a, b) => {
+          const timeA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp).getTime() : 0;
+          const timeB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp).getTime() : 0;
+          return timeB - timeA;
+        })[0];
 
-      // Browser Notification
-      if (Notification.permission === 'granted') {
-        new Notification(t('new_message'), {
-          body: `${senderName} ${t('sent_message') || 'sent a message'}`,
-          icon: '/favicon.ico' // or happyIcon if valid URL
+      const senderName = activePatient?.fullName || t('patient');
+      const unreadFromSender = activePatient?.unreadCount || 1;
+
+      // 🔔 Professional iOS Notification
+      if ('Notification' in window && Notification.permission === 'granted') {
+        // Show the actual message text, or fallback to generic
+        const notifBody = activePatient?.lastMessage || t('sent_message');
+
+        new Notification('Graft', {
+          body: notifBody,
+          icon: '/apple-touch-icon.png',
+          badge: '/favicon-96x96.png',
+          tag: `graft-chat-${activePatient?.id || 'general'}`,
+          // @ts-ignore
+          renotify: true,
         });
       }
-
-
-
     }
 
     // Update ref for next render
