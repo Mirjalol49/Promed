@@ -51,10 +51,19 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
                     const spaceBelow = window.innerHeight - rect.bottom;
                     const showAbove = spaceBelow < dropdownHeight;
 
+                    const dropdownWidth = 320;
+                    let left = rect.left + (rect.width / 2) - (dropdownWidth / 2);
+
+                    // Viewport boundary checks
+                    if (left < 16) left = 16;
+                    if (left + dropdownWidth > window.innerWidth - 16) {
+                        left = window.innerWidth - dropdownWidth - 16;
+                    }
+
                     setCoords({
                         top: showAbove ? undefined : rect.bottom + 8,
                         bottom: showAbove ? window.innerHeight - rect.top + 8 : undefined,
-                        left: rect.left,
+                        left: left,
                         width: rect.width
                     });
                 }

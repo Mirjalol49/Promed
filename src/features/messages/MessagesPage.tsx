@@ -2078,41 +2078,39 @@ match /patients/{patientId}/messages/{messageId} {
                                             {targetMsg.isPinned ? <PinOff size={18} className="text-blue-500" /> : <Pin size={18} className="text-slate-400" />}
                                             <span>{targetMsg.isPinned ? t('unpin') : t('pin')}</span>
                                         </motion.button>
+                                        <div className="h-px bg-slate-100 my-1 mx-2" />
                                         {targetMsg.sender === 'doctor' && (
-                                            <>
-                                                <div className="h-px bg-slate-100 my-1 mx-2" />
-                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                    onClick={(e) => {
-                                                        setMsgContextMenu(null);
-                                                        setEditingMessageId(targetMsg.id);
-                                                        setMessageInput(targetMsg.text);
-                                                        if (textareaRef.current) textareaRef.current.style.height = 'auto';
-                                                        setTimeout(() => {
-                                                            textareaRef.current?.focus();
-                                                            if (textareaRef.current) {
-                                                                const scrollHeight = textareaRef.current.scrollHeight;
-                                                                textareaRef.current.style.height = `${Math.min(scrollHeight, 150)}px`;
-                                                            }
-                                                        }, 100);
-                                                    }}
-                                                    className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 text-slate-700 hover:text-blue-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
-                                                >
-                                                    <Edit2 size={18} className="text-slate-400" />
-                                                    <span>{t('edit')}</span>
-                                                </motion.button>
-                                                <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
-                                                    onClick={(e) => {
-                                                        setMsgContextMenu(null);
-                                                        setMessageToDelete(targetMsg);
-                                                        setIsDeleteModalOpen(true);
-                                                    }}
-                                                    className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
-                                                >
-                                                    <Trash2 size={18} className="text-red-400" />
-                                                    <span>{t('delete')}</span>
-                                                </motion.button>
-                                            </>
+                                            <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                                onClick={(e) => {
+                                                    setMsgContextMenu(null);
+                                                    setEditingMessageId(targetMsg.id);
+                                                    setMessageInput(targetMsg.text);
+                                                    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+                                                    setTimeout(() => {
+                                                        textareaRef.current?.focus();
+                                                        if (textareaRef.current) {
+                                                            const scrollHeight = textareaRef.current.scrollHeight;
+                                                            textareaRef.current.style.height = `${Math.min(scrollHeight, 150)}px`;
+                                                        }
+                                                    }, 100);
+                                                }}
+                                                className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 text-slate-700 hover:text-blue-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
+                                            >
+                                                <Edit2 size={18} className="text-slate-400" />
+                                                <span>{t('edit')}</span>
+                                            </motion.button>
                                         )}
+                                        <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                                            onClick={(e) => {
+                                                setMsgContextMenu(null);
+                                                setMessageToDelete(targetMsg);
+                                                setIsDeleteModalOpen(true);
+                                            }}
+                                            className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 rounded-xl transition-all text-sm font-semibold text-left w-full"
+                                        >
+                                            <Trash2 size={18} className="text-red-400" />
+                                            <span>{t('delete')}</span>
+                                        </motion.button>
                                     </motion.div>
                                 );
                             })()}

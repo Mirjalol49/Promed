@@ -45,8 +45,8 @@ import {
 } from 'lucide-react';
 import { Patient, InjectionStatus, Injection } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { DatePicker } from '../../components/ui/DatePicker';
 import { TimePicker } from '../../components/ui/TimePicker';
+import { CustomDatePicker } from '../../components/ui/CustomDatePicker';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Portal } from '../../components/ui/Portal';
 import { ImageWithFallback } from '../../components/ui/ImageWithFallback';
@@ -165,10 +165,15 @@ const InjectionModal: React.FC<{
                 <div className="space-y-4">
                   {/* DATE PICKER */}
                   <div>
-                    <DatePicker
+                    <CustomDatePicker
                       label={t('date')}
-                      value={date}
-                      onChange={setDate}
+                      value={new Date(date)}
+                      onChange={(newDate) => {
+                        const year = newDate.getFullYear();
+                        const month = String(newDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(newDate.getDate()).padStart(2, '0');
+                        setDate(`${year}-${month}-${day}`);
+                      }}
                     />
                   </div>
 
@@ -1743,9 +1748,14 @@ export const AddPatientForm: React.FC<{
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1.5">
                           <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t('operation_date')}</label>
-                          <DatePicker
-                            value={operationDate}
-                            onChange={setOperationDate}
+                          <CustomDatePicker
+                            value={new Date(operationDate)}
+                            onChange={(newDate) => {
+                              const year = newDate.getFullYear();
+                              const month = String(newDate.getMonth() + 1).padStart(2, '0');
+                              const day = String(newDate.getDate()).padStart(2, '0');
+                              setOperationDate(`${year}-${month}-${day}`);
+                            }}
                           />
                         </div>
                         <div className="space-y-1.5">
