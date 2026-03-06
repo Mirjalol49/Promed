@@ -511,8 +511,8 @@ bot.on('contact', async (ctx) => {
 
         // --- STEP B: FIND NEW RECORDS ---
         const [patientSnap, profileSnap] = await Promise.all([
-            patientsRef.where("phone", "in", variants).limit(1).get(),
-            profilesRef.where("phone", "in", variants).limit(1).get()
+            patientsRef.where("phone", "in", variants).get(),
+            profilesRef.where("phone", "in", variants).get()
         ]);
 
         if (patientSnap.empty && profileSnap.empty) {
@@ -520,32 +520,38 @@ bot.on('contact', async (ctx) => {
         }
 
         let isLinked = false;
+        let pName = "Bemor";
+        let sName = "Xodim";
 
         // Link Patient
         if (!patientSnap.empty) {
-            const patientDoc = patientSnap.docs[0];
-            const patientData = patientDoc.data();
-            await patientDoc.ref.update({
-                telegramChatId: userId.toString(),
-                botLanguage: lang
+            const batch = db.batch();
+            patientSnap.docs.forEach(doc => {
+                batch.update(doc.ref, {
+                    telegramChatId: userId.toString(),
+                    botLanguage: lang
+                });
+                if (!isLinked) pName = doc.data().fullName || doc.data().name || doc.data().full_name || "Bemor";
             });
+            await batch.commit();
             isLinked = true;
 
-            const pName = patientData.fullName || patientData.name || patientData.full_name || "Bemor";
             await ctx.reply(`✅ Bemorni (Patient) profili bog'landi: **${pName}**`, { parse_mode: 'Markdown' });
         }
 
         // Link Staff/Admin (Professional Fallback support)
         if (!profileSnap.empty) {
-            const profileDoc = profileSnap.docs[0];
-            const profileData = profileDoc.data();
-            await profileDoc.ref.update({
-                telegramChatId: userId.toString(),
-                botLanguage: lang
+            const batch = db.batch();
+            profileSnap.docs.forEach(doc => {
+                batch.update(doc.ref, {
+                    telegramChatId: userId.toString(),
+                    botLanguage: lang
+                });
+                if (!isLinked) sName = doc.data().fullName || doc.data().name || doc.data().full_name || "Xodim";
             });
+            await batch.commit();
             isLinked = true;
 
-            const sName = profileData.fullName || profileData.name || profileData.full_name || "Xodim";
             await ctx.reply(`✅ Xodim (Staff/Admin) profili bog'landi: **${sName}**`, { parse_mode: 'Markdown' });
         }
 
@@ -703,22 +709,17 @@ bot.on('text', async (ctx) => {
         const patientsRef = db.collection('patients');
 
         // 1. Try String ID
-        let snapshot = await patientsRef.where("telegramChatId", "==", userId).limit(1).get();
+        let snapshot = await patientsRef.where("telegramChatId", "==", userId).get();
 
         // 2. Fallback: Try Number ID
         if (snapshot.empty) {
-            snapshot = await patientsRef.where("telegramChatId", "==", Number(userId)).limit(1).get();
+            snapshot = await patientsRef.where("telegramChatId", "==", Number(userId)).get();
         }
 
         if (snapshot.empty) {
             console.log(`❌ Patient not found for Telegram ID: ${userId}`);
             return;
         }
-
-        const patientDoc = snapshot.docs[0];
-        const patientId = patientDoc.id;
-        const patientData = patientDoc.data();
-
 
         const now = new Date();
         const messageData = {
@@ -730,94 +731,99 @@ bot.on('text', async (ctx) => {
             text: ctx.message.text
         };
 
-        // 1. Save to Messages Subcollection
-        await patientDoc.ref.collection('messages').add(messageData);
+        // Cache tokens to avoid re-fetching per patient if they share FCM database
+        const tokenSnap = await db.collection('fcmTokens').get();
+        const allTokens = tokenSnap.docs.map(t => t.data());
 
-        // 2. Update Patient Last Message
-        await patientDoc.ref.update({
-            lastMessage: messageData.text,
-            lastMessageTime: messageData.time,
-            lastMessageTimestamp: now.toISOString(),
-            unreadCount: admin.firestore.FieldValue.increment(1)
-        });
+        for (const patientDoc of snapshot.docs) {
+            const patientId = patientDoc.id;
+            const patientData = patientDoc.data();
 
-        // 3. BROADCAST TO STAFF (MANDATORY FOR iOS LOCKED STATE)
-        const accountId = patientData.account_id || patientData.accountId || patientData.staffId;
+            // 1. Save to Messages Subcollection
+            await patientDoc.ref.collection('messages').add(messageData);
 
-        let staffTokens = [];
-        let staffChatIds = [];
-        try {
-            // Find tokens for Admins and Doctors belonging to this patient's account
-            const tokenSnap = await db.collection('fcmTokens').get();
-            const allTokens = tokenSnap.docs.map(t => t.data());
+            // 2. Update Patient Last Message
+            await patientDoc.ref.update({
+                lastMessage: messageData.text,
+                lastMessageTime: messageData.time,
+                lastMessageTimestamp: now.toISOString(),
+                unreadCount: admin.firestore.FieldValue.increment(1)
+            });
 
-            let staffProfiles = [];
-            if (accountId) {
-                const staffSnap = await db.collection('profiles')
-                    .where('account_id', '==', accountId)
-                    .get();
-                staffProfiles = staffSnap.docs.map(s => ({ id: s.id, ...s.data() }));
-            } else {
-                const adminSnap = await db.collection('profiles').where('role', '==', 'admin').get();
-                staffProfiles = adminSnap.docs.map(s => ({ id: s.id, ...s.data() }));
-            }
+            // 3. BROADCAST TO STAFF (MANDATORY FOR iOS LOCKED STATE)
+            const accountId = patientData.account_id || patientData.accountId || patientData.staffId;
 
-            const staffIds = staffProfiles.map(s => s.id);
-            staffTokens = allTokens.filter(t => staffIds.includes(t.userId)).map(t => t.token);
-            staffChatIds = staffProfiles.filter(s => s.telegramChatId).map(s => s.telegramChatId);
+            let staffTokens = [];
+            let staffChatIds = [];
+            try {
+                let staffProfiles = [];
+                if (accountId) {
+                    const staffSnap = await db.collection('profiles')
+                        .where('account_id', '==', accountId)
+                        .get();
+                    staffProfiles = staffSnap.docs.map(s => ({ id: s.id, ...s.data() }));
+                } else {
+                    const adminSnap = await db.collection('profiles').where('role', '==', 'admin').get();
+                    staffProfiles = adminSnap.docs.map(s => ({ id: s.id, ...s.data() }));
+                }
 
-            // 3a. TELEGRAM FALLBACK (100% Reliability)
-            if (staffChatIds.length > 0) {
-                const pName = patientData.fullName || patientData.name || "Bemor";
-                const alertMsg = `📩 *Yangi xabar* (${pName}):\n\n${messageData.text}`;
+                const staffIds = staffProfiles.map(s => s.id);
+                staffTokens = allTokens.filter(t => staffIds.includes(t.userId)).map(t => t.token);
+                staffChatIds = staffProfiles.filter(s => s.telegramChatId).map(s => s.telegramChatId);
 
-                for (const chatId of staffChatIds) {
-                    try {
-                        await bot.telegram.sendMessage(chatId, alertMsg, { parse_mode: 'Markdown' });
-                        console.log(`📡 Telegram Fallback sent to staff: ${chatId}`);
-                    } catch (tgErr) {
-                        console.error(`❌ Telegram Fallback failed for staff ${chatId}:`, tgErr.message);
+                // 3a. TELEGRAM FALLBACK (100% Reliability)
+                if (staffChatIds.length > 0) {
+                    const pName = patientData.fullName || patientData.name || "Bemor";
+                    const alertMsg = `📩 *Yangi xabar* (${pName}):\n\n${messageData.text}`;
+
+                    for (const chatId of staffChatIds) {
+                        try {
+                            await bot.telegram.sendMessage(chatId, alertMsg, { parse_mode: 'Markdown' });
+                            console.log(`📡 Telegram Fallback sent to staff: ${chatId} for account ${accountId}`);
+                        } catch (tgErr) {
+                            console.error(`❌ Telegram Fallback failed for staff ${chatId}:`, tgErr.message);
+                        }
                     }
                 }
-            }
 
-            if (staffTokens.length > 0) {
-                // CRITICAL PAYLOAD: iOS will ONLY wake a completely closed PWA
-                // if BOTH 'notification' and high 'Urgency' webpush headers are provided!
-                const fcmMessage = {
-                    notification: {
-                        title: patientData.fullName || patientData.name || "Bemor",
-                        body: messageData.text,
-                    },
-                    webpush: {
-                        headers: {
-                            "Urgency": "high"
-                        }
-                    },
-                    data: {
-                        patientName: patientData.fullName || patientData.name || "Bemor",
-                        patientId: patientId,
-                        text: messageData.text,
-                        type: "CHAT_MESSAGE"
-                    },
-                    tokens: staffTokens
-                };
+                if (staffTokens.length > 0) {
+                    // CRITICAL PAYLOAD: iOS will ONLY wake a completely closed PWA
+                    // if BOTH 'notification' and high 'Urgency' webpush headers are provided!
+                    const fcmMessage = {
+                        notification: {
+                            title: patientData.fullName || patientData.name || "Bemor",
+                            body: messageData.text,
+                        },
+                        webpush: {
+                            headers: {
+                                "Urgency": "high"
+                            }
+                        },
+                        data: {
+                            patientName: patientData.fullName || patientData.name || "Bemor",
+                            patientId: patientId,
+                            text: messageData.text,
+                            type: "CHAT_MESSAGE"
+                        },
+                        tokens: staffTokens
+                    };
 
-                const response = await admin.messaging().sendEachForMulticast(fcmMessage);
-                console.log(`✅ FCM Broadcast: Sent to ${response.successCount}/${staffTokens.length} staff devices.`);
+                    const response = await admin.messaging().sendEachForMulticast(fcmMessage);
+                    console.log(`✅ FCM Broadcast: Sent to ${response.successCount}/${staffTokens.length} staff devices for account ${accountId}.`);
 
-                if (response.failureCount > 0) {
-                    response.responses.forEach((resp, idx) => {
-                        if (!resp.success) {
-                            console.log(`❌ FCM Token failure: ${resp.error.message}`);
-                        }
-                    });
+                    if (response.failureCount > 0) {
+                        response.responses.forEach((resp, idx) => {
+                            if (!resp.success) {
+                                console.log(`❌ FCM Token failure: ${resp.error.message}`);
+                            }
+                        });
+                    }
+                } else {
+                    console.log(`ℹ️ No FCM tokens found for staff assigned to patient ${patientId}`);
                 }
-            } else {
-                console.log(`ℹ️ No FCM tokens found for staff assigned to patient ${patientId}`);
+            } catch (fcmErr) {
+                console.error("❌ FCM Broadcast Error:", fcmErr.message);
             }
-        } catch (fcmErr) {
-            console.error("❌ FCM Broadcast Error:", fcmErr.message);
         }
 
     } catch (e) {

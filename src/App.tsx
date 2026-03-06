@@ -1104,17 +1104,22 @@ const App: React.FC = () => {
           messageText = `Assalomu alaykum, **${patient.fullName}**! 🔔\n\n✅ Sizga yangi inyeksiya belgilandi.\n\n🗓 Sana: **${dateDisplay}**\n⏰ Vaqt: **${timeDisplay}**\n\nSizni klinikada kutamiz! 😊`;
         }
 
-        // Add to Outbound Queue (Hardened Polling)
-        await addDoc(collection(db, 'outbound_messages'), {
-          telegramChatId: patient.telegramChatId,
-          text: messageText,
-          patientName: patient.fullName,
-          botLanguage: patient.botLanguage || 'uz',
-          action: 'SEND',
-          status: 'PENDING',
-          createdAt: new Date().toISOString(),
-          type: 'INJECTION_NEW'
-        });
+        try {
+          // Add to Outbound Queue (Hardened Polling)
+          await addDoc(collection(db, 'outbound_messages'), {
+            telegramChatId: patient.telegramChatId,
+            text: messageText,
+            patientName: patient.fullName,
+            patientId: patient.id,
+            botLanguage: patient.botLanguage || 'uz',
+            action: 'SEND',
+            status: 'PENDING',
+            createdAt: new Date().toISOString(),
+            type: 'INJECTION_NEW'
+          });
+        } catch (msgError) {
+          console.error('Non-critical: Telegram notification failed to queue.', msgError);
+        }
       }
     } catch (err: any) {
       console.error('Error adding injection:', err);
@@ -1157,17 +1162,22 @@ const App: React.FC = () => {
           messageText = `Assalomu alaykum, **${patient.fullName}**! 🔔\n\n⚠️ Sizning inyeksiya vaqtingiz o'zgardi.\n\n🗓 Yangi sana: **${dateDisplay}**\n⏰ Yangi vaqt: **${timeDisplay}**\n\nNoqulaylik uchun uzr so'raymiz, bu o'zgarish sizga yaxshiroq xizmat ko'rsatishimizga yordam beradi! 🙏`;
         }
 
-        // Add to Outbound Queue (Hardened Polling)
-        await addDoc(collection(db, 'outbound_messages'), {
-          telegramChatId: patient.telegramChatId,
-          text: messageText,
-          patientName: patient.fullName,
-          botLanguage: patient.botLanguage || 'uz',
-          action: 'SEND',
-          status: 'PENDING',
-          createdAt: new Date().toISOString(),
-          type: 'INJECTION_CHANGE'
-        });
+        try {
+          // Add to Outbound Queue (Hardened Polling)
+          await addDoc(collection(db, 'outbound_messages'), {
+            telegramChatId: patient.telegramChatId,
+            text: messageText,
+            patientName: patient.fullName,
+            patientId: patient.id,
+            botLanguage: patient.botLanguage || 'uz',
+            action: 'SEND',
+            status: 'PENDING',
+            createdAt: new Date().toISOString(),
+            type: 'INJECTION_CHANGE'
+          });
+        } catch (msgError) {
+          console.error('Non-critical: Telegram notification failed to queue.', msgError);
+        }
       }
 
     } catch (err: any) {

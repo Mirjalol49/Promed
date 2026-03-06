@@ -64,7 +64,7 @@ export const useReliableUpload = () => {
                         }).then(() => resolve()).catch(reject);
                     }),
                     new Promise<never>((_, reject) =>
-                        setTimeout(() => reject(new Error("Timeout during file upload chunk")), 8000)
+                        setTimeout(() => reject(new Error("Timeout during file upload chunk")), 60000)
                     )
                 ]);
 

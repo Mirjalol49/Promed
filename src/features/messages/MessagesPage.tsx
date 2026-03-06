@@ -93,7 +93,6 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
 
     // Media Attachment
     const [fileAttachment, setFileAttachment] = useState<File | null>(null);
-    const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
     const [uploadProgress, setUploadProgress] = useState<number>(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -752,7 +751,6 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
             // Success Updates
             setMessageInput('');
             setFileAttachment(null);
-            setVideoThumbnail(null);
             setUploadProgress(0);
             setReplyingToMessage(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -829,6 +827,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ patients = [], isVis
                         text: newText,
                         action: 'EDIT',
                         status: 'PENDING',
+                        patientId: selectedPatient.id,
                         patientName: selectedPatient.fullName,
                         createdAt: new Date().toISOString()
                     });
@@ -1717,7 +1716,7 @@ match /patients/{patientId}/messages/{messageId} {
                                                     exit={{ opacity: 0 }}
                                                     transition={{ duration: 0.2 }}
                                                     className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
-                                                    onClick={() => { setFileAttachment(null); setVideoThumbnail(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                                    onClick={() => { setFileAttachment(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                                                 />
 
                                                 {/* Modal Content */}
@@ -1732,7 +1731,7 @@ match /patients/{patientId}/messages/{messageId} {
                                                     {/* Header */}
                                                     <div className="flex items-center justify-between px-4 py-3 relative z-10 w-full">
                                                         <motion.button whileTap={{ scale: 0.9 }}
-                                                            onClick={() => { setFileAttachment(null); setVideoThumbnail(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                                            onClick={() => { setFileAttachment(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                                                             className="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors order-1"
                                                         >
                                                             <X size={20} />
@@ -1746,18 +1745,11 @@ match /patients/{patientId}/messages/{messageId} {
                                                     {/* Media Canvas */}
                                                     <div className="w-full flex items-center justify-center bg-slate-50 relative overflow-hidden group border-y border-slate-100" style={{ minHeight: '30vh', maxHeight: '55vh' }}>
                                                         {fileAttachment.type.startsWith('video/') ? (
-                                                            videoThumbnail ? (
-                                                                <>
-                                                                    <img src={videoThumbnail} alt="Video preview" className="max-w-full max-h-[55vh] object-contain" />
-                                                                    <div className="absolute inset-0 flex items-center justify-center">
-                                                                        <div className="bg-white/80 backdrop-blur-md rounded-full p-4 shadow-sm border border-slate-200">
-                                                                            <Play size={32} className="text-black ml-1" fill="currentColor" />
-                                                                        </div>
-                                                                    </div>
-                                                                </>
-                                                            ) : (
-                                                                <FileVideo size={64} className="text-slate-300" />
-                                                            )
+                                                            <video
+                                                                src={URL.createObjectURL(fileAttachment)}
+                                                                controls
+                                                                className="max-w-full max-h-[55vh] object-contain"
+                                                            />
                                                         ) : (
                                                             <img src={URL.createObjectURL(fileAttachment)} className="max-w-full max-h-[55vh] object-contain" />
                                                         )}
@@ -1838,31 +1830,7 @@ match /patients/{patientId}/messages/{messageId} {
                                         if (e.target.files && e.target.files[0]) {
                                             const file = e.target.files[0];
                                             setFileAttachment(file);
-                                            setVideoThumbnail(null);
-
-                                            // Generate video thumbnail
-                                            if (file.type.startsWith('video/')) {
-                                                const video = document.createElement('video');
-                                                video.preload = 'metadata';
-                                                video.muted = true;
-                                                video.playsInline = true;
-                                                const objectUrl = URL.createObjectURL(file);
-                                                video.src = objectUrl;
-                                                video.onloadeddata = () => {
-                                                    video.currentTime = Math.min(1, video.duration * 0.1);
-                                                };
-                                                video.onseeked = () => {
-                                                    const canvas = document.createElement('canvas');
-                                                    canvas.width = video.videoWidth;
-                                                    canvas.height = video.videoHeight;
-                                                    const ctx = canvas.getContext('2d');
-                                                    if (ctx) {
-                                                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                                                        setVideoThumbnail(canvas.toDataURL('image/jpeg', 0.7));
-                                                    }
-                                                    URL.revokeObjectURL(objectUrl);
-                                                };
-                                            }
+                                            // The video is now previewed directly via a <video> element
 
                                             setTimeout(() => textareaRef.current?.focus(), 100);
                                         }
