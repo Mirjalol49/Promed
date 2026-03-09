@@ -393,6 +393,7 @@ export const translations = {
     preferences: "Preferences",
     notifications: "Notifications",
     no_notifications_yet: "No notifications yet",
+    notifications_caught_up: "You're all caught up! New updates and messages will appear here.",
     time_just_now: "Just now",
     time_minute_ago: "{m}m ago",
     time_hour_ago: "{h}h ago",
@@ -1128,6 +1129,7 @@ export const translations = {
     preferences: "Afzalliklar",
     notifications: "Bildirishnomalar",
     no_notifications_yet: "Hozircha hech qanday bildirishnoma yo'q",
+    notifications_caught_up: "Hammasi joyida! Yangi xabarlar va o'zgarishlar shu yerda paydo bo'ladi.",
     time_just_now: "Hozirgina",
     time_minute_ago: "{m} m avval",
     time_hour_ago: "{h} s avval",
@@ -1877,6 +1879,7 @@ export const translations = {
     preferences: "Предпочтения",
     notifications: "Уведомления", // Assuming I find 'notifications' or nearby key in RU
     no_notifications_yet: "Уведомлений пока нет",
+    notifications_caught_up: "У вас все прочитано! Новые обновления и сообщения появятся здесь.",
     time_just_now: "Только что",
     time_minute_ago: "{m} м назад",
     time_hour_ago: "{h} ч назад",

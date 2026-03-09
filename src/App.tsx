@@ -521,7 +521,8 @@ const App: React.FC = () => {
       if (sessionMismatch) {
         console.warn('⚠️ User mismatch detected! Clearing old user state...');
         localStorage.clear();
-        logout();
+        // We don't call logout() here because firebase auth is the source of truth.
+        // Calling logout() destroys the valid session the user just logged in with.
         window.location.reload();
         return;
       }

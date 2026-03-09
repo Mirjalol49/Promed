@@ -17,7 +17,6 @@ import { useAccount } from '../contexts/AccountContext';
 import { Patient } from '../types';
 import { DashboardLoader } from '../components/ui/DashboardLoader';
 import LockedOverlay from '../components/ui/LockedOverlay';
-import TourGuide from '../components/tour/TourGuide';
 
 
 
@@ -69,8 +68,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     return (
         <div className="relative w-full max-w-full overflow-x-hidden">
-            {/* Tour Guide */}
-            <TourGuide />
 
             <div className="space-y-10 p-2 sm:p-4 w-full">
                 {/* Vitals Strip */}
