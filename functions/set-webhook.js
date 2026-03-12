@@ -2,7 +2,7 @@
 const { Telegraf } = require("telegraf");
 
 // CONFIGURATION
-const BOT_TOKEN = '8591992335:AAHzpuGzTHGvEHZgiQuH1-SgEZsf3l9w_GQ';
+const BOT_TOKEN = '8685148431:AAGtGgLjltefGoA2sc5AA8ZQZ28pfZ6hQ1I';
 // This is the URL from your recent deployment log
 const WEBHOOK_URL = 'https://bothandler-5groksfpjq-uc.a.run.app';
 

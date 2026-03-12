@@ -1,6 +1,6 @@
 const https = require('https');
 
-const BOT_TOKEN = '8234286653:AAGAD8fDKz9AqirDAqOIaddZuPCq4keln-w';
+const BOT_TOKEN = '8685148431:AAGtGgLjltefGoA2sc5AA8ZQZ28pfZ6hQ1I';
 const WEBHOOK_URL = 'https://bothandler-5groksfpjq-uc.a.run.app';
 
 function setWebhook() {
