@@ -14,7 +14,7 @@ const db = admin.firestore();
 
 
 // --- CONFIGURATION ---
-const BOT_TOKEN = '8591992335:AAHzpuGzTHGvEHZgiQuH1-SgEZsf3l9w_GQ';
+const BOT_TOKEN = '8685148431:AAGtGgLjltefGoA2sc5AA8ZQZ28pfZ6hQ1I';
 // IMPORTANT: Set this in your environment variables or config
 // OpenAI Removed as per user request
 // const OpenAI = require("openai");
