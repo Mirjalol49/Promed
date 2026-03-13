@@ -773,7 +773,7 @@ bot.on('text', async (ctx) => {
 
                 // 3a. TELEGRAM FALLBACK (100% Reliability)
                 if (staffChatIds.length > 0) {
-                    const pName = patientData.fullName || patientData.name || "Bemor";
+                    const pName = patientData.full_name || patientData.fullName || patientData.name || "Bemor";
                     const alertMsg = `📩 *Yangi xabar* (${pName}):\n\n${messageData.text}`;
 
                     for (const chatId of staffChatIds) {
@@ -791,7 +791,7 @@ bot.on('text', async (ctx) => {
                     // if BOTH 'notification' and high 'Urgency' webpush headers are provided!
                     const fcmMessage = {
                         notification: {
-                            title: patientData.fullName || patientData.name || "Bemor",
+                            title: patientData.full_name || patientData.fullName || patientData.name || "Bemor",
                             body: messageData.text,
                         },
                         webpush: {
@@ -800,7 +800,7 @@ bot.on('text', async (ctx) => {
                             }
                         },
                         data: {
-                            patientName: patientData.fullName || patientData.name || "Bemor",
+                            patientName: patientData.full_name || patientData.fullName || patientData.name || "Bemor",
                             patientId: patientId,
                             text: messageData.text,
                             type: "CHAT_MESSAGE"
@@ -880,7 +880,7 @@ exports.dailyReminder = onSchedule({
                 if (injectionDue) {
                     const lang = patient.botLanguage || 'uz';
                     const chatId = patient.telegramChatId;
-                    const name = patient.fullName || patient.name || patient.full_name || "Patient";
+                    const name = patient.full_name || patient.fullName || patient.name || "Patient";
 
                     // Parse Time if available
                     let time = "09:00"; // Default
@@ -918,7 +918,8 @@ exports.doctorEveningReminder = onSchedule({
     timeZone: "Asia/Tashkent",
     region: "us-central1"
 }, async (event) => {
-    console.log("🌙 Running Doctor Evening Reminder (9 PM)...");
+    console.log("🌙 Doctor Evening Reminder (9 PM) - DISABLED PER ADMIN REQUEST");
+    return null;
 
     try {
         const tomorrow = new Date();
@@ -951,11 +952,11 @@ exports.doctorEveningReminder = onSchedule({
                     }
 
                     tomorrowPatients.push({
-                        name: patient.fullName || patient.name || "Bemor",
+                        name: patient.full_name || patient.fullName || patient.name || "Bemor",
                         time,
                         accountId: patient.account_id || patient.accountId || null,
                         patientId: docSnap.id,
-                        image: patient.profileImage || null
+                        image: patient.profile_image || patient.profileImage || null
                     });
                 }
             }

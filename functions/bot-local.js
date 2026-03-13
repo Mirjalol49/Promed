@@ -148,7 +148,7 @@ async function checkSchedule(ctx) {
 
         const patient = snapshot.docs[0].data();
         const lang = patient.botLanguage || 'uz';
-        const name = patient.fullName || patient.name || patient.full_name || "Bemor";
+        const name = patient.full_name || patient.fullName || patient.name || "Bemor";
 
         if (patient.injections && Array.isArray(patient.injections)) {
             const now = new Date();

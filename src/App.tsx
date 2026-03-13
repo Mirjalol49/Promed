@@ -647,7 +647,7 @@ const App: React.FC = () => {
       }
     }).catch(console.error);
 
-    patientSubscription = subscribeToUnreadPatients(
+    patientSubscription = subscribeToPatients(
       accountId,
       (updatedPatients) => {
         if (mounted) {
@@ -679,7 +679,9 @@ const App: React.FC = () => {
       (error) => {
         console.error('❌ [Subscription] Error:', error);
         if (mounted) setLoading(false);
-      }
+      },
+      'list',
+      200
     );
 
     const now = new Date();
