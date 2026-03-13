@@ -30,7 +30,7 @@ export const uploadImage = async (file: File, path: string): Promise<string> => 
     const storageRef = ref(storage, uniquePath);
     // Add metadata for caching if needed
     const metadata = {
-      cacheControl: 'public,max-age=3600',
+      cacheControl: 'public,max-age=31536000',
       contentType: file.type
     };
 

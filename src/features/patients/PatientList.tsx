@@ -59,6 +59,7 @@ import { InjectionTimeline } from '../../components/ui/InjectionTimeline';
 import { AnimateIcon } from '../../components/ui/AnimateIcon';
 import { PatientFinanceStats } from './PatientFinanceStats';
 import { Pagination } from '../../components/ui/Pagination';
+import { Pagination } from '../../components/ui/Pagination';
 import { useRBAC } from '../../hooks/useRBAC';
 import { SCOPES } from '../../config/permissions';
 import { useAccount } from '../../contexts/AccountContext';
@@ -471,69 +472,34 @@ export const PatientList: React.FC<{
   const translateStatus = useStatusTranslation();
 
   // --- Pagination & Search State ---
-  const [paginatedPatients, setPaginatedPatients] = useState<Patient[]>(initialPatients);
   const [searchQuery, setSearchQuery] = useState('');
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [isFetching, setIsFetching] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(initialPatients.length === 0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  // Fetch initial page if we didn't get initialPatients, or if account changes
+  // Process and filter patients locally
+  const filteredPatients = useMemo(() => {
+    if (!searchQuery.trim()) return initialPatients;
+    
+    const lowerQuery = searchQuery.toLowerCase();
+    return initialPatients.filter(p => 
+      p.fullName.toLowerCase().includes(lowerQuery) ||
+      p.phone.includes(lowerQuery)
+    );
+  }, [initialPatients, searchQuery]);
+
+  // Reset page when search changes OR when initialPatients change drastically (e.g. account switch)
   useEffect(() => {
-    if (initialPatients.length > 0 && !searchQuery) return;
-    
-    let active = true;
-    const fetchInitial = async () => {
-      setIsInitialLoad(true);
-      try {
-        if (searchQuery) {
-          const results = await searchPatients(accountId, searchQuery);
-          if (active) {
-            setPaginatedPatients(results);
-            setHasMore(false); // Disable pagination during search
-          }
-        } else {
-          const { patients, lastVisible } = await getPatientsPage(accountId);
-          if (active) {
-            setPaginatedPatients(patients);
-            setLastDoc(lastVisible || null);
-            setHasMore(patients.length === 20); // Assume limit is 20
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching patients:", err);
-      } finally {
-        if (active) setIsInitialLoad(false);
-      }
-    };
-    
-    // Simple debounce for search
-    const timer = setTimeout(fetchInitial, 300);
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [accountId, searchQuery]);
+    setCurrentPage(1);
+  }, [searchQuery]);
 
-  const loadMore = async () => {
-    if (!hasMore || isFetching || !lastDoc || searchQuery) return;
-    setIsFetching(true);
-    try {
-      const { patients, lastVisible } = await getPatientsPage(accountId, 20, lastDoc);
-      setPaginatedPatients(prev => {
-        // Filter out duplicates just in case
-        const existingIds = new Set(prev.map(p => p.id));
-        const newUnique = patients.filter(p => !existingIds.has(p.id));
-        return [...prev, ...newUnique];
-      });
-      setLastDoc(lastVisible || null);
-      setHasMore(patients.length === 20);
-    } catch (err) {
-      console.error("Error loading more patients:", err);
-    } finally {
-      setIsFetching(false);
-    }
-  };
+  // Calculate pagination
+  const totalPages = Math.max(1, Math.ceil(filteredPatients.length / itemsPerPage));
+  const paginatedPatients = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredPatients.slice(start, start + itemsPerPage);
+  }, [filteredPatients, currentPage, itemsPerPage]);
+
+  const isInitialLoad = initialPatients.length === 0 && paginatedPatients.length === 0 && !searchQuery;
 
   if (isInitialLoad) {
     return <PatientListSkeleton />;
@@ -615,25 +581,13 @@ export const PatientList: React.FC<{
           </tbody>
         </table>
       </div>
-
-      {/* --- Load More Footer --- */}
-      {paginatedPatients.length > 0 && hasMore && !searchQuery && (
-        <div className="p-4 border-t border-slate-100 flex justify-center bg-slate-50">
-          <button
-            onClick={loadMore}
-            disabled={isFetching}
-            className="px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50 hover:text-promed-primary active:scale-95 transition-all shadow-sm flex items-center gap-2"
-          >
-            {isFetching ? (
-              <>
-                <Loader2 size={16} className="animate-spin text-promed-primary" />
-                <span>Loading...</span>
-              </>
-            ) : (
-              <span>Load More</span>
-            )}
-          </button>
-        </div>
+      {/* --- Pagination Footer --- */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       )}
     </div>
   );

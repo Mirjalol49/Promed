@@ -69,7 +69,7 @@ export const useImageUpload = (options: UseImageUploadOptions = {}): UseImageUpl
 
                 const storageRef = ref(storage, filePath);
                 const uploadTask = uploadBytesResumable(storageRef, compressedFile, {
-                    cacheControl: 'public,max-age=3600',
+                    cacheControl: 'public,max-age=31536000',
                     contentType: compressedFile.type
                 });
 

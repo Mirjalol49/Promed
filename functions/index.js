@@ -9,8 +9,18 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
+const { setGlobalOptions } = require("firebase-functions/v2");
+
 admin.initializeApp();
 const db = admin.firestore();
+
+// Apply global concurrency and memory caps to prevent Denial of Wallet attacks
+setGlobalOptions({
+  maxInstances: 10,
+  concurrency: 80,
+  memory: '256MiB',
+  timeoutSeconds: 60
+});
 
 
 // --- CONFIGURATION ---
