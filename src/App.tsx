@@ -28,6 +28,7 @@ import SyncToast from './components/ui/SyncToast';
 import { useAppSounds } from './hooks/useAppSounds';
 import {
   subscribeToPatients,
+  getPatientStats,
   addPatient,
   updatePatient,
   deletePatient as deletePatientFromDb,
@@ -35,9 +36,11 @@ import {
   addPatientAfterImage,
   deletePatientAfterImage,
   COLUMNS,
+  subscribeToUnreadPatients
 } from './lib/patientService';
 import { subscribeToUserProfile, updateUserProfile } from './lib/userService';
-import { addTransaction, subscribeToTransactions, calculateStats } from './lib/financeService';
+import { subscribeToUpcomingSchedules, ScheduleEvent } from './lib/scheduleService';
+import { addTransaction, subscribeToMonthlyAggregate, calculateStats } from './lib/financeService';
 import { uploadImage, uploadAvatar, setOptimisticImage, getOptimisticImage } from './lib/imageService';
 import { ProfileAvatar } from './components/layout/ProfileAvatar';
 import { useImagePreloader } from './lib/useImagePreloader';
@@ -260,11 +263,12 @@ const App: React.FC = () => {
   });
 
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [schedules, setSchedules] = useState<ScheduleEvent[]>([]);
+  const [serverStats, setServerStats] = useState({ total: 0, active: 0, newThisMonth: 0 });
+  const [monthlyRevenue, setMonthlyRevenue] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [selectedInjectionId, setSelectedInjectionId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [highlightTransactionId, setHighlightTransactionId] = useState<string | null>(null);
   const [notificationPatientId, setNotificationPatientId] = useState<string | null>(null);
   // Initialize lock state from localStorage to persist across refreshes
@@ -618,6 +622,7 @@ const App: React.FC = () => {
     let mounted = true;
     let patientSubscription: (() => void) | null = null;
     let transactionSubscription: (() => void) | null = null;
+    let scheduleSubscription: (() => void) | null = null;
 
     if (!accountId) {
       if (userId) {
@@ -632,7 +637,17 @@ const App: React.FC = () => {
     console.log("⚡ [Subscription] Starting for Account:", accountId);
     setLoading(true);
 
-    patientSubscription = subscribeToPatients(
+    getPatientStats(accountId).then(stats => {
+      if (mounted) {
+        setServerStats({
+          total: stats.total,
+          active: stats.active,
+          newThisMonth: stats.newThisMonth
+        });
+      }
+    }).catch(console.error);
+
+    patientSubscription = subscribeToUnreadPatients(
       accountId,
       (updatedPatients) => {
         if (mounted) {
@@ -667,12 +682,24 @@ const App: React.FC = () => {
       }
     );
 
-    transactionSubscription = subscribeToTransactions(
+    const now = new Date();
+    const monthKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+    transactionSubscription = subscribeToMonthlyAggregate(
       accountId,
-      (txs) => {
+      monthKey,
+      (aggStats) => {
         if (mounted) {
-          console.log("✅ [Subscription] Transactions received. Count:", txs.length);
-          setTransactions(txs);
+          console.log("✅ [Subscription] Monthly Aggregates received:", aggStats);
+          setMonthlyRevenue(aggStats ? aggStats.totalIncome : 0);
+        }
+      }
+    );
+
+    scheduleSubscription = subscribeToUpcomingSchedules(
+      accountId,
+      (updatedSchedules) => {
+        if (mounted) {
+          setSchedules(updatedSchedules);
         }
       }
     );
@@ -681,6 +708,7 @@ const App: React.FC = () => {
       mounted = false;
       if (patientSubscription) patientSubscription();
       if (transactionSubscription) transactionSubscription();
+      if (scheduleSubscription) scheduleSubscription();
     };
   }, [accountId]); // Depends strictly on accountId for correct data isolation
 
@@ -695,49 +723,12 @@ const App: React.FC = () => {
 
   // Computed Stats - MUST be before any early returns to follow Rules of Hooks
   const stats = useMemo(() => {
-    const total = patients.length;
-    const active = patients.filter(p => p.status === 'Active').length;
-    const upcoming = patients.reduce((acc, p) =>
-      acc + (p.injections || []).filter(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date()).length
-      , 0);
-
-    // Count patients added this month
-    const now = new Date();
-    const thisMonth = patients.filter(p => {
-      const opDate = new Date(p.operationDate);
-      return opDate.getMonth() === now.getMonth() && opDate.getFullYear() === now.getFullYear();
-    }).length;
-
-    // Calculate Monthly Revenue
-    const monthlyRevenue = transactions
-      .filter(t => {
-        if (!t.date || t.type !== 'income' || t.isVoided || t.returned) return false;
-        const tDate = new Date(t.date);
-        return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
-      })
-      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    const { total, active, newThisMonth: thisMonth } = serverStats;
+    const upcoming = schedules.filter(s => s.type === 'Injection' && s.status === InjectionStatus.SCHEDULED).length;
 
     return { total, active, upcoming, newThisMonth: thisMonth, monthlyRevenue };
-  }, [patients, transactions]);
+  }, [schedules, monthlyRevenue, serverStats]);
 
-  const filteredPatients = useMemo(() => {
-    let result = [...patients];
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(p =>
-        p.fullName.toLowerCase().includes(q) ||
-        p.phone.includes(q) ||
-        (p.email?.toLowerCase().includes(q) ?? false)
-      );
-    }
-
-    // Always sort by last activity (Telegram-style)
-    return result.sort((a, b) => {
-      const timeA = (a.lastMessageTimestamp || a.lastActive || a.operationDate) ? new Date(a.lastMessageTimestamp || a.lastActive || a.operationDate).getTime() : 0;
-      const timeB = (b.lastMessageTimestamp || b.lastActive || b.operationDate) ? new Date(b.lastMessageTimestamp || b.lastActive || b.operationDate).getTime() : 0;
-      return timeB - timeA;
-    });
-  }, [patients, searchQuery]);
 
   const handleNavigate = useCallback((page: PageView) => {
     setView(page);
@@ -891,7 +882,7 @@ const App: React.FC = () => {
         if (files?.profileImage) {
           const url = URL.createObjectURL(files.profileImage);
           setOptimisticImage(`${patientData.id}_profile`, url);
-          const remoteUrl = await uploadImage(files.profileImage, `patients/${patientData.id}/profile`);
+          const remoteUrl = await uploadAvatar(files.profileImage, userId);
           patientData.profileImage = remoteUrl;
         }
       } catch (imgErr) {
@@ -1354,17 +1345,18 @@ const App: React.FC = () => {
         {view === 'DASHBOARD' && (
           <PageTransition key="dashboard">
             <Dashboard
+              schedules={schedules}
+              patients={patients}
               stats={{
                 total: stats.total,
-                active: patients.length,
-                upcoming: (patients || []).flatMap(p => p.injections || []).filter(i => i.status === InjectionStatus.SCHEDULED && new Date(i.date) >= new Date(new Date().setHours(0, 0, 0, 0))).length,
+                active: stats.active,
+                upcoming: stats.upcoming,
                 newThisMonth: stats.newThisMonth,
                 monthlyRevenue: stats.monthlyRevenue
               }}
               onNewPatient={() => setView('ADD_PATIENT')}
               onUploadPhoto={() => console.log('Upload Photo Clicked')}
               onPatientSelect={handleSelectPatient}
-              patients={patients}
               isLoading={showSkeleton}
             />
           </PageTransition>
@@ -1393,12 +1385,10 @@ const App: React.FC = () => {
         {(view === 'PATIENTS' || view === 'ADD_PATIENT') && (
           <PageTransition key="patients-group">
             <PatientList
-              patients={filteredPatients}
+              accountId={accountId}
+              initialPatients={patients}
               onSelect={handleSelectPatient}
-              searchQuery={searchQuery}
-              onSearch={setSearchQuery}
               onAddPatient={() => setView('ADD_PATIENT')}
-              isLoading={showSkeleton}
             />
             {view === 'ADD_PATIENT' && (
               <AddPatientForm

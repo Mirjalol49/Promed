@@ -10,7 +10,14 @@ import {
   doc,
   getDoc,
   getDocs,
-  arrayUnion
+  arrayUnion,
+  limit,
+  startAfter,
+  orderBy,
+  QueryDocumentSnapshot,
+  getCountFromServer,
+  getAggregateFromServer,
+  sum
 } from 'firebase/firestore';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { storage } from './firebase';
@@ -57,7 +64,8 @@ export const subscribeToPatients = (
   accountId: string,
   onUpdate: (patients: Patient[]) => void,
   onError?: (error: any) => void,
-  columns: string = COLUMNS.LIST // Unused in Firestore adaptation but kept for signature compatibility
+  columns: string = COLUMNS.LIST, // Unused in Firestore adaptation but kept for signature compatibility
+  limitCount: number = 50
 ) => {
   if (!accountId) {
     console.warn("⚠️ subscribeToPatients: No accountId provided.");
@@ -68,7 +76,9 @@ export const subscribeToPatients = (
 
   const q = query(
     collection(db, "patients"),
-    where("account_id", "==", accountId)
+    where("account_id", "==", accountId),
+    orderBy("created_at", "desc"),
+    limit(limitCount)
   );
 
   let unsub: (() => void) | null = null;
@@ -97,6 +107,117 @@ export const subscribeToPatients = (
       unsub = null;
     }
   };
+};
+
+export const getPatientsPage = async (
+  accountId: string,
+  limitCount: number = 20,
+  lastDoc: QueryDocumentSnapshot | null = null
+) => {
+  if (!accountId) return { patients: [], lastVisible: null };
+
+  let q = query(
+    collection(db, "patients"),
+    where("account_id", "==", accountId),
+    orderBy("created_at", "desc"),
+    limit(limitCount)
+  );
+
+  if (lastDoc) {
+    q = query(q, startAfter(lastDoc));
+  }
+
+  const snapshot = await getDocs(q);
+  const patients = snapshot.docs.map(doc => mapPatient(doc.id, doc.data()));
+  return { patients, lastVisible: snapshot.docs[snapshot.docs.length - 1] || null };
+};
+
+export const subscribeToUnreadPatients = (
+  accountId: string,
+  onUpdate: (patients: Patient[]) => void,
+  onError?: (error: any) => void
+) => {
+  if (!accountId) {
+    return () => { };
+  }
+
+  const q = query(
+    collection(db, "patients"),
+    where("account_id", "==", accountId),
+    where("unreadCount", ">", 0),
+    limit(50)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const patients = snapshot.docs.map(doc => mapPatient(doc.id, doc.data()));
+    onUpdate(patients);
+  }, (error) => {
+    console.error("Unread patients subscription error:", error);
+    if (onError) onError(error);
+  });
+};
+
+export const searchPatients = async (
+  accountId: string,
+  searchQuery: string,
+  limitCount: number = 20
+) => {
+  if (!accountId || !searchQuery) return [];
+
+  // Firestore doesn't support generic substring search easily unless you use a 3rd party tool.
+  // The closest we can do natively is prefix search on a single field (like full_name).
+  // E.g., name >= "John" and name < "John\uf8ff"
+  // For broader search, it's better to filter client-side if the result set was previously small, 
+  // but with pagination we'll try a basic `where` on a pre-defined array or prefix.
+  // As a compromise, we'll fetch a larger chunk and filter, OR use query-based prefix search.
+  const lowerQuery = searchQuery.toLowerCase();
+  
+  // Note: For a robust app, a field like "search_keywords" (array) is needed.
+  // Here we'll do a simple prefix search on `full_name`. (Requires users to enter capitalization correctly or saving a lower_case_name field).
+  // Instead, since it's tricky, we'll pull recent max 1000 patients and filter here.
+  const q = query(
+    collection(db, "patients"),
+    where("account_id", "==", accountId),
+    orderBy("created_at", "desc"),
+    limit(100) // Fetch up to 100 to search client-side for reasonable responsiveness without fetching 100k
+  );
+
+  const snapshot = await getDocs(q);
+  const patients = snapshot.docs.map(doc => mapPatient(doc.id, doc.data()));
+  
+  return patients.filter(p => 
+    p.fullName.toLowerCase().includes(lowerQuery) ||
+    p.phone.includes(lowerQuery)
+  ).slice(0, limitCount);
+};
+
+export const getPatientStats = async (accountId: string) => {
+  if (!accountId) return { total: 0, newThisMonth: 0, monthlyRevenue: 0 };
+
+  const patientsCol = collection(db, "patients");
+  
+  // Total Patients
+  const totalQuery = query(patientsCol, where("account_id", "==", accountId));
+  const totalSnapshot = await getCountFromServer(totalQuery);
+  const totalCount = totalSnapshot.data().count;
+
+  // Active Patients
+  const activeQuery = query(patientsCol, where("account_id", "==", accountId), where("status", "==", "Active"));
+  const activeSnapshot = await getCountFromServer(activeQuery);
+  const activeCount = activeSnapshot.data().count;
+
+  // New this month
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const newMonthQuery = query(
+    patientsCol, 
+    where("account_id", "==", accountId),
+    where("created_at", ">=", firstDayOfMonth)
+  );
+  const newMonthSnapshot = await getCountFromServer(newMonthQuery);
+  const newThisMonth = newMonthSnapshot.data().count;
+
+  return { total: totalCount, active: activeCount, newThisMonth, monthlyRevenue: 0 }; // revenue handled separately or needs transaction collection
 };
 
 export const addPatient = async (

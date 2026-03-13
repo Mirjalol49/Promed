@@ -41,6 +41,14 @@ export const storage = getStorage(app);
 // Analytics disabled to prevent content blocker issues
 // export const analytics = getAnalytics(app);
 
+// Initialize Firebase Performance Monitoring
+import { getPerformance } from "firebase/performance";
+let perf: ReturnType<typeof getPerformance> | null = null;
+if (typeof window !== "undefined") {
+    perf = getPerformance(app);
+}
+export const performance = perf;
+
 // Initialize Cloud Functions
 import { getFunctions } from 'firebase/functions';
 export const functions = getFunctions(app);

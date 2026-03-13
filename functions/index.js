@@ -1537,3 +1537,173 @@ exports.sendFCMNotification = onDocumentCreated({ document: "notifications/{noti
     }
 });
 
+// --- DENORMALIZATION: Patient Total Paid ---
+exports.updatePatientPaidBalance = onDocumentWritten("transactions/{txId}", async (event) => {
+    const beforeData = event.data?.before?.exists ? event.data.before.data() : null;
+    const afterData = event.data?.after?.exists ? event.data.after.data() : null;
+
+    const patientId = (afterData && afterData.patientId) || (beforeData && beforeData.patientId);
+    if (!patientId) return null;
+
+    const getEffectiveAmount = (doc) => {
+        if (!doc) return 0;
+        if (doc.type !== 'income') return 0;
+        if (doc.isVoided || doc.returned) return 0;
+        return typeof doc.amount === 'number' ? doc.amount : 0;
+    };
+
+    const amtBefore = getEffectiveAmount(beforeData);
+    const amtAfter = getEffectiveAmount(afterData);
+    const delta = amtAfter - amtBefore;
+
+    if (delta !== 0) {
+        try {
+            const patientRef = db.collection('patients').doc(patientId);
+            await db.runTransaction(async (t) => {
+                const pDoc = await t.get(patientRef);
+                if (pDoc.exists) {
+                    const currentTotal = pDoc.data().totalPaid || 0;
+                    t.update(patientRef, { totalPaid: currentTotal + delta });
+                }
+            });
+            console.log(`Updated patient ${patientId} totalPaid by ${delta}`);
+        } catch (error) {
+            console.error(`Error updating patient ${patientId} totalPaid:`, error);
+        }
+    }
+});
+
+// --- DENORMALIZATION: Monthly Finance Aggregates ---
+exports.updateMonthlyFinanceStats = onDocumentWritten("transactions/{txId}", async (event) => {
+    const beforeData = event.data?.before?.exists ? event.data.before.data() : null;
+    const afterData = event.data?.after?.exists ? event.data.after.data() : null;
+
+    // Both splits and main logic attach accountId explicitly
+    const accountId = (afterData && afterData.accountId) || (beforeData && beforeData.accountId);
+    const dateStr = (afterData && afterData.date) || (beforeData && beforeData.date);
+    
+    if (!accountId || !dateStr) return null;
+
+    const dateObj = new Date(dateStr);
+    if (isNaN(dateObj.getTime())) return null; // Invalid date
+
+    // Using UTC ensures stability despite the server location
+    const monthKey = `${dateObj.getUTCFullYear()}-${String(dateObj.getUTCMonth() + 1).padStart(2, '0')}`;
+    const docId = `${accountId}_${monthKey}`;
+
+    const getIncome = (doc) => (!doc || doc.type !== 'income' || doc.isVoided || doc.returned) ? 0 : (typeof doc.amount === 'number' ? doc.amount : 0);
+    const getExpense = (doc) => (!doc || doc.type !== 'expense' || doc.isVoided || doc.returned) ? 0 : (typeof doc.amount === 'number' ? doc.amount : 0);
+
+    const deltaIncome = getIncome(afterData) - getIncome(beforeData);
+    const deltaExpense = getExpense(afterData) - getExpense(beforeData);
+
+    if (deltaIncome !== 0 || deltaExpense !== 0) {
+        try {
+            const aggRef = db.collection('finance_aggregates').doc(docId);
+            await db.runTransaction(async (t) => {
+                const aggDoc = await t.get(aggRef);
+                let data = aggDoc.exists ? aggDoc.data() : { totalIncome: 0, totalExpense: 0, netProfit: 0, accountId, month: monthKey };
+                
+                data.totalIncome = (data.totalIncome || 0) + deltaIncome;
+                data.totalExpense = (data.totalExpense || 0) + deltaExpense;
+                data.netProfit = data.totalIncome - data.totalExpense;
+                
+                t.set(aggRef, data, { merge: true });
+            });
+            console.log(`Updated finance_aggregates ${docId} / ${accountId} / ${monthKey} Income: ${deltaIncome} Exp: ${deltaExpense}`);
+        } catch (error) {
+            console.error(`Error updating finance_aggregates ${docId}:`, error);
+        }
+    }
+});
+
+// --- DENORMALIZATION: Patient Schedules (Dashboard O(1) Fetching) ---
+exports.updatePatientSchedules = onDocumentWritten("patients/{patientId}", async (event) => {
+    const patientId = event.params.patientId;
+    const afterData = event.data?.after?.exists ? event.data.after.data() : null;
+    
+    // Step 1: Delete all existing schedules for this patient to ensure a clean sync
+    const schedulesRef = db.collection('schedules');
+    const existingSchedules = await schedulesRef.where('patientId', '==', patientId).get();
+    
+    const batch = db.batch();
+    existingSchedules.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    
+    // Step 2: If the patient was deleted, just commit the deletions and return
+    if (!afterData) {
+        if (!existingSchedules.empty) await batch.commit();
+        return;
+    }
+
+    const accountId = afterData.account_id || afterData.accountId;
+    if (!accountId) return; // Cannot schedule without an account
+
+    const name = afterData.fullName || afterData.name || "Unknown Patient";
+    const profileImage = afterData.profileImage || null;
+    const tier = afterData.tier || 'regular';
+    const status = afterData.status || null;
+
+    let hasNewSchedules = false;
+
+    // Step 3: Add Operation Date Event
+    if (afterData.operationDate) {
+        // Date strings in DB are usually ISO strings or YYYY-MM-DD
+        const opRef = schedulesRef.doc(`op-${patientId}`);
+        batch.set(opRef, {
+            accountId,
+            patientId,
+            id: `op-${patientId}`,
+            date: afterData.operationDate,
+            type: 'Operation',
+            title: 'Operation',
+            subtitle: afterData.technique || 'N/A',
+            name,
+            patientImage,
+            tier,
+            status: status
+        });
+        hasNewSchedules = true;
+    }
+
+    // Step 4: Add Future/Pending Injections
+    if (Array.isArray(afterData.injections)) {
+        afterData.injections.forEach(inj => {
+            // Only mirror active schedule items to keep the collection strictly for Dashboard queries
+            if (inj.status === 'Cancelled' || inj.status === 'Completed') return;
+
+            const injDate = inj.date; 
+            if (!injDate) return;
+
+            const injId = inj.id || Math.random().toString(36).substring(7);
+            const ref = schedulesRef.doc(`inj-${patientId}-${injId}`);
+            
+            batch.set(ref, {
+                accountId,
+                patientId,
+                id: `inj-${patientId}-${injId}`,
+                injectionId: inj.id,
+                date: injDate,
+                type: 'Injection',
+                title: 'Plasma Injection',
+                subtitle: inj.notes || inj.dose || 'Routine Followup',
+                name,
+                patientImage,
+                tier,
+                status: inj.status
+            });
+            hasNewSchedules = true;
+        });
+    }
+
+    // Step 5: Commit changes
+    if (!existingSchedules.empty || hasNewSchedules) {
+        try {
+            await batch.commit();
+            console.log(`Synced schedules for patient ${patientId}`);
+        } catch (error) {
+            console.error(`Error syncing schedules for patient ${patientId}:`, error);
+        }
+    }
+});

@@ -3,7 +3,15 @@ import { createPortal } from 'react-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAccount } from '../../contexts/AccountContext';
 import { Transaction, TransactionType, TransactionCategory, Staff, Patient } from '../../types';
-import { subscribeToTransactions, addTransaction, deleteTransaction, returnTransaction, restoreTransaction, calculateStats } from '../../lib/financeService';
+import {
+    addTransaction,
+    addTransactionBatch,
+    subscribeToTransactions,
+    deleteTransaction,
+    restoreTransaction,
+    returnTransaction,
+    calculateStats
+} from '../../lib/financeService';
 import { subscribeToStaff } from '../../lib/staffService';
 import { subscribeToPatients } from '../../lib/patientService';
 import { useToast } from '../../contexts/ToastContext';
@@ -361,10 +369,16 @@ export const FinancePage = ({ onPatientClick, highlightTransactionId, onHighligh
     }, [filteredTransactions, transactions, dateFilter, startDate, endDate, language]);
 
 
-    const handleSave = async (data: any) => {
+    const handleSave = async (data: any | any[]) => {
         try {
-            await addTransaction({ ...data, accountId });
-            success(t('added') || 'Added', `${data.type === 'income' ? 'Income' : 'Expense'} recorded successfully`);
+            if (Array.isArray(data)) {
+                const batchData = data.map(tx => ({ ...tx, accountId }));
+                await addTransactionBatch(batchData);
+                success(t('added') || 'Added', `Batch transactions recorded successfully`);
+            } else {
+                await addTransaction({ ...data, accountId });
+                success(t('added') || 'Added', `${data.type === 'income' ? 'Income' : 'Expense'} recorded successfully`);
+            }
             setIsModalOpen(false);
         } catch (err: any) {
             toastError(t('error'), err.message);
@@ -659,9 +673,8 @@ export const FinancePage = ({ onPatientClick, highlightTransactionId, onHighligh
                         {layout === 'grid' ? (
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                 {paginatedPatients.map(patient => {
-                                    // Specific calc for this patient
-                                    const pTransactions = transactions.filter(t => t.patientId === patient.id && t.type === 'income' && !t.isVoided);
-                                    const totalPaid = pTransactions.reduce((sum, t) => sum + t.amount, 0);
+                                    // Use Denormalized patient.totalPaid
+                                    const totalPaid = patient.totalPaid || 0;
                                     const totalCost = patient.totalAmount || 0;
                                     const remaining = Math.max(0, totalCost - totalPaid);
 
@@ -731,8 +744,8 @@ export const FinancePage = ({ onPatientClick, highlightTransactionId, onHighligh
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 text-sm">
                                         {paginatedPatients.map((patient) => {
-                                            const pTransactions = transactions.filter(t => t.patientId === patient.id && t.type === 'income' && !t.isVoided);
-                                            const totalPaid = pTransactions.reduce((sum, t) => sum + t.amount, 0);
+                                            // Use Denormalized patient.totalPaid
+                                            const totalPaid = patient.totalPaid || 0;
                                             const totalCost = patient.totalAmount || 0;
                                             const remaining = Math.max(0, totalCost - totalPaid);
 

@@ -62,20 +62,22 @@ service cloud.firestore {
 
     // Patients: Controlled access
     match /patients/{patientId} {
-      allow read: if isAuthenticated() && canViewPatients();
-      allow write: if isAuthenticated() && canEditPatients();
+      allow read, update, delete: if isAuthenticated() && (request.auth.uid == resource.data.account_id || request.auth.uid == resource.data.accountId);
+      allow create: if isAuthenticated() && (request.auth.uid == request.resource.data.account_id || request.auth.uid == request.resource.data.accountId);
     }
 
     // Leads (Clients): Controlled access
     match /leads/{leadId} {
       allow read: if isAuthenticated() && canViewLeads();
-      allow write: if isAuthenticated() && canEditLeads();
+      allow create: if isAuthenticated() && canEditLeads() && (request.auth.uid == request.resource.data.account_id || request.auth.uid == request.resource.data.accountId);
+      allow update, delete: if isAuthenticated() && canEditLeads();
     }
 
     // Finance/Transactions
     match /transactions/{txId} {
-      allow read: if isAuthenticated() && canViewFinance();
-      allow write: if isAuthenticated() && canEditFinance();
+      allow read, delete: if isAuthenticated() && (request.auth.uid == resource.data.account_id || request.auth.uid == resource.data.accountId);
+      allow create: if isAuthenticated() && (request.auth.uid == request.resource.data.account_id || request.auth.uid == request.resource.data.accountId) && request.resource.data.amount is number && request.resource.data.amount >= 0;
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.account_id || request.auth.uid == resource.data.accountId) && request.resource.data.amount is number && request.resource.data.amount >= 0;
     }
 
     // Staff

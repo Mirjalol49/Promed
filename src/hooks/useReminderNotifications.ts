@@ -23,6 +23,7 @@ export const useReminderNotifications = () => {
             (updatedLeads) => {
                 setLeads(updatedLeads);
             },
+            100,
             (error) => console.error("Error adhering to leads for reminders:", error)
         );
 

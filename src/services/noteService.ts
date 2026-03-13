@@ -8,6 +8,7 @@ import {
     where,
     orderBy,
     onSnapshot,
+    limit,
     serverTimestamp,
     Timestamp
 } from 'firebase/firestore';
@@ -27,7 +28,8 @@ export const noteService = {
 
         const q = query(
             collection(db, NOTES_COLLECTION),
-            where('userId', '==', userId)
+            where('userId', '==', userId),
+            limit(100)
         );
 
         return onSnapshot(

@@ -3,7 +3,8 @@ import React, { useState, useMemo } from 'react';
 import { CalendarWidget, CalendarEvent, EventType } from './CalendarWidget';
 import { ProfileAvatar } from '../../components/layout/ProfileAvatar';
 import { ProBadge } from '../../components/ui/ProBadge';
-import { Patient, InjectionStatus } from '../../types';
+import { InjectionStatus } from '../../types';
+import { ScheduleEvent } from '../../lib/scheduleService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import {
     Calendar,
@@ -19,7 +20,7 @@ import { uz, ru, enUS } from 'date-fns/locale';
 import calendarMascot from '../../assets/images/mascots/calendar.png';
 
 interface DashboardSchedulerProps {
-    patients: Patient[];
+    schedules: ScheduleEvent[];
     onViewPatient: (id: string, injectionId?: string) => void;
 }
 
@@ -44,7 +45,7 @@ interface GroupedEvent {
     totalSessions: number;
 }
 
-export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients, onViewPatient }) => {
+export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ schedules, onViewPatient }) => {
     const { t, language } = useLanguage();
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -53,51 +54,33 @@ export const DashboardScheduler: React.FC<DashboardSchedulerProps> = ({ patients
 
     // 1. Extract all events
     const allEvents = useMemo(() => {
-        const events: FlattenedEvent[] = [];
+        const events: FlattenedEvent[] = schedules.map(s => {
+            let dateStr = s.date;
+            if (!dateStr.includes('T')) {
+                // If it's a date only like 'YYYY-MM-DD', force it to local 9 AM
+                dateStr += 'T09:00:00';
+            }
+            
+            return {
+                id: s.id,
+                date: new Date(dateStr),
+                type: s.type as EventType,
+                patientId: s.patientId,
+                title: s.title,
+                subtitle: s.subtitle,
+                patientImage: s.patientImage,
+                name: s.name,
+                status: s.status || undefined,
+                tier: s.tier === 'vip' ? 'pro' : s.tier,
+                injectionId: s.injectionId
+            };
+        });
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        patients.forEach(patient => {
-            if (patient.operationDate) {
-                events.push({
-                    id: `op-${patient.id}`,
-                    date: new Date(patient.operationDate),
-                    type: 'Operation', // This matches EventType
-                    patientId: patient.id,
-                    title: t('operation') || 'Operation',
-                    subtitle: patient.technique || 'N/A',
-                    patientImage: patient.profileImage,
-                    name: patient.fullName,
-                    status: patient.status,
-                    tier: patient.tier
-                });
-            }
-
-            const injectionEvents = (patient.injections || [])
-                .filter(inj => inj.status !== InjectionStatus.CANCELLED && inj.status !== InjectionStatus.COMPLETED)
-                .map(inj => {
-                    const date = new Date(inj.date);
-                    if (isNaN(date.getTime())) return null;
-                    return {
-                        id: `inj-${patient.id}-${inj.id}`,
-                        patientId: patient.id,
-                        name: patient.fullName,
-                        date: date,
-                        type: 'Injection' as EventType,
-                        status: inj.status,
-                        title: t('plasma_injection') || 'Plasma Injection',
-                        subtitle: inj.notes || inj.dose || t('routine_followup'),
-                        patientImage: patient.profileImage,
-                        tier: patient.tier,
-                        injectionId: inj.id
-                    };
-                }).filter((e) => Boolean(e)) as FlattenedEvent[];
-
-            events.push(...injectionEvents);
-        });
-
         return events.filter(e => e.date >= today).sort((a, b) => a.date.getTime() - b.date.getTime());
-    }, [patients, t]);
+    }, [schedules]);
 
     // 2. Prepare Calendar Events (Flat List for dots)
     const calendarEvents: CalendarEvent[] = useMemo(() => {

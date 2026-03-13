@@ -47,6 +47,7 @@ export interface Patient {
   lastMessageTimestamp?: string; // ISO string for sorting/formatting
   botLanguage?: string;
   totalAmount?: number; // Total agreed price for surgery/treatment
+  totalPaid?: number; // Added for denormalized balance calculation
   currency?: 'USD' | 'UZS';
 }
 

@@ -11,7 +11,8 @@ import {
     deleteDoc,
     onSnapshot,
     Unsubscribe,
-    where
+    where,
+    limit
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Lead, LeadStatus, TimelineEvent } from '../types';
@@ -20,13 +21,15 @@ const LEADS_COLLECTION = 'leads';
 
 export const leadService = {
     // Subscribe to leads (Real-time) — uses accountId to sync data across all sub-users (nurse, call operator, viewer)
-    subscribeToLeads(accountId: string, callback: (leads: Lead[]) => void, onError?: (error: any) => void): Unsubscribe {
+    subscribeToLeads(accountId: string, callback: (leads: Lead[]) => void, limitCount = 100, onError?: (error: any) => void): Unsubscribe {
         if (!accountId) return () => { };
 
         // Query by account_id (matches patients pattern) for multi-user data sync
         const q = query(
             collection(db, LEADS_COLLECTION),
-            where('account_id', '==', accountId)
+            where('account_id', '==', accountId),
+            orderBy('created_at', 'desc'),
+            limit(limitCount)
         );
 
         return onSnapshot(q, (snapshot) => {

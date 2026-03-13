@@ -15,6 +15,7 @@ import { DashboardScheduler } from '../features/dashboard/DashboardScheduler';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAccount } from '../contexts/AccountContext';
 import { Patient } from '../types';
+import { ScheduleEvent } from '../lib/scheduleService';
 import { DashboardLoader } from '../components/ui/DashboardLoader';
 import LockedOverlay from '../components/ui/LockedOverlay';
 
@@ -32,6 +33,7 @@ interface DashboardProps {
     onUploadPhoto: () => void;
     onPatientSelect: (id: string, injectionId?: string) => void;
     patients: Patient[];
+    schedules: ScheduleEvent[];
     isLoading?: boolean;
 }
 
@@ -42,6 +44,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     onUploadPhoto,
     onPatientSelect,
     patients,
+    schedules,
     isLoading
 }) => {
     const { t, language } = useLanguage();
@@ -133,7 +136,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     {/* Main: Upcoming Schedule */}
                     <div className="relative min-h-[500px] w-full min-w-0">
                         <DashboardScheduler
-                            patients={patients}
+                            schedules={schedules}
                             onViewPatient={onPatientSelect}
                         />
 

@@ -157,11 +157,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         if (type === 'income' && formData.patientId) {
             const patient = patientList.find(p => p.id === formData.patientId);
             if (patient) {
-                // Calculate Paid
-                const paid = transactions
-                    .filter(t => t.patientId === patient.id && t.type === 'income' && !t.isVoided)
-                    .reduce((sum, t) => sum + t.amount, 0);
-
+                // Calculate Paid using denormalized field
+                const paid = patient.totalPaid || 0;
                 const totalCost = patient.totalAmount || 0;
                 const remaining = Math.max(0, totalCost - paid);
 
@@ -279,12 +276,14 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         setLoading(true);
         try {
             const currentTime = new Date().toTimeString().slice(0, 5);
-            await onSave({ ...formData, type, time: currentTime });
+            const mainTransaction = { ...formData, type, time: currentTime };
+            
+            const transactionsToSave = [mainTransaction];
 
             if (type === 'income') {
                 for (const split of splits) {
                     if (split.amount > 0) {
-                        await onSave({
+                        transactionsToSave.push({
                             amount: split.amount,
                             currency: formData.currency,
                             type: 'expense',
@@ -298,6 +297,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                     }
                 }
             }
+
+            // Using the overloaded onSave that accepts Array of transactions
+            await onSave(transactionsToSave);
+            
             onClose();
         } catch (error) {
             console.error(error);

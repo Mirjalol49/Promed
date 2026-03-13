@@ -107,6 +107,7 @@ export const KanbanBoard: React.FC = () => {
                 setIsLoading(false);
                 setHasFetchedOnce(true);
             },
+            200,
             (error) => {
                 console.error("Critical: Failed to load leads", error);
                 setIsLoading(false); // Stop loop even on error

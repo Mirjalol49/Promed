@@ -140,7 +140,8 @@ service cloud.firestore {
     // Note: profile_image, before_image, and after_images are optional and not required to create/save.
     match /patients/{patientId} {
       allow read: if isAuthenticated() && canViewPatients() && (resource == null || belongsToAccount(resource));
-      allow write: if isAuthenticated() && canEditPatients() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));
+      allow update, delete: if isAuthenticated() && canEditPatients() && (resource == null || belongsToAccount(resource));
+      allow create: if isAuthenticated() && canEditPatients() && writesToAccount(request.resource.data);
       
       // Messages Subcollection (Fix for Permission Denied)
       match /messages/{messageId} {
@@ -174,7 +175,8 @@ service cloud.firestore {
     // Leads (Clients)
     match /leads/{leadId} {
       allow read: if isAuthenticated() && canViewLeads() && (resource == null || belongsToAccount(resource));
-      allow write: if isAuthenticated() && canEditLeads() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));
+      allow create: if isAuthenticated() && canEditLeads() && (request.auth.uid == request.resource.data.account_id || request.auth.uid == request.resource.data.accountId);
+      allow update, delete: if isAuthenticated() && canEditLeads() && (resource != null && belongsToAccount(resource));
       
       // Timeline subcollection (reminders, notes, status changes)
       match /timeline/{eventId} {
@@ -185,8 +187,21 @@ service cloud.firestore {
 
     // Finance
     match /transactions/{txId} {
-      allow read: if isAuthenticated() && canViewFinance() && (resource == null || belongsToAccount(resource));
-      allow write: if isAuthenticated() && canEditFinance() && (writesToAccount(request.resource.data) || (resource != null && belongsToAccount(resource)));
+      allow read, delete: if isAuthenticated() && canViewFinance() && (resource == null || belongsToAccount(resource));
+      allow create: if isAuthenticated() && canEditFinance() && writesToAccount(request.resource.data) && request.resource.data.amount is number && request.resource.data.amount >= 0;
+      allow update: if isAuthenticated() && canEditFinance() && (resource == null || belongsToAccount(resource)) && request.resource.data.amount is number && request.resource.data.amount >= 0;
+    }
+
+    // Finance Aggregates (Denormalized)
+    match /finance_aggregates/{aggId} {
+      allow read: if isAuthenticated() && canViewFinance();
+      allow write: if false; // Only Cloud Functions manage aggregates
+    }
+
+    // Schedules (Denormalized)
+    match /schedules/{scheduleId} {
+      allow read: if isAuthenticated() && canViewPatients() && (resource == null || belongsToAccount(resource));
+      allow write: if false; // Only Cloud Functions manage flattened schedules
     }
 
     // Staff

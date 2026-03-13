@@ -9,7 +9,8 @@ import {
     where,
     onSnapshot,
     orderBy,
-    limit
+    limit,
+    writeBatch
 } from 'firebase/firestore';
 import { Transaction, FinanceStats } from '../types';
 
@@ -25,9 +26,8 @@ export const subscribeToTransactions = (
 
     const q = query(
         collection(db, COLLECTION_NAME),
-        where("accountId", "==", accountId)
-        // orderBy("date", "desc"), 
-        // limit(limitCount)
+        where("accountId", "==", accountId),
+        limit(limitCount || 500)
     );
 
     return onSnapshot(q, (snapshot) => {
@@ -56,6 +56,34 @@ export const addTransaction = async (data: Omit<Transaction, 'id' | 'createdAt'>
         throw error;
     }
 };
+
+export const addTransactionBatch = async (transactions: Omit<Transaction, 'id' | 'createdAt'>[]) => {
+    try {
+        const batch = writeBatch(db);
+        const colRef = collection(db, COLLECTION_NAME);
+        const createdAt = new Date().toISOString();
+        const ids: string[] = [];
+
+        transactions.forEach((data) => {
+            const docRef = doc(colRef);
+            batch.set(docRef, { ...data, createdAt });
+            ids.push(docRef.id);
+        });
+
+        await Promise.race([
+            batch.commit(),
+            new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error("Firebase Transaction batch commit timeout")), 15000)
+            )
+        ]);
+
+        return ids;
+    } catch (error) {
+        console.error("Error committing transaction batch:", error);
+        throw error;
+    }
+};
+
 
 // Return a transaction (instead of deleting)
 export const returnTransaction = async (id: string, note?: string) => {
@@ -142,7 +170,8 @@ export const getStaffPaymentHistory = (
     const q = query(
         collection(db, COLLECTION_NAME),
         where("accountId", "==", accountId),
-        where("staffId", "==", staffId)
+        where("staffId", "==", staffId),
+        limit(100)
     );
 
     console.log('[getStaffPaymentHistory] Querying for accountId:', accountId, 'staffId:', staffId);
@@ -165,5 +194,30 @@ export const getStaffPaymentHistory = (
             console.log('[getStaffPaymentHistory] First payment:', payments[0]);
         }
         onUpdate(payments);
+    }, onError);
+};
+
+export const subscribeToMonthlyAggregate = (
+    accountId: string,
+    monthKey: string, // YYYY-MM
+    onUpdate: (stats: { totalIncome: number, totalExpense: number, netProfit: number } | null) => void,
+    onError?: (error: any) => void
+) => {
+    if (!accountId || !monthKey) return () => { };
+
+    const docId = `${accountId}_${monthKey}`;
+    const docRef = doc(db, 'finance_aggregates', docId);
+
+    return onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            onUpdate({
+                totalIncome: data.totalIncome || 0,
+                totalExpense: data.totalExpense || 0,
+                netProfit: data.netProfit || 0
+            });
+        } else {
+            onUpdate({ totalIncome: 0, totalExpense: 0, netProfit: 0 }); // Default when missing
+        }
     }, onError);
 };

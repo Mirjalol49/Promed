@@ -24,6 +24,7 @@ import { useAccount } from '../contexts/AccountContext';
 import { createSystemUser } from '../lib/adminService';
 import { auth } from '../lib/firebase';
 import { AdminRegistrySkeleton } from '../components/ui/Skeletons';
+import { AdminHealthDash } from '../components/admin/AdminHealthDash';
 
 export const AdminDashboard: React.FC = () => {
     const { accountId } = useAccount();
@@ -41,7 +42,7 @@ export const AdminDashboard: React.FC = () => {
     const [isCreating, setIsCreating] = useState(false);
 
     // Navigation State
-    const [activeTab, setActiveTab] = useState<'registry' | 'broadcast'>('registry');
+    const [activeTab, setActiveTab] = useState<'registry' | 'broadcast' | 'health'>('registry');
     const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
 
     // Megaphone State
@@ -266,6 +267,16 @@ export const AdminDashboard: React.FC = () => {
                         <Megaphone size={16} strokeWidth={2.5} />
                         Global Broadcast
                     </motion.button>
+                    <motion.button whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 800, damping: 35 }}
+                        onClick={() => setActiveTab('health')}
+                        className={`px-8 py-3 rounded-[18px] text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300 flex items-center gap-2.5 ${activeTab === 'health'
+                            ? 'bg-promed-primary text-white scale-[1.02]'
+                            : 'text-promed-muted hover:text-promed-text hover:bg-white/50'
+                            }`}
+                    >
+                        <ShieldCheck size={16} strokeWidth={2.5} />
+                        System Health
+                    </motion.button>
                 </div>
             </div>
 
@@ -474,7 +485,7 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            ) : (
+            ) : activeTab === 'broadcast' ? (
                 <div className="max-w-2xl mx-auto space-y-8 mt-10">
                     <div className="bg-white/80 backdrop-blur-3xl rounded-[40px] shadow-premium border border-white/40 overflow-hidden relative group/mega transition-all duration-500">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/[0.03] rounded-full blur-[80px] -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000" />
@@ -635,6 +646,8 @@ export const AdminDashboard: React.FC = () => {
                         </ul>
                     </div>
                 </div >
+            ) : (
+                <AdminHealthDash />
             )}
             {/* Account Details Modal */}
             {

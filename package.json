@@ -36,6 +36,9 @@
     "tailwindcss-animate": "^1.0.7",
     "telegraf": "^4.16.3",
     "use-sound": "^5.0.0",
+    "workbox-cacheable-response": "^7.4.0",
+    "workbox-expiration": "^7.4.0",
+    "workbox-strategies": "^7.4.0",
     "zod": "^4.2.1"
   },
   "devDependencies": {

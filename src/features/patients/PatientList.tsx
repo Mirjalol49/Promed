@@ -62,6 +62,8 @@ import { Pagination } from '../../components/ui/Pagination';
 import { useRBAC } from '../../hooks/useRBAC';
 import { SCOPES } from '../../config/permissions';
 import { useAccount } from '../../contexts/AccountContext';
+import { getPatientsPage, searchPatients } from '../../lib/patientService';
+import { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 
 
 // Re-importing to force build update
@@ -457,75 +459,83 @@ const PatientRow = React.memo<{ patient: Patient; onSelect: (id: string) => void
 
 // --- Patient List ---
 export const PatientList: React.FC<{
-  patients: Patient[];
+  accountId: string;
+  initialPatients: Patient[];
   onSelect: (id: string) => void;
-  searchQuery: string;
-  onSearch: (q: string) => void;
   onAddPatient: () => void;
-  isLoading?: boolean;
-}> = ({ patients, onSelect, searchQuery, onSearch, onAddPatient, isLoading }) => {
+}> = ({ accountId, initialPatients, onSelect, onAddPatient }) => {
   const { language, t } = useLanguage();
   const { can } = useRBAC();
   const canEdit = can(SCOPES.canEditPatients);
   const localeString = language === 'uz' ? 'uz-UZ' : language === 'ru' ? 'ru-RU' : 'en-US';
   const translateStatus = useStatusTranslation();
 
-  // --- Pagination State ---
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+  // --- Pagination & Search State ---
+  const [paginatedPatients, setPaginatedPatients] = useState<Patient[]>(initialPatients);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(initialPatients.length === 0);
 
-  // --- Reset Page on Search ---
+  // Fetch initial page if we didn't get initialPatients, or if account changes
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, patients.length]);
-
-  // --- Computation ---
-  const totalPages = Math.ceil(patients.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-
-  // Simple slice (removed useMemo to prevent stale closure issues)
-  const currentPatients = patients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-  // --- SAFETY RESETS ---
-  useEffect(() => {
-    // If we have patients but current view is empty (e.g. deleted last item on page 2), reset to page 1
-    if (patients.length > 0 && currentPatients.length === 0) {
-      console.warn("⚠️ PatientList: Page empty but data exists. Resetting to Page 1.");
-      setCurrentPage(1);
-    }
-  }, [patients.length, currentPatients.length]);
-
-  const startCount = patients.length > 0 ? startIndex + 1 : 0;
-  const endCount = Math.min(startIndex + ITEMS_PER_PAGE, patients.length);
-
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) setCurrentPage(p => p - 1);
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(p => p + 1);
-  };
-
-  // Generate page numbers for display
-  const getPageNumbers = () => {
-    const pages = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      // Simple logic for large page counts: Show 1, 2, ..., curr-1, curr, curr+1, ..., last
-      if (currentPage <= 4) {
-        pages.push(1, 2, 3, 4, 5, '...', totalPages);
-      } else if (currentPage >= totalPages - 3) {
-        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-      } else {
-        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+    if (initialPatients.length > 0 && !searchQuery) return;
+    
+    let active = true;
+    const fetchInitial = async () => {
+      setIsInitialLoad(true);
+      try {
+        if (searchQuery) {
+          const results = await searchPatients(accountId, searchQuery);
+          if (active) {
+            setPaginatedPatients(results);
+            setHasMore(false); // Disable pagination during search
+          }
+        } else {
+          const { patients, lastVisible } = await getPatientsPage(accountId);
+          if (active) {
+            setPaginatedPatients(patients);
+            setLastDoc(lastVisible || null);
+            setHasMore(patients.length === 20); // Assume limit is 20
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching patients:", err);
+      } finally {
+        if (active) setIsInitialLoad(false);
       }
+    };
+    
+    // Simple debounce for search
+    const timer = setTimeout(fetchInitial, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [accountId, searchQuery]);
+
+  const loadMore = async () => {
+    if (!hasMore || isFetching || !lastDoc || searchQuery) return;
+    setIsFetching(true);
+    try {
+      const { patients, lastVisible } = await getPatientsPage(accountId, 20, lastDoc);
+      setPaginatedPatients(prev => {
+        // Filter out duplicates just in case
+        const existingIds = new Set(prev.map(p => p.id));
+        const newUnique = patients.filter(p => !existingIds.has(p.id));
+        return [...prev, ...newUnique];
+      });
+      setLastDoc(lastVisible || null);
+      setHasMore(patients.length === 20);
+    } catch (err) {
+      console.error("Error loading more patients:", err);
+    } finally {
+      setIsFetching(false);
     }
-    return pages;
   };
 
-  if (isLoading) {
+  if (isInitialLoad) {
     return <PatientListSkeleton />;
   }
 
@@ -541,7 +551,7 @@ export const PatientList: React.FC<{
               type="text"
               placeholder={t('search')}
               value={searchQuery}
-              onChange={(e) => onSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-400 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-promed-primary/20 focus:border-promed-primary/50 transition-all font-medium text-sm"
             />
           </div>
@@ -562,9 +572,9 @@ export const PatientList: React.FC<{
 
       {/* MOBILE CARD VIEW (Visible only on mobile) */}
       <div className="block md:hidden">
-        {currentPatients.length > 0 ? (
+        {paginatedPatients.length > 0 ? (
           <div className="divide-y divide-slate-100">
-            {currentPatients.map((patient) => (
+            {paginatedPatients.map((patient) => (
               <MobilePatientCard key={patient.id} patient={patient} onSelect={onSelect} />
             ))}
           </div>
@@ -589,8 +599,8 @@ export const PatientList: React.FC<{
             </tr>
           </thead>
           <tbody className="divide-y-0 relative">
-            {currentPatients.length > 0 ? (
-              currentPatients.map((patient) => (
+            {paginatedPatients.length > 0 ? (
+              paginatedPatients.map((patient) => (
                 <PatientRow key={patient.id} patient={patient} onSelect={onSelect} />
               ))
             ) : (
@@ -606,13 +616,24 @@ export const PatientList: React.FC<{
         </table>
       </div>
 
-      {/* --- Pagination Footer --- */}
-      {patients.length > 0 && totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+      {/* --- Load More Footer --- */}
+      {paginatedPatients.length > 0 && hasMore && !searchQuery && (
+        <div className="p-4 border-t border-slate-100 flex justify-center bg-slate-50">
+          <button
+            onClick={loadMore}
+            disabled={isFetching}
+            className="px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50 hover:text-promed-primary active:scale-95 transition-all shadow-sm flex items-center gap-2"
+          >
+            {isFetching ? (
+              <>
+                <Loader2 size={16} className="animate-spin text-promed-primary" />
+                <span>Loading...</span>
+              </>
+            ) : (
+              <span>Load More</span>
+            )}
+          </button>
+        </div>
       )}
     </div>
   );
